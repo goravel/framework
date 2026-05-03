@@ -123,7 +123,7 @@ func (s *ServiceProviderTestSuite) TestBoot() {
 	var storage contractsfilesystem.Storage
 	var httpFactory contractshttpclient.Factory
 
-	mockApp.EXPECT().Make(binding.AI).Return(mockAI, nil).Once()
+	mockApp.EXPECT().MakeAI().Return(mockAI).Once()
 	mockApp.EXPECT().MakeStorage().Return(storage).Once()
 	mockApp.EXPECT().MakeHttp().Return(httpFactory).Once()
 

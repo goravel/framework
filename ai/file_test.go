@@ -240,9 +240,9 @@ func TestDocumentFromURLWithoutPathLeavesFileNameEmpty(t *testing.T) {
 }
 
 func TestPutFile(t *testing.T) {
-	originalFileUploaderFacade := fileUploaderFacade
+	originalAIFacade := aiFacade
 	t.Cleanup(func() {
-		fileUploaderFacade = originalFileUploaderFacade
+		aiFacade = originalAIFacade
 	})
 
 	tests := []struct {
@@ -259,7 +259,7 @@ func TestPutFile(t *testing.T) {
 				response.EXPECT().ID().Return("file-123").Once()
 
 				fileProvider.EXPECT().PutFile(ctx, file).Return(response, nil).Once()
-				fileUploaderFacade = &Application{
+				aiFacade = &Application{
 					ctx: context.Background(),
 					config: contractsai.Config{
 						Default: "openai",
@@ -283,7 +283,7 @@ func TestPutFile(t *testing.T) {
 			name: "provider does not support files",
 			setup: func(t *testing.T, _ context.Context, _ contractsai.StorableFile) contractsai.StoredFileResponse {
 				provider := mocksai.NewProvider(t)
-				fileUploaderFacade = &Application{
+				aiFacade = &Application{
 					ctx: context.Background(),
 					config: contractsai.Config{
 						Default: "openai",
@@ -306,7 +306,7 @@ func TestPutFile(t *testing.T) {
 		{
 			name: "facade not set",
 			setup: func(t *testing.T, _ context.Context, _ contractsai.StorableFile) contractsai.StoredFileResponse {
-				fileUploaderFacade = nil
+				aiFacade = nil
 				return nil
 			},
 			expectError: errors.AIFacadeNotSet,
@@ -334,9 +334,9 @@ func TestPutFile(t *testing.T) {
 }
 
 func TestResolved_Put(t *testing.T) {
-	originalFileUploaderFacade := fileUploaderFacade
+	originalAIFacade := aiFacade
 	t.Cleanup(func() {
-		fileUploaderFacade = originalFileUploaderFacade
+		aiFacade = originalAIFacade
 	})
 
 	ctx := context.WithValue(context.Background(), testCtxKey("resolved-put"), true)
@@ -346,7 +346,7 @@ func TestResolved_Put(t *testing.T) {
 	response.EXPECT().ID().Return("file-456").Once()
 
 	fileProvider.EXPECT().PutFile(ctx, attachment).Return(response, nil).Once()
-	fileUploaderFacade = &Application{
+	aiFacade = &Application{
 		ctx: context.Background(),
 		config: contractsai.Config{
 			Default: "openai",

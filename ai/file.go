@@ -21,10 +21,6 @@ import (
 
 type resolver func(context.Context) ([]byte, string, string, error)
 
-type fileUploader interface {
-	putFile(ctx context.Context, file contractsai.StorableFile, options ...contractsai.Option) (contractsai.StoredFileResponse, error)
-}
-
 type resolved struct {
 	kind     contractsai.AttachmentKind
 	filename string
@@ -278,11 +274,16 @@ func (r *resolved) MimeType() string { return r.mimeType }
 
 // PutFile uploads a file through the configured AI provider and returns the stored provider file reference.
 func PutFile(ctx context.Context, file contractsai.StorableFile, options ...contractsai.Option) (contractsai.StoredFileResponse, error) {
-	if fileUploaderFacade == nil {
+	if aiFacade == nil {
 		return nil, errors.AIFacadeNotSet
 	}
 
-	return fileUploaderFacade.putFile(ctx, file, options...)
+	application, ok := aiFacade.(*Application)
+	if !ok {
+		return nil, errors.AIFacadeNotSet
+	}
+
+	return application.putFile(ctx, file, options...)
 }
 
 func (r *resolved) Put(ctx context.Context, options ...contractsai.Option) (contractsai.StoredFileResponse, error) {
