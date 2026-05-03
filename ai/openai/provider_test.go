@@ -523,6 +523,30 @@ func TestProviderBuildInputKeepsBinaryFileAttachmentsAsInputFiles(t *testing.T) 
 	assert.Equal(t, "report.pdf", content[0]["filename"])
 }
 
+func TestProviderBuildInputUsesStoredFileIDReferences(t *testing.T) {
+	mockAgent := mocksai.NewAgent(t)
+	mockAgent.EXPECT().Instructions().Return("").Once()
+	mockAgent.EXPECT().Messages().Return(nil).Once()
+
+	provider := &Provider{}
+	input, _, _, err := provider.buildInput(context.Background(), contractsai.AgentPrompt{
+		Agent: mockAgent,
+		Attachments: []contractsai.Attachment{
+			frameworkai.ImageFromID("image-123"),
+			frameworkai.DocumentFromID("file-123"),
+		},
+	})
+	require.NoError(t, err)
+	require.Len(t, input, 1)
+
+	content := marshalInputContent(t, input[0])
+	require.Len(t, content, 2)
+	assert.Equal(t, "input_image", content[0]["type"])
+	assert.Equal(t, "image-123", content[0]["file_id"])
+	assert.Equal(t, "input_file", content[1]["type"])
+	assert.Equal(t, "file-123", content[1]["file_id"])
+}
+
 func TestProviderBuildInputDoesNotTreatEmptyAttachmentPromptAsToolContinuation(t *testing.T) {
 	state := &providerStateStub{data: map[string]any{providerStateResponseID: "resp_prev"}}
 	mockAgent := mocksai.NewAgent(t)
@@ -966,6 +990,36 @@ func TestProviderPutFile(t *testing.T) {
 	}
 }
 
+func TestProviderGetFile(t *testing.T) {
+	captured := make(chan capturedRequest, 2)
+	server := newResponsesServerWithFileContent(t, captured)
+	defer server.Close()
+
+	provider := &Provider{client: goopenai.NewClient(option.WithAPIKey("test-key"), option.WithBaseURL(server.URL))}
+	file, err := provider.GetFile(context.Background(), "file-123")
+	require.NoError(t, err)
+	assert.Equal(t, "file-123", file.ID())
+	assert.Equal(t, "text/plain; charset=utf-8", file.MimeType())
+
+	content, err := file.Content(context.Background())
+	require.NoError(t, err)
+	assert.Equal(t, []byte("report"), content)
+}
+
+func TestProviderDeleteFile(t *testing.T) {
+	captured := make(chan capturedRequest, 1)
+	server := newFileDeleteServer(t, captured)
+	defer server.Close()
+
+	provider := &Provider{client: goopenai.NewClient(option.WithAPIKey("test-key"), option.WithBaseURL(server.URL))}
+	require.NoError(t, provider.DeleteFile(context.Background(), "file-123"))
+
+	req, ok := readCapturedRequest(t, captured)
+	require.True(t, ok)
+	assert.Equal(t, "/files/file-123", req.path)
+	assert.Equal(t, "Bearer test-key", req.authorization)
+}
+
 func newResponsesServer(t *testing.T, status int, responses []string, captured chan<- capturedRequest) *httptest.Server {
 	return newResponsesServerWithOverflow(t, status, responses, captured, false)
 }
@@ -1186,6 +1240,59 @@ func newFileUploadServer(t *testing.T, response string, captured chan<- captured
 	mux := http.NewServeMux()
 	mux.HandleFunc("/files", handler)
 	mux.HandleFunc("/v1/files", handler)
+
+	return httptest.NewServer(mux)
+}
+
+func newResponsesServerWithFileContent(t *testing.T, captured chan<- capturedRequest) *httptest.Server {
+	t.Helper()
+
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case captured <- capturedRequest{path: r.URL.Path, authorization: r.Header.Get("Authorization")}:
+		default:
+		}
+
+		switch r.URL.Path {
+		case "/files/file-123", "/v1/files/file-123":
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"id":"file-123","filename":"report.txt","bytes":6,"created_at":1,"object":"file","purpose":"user_data","status":"processed"}`))
+		case "/files/file-123/content", "/v1/files/file-123/content":
+			w.Header().Set("Content-Type", "application/binary")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("report"))
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/files/file-123", handler)
+	mux.HandleFunc("/v1/files/file-123", handler)
+	mux.HandleFunc("/files/file-123/content", handler)
+	mux.HandleFunc("/v1/files/file-123/content", handler)
+
+	return httptest.NewServer(mux)
+}
+
+func newFileDeleteServer(t *testing.T, captured chan<- capturedRequest) *httptest.Server {
+	t.Helper()
+
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case captured <- capturedRequest{path: r.URL.Path, authorization: r.Header.Get("Authorization")}:
+		default:
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"id":"file-123","deleted":true,"object":"file"}`))
+	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/files/file-123", handler)
+	mux.HandleFunc("/v1/files/file-123", handler)
 
 	return httptest.NewServer(mux)
 }

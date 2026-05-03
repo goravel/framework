@@ -32,6 +32,16 @@ type resolved struct {
 	err     error
 }
 
+type stored struct {
+	kind     contractsai.AttachmentKind
+	id       string
+	filename string
+	mimeType string
+	content  []byte
+	file     contractsai.FileResponse
+	mu       sync.RWMutex
+}
+
 func WithMimeType(mimeType string) contractsai.AttachmentOption {
 	return func(options *contractsai.AttachmentOptions) {
 		options.MimeType = mimeType
@@ -76,6 +86,10 @@ func DocumentFromUpload(file contractsfilesystem.File, options ...contractsai.At
 	return fromUpload(contractsai.AttachmentKindFile, file, resolveAttachmentOptions(options))
 }
 
+func DocumentFromID(id string) contractsai.ProviderFile {
+	return fromID(contractsai.AttachmentKindFile, id)
+}
+
 func ImageFromByte(content []byte, options ...contractsai.AttachmentOption) contractsai.Attachment {
 	return fromBytes(contractsai.AttachmentKindImage, content, resolveAttachmentOptions(options))
 }
@@ -102,6 +116,10 @@ func ImageFromURL(rawURL string, options ...contractsai.AttachmentOption) contra
 
 func ImageFromUpload(file contractsfilesystem.File, options ...contractsai.AttachmentOption) contractsai.Attachment {
 	return fromUpload(contractsai.AttachmentKindImage, file, resolveAttachmentOptions(options))
+}
+
+func ImageFromID(id string) contractsai.ProviderFile {
+	return fromID(contractsai.AttachmentKindImage, id)
 }
 
 func resolveAttachmentOptions(options []contractsai.AttachmentOption) contractsai.AttachmentOptions {
@@ -252,6 +270,23 @@ func fromUpload(kind contractsai.AttachmentKind, file contractsfilesystem.File, 
 	}, metadata)
 }
 
+func fromID(kind contractsai.AttachmentKind, id string) contractsai.ProviderFile {
+	return &stored{kind: kind, id: id}
+}
+
+func resolveApplication() (*Application, error) {
+	if aiFacade == nil {
+		return nil, errors.AIFacadeNotSet
+	}
+
+	application, ok := aiFacade.(*Application)
+	if !ok {
+		return nil, errors.AIFacadeNotSet
+	}
+
+	return application, nil
+}
+
 func resolveURLFilename(rawURL string) string {
 	parsedURL, err := urlpkg.Parse(rawURL)
 	if err != nil {
@@ -273,16 +308,99 @@ func (r *resolved) FileName() string { return r.filename }
 func (r *resolved) MimeType() string { return r.mimeType }
 
 func (r *resolved) Put(ctx context.Context, options ...contractsai.Option) (contractsai.StoredFileResponse, error) {
-	if aiFacade == nil {
-		return nil, errors.AIFacadeNotSet
-	}
-
-	application, ok := aiFacade.(*Application)
-	if !ok {
-		return nil, errors.AIFacadeNotSet
+	application, err := resolveApplication()
+	if err != nil {
+		return nil, err
 	}
 
 	return application.putFile(ctx, r, options...)
+}
+
+func (r *stored) Kind() contractsai.AttachmentKind { return r.kind }
+
+func (r *stored) ID() string { return r.id }
+
+func (r *stored) FileName() string { return r.filename }
+
+func (r *stored) MimeType() string { return r.mimeType }
+
+func (r *stored) Put(context.Context, ...contractsai.Option) (contractsai.StoredFileResponse, error) {
+	if r.id == "" {
+		return nil, errors.AIStoredFileIDEmpty
+	}
+
+	return &storedFileResponse{id: r.id}, nil
+}
+
+func (r *stored) Content(ctx context.Context) ([]byte, error) {
+	r.mu.RLock()
+	if len(r.content) > 0 {
+		content := bytes.Clone(r.content)
+		r.mu.RUnlock()
+		return content, nil
+	}
+	file := r.file
+	r.mu.RUnlock()
+
+	if file == nil {
+		var err error
+		file, err = r.Get(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	content, err := file.Content(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	r.mu.Lock()
+	r.content = bytes.Clone(content)
+	if r.mimeType == "" {
+		r.mimeType = file.MimeType()
+	}
+	r.mu.Unlock()
+
+	return content, nil
+}
+
+func (r *stored) Get(ctx context.Context, options ...contractsai.Option) (contractsai.FileResponse, error) {
+	r.mu.RLock()
+	if r.file != nil {
+		file := r.file
+		r.mu.RUnlock()
+		return file, nil
+	}
+	r.mu.RUnlock()
+
+	application, err := resolveApplication()
+	if err != nil {
+		return nil, err
+	}
+
+	file, err := application.getFile(ctx, r.id, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	r.mu.Lock()
+	r.file = file
+	if r.mimeType == "" {
+		r.mimeType = file.MimeType()
+	}
+	r.mu.Unlock()
+
+	return file, nil
+}
+
+func (r *stored) Delete(ctx context.Context, options ...contractsai.Option) error {
+	application, err := resolveApplication()
+	if err != nil {
+		return err
+	}
+
+	return application.deleteFile(ctx, r.id, options...)
 }
 
 func (r *resolved) Content(ctx context.Context) ([]byte, error) {
@@ -310,3 +428,9 @@ func (r *resolved) Content(ctx context.Context) ([]byte, error) {
 
 	return bytes.Clone(r.content), nil
 }
+
+type storedFileResponse struct {
+	id string
+}
+
+func (r *storedFileResponse) ID() string { return r.id }

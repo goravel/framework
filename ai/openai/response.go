@@ -23,6 +23,12 @@ type imageResponse struct {
 	usage    *usage
 }
 
+type fileResponse struct {
+	id       string
+	mimeType string
+	content  []byte
+}
+
 func (r *response) Text() string                      { return r.text }
 func (r *response) Usage() contractsai.Usage          { return r.usage }
 func (r *response) ToolCalls() []contractsai.ToolCall { return r.toolCalls }
@@ -53,6 +59,12 @@ func (r *imageResponse) Then(callback func(contractsai.ImageResponse)) contracts
 
 	return r
 }
+
+func (r *fileResponse) ID() string { return r.id }
+
+func (r *fileResponse) MimeType() string { return r.mimeType }
+
+func (r *fileResponse) Content(context.Context) ([]byte, error) { return bytes.Clone(r.content), nil }
 
 type usage struct{ input, output, total int }
 

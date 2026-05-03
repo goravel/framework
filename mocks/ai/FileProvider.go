@@ -23,6 +23,112 @@ func (_m *FileProvider) EXPECT() *FileProvider_Expecter {
 	return &FileProvider_Expecter{mock: &_m.Mock}
 }
 
+// DeleteFile provides a mock function with given fields: ctx, id
+func (_m *FileProvider) DeleteFile(ctx context.Context, id string) error {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteFile")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// FileProvider_DeleteFile_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteFile'
+type FileProvider_DeleteFile_Call struct {
+	*mock.Call
+}
+
+// DeleteFile is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+func (_e *FileProvider_Expecter) DeleteFile(ctx interface{}, id interface{}) *FileProvider_DeleteFile_Call {
+	return &FileProvider_DeleteFile_Call{Call: _e.mock.On("DeleteFile", ctx, id)}
+}
+
+func (_c *FileProvider_DeleteFile_Call) Run(run func(ctx context.Context, id string)) *FileProvider_DeleteFile_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *FileProvider_DeleteFile_Call) Return(_a0 error) *FileProvider_DeleteFile_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *FileProvider_DeleteFile_Call) RunAndReturn(run func(context.Context, string) error) *FileProvider_DeleteFile_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetFile provides a mock function with given fields: ctx, id
+func (_m *FileProvider) GetFile(ctx context.Context, id string) (ai.FileResponse, error) {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetFile")
+	}
+
+	var r0 ai.FileResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (ai.FileResponse, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) ai.FileResponse); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(ai.FileResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// FileProvider_GetFile_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetFile'
+type FileProvider_GetFile_Call struct {
+	*mock.Call
+}
+
+// GetFile is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+func (_e *FileProvider_Expecter) GetFile(ctx interface{}, id interface{}) *FileProvider_GetFile_Call {
+	return &FileProvider_GetFile_Call{Call: _e.mock.On("GetFile", ctx, id)}
+}
+
+func (_c *FileProvider_GetFile_Call) Run(run func(ctx context.Context, id string)) *FileProvider_GetFile_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *FileProvider_GetFile_Call) Return(_a0 ai.FileResponse, _a1 error) *FileProvider_GetFile_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *FileProvider_GetFile_Call) RunAndReturn(run func(context.Context, string) (ai.FileResponse, error)) *FileProvider_GetFile_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // PutFile provides a mock function with given fields: ctx, file
 func (_m *FileProvider) PutFile(ctx context.Context, file ai.StorableFile) (ai.StoredFileResponse, error) {
 	ret := _m.Called(ctx, file)

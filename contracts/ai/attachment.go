@@ -24,6 +24,13 @@ type StorableFile interface {
 	Content(ctx context.Context) ([]byte, error)
 }
 
+// FileResponse describes a provider-managed file returned by a get operation.
+type FileResponse interface {
+	ID() string
+	MimeType() string
+	Content(ctx context.Context) ([]byte, error)
+}
+
 // StoredFileResponse describes a provider-managed file that can be referenced later.
 type StoredFileResponse interface {
 	ID() string
@@ -34,4 +41,13 @@ type Attachment interface {
 	StorableFile
 	Kind() AttachmentKind
 	Put(ctx context.Context, options ...Option) (StoredFileResponse, error)
+}
+
+// ProviderFile describes a provider-managed file handle that can be attached to
+// prompts and resolved or deleted later by ID.
+type ProviderFile interface {
+	Attachment
+	ID() string
+	Get(ctx context.Context, options ...Option) (FileResponse, error)
+	Delete(ctx context.Context, options ...Option) error
 }

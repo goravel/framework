@@ -233,6 +233,36 @@ func (r *Provider) PutFile(ctx context.Context, file contractsai.StorableFile) (
 	return &storedFileResponse{id: upload.ID}, nil
 }
 
+func (r *Provider) GetFile(ctx context.Context, id string) (contractsai.FileResponse, error) {
+	file, err := r.client.Files.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := r.client.Files.Content(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	defer errors.Ignore(response.Body.Close)
+
+	content, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	mimeType := mime.TypeByExtension(filepath.Ext(file.Filename))
+	if mimeType == "" {
+		mimeType = response.Header.Get("Content-Type")
+	}
+
+	return &fileResponse{id: file.ID, mimeType: mimeType, content: content}, nil
+}
+
+func (r *Provider) DeleteFile(ctx context.Context, id string) error {
+	_, err := r.client.Files.Delete(ctx, id)
+	return err
+}
+
 func (r *Provider) uploadFilename(file contractsai.StorableFile) string {
 	if fileName := file.FileName(); fileName != "" {
 		return fileName
@@ -479,6 +509,23 @@ func (r *Provider) buildUserInputItem(ctx context.Context, input string, attachm
 		parts = append(parts, responses.ResponseInputContentUnionParam{OfInputText: &responses.ResponseInputTextParam{Text: input}})
 	}
 	for _, attachment := range attachments {
+		if stored, ok := attachment.(contractsai.ProviderFile); ok && stored.ID() != "" {
+			switch attachment.Kind() {
+			case contractsai.AttachmentKindImage:
+				parts = append(parts, responses.ResponseInputContentUnionParam{OfInputImage: &responses.ResponseInputImageParam{
+					Detail: responses.ResponseInputImageDetailAuto,
+					FileID: param.NewOpt(stored.ID()),
+				}})
+			case contractsai.AttachmentKindFile:
+				parts = append(parts, responses.ResponseInputContentUnionParam{OfInputFile: &responses.ResponseInputFileParam{
+					FileID: param.NewOpt(stored.ID()),
+				}})
+			default:
+				return responses.ResponseInputItemUnionParam{}, errors.AIUnsupportedAttachmentKind.Args(attachment.Kind())
+			}
+			continue
+		}
+
 		switch attachment.Kind() {
 		case contractsai.AttachmentKindImage:
 			content, err := attachment.Content(ctx)
