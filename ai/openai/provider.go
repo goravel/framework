@@ -142,7 +142,7 @@ func (r *Provider) Stream(ctx context.Context, prompt contractsai.AgentPrompt) (
 	}), nil
 }
 
-func (r *Provider) PutFile(ctx context.Context, file contractsai.StorableFile, _ contractsai.Options) (contractsai.StoredFileResponse, error) {
+func (r *Provider) PutFile(ctx context.Context, file contractsai.StorableFile) (contractsai.StoredFileResponse, error) {
 	content, err := file.Content(ctx)
 	if err != nil {
 		return nil, err

@@ -23,9 +23,9 @@ func (_m *FileProvider) EXPECT() *FileProvider_Expecter {
 	return &FileProvider_Expecter{mock: &_m.Mock}
 }
 
-// PutFile provides a mock function with given fields: ctx, file, options
-func (_m *FileProvider) PutFile(ctx context.Context, file ai.StorableFile, options ai.Options) (ai.StoredFileResponse, error) {
-	ret := _m.Called(ctx, file, options)
+// PutFile provides a mock function with given fields: ctx, file
+func (_m *FileProvider) PutFile(ctx context.Context, file ai.StorableFile) (ai.StoredFileResponse, error) {
+	ret := _m.Called(ctx, file)
 
 	if len(ret) == 0 {
 		panic("no return value specified for PutFile")
@@ -33,19 +33,19 @@ func (_m *FileProvider) PutFile(ctx context.Context, file ai.StorableFile, optio
 
 	var r0 ai.StoredFileResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, ai.StorableFile, ai.Options) (ai.StoredFileResponse, error)); ok {
-		return rf(ctx, file, options)
+	if rf, ok := ret.Get(0).(func(context.Context, ai.StorableFile) (ai.StoredFileResponse, error)); ok {
+		return rf(ctx, file)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, ai.StorableFile, ai.Options) ai.StoredFileResponse); ok {
-		r0 = rf(ctx, file, options)
+	if rf, ok := ret.Get(0).(func(context.Context, ai.StorableFile) ai.StoredFileResponse); ok {
+		r0 = rf(ctx, file)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(ai.StoredFileResponse)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, ai.StorableFile, ai.Options) error); ok {
-		r1 = rf(ctx, file, options)
+	if rf, ok := ret.Get(1).(func(context.Context, ai.StorableFile) error); ok {
+		r1 = rf(ctx, file)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -61,14 +61,13 @@ type FileProvider_PutFile_Call struct {
 // PutFile is a helper method to define mock.On call
 //   - ctx context.Context
 //   - file ai.StorableFile
-//   - options ai.Options
-func (_e *FileProvider_Expecter) PutFile(ctx interface{}, file interface{}, options interface{}) *FileProvider_PutFile_Call {
-	return &FileProvider_PutFile_Call{Call: _e.mock.On("PutFile", ctx, file, options)}
+func (_e *FileProvider_Expecter) PutFile(ctx interface{}, file interface{}) *FileProvider_PutFile_Call {
+	return &FileProvider_PutFile_Call{Call: _e.mock.On("PutFile", ctx, file)}
 }
 
-func (_c *FileProvider_PutFile_Call) Run(run func(ctx context.Context, file ai.StorableFile, options ai.Options)) *FileProvider_PutFile_Call {
+func (_c *FileProvider_PutFile_Call) Run(run func(ctx context.Context, file ai.StorableFile)) *FileProvider_PutFile_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(ai.StorableFile), args[2].(ai.Options))
+		run(args[0].(context.Context), args[1].(ai.StorableFile))
 	})
 	return _c
 }
@@ -78,7 +77,7 @@ func (_c *FileProvider_PutFile_Call) Return(_a0 ai.StoredFileResponse, _a1 error
 	return _c
 }
 
-func (_c *FileProvider_PutFile_Call) RunAndReturn(run func(context.Context, ai.StorableFile, ai.Options) (ai.StoredFileResponse, error)) *FileProvider_PutFile_Call {
+func (_c *FileProvider_PutFile_Call) RunAndReturn(run func(context.Context, ai.StorableFile) (ai.StoredFileResponse, error)) *FileProvider_PutFile_Call {
 	_c.Call.Return(run)
 	return _c
 }

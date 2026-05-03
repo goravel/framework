@@ -30,7 +30,7 @@ func TestImageFromByte(t *testing.T) {
 
 func TestDocumentFromByteAndStringLeaveFileNameEmpty(t *testing.T) {
 	attachment := DocumentFromByte([]byte("report"))
-	_, ok := any(attachment).(contractsai.UploadableAttachment)
+	_, ok := any(attachment).(contractsai.Attachment)
 	assert.True(t, ok)
 
 	content, err := attachment.Content(context.Background())
@@ -258,7 +258,7 @@ func TestPutFile(t *testing.T) {
 				response := mocksai.NewStoredFileResponse(t)
 				response.EXPECT().ID().Return("file-123").Once()
 
-				fileProvider.EXPECT().PutFile(ctx, file, contractsai.Options{}).Return(response, nil).Once()
+				fileProvider.EXPECT().PutFile(ctx, file).Return(response, nil).Once()
 				fileUploaderFacade = &Application{
 					ctx: context.Background(),
 					config: contractsai.Config{
@@ -345,7 +345,7 @@ func TestResolved_Put(t *testing.T) {
 	response := mocksai.NewStoredFileResponse(t)
 	response.EXPECT().ID().Return("file-456").Once()
 
-	fileProvider.EXPECT().PutFile(ctx, attachment, contractsai.Options{}).Return(response, nil).Once()
+	fileProvider.EXPECT().PutFile(ctx, attachment).Return(response, nil).Once()
 	fileUploaderFacade = &Application{
 		ctx: context.Background(),
 		config: contractsai.Config{

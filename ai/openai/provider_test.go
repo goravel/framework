@@ -812,7 +812,7 @@ func TestProviderPutFile(t *testing.T) {
 			provider := &Provider{client: goopenai.NewClient(option.WithAPIKey("test-key"), option.WithBaseURL(server.URL))}
 			file := namedAttachment{kind: contractsai.AttachmentKindFile, filename: tt.fileName, mimeType: tt.mimeType, content: tt.content}
 
-			response, err := provider.PutFile(context.Background(), file, contractsai.Options{})
+			response, err := provider.PutFile(context.Background(), file)
 			require.NoError(t, err)
 			assert.Equal(t, "file-123", response.ID())
 

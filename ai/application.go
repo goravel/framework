@@ -37,7 +37,7 @@ func (r *Application) Agent(agent contractsai.Agent, options ...contractsai.Opti
 }
 
 func (r *Application) putFile(ctx context.Context, file contractsai.StorableFile, options ...contractsai.Option) (contractsai.StoredFileResponse, error) {
-	opts, providerName, provider, err := r.resolveProvider(options)
+	_, providerName, provider, err := r.resolveProvider(options)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (r *Application) putFile(ctx context.Context, file contractsai.StorableFile
 		return nil, errors.AIProviderDoesNotSupportFiles.Args(providerName)
 	}
 
-	return fileProvider.PutFile(ctx, file, *opts)
+	return fileProvider.PutFile(ctx, file)
 }
 
 func (r *Application) resolveProvider(options []contractsai.Option) (*contractsai.Options, string, contractsai.Provider, error) {

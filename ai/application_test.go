@@ -289,7 +289,7 @@ func TestApplication_putFile(t *testing.T) {
 				fileProvider := mocksai.NewFileProvider(t)
 				response := mocksai.NewStoredFileResponse(t)
 				response.EXPECT().ID().Return("file-123").Once()
-				fileProvider.EXPECT().PutFile(ctx, file, contractsai.Options{Provider: "openai"}).Return(response, nil).Once()
+				fileProvider.EXPECT().PutFile(ctx, file).Return(response, nil).Once()
 
 				return contractsai.Config{
 					Default: "default",
@@ -349,8 +349,8 @@ func (p uploadTestProvider) Stream(context.Context, contractsai.AgentPrompt) (co
 	return nil, nil
 }
 
-func (p uploadTestProvider) PutFile(ctx context.Context, file contractsai.StorableFile, options contractsai.Options) (contractsai.StoredFileResponse, error) {
-	return p.fileProvider.PutFile(ctx, file, options)
+func (p uploadTestProvider) PutFile(ctx context.Context, file contractsai.StorableFile) (contractsai.StoredFileResponse, error) {
+	return p.fileProvider.PutFile(ctx, file)
 }
 
 func (m *applicationTestMiddleware) Handle(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {

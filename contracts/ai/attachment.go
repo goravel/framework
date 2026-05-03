@@ -33,10 +33,5 @@ type StoredFileResponse interface {
 type Attachment interface {
 	StorableFile
 	Kind() AttachmentKind
-}
-
-// UploadableAttachment is an attachment that can be uploaded to a provider and reused by ID.
-type UploadableAttachment interface {
-	Attachment
 	Put(ctx context.Context, options ...Option) (StoredFileResponse, error)
 }

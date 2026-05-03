@@ -33,5 +33,5 @@ type Provider interface {
 // FileProvider is implemented by providers that support storing files before they are referenced by prompts.
 type FileProvider interface {
 	// PutFile uploads the given file and returns the provider-managed file reference.
-	PutFile(ctx context.Context, file StorableFile, options Options) (StoredFileResponse, error)
+	PutFile(ctx context.Context, file StorableFile) (StoredFileResponse, error)
 }
