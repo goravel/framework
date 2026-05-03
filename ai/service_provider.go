@@ -7,7 +7,15 @@ import (
 	contractsai "github.com/goravel/framework/contracts/ai"
 	"github.com/goravel/framework/contracts/binding"
 	contractsconsole "github.com/goravel/framework/contracts/console"
+	contractsfilesystem "github.com/goravel/framework/contracts/filesystem"
 	"github.com/goravel/framework/contracts/foundation"
+	contractshttpclient "github.com/goravel/framework/contracts/http/client"
+)
+
+var (
+	aiFacade      contractsai.AI
+	storageFacade contractsfilesystem.Storage
+	httpFacade    contractshttpclient.Factory
 )
 
 type ServiceProvider struct{}
@@ -34,6 +42,10 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (r *ServiceProvider) Boot(app foundation.Application) {
+	aiFacade = app.MakeAI()
+	storageFacade = app.MakeStorage()
+	httpFacade = app.MakeHttp()
+
 	app.Commands([]contractsconsole.Command{
 		&console.AgentMakeCommand{},
 	})

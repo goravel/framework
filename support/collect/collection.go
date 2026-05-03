@@ -647,7 +647,7 @@ func (c *Collection[T]) Pluck(field string) *Collection[any] {
 
 	for _, item := range c.items {
 		v := reflect.ValueOf(item)
-		if v.Kind() == reflect.Ptr {
+		if v.Kind() == reflect.Pointer {
 			v = v.Elem()
 		}
 		if v.Kind() == reflect.Struct {
@@ -1235,7 +1235,7 @@ func isSimpleComparable(value any) bool {
 
 func getFieldValue(item any, field string) *any {
 	v := reflect.ValueOf(item)
-	if v.Kind() == reflect.Ptr {
+	if v.Kind() == reflect.Pointer {
 		v = v.Elem()
 	}
 	if v.Kind() != reflect.Struct {
@@ -1248,7 +1248,7 @@ func getFieldValue(item any, field string) *any {
 	}
 
 	// Handle nil pointer fields
-	if fieldValue.Kind() == reflect.Ptr && fieldValue.IsNil() {
+	if fieldValue.Kind() == reflect.Pointer && fieldValue.IsNil() {
 		return nil
 	}
 

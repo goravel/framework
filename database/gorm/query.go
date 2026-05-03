@@ -826,7 +826,7 @@ func (r *Query) SharedLock() contractsorm.Query {
 
 func (r *Query) Sum(column string, dest any) error {
 	destValue := reflect.ValueOf(dest)
-	if destValue.Kind() != reflect.Ptr {
+	if destValue.Kind() != reflect.Pointer {
 		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
 	}
 
@@ -836,7 +836,7 @@ func (r *Query) Sum(column string, dest any) error {
 
 func (r *Query) Avg(column string, dest any) error {
 	destValue := reflect.ValueOf(dest)
-	if destValue.Kind() != reflect.Ptr {
+	if destValue.Kind() != reflect.Pointer {
 		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
 	}
 
@@ -846,7 +846,7 @@ func (r *Query) Avg(column string, dest any) error {
 
 func (r *Query) Min(column string, dest any) error {
 	destValue := reflect.ValueOf(dest)
-	if destValue.Kind() != reflect.Ptr {
+	if destValue.Kind() != reflect.Pointer {
 		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
 	}
 
@@ -856,7 +856,7 @@ func (r *Query) Min(column string, dest any) error {
 
 func (r *Query) Max(column string, dest any) error {
 	destValue := reflect.ValueOf(dest)
-	if destValue.Kind() != reflect.Ptr {
+	if destValue.Kind() != reflect.Pointer {
 		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
 	}
 
@@ -2108,7 +2108,7 @@ func modelToStruct(model any) (any, error) {
 	}
 
 	modelValue := reflect.ValueOf(model)
-	if modelValue.Kind() == reflect.Ptr && modelValue.IsNil() {
+	if modelValue.Kind() == reflect.Pointer && modelValue.IsNil() {
 		// If the model is a pointer and is nil, we will create a new instance of the model
 		modelValue = reflect.New(modelValue.Type().Elem())
 	}
@@ -2118,7 +2118,7 @@ func modelToStruct(model any) (any, error) {
 		modelType = reflect.Indirect(modelValue).Elem().Type()
 	}
 
-	for modelType.Kind() == reflect.Slice || modelType.Kind() == reflect.Array || modelType.Kind() == reflect.Ptr {
+	for modelType.Kind() == reflect.Slice || modelType.Kind() == reflect.Array || modelType.Kind() == reflect.Pointer {
 		modelType = modelType.Elem()
 	}
 

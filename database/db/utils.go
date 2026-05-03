@@ -31,7 +31,7 @@ func convertToSliceMap(data any) ([]map[string]any, error) {
 	typ := val.Type()
 
 	// Handle pointer
-	if typ.Kind() == reflect.Ptr {
+	if typ.Kind() == reflect.Pointer {
 		if val.IsNil() {
 			return nil, nil
 		}
@@ -84,7 +84,7 @@ func convertToMap(data any) (map[string]any, error) {
 	typ := val.Type()
 
 	// Handle pointer
-	if typ.Kind() == reflect.Ptr {
+	if typ.Kind() == reflect.Pointer {
 		if val.IsNil() {
 			return nil, nil
 		}
@@ -107,7 +107,7 @@ func convertToMap(data any) (map[string]any, error) {
 		// Handle embedded struct
 		if field.Anonymous {
 			fieldValue := val.Field(i)
-			if fieldValue.Kind() == reflect.Ptr && !fieldValue.IsNil() {
+			if fieldValue.Kind() == reflect.Pointer && !fieldValue.IsNil() {
 				fieldValue = fieldValue.Elem()
 			}
 			if fieldValue.Kind() == reflect.Struct {

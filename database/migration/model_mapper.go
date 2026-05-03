@@ -142,7 +142,7 @@ func renderField(f *schema.Field) string {
 	// - Pointer type (can be nil in Go), OR
 	// - sql.Null* types (designed for nullable columns)
 	// And not explicitly NOT NULL or primary key
-	isNullable := f.FieldType.Kind() == reflect.Ptr || isSQLNullType(f.FieldType)
+	isNullable := f.FieldType.Kind() == reflect.Pointer || isSQLNullType(f.FieldType)
 	if isNullable && !f.NotNull && !f.PrimaryKey {
 		b.WriteMethod(contractsschema.MethodNullable)
 	}
