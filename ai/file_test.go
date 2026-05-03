@@ -12,6 +12,7 @@ import (
 
 	contractsai "github.com/goravel/framework/contracts/ai"
 	"github.com/goravel/framework/errors"
+	mocksai "github.com/goravel/framework/mocks/ai"
 	mocksfilesystem "github.com/goravel/framework/mocks/filesystem"
 	mockshttpclient "github.com/goravel/framework/mocks/http/client"
 )
@@ -29,6 +30,9 @@ func TestImageFromByte(t *testing.T) {
 
 func TestDocumentFromByteAndStringLeaveFileNameEmpty(t *testing.T) {
 	attachment := DocumentFromByte([]byte("report"))
+	_, ok := any(attachment).(contractsai.Attachment)
+	assert.True(t, ok)
+
 	content, err := attachment.Content(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, []byte("report"), content)
@@ -233,6 +237,77 @@ func TestDocumentFromURLWithoutPathLeavesFileNameEmpty(t *testing.T) {
 	assert.Equal(t, []byte("data"), content)
 	assert.Equal(t, "", attachment.FileName())
 	assert.Equal(t, "application/octet-stream", attachment.MimeType())
+}
+
+func TestResolved_Put(t *testing.T) {
+	originalAIFacade := aiFacade
+	t.Cleanup(func() {
+		aiFacade = originalAIFacade
+	})
+
+	tests := []struct {
+		name        string
+		setup       func(t *testing.T, ctx context.Context, attachment contractsai.Attachment) contractsai.StoredFileResponse
+		expectError error
+		expectID    string
+	}{
+		{
+			name: "success",
+			setup: func(t *testing.T, ctx context.Context, attachment contractsai.Attachment) contractsai.StoredFileResponse {
+				fileProvider := mocksai.NewFileProvider(t)
+				response := mocksai.NewStoredFileResponse(t)
+				response.EXPECT().ID().Return("file-456").Once()
+
+				fileProvider.EXPECT().PutFile(ctx, attachment).Return(response, nil).Once()
+				aiFacade = &Application{
+					ctx: context.Background(),
+					config: contractsai.Config{
+						Default: "openai",
+						Providers: map[string]contractsai.ProviderConfig{
+							"openai": {Via: uploadTestProvider{fileProvider: fileProvider}},
+						},
+					},
+					resolver: NewProviderResolver(contractsai.Config{
+						Default: "openai",
+						Providers: map[string]contractsai.ProviderConfig{
+							"openai": {Via: uploadTestProvider{fileProvider: fileProvider}},
+						},
+					}),
+				}
+
+				return response
+			},
+			expectID: "file-456",
+		},
+		{
+			name: "facade not set",
+			setup: func(t *testing.T, _ context.Context, _ contractsai.Attachment) contractsai.StoredFileResponse {
+				aiFacade = nil
+				return nil
+			},
+			expectError: errors.AIFacadeNotSet,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.WithValue(context.Background(), testCtxKey("resolved-put"), tt.name)
+			attachment := DocumentFromString("report")
+
+			response := tt.setup(t, ctx, attachment)
+
+			stored, err := attachment.Put(ctx)
+			assert.Equal(t, tt.expectError, err)
+			if tt.expectError != nil {
+				assert.Nil(t, stored)
+				return
+			}
+
+			require.NotNil(t, stored)
+			assert.Equal(t, response, stored)
+			assert.Equal(t, tt.expectID, stored.ID())
+		})
+	}
 }
 
 func TestDocumentFromURLUsesDetectedMimeTypeWhenHeaderMissing(t *testing.T) {

@@ -13,6 +13,7 @@ import (
 	contractsfilesystem "github.com/goravel/framework/contracts/filesystem"
 	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	contractshttpclient "github.com/goravel/framework/contracts/http/client"
+	mocksai "github.com/goravel/framework/mocks/ai"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 )
@@ -118,9 +119,11 @@ func (s *ServiceProviderTestSuite) TestRegister() {
 func (s *ServiceProviderTestSuite) TestBoot() {
 	provider := &ServiceProvider{}
 	mockApp := mocksfoundation.NewApplication(s.T())
+	mockAI := mocksai.NewAI(s.T())
 	var storage contractsfilesystem.Storage
 	var httpFactory contractshttpclient.Factory
 
+	mockApp.EXPECT().MakeAI().Return(mockAI).Once()
 	mockApp.EXPECT().MakeStorage().Return(storage).Once()
 	mockApp.EXPECT().MakeHttp().Return(httpFactory).Once()
 

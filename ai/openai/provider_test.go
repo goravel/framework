@@ -61,6 +61,15 @@ type normalizedCapturedStreamRequest struct {
 	stream        bool
 }
 
+type capturedFileUploadRequest struct {
+	path          string
+	authorization string
+	filename      string
+	mimeType      string
+	purpose       string
+	body          []byte
+}
+
 type streamUsageSnapshot struct {
 	input  int
 	output int
@@ -521,6 +530,9 @@ func (attachment namedAttachment) MimeType() string                 { return att
 func (attachment namedAttachment) Content(context.Context) ([]byte, error) {
 	return attachment.content, nil
 }
+func (attachment namedAttachment) Put(context.Context, ...contractsai.Option) (contractsai.StoredFileResponse, error) {
+	return nil, nil
+}
 
 func (unsupportedAttachment) Kind() contractsai.AttachmentKind {
 	return contractsai.AttachmentKind("audio")
@@ -529,6 +541,9 @@ func (unsupportedAttachment) FileName() string { return "audio.mp3" }
 func (unsupportedAttachment) MimeType() string { return "audio/mpeg" }
 func (unsupportedAttachment) Content(context.Context) ([]byte, error) {
 	return []byte("audio"), nil
+}
+func (unsupportedAttachment) Put(context.Context, ...contractsai.Option) (contractsai.StoredFileResponse, error) {
+	return nil, nil
 }
 
 func TestProviderStream(t *testing.T) {
@@ -761,6 +776,58 @@ func TestProviderStream(t *testing.T) {
 	}
 }
 
+func TestProviderPutFile(t *testing.T) {
+	tests := []struct {
+		name           string
+		fileName       string
+		mimeType       string
+		content        []byte
+		expectFileName string
+		expectMimeType string
+	}{
+		{
+			name:           "uses provided filename",
+			fileName:       "report.txt",
+			mimeType:       "text/plain",
+			content:        []byte("report"),
+			expectFileName: "report.txt",
+			expectMimeType: "text/plain",
+		},
+		{
+			name:           "uses default filename when empty",
+			fileName:       "",
+			mimeType:       "application/pdf",
+			content:        []byte("%PDF"),
+			expectFileName: "attachment.pdf",
+			expectMimeType: "application/pdf",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			captured := make(chan capturedFileUploadRequest, 1)
+			server := newFileUploadServer(t, `{"id":"file-123"}`, captured)
+			defer server.Close()
+
+			provider := &Provider{client: goopenai.NewClient(option.WithAPIKey("test-key"), option.WithBaseURL(server.URL))}
+			file := namedAttachment{kind: contractsai.AttachmentKindFile, filename: tt.fileName, mimeType: tt.mimeType, content: tt.content}
+
+			response, err := provider.PutFile(context.Background(), file)
+			require.NoError(t, err)
+			assert.Equal(t, "file-123", response.ID())
+
+			req, ok := readCapturedFileUploadRequest(t, captured)
+			require.True(t, ok, "expected upload request payload")
+			assert.Equal(t, "/files", req.path)
+			assert.Equal(t, "Bearer test-key", req.authorization)
+			assert.Equal(t, tt.expectFileName, req.filename)
+			assert.Equal(t, tt.expectMimeType, req.mimeType)
+			assert.Equal(t, "user_data", req.purpose)
+			assert.Equal(t, tt.content, req.body)
+		})
+	}
+}
+
 func newResponsesServer(t *testing.T, status int, responses []string, captured chan<- capturedRequest) *httptest.Server {
 	return newResponsesServerWithOverflow(t, status, responses, captured, false)
 }
@@ -935,6 +1002,63 @@ func normalizeCapturedStreamRequest(req capturedStreamRequest) normalizedCapture
 		instructions:  req.instructions,
 		messages:      normalizeInputItems(inputItemsFromBody(req.body)),
 		stream:        req.stream,
+	}
+}
+
+func newFileUploadServer(t *testing.T, response string, captured chan<- capturedFileUploadRequest) *httptest.Server {
+	t.Helper()
+
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		defer errors.Ignore(r.Body.Close)
+
+		reader, err := r.MultipartReader()
+		require.NoError(t, err)
+
+		capturedRequest := capturedFileUploadRequest{path: r.URL.Path, authorization: r.Header.Get("Authorization")}
+		for {
+			part, err := reader.NextPart()
+			if err == io.EOF {
+				break
+			}
+			require.NoError(t, err)
+
+			body, readErr := io.ReadAll(part)
+			require.NoError(t, readErr)
+
+			switch part.FormName() {
+			case "purpose":
+				capturedRequest.purpose = string(body)
+			case "file":
+				capturedRequest.filename = part.FileName()
+				capturedRequest.mimeType = part.Header.Get("Content-Type")
+				capturedRequest.body = body
+			}
+		}
+
+		select {
+		case captured <- capturedRequest:
+		default:
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(response))
+	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/files", handler)
+	mux.HandleFunc("/v1/files", handler)
+
+	return httptest.NewServer(mux)
+}
+
+func readCapturedFileUploadRequest(t *testing.T, captured <-chan capturedFileUploadRequest) (capturedFileUploadRequest, bool) {
+	t.Helper()
+	select {
+	case req := <-captured:
+		return req, true
+	default:
+		return capturedFileUploadRequest{}, false
 	}
 }
 

@@ -5,8 +5,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	contractsai "github.com/goravel/framework/contracts/ai"
+	"github.com/goravel/framework/errors"
 	mocksai "github.com/goravel/framework/mocks/ai"
 )
 
@@ -105,9 +107,9 @@ func TestApplication_Agent(t *testing.T) {
 			assert.True(t, ok)
 
 			expectedPrompt := contractsai.AgentPrompt{
-				Agent: convImpl,
-				Input: tt.promptInput,
-				Model: tt.expectedModel,
+				Agent:         convImpl,
+				Input:         tt.promptInput,
+				Model:         tt.expectedModel,
 				ProviderState: convImpl.providerState,
 			}
 
@@ -270,7 +272,86 @@ func TestApplication_Agent_MergesDefaultMiddlewareWithOptions(t *testing.T) {
 	assert.Equal(t, "before middleware after middleware after middleware", resp.Text())
 }
 
+func TestApplication_putFile(t *testing.T) {
+	tests := []struct {
+		name        string
+		ctx         context.Context
+		options     []contractsai.Option
+		setup       func(t *testing.T, ctx context.Context, file contractsai.StorableFile) contractsai.Config
+		expectError error
+		expectID    string
+	}{
+		{
+			name:    "success",
+			ctx:     context.WithValue(context.Background(), testCtxKey("upload"), "success"),
+			options: []contractsai.Option{WithProvider("openai")},
+			setup: func(t *testing.T, ctx context.Context, file contractsai.StorableFile) contractsai.Config {
+				fileProvider := mocksai.NewFileProvider(t)
+				response := mocksai.NewStoredFileResponse(t)
+				response.EXPECT().ID().Return("file-123").Once()
+				fileProvider.EXPECT().PutFile(ctx, file).Return(response, nil).Once()
+
+				return contractsai.Config{
+					Default: "default",
+					Providers: map[string]contractsai.ProviderConfig{
+						"default": {Via: mocksai.NewProvider(t)},
+						"openai":  {Via: uploadTestProvider{fileProvider: fileProvider}},
+					},
+				}
+			},
+			expectID: "file-123",
+		},
+		{
+			name: "provider does not support files",
+			ctx:  context.Background(),
+			setup: func(t *testing.T, _ context.Context, _ contractsai.StorableFile) contractsai.Config {
+				return contractsai.Config{
+					Default: "default",
+					Providers: map[string]contractsai.ProviderConfig{
+						"default": {Via: mocksai.NewProvider(t)},
+					},
+				}
+			},
+			expectError: errors.AIProviderDoesNotSupportFiles.Args("default"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			file := mocksai.NewStorableFile(t)
+			config := tt.setup(t, tt.ctx, file)
+
+			app := NewApplication(context.Background(), config)
+			stored, err := app.putFile(tt.ctx, file, tt.options...)
+			assert.Equal(t, tt.expectError, err)
+			if tt.expectError != nil {
+				assert.Nil(t, stored)
+				return
+			}
+
+			require.NotNil(t, stored)
+			assert.Equal(t, tt.expectID, stored.ID())
+		})
+	}
+}
+
 type applicationTestMiddleware struct{}
+
+type uploadTestProvider struct {
+	fileProvider contractsai.FileProvider
+}
+
+func (p uploadTestProvider) Prompt(context.Context, contractsai.AgentPrompt) (contractsai.Response, error) {
+	return nil, nil
+}
+
+func (p uploadTestProvider) Stream(context.Context, contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
+	return nil, nil
+}
+
+func (p uploadTestProvider) PutFile(ctx context.Context, file contractsai.StorableFile) (contractsai.StoredFileResponse, error) {
+	return p.fileProvider.PutFile(ctx, file)
+}
 
 func (m *applicationTestMiddleware) Handle(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
 	response, err := next(ctx, prompt)

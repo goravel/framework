@@ -8,6 +8,10 @@ type response struct {
 	toolCalls []contractsai.ToolCall
 }
 
+type storedFileResponse struct {
+	id string
+}
+
 func (r *response) Text() string                      { return r.text }
 func (r *response) Usage() contractsai.Usage          { return r.usage }
 func (r *response) ToolCalls() []contractsai.ToolCall { return r.toolCalls }
@@ -20,6 +24,8 @@ func (r *response) Then(callback func(contractsai.Response)) contractsai.Respons
 
 	return r
 }
+
+func (r *storedFileResponse) ID() string { return r.id }
 
 type usage struct{ input, output, total int }
 
