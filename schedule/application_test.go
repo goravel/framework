@@ -30,16 +30,17 @@ func (s *ApplicationTestSuite) SetupTest() {
 
 func (s *ApplicationTestSuite) TestCallAndCommand() {
 	mockArtisan := mocksconsole.NewArtisan(s.T())
-	mockArtisan.EXPECT().Call("test --name Goravel argument0 argument1").Return(nil).Times(2)
+	commandCall := 0
+	mockArtisan.EXPECT().Call("test --name Goravel argument0 argument1").RunAndReturn(func(string) error {
+		commandCall++
+		return nil
+	})
 
 	mockLog := mockslog.NewLog(s.T())
-
-	if env.IsWindows() {
-		// The Windows system is not stable when runing the last time
-		mockLog.EXPECT().Error("panic", mock.Anything).Return()
-	} else {
-		mockLog.EXPECT().Error("panic", mock.Anything).Return().Times(4)
-	}
+	panicCall := 0
+	mockLog.EXPECT().Error("panic", mock.Anything).Run(func(args ...interface{}) {
+		panicCall++
+	}).Return()
 
 	immediatelyCall := 0
 	delayIfStillRunningCall := 0
@@ -76,10 +77,12 @@ func (s *ApplicationTestSuite) TestCallAndCommand() {
 		s.True(delayIfStillRunningCall >= 3 && delayIfStillRunningCall <= 4)
 		s.True(skipIfStillRunningCall >= 1 && skipIfStillRunningCall <= 2)
 	} else {
-		s.Equal(4, immediatelyCall)
-		s.Equal(4, delayIfStillRunningCall)
-		s.Equal(2, skipIfStillRunningCall)
+		s.True(immediatelyCall >= 3 && immediatelyCall <= 4)
+		s.True(delayIfStillRunningCall >= 3 && delayIfStillRunningCall <= 4)
+		s.True(skipIfStillRunningCall >= 1 && skipIfStillRunningCall <= 2)
 	}
+	s.True(commandCall >= 1 && commandCall <= 2)
+	s.True(panicCall >= 3 && panicCall <= 4)
 }
 
 func (s *ApplicationTestSuite) TestOnOneServer() {

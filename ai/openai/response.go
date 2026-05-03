@@ -17,12 +17,6 @@ type storedFileResponse struct {
 	id string
 }
 
-type fileResponse struct {
-	id       string
-	mimeType string
-	content  []byte
-}
-
 type imageResponse struct {
 	mimeType string
 	content  []byte
@@ -43,12 +37,6 @@ func (r *response) Then(callback func(contractsai.Response)) contractsai.Respons
 }
 
 func (r *storedFileResponse) ID() string { return r.id }
-
-func (r *fileResponse) ID() string { return r.id }
-
-func (r *fileResponse) MimeType() string { return r.mimeType }
-
-func (r *fileResponse) Content(context.Context) ([]byte, error) { return bytes.Clone(r.content), nil }
 
 func (r *imageResponse) Content(context.Context) ([]byte, error) { return bytes.Clone(r.content), nil }
 

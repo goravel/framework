@@ -10,7 +10,6 @@ import (
 	"mime"
 	"path/filepath"
 	"strings"
-	"time"
 
 	goopenai "github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
@@ -69,7 +68,7 @@ func (r *Provider) Image(ctx context.Context, prompt contractsai.ImagePrompt) (c
 
 	requestOptions := make([]option.RequestOption, 0, 1)
 	if prompt.Timeout > 0 {
-		requestOptions = append(requestOptions, option.WithRequestTimeout(time.Duration(prompt.Timeout)))
+		requestOptions = append(requestOptions, option.WithRequestTimeout(prompt.Timeout))
 	}
 
 	if len(prompt.Attachments) == 0 {

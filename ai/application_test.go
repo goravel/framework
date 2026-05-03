@@ -400,7 +400,7 @@ func TestImageRequest_Generate(t *testing.T) {
 		Size:        contractsai.ImageSizeLandscape,
 		Quality:     contractsai.ImageQualityHigh,
 		Attachments: []contractsai.Attachment{attachment},
-		Timeout:     int64(3 * time.Second),
+		Timeout:     3 * time.Second,
 	}, provider.prompt)
 }
 
@@ -412,8 +412,8 @@ func TestApplication_image(t *testing.T) {
 		expectError error
 	}{
 		{
-			name: "success",
-			options: []contractsai.Option{WithProvider("openai")},
+			name:    "success",
+			options: []contractsai.Option{WithProvider("openai"), WithModel("gpt-image-override")},
 			setup: func() contractsai.Config {
 				provider := &applicationImageProviderStub{}
 				provider.response = &applicationImageResponseStub{}
@@ -451,6 +451,10 @@ func TestApplication_image(t *testing.T) {
 			}
 
 			require.NotNil(t, response)
+			provider, ok := app.config.Providers["openai"].Via.(*applicationImageProviderStub)
+			if ok {
+				assert.Equal(t, "gpt-image-override", provider.prompt.Model)
+			}
 		})
 	}
 }
@@ -496,7 +500,9 @@ func (p *applicationImageProviderStub) Image(ctx context.Context, prompt contrac
 
 type applicationImageResponseStub struct{}
 
-func (r *applicationImageResponseStub) Content(context.Context) ([]byte, error) { return []byte("image"), nil }
+func (r *applicationImageResponseStub) Content(context.Context) ([]byte, error) {
+	return []byte("image"), nil
+}
 
 func (r *applicationImageResponseStub) MimeType() string { return "image/png" }
 

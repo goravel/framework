@@ -1,6 +1,9 @@
 package ai
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // ProviderState stores provider-scoped conversation state across prompt calls.
 type ProviderState interface {
@@ -27,7 +30,7 @@ type ImagePrompt struct {
 	Size        ImageSize
 	Quality     ImageQuality
 	Attachments []Attachment
-	Timeout     int64
+	Timeout     time.Duration
 }
 
 // Provider defines low-level model interactions (text generation).

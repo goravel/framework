@@ -55,9 +55,12 @@ func (r *Application) putFile(ctx context.Context, file contractsai.StorableFile
 }
 
 func (r *Application) image(ctx context.Context, prompt contractsai.ImagePrompt, options ...contractsai.Option) (contractsai.ImageResponse, error) {
-	_, providerName, provider, err := r.resolveProvider(options)
+	opts, providerName, provider, err := r.resolveProvider(options)
 	if err != nil {
 		return nil, err
+	}
+	if prompt.Model == "" {
+		prompt.Model = opts.Model
 	}
 
 	imageProvider, ok := provider.(contractsai.ImageProvider)

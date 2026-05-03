@@ -93,6 +93,6 @@ func (r *imageRequest) Generate() (contractsai.ImageResponse, error) {
 		Size:        r.size,
 		Quality:     r.quality,
 		Attachments: filterNilAttachments(r.attachments),
-		Timeout:     int64(r.timeout),
+		Timeout:     r.timeout,
 	}, options...)
 }

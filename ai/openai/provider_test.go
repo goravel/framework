@@ -195,8 +195,8 @@ func TestProviderImage(t *testing.T) {
 			prompt: contractsai.ImagePrompt{
 				Prompt: "draw a cat",
 			},
-			status:   http.StatusOK,
-			response: imageResponseBody(t, "png", "image-bytes", 11, 7, 18),
+			status:     http.StatusOK,
+			response:   imageResponseBody(t, "png", "image-bytes", 11, 7, 18),
 			expectPath: "/images/generations",
 			expectForm: map[string]string{
 				"prompt": "draw a cat",
@@ -212,10 +212,10 @@ func TestProviderImage(t *testing.T) {
 				Model:   "gpt-image-override",
 				Size:    contractsai.ImageSizeLandscape,
 				Quality: contractsai.ImageQualityHigh,
-				Timeout: int64(2 * time.Second),
+				Timeout: 2 * time.Second,
 			},
-			status:   http.StatusOK,
-			response: imageResponseBody(t, "jpeg", "jpeg-bytes", 1, 2, 3),
+			status:     http.StatusOK,
+			response:   imageResponseBody(t, "jpeg", "jpeg-bytes", 1, 2, 3),
 			expectPath: "/images/generations",
 			expectForm: map[string]string{
 				"prompt":  "draw a cat",
@@ -234,8 +234,8 @@ func TestProviderImage(t *testing.T) {
 				Quality:     contractsai.ImageQualityMedium,
 				Attachments: []contractsai.Attachment{namedAttachment{kind: contractsai.AttachmentKindImage, filename: "photo.png", mimeType: "image/png", content: []byte("source-image")}},
 			},
-			status:   http.StatusOK,
-			response: imageResponseBody(t, "webp", "webp-bytes", 4, 5, 9),
+			status:     http.StatusOK,
+			response:   imageResponseBody(t, "webp", "webp-bytes", 4, 5, 9),
 			expectPath: "/images/edits",
 			expectForm: map[string]string{
 				"prompt":  "turn this into watercolor",
@@ -243,13 +243,13 @@ func TestProviderImage(t *testing.T) {
 				"size":    "1024x1536",
 				"quality": "medium",
 			},
-			expectFiles: []capturedImageFile{{fieldName: "image[]", fileName: "photo.png", mimeType: "image/png", body: []byte("source-image")}},
-			expectMime:  "image/webp",
+			expectFiles:   []capturedImageFile{{fieldName: "image[]", fileName: "photo.png", mimeType: "image/png", body: []byte("source-image")}},
+			expectMime:    "image/webp",
 			expectContent: []byte("webp-bytes"),
 		},
 		{
-			name: "returns error for empty prompt",
-			prompt: contractsai.ImagePrompt{},
+			name:        "returns error for empty prompt",
+			prompt:      contractsai.ImagePrompt{},
 			expectError: errors.AIImagePromptRequired,
 		},
 		{
@@ -1241,7 +1241,9 @@ func newImagesServer(t *testing.T, status int, response string, captured chan<- 
 			}
 		} else {
 			payload := decodeBodyMap(t, r)
-			capturedRequest.body, _ = json.Marshal(payload)
+			body, err := json.Marshal(payload)
+			require.NoError(t, err)
+			capturedRequest.body = body
 			capturedRequest.formValues = make(map[string]string)
 			for key, value := range payload {
 				switch val := value.(type) {
