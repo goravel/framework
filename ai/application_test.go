@@ -554,7 +554,7 @@ func (p *applicationImageProviderStub) Image(ctx context.Context, prompt contrac
 
 type applicationImageResponseStub struct{}
 
-func (r *applicationImageResponseStub) Content(context.Context) ([]byte, error) {
+func (r *applicationImageResponseStub) Content() ([]byte, error) {
 	return []byte("image"), nil
 }
 
