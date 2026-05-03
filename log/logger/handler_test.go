@@ -110,24 +110,25 @@ func (s *IOHandlerTestSuite) TestHandle() {
 
 func (s *IOHandlerTestSuite) TestHandleWithAllFields() {
 	s.mockConfig.EXPECT().GetString("app.env").Return("test").Once()
+	s.mockConfig.EXPECT().Get("logging.context.exclude", []any{}).Return([]any{}).Once()
 
 	handler := NewIOHandler(s.buffer, s.mockConfig, s.json, log.LevelDebug, FormatterText)
 
 	ctx := context.WithValue(context.Background(), handlerTestContextKey("key"), "value")
 	entry := &mockEntry{
-		time:       time.Now(),
-		level:      log.LevelError,
-		message:    "error message",
-		code:       "ERR001",
-		ctx:        ctx,
-		domain:     "payment",
-		hint:       "check balance",
-		owner:      "team-a",
-		request:    map[string]any{"method": "POST", "url": "/api"},
-		response:   map[string]any{"status": 500},
-		tags:       []string{"critical", "urgent"},
-		user:       map[string]any{"id": 123, "name": "test"},
-		with:       map[string]any{"extra": "data"},
+		time:     time.Now(),
+		level:    log.LevelError,
+		message:  "error message",
+		code:     "ERR001",
+		ctx:      ctx,
+		domain:   "payment",
+		hint:     "check balance",
+		owner:    "team-a",
+		request:  map[string]any{"method": "POST", "url": "/api"},
+		response: map[string]any{"status": 500},
+		tags:     []string{"critical", "urgent"},
+		user:     map[string]any{"id": 123, "name": "test"},
+		with:     map[string]any{"extra": "data"},
 	}
 
 	err := handler.Handle(entry)
@@ -409,6 +410,7 @@ func TestIOHandlerJSONFormat(t *testing.T) {
 func TestIOHandlerJSONFormatWithAllFields(t *testing.T) {
 	mockConfig := mocksconfig.NewConfig(t)
 	mockConfig.EXPECT().GetString("app.env").Return("test").Once()
+	mockConfig.EXPECT().Get("logging.context.exclude", []any{}).Return([]any{}).Once()
 
 	j := json.New()
 	buffer := new(bytes.Buffer)
@@ -495,6 +497,33 @@ func TestIOHandlerJSONFormatWithAllFields(t *testing.T) {
 	root, ok := trace["root"].(map[string]any)
 	assert.True(t, ok)
 	assert.Equal(t, "error", root["message"])
+}
+
+type jsonStructSentinelKey struct{}
+
+func TestIOHandlerJSONFormat_StructSentinelContextKey(t *testing.T) {
+	mockConfig := mocksconfig.NewConfig(t)
+	mockConfig.EXPECT().GetString("app.env").Return("test").Once()
+	mockConfig.EXPECT().Get("logging.context.exclude", []any{}).Return([]any{}).Once()
+
+	j := json.New()
+	buffer := new(bytes.Buffer)
+	handler := NewIOHandler(buffer, mockConfig, j, log.LevelDebug, FormatterJson)
+
+	ctx := context.WithValue(context.Background(), jsonStructSentinelKey{}, "u-42")
+	err := handler.Handle(&mockEntry{
+		time:    time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
+		level:   log.LevelInfo,
+		message: "json struct sentinel",
+		ctx:     ctx,
+	})
+	assert.Nil(t, err)
+
+	var result map[string]any
+	assert.Nil(t, j.Unmarshal(buffer.Bytes(), &result))
+	ctxOut, ok := result["context"].(map[string]any)
+	assert.True(t, ok)
+	assert.Equal(t, "u-42", ctxOut["logger.jsonStructSentinelKey"])
 }
 
 func TestIOHandlerJSONFormatEmptyOptionalFields(t *testing.T) {
