@@ -999,19 +999,10 @@ func TestProviderGetFile(t *testing.T) {
 	file, err := provider.GetFile(context.Background(), "file-123")
 	require.NoError(t, err)
 	assert.Equal(t, "file-123", file.ID())
-	assert.Equal(t, "text/plain; charset=utf-8", file.MimeType())
-
-	req, ok := readCapturedRequest(t, captured)
-	require.True(t, ok)
-	assert.Equal(t, "/files/file-123", req.path)
 
 	content, err := file.Content(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, []byte("report"), content)
-
-	req, ok = readCapturedRequest(t, captured)
-	require.True(t, ok)
-	assert.Equal(t, "/files/file-123/content", req.path)
 }
 
 func TestProviderDeleteFile(t *testing.T) {
@@ -1267,7 +1258,7 @@ func newResponsesServerWithFileContent(t *testing.T, captured chan<- capturedReq
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte(`{"id":"file-123","filename":"report.txt","bytes":6,"created_at":1,"object":"file","purpose":"user_data","status":"processed"}`))
 		case "/files/file-123/content", "/v1/files/file-123/content":
-			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			w.Header().Set("Content-Type", "application/binary")
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte("report"))
 		default:

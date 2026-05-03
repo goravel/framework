@@ -374,12 +374,6 @@ func TestDocumentFromIDGetAndDelete(t *testing.T) {
 	assert.NoError(t, attachment.Delete(ctx))
 }
 
-func TestDocumentFromIDPutReturnsErrorWhenIDEmpty(t *testing.T) {
-	stored, err := DocumentFromID("").Put(context.Background())
-	assert.Nil(t, stored)
-	assert.Equal(t, errors.AIStoredFileIDEmpty, err)
-}
-
 func TestDocumentFromIDReturnsErrorWhenFacadeNotSet(t *testing.T) {
 	originalAIFacade := aiFacade
 	t.Cleanup(func() {

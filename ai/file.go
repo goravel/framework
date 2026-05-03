@@ -38,7 +38,6 @@ type stored struct {
 	filename string
 	mimeType string
 	content  []byte
-	file     contractsai.FileResponse
 	mu       sync.RWMutex
 }
 
@@ -325,10 +324,6 @@ func (r *stored) FileName() string { return r.filename }
 func (r *stored) MimeType() string { return r.mimeType }
 
 func (r *stored) Put(context.Context, ...contractsai.Option) (contractsai.StoredFileResponse, error) {
-	if r.id == "" {
-		return nil, errors.AIStoredFileIDEmpty
-	}
-
 	return &storedFileResponse{id: r.id}, nil
 }
 
@@ -339,15 +334,11 @@ func (r *stored) Content(ctx context.Context) ([]byte, error) {
 		r.mu.RUnlock()
 		return content, nil
 	}
-	file := r.file
 	r.mu.RUnlock()
 
-	if file == nil {
-		var err error
-		file, err = r.Get(ctx)
-		if err != nil {
-			return nil, err
-		}
+	file, err := r.Get(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	content, err := file.Content(ctx)
@@ -356,7 +347,6 @@ func (r *stored) Content(ctx context.Context) ([]byte, error) {
 	}
 
 	r.mu.Lock()
-	r.file = file
 	r.content = bytes.Clone(content)
 	if r.mimeType == "" {
 		r.mimeType = file.MimeType()
@@ -377,11 +367,16 @@ func (r *stored) Get(ctx context.Context, options ...contractsai.Option) (contra
 		return nil, err
 	}
 
+	content, err := file.Content(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	r.mu.Lock()
-	r.file = file
 	if r.mimeType == "" {
 		r.mimeType = file.MimeType()
 	}
+	r.content = bytes.Clone(content)
 	r.mu.Unlock()
 
 	return file, nil

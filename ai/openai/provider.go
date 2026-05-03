@@ -239,34 +239,18 @@ func (r *Provider) GetFile(ctx context.Context, id string) (contractsai.FileResp
 		return nil, err
 	}
 
-	mimeType := mime.TypeByExtension(strings.ToLower(filepath.Ext(file.Filename)))
+	response, err := r.client.Files.Content(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	defer errors.Ignore(response.Body.Close)
 
-	return &fileResponse{
-		id:       file.ID,
-		mimeType: mimeType,
-		resolve: func(ctx context.Context) ([]byte, string, error) {
-			response, err := r.client.Files.Content(ctx, id)
-			if err != nil {
-				return nil, "", err
-			}
-			defer errors.Ignore(response.Body.Close)
+	content, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
 
-			content, err := io.ReadAll(response.Body)
-			if err != nil {
-				return nil, "", err
-			}
-
-			resolvedMimeType := response.Header.Get("Content-Type")
-			if parsedMimeType, _, err := mime.ParseMediaType(resolvedMimeType); err == nil {
-				resolvedMimeType = parsedMimeType
-			}
-			if resolvedMimeType == "" {
-				resolvedMimeType = mimeType
-			}
-
-			return content, resolvedMimeType, nil
-		},
-	}, nil
+	return &fileResponse{id: file.ID, content: content}, nil
 }
 
 func (r *Provider) DeleteFile(ctx context.Context, id string) error {
