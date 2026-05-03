@@ -3,6 +3,7 @@ package schedule
 import (
 	"context"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -13,7 +14,6 @@ import (
 	mockscache "github.com/goravel/framework/mocks/cache"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mockslog "github.com/goravel/framework/mocks/log"
-	"github.com/goravel/framework/support/env"
 )
 
 type ApplicationTestSuite struct {
@@ -30,20 +30,22 @@ func (s *ApplicationTestSuite) SetupTest() {
 
 func (s *ApplicationTestSuite) TestCallAndCommand() {
 	mockArtisan := mocksconsole.NewArtisan(s.T())
-	mockArtisan.EXPECT().Call("test --name Goravel argument0 argument1").Return(nil).Times(2)
+	var commandCall atomic.Int64
+	mockArtisan.EXPECT().Call("test --name Goravel argument0 argument1").RunAndReturn(func(string) error {
+		commandCall.Add(1)
+		return nil
+	}).Times(3)
 
 	mockLog := mockslog.NewLog(s.T())
+	var panicCall atomic.Int64
+	mockLog.EXPECT().Error("panic", mock.Anything).Run(func(args ...any) {
+		panicCall.Add(1)
+	}).Return().Times(3)
 
-	if env.IsWindows() {
-		// The Windows system is not stable when runing the last time
-		mockLog.EXPECT().Error("panic", mock.Anything).Return()
-	} else {
-		mockLog.EXPECT().Error("panic", mock.Anything).Return().Times(4)
-	}
-
-	immediatelyCall := 0
-	delayIfStillRunningCall := 0
-	skipIfStillRunningCall := 0
+	var immediatelyCall atomic.Int64
+	var delayIfStillRunningCall atomic.Int64
+	var skipIfStillRunningCall atomic.Int64
+	shutdownErr := make(chan error, 1)
 
 	app := NewApplication(mockArtisan, nil, mockLog, false)
 	app.Register([]schedule.Event{
@@ -51,35 +53,38 @@ func (s *ApplicationTestSuite) TestCallAndCommand() {
 			panic(1)
 		}).Cron("* * * * * *"),
 		app.Call(func() {
-			immediatelyCall++
+			if immediatelyCall.Add(1) == 3 {
+				go func() {
+					shutdownErr <- app.Shutdown()
+				}()
+			}
 		}).Cron("* * * * * *"),
 		app.Call(func() {
-			time.Sleep(2 * time.Second)
-			delayIfStillRunningCall++
+			time.Sleep(1100 * time.Millisecond)
+			delayIfStillRunningCall.Add(1)
 		}).Cron("* * * * * *").DelayIfStillRunning(),
 		app.Call(func() {
-			time.Sleep(2 * time.Second)
-			skipIfStillRunningCall++
+			time.Sleep(2500 * time.Millisecond)
+			skipIfStillRunningCall.Add(1)
 		}).Cron("* * * * * *").SkipIfStillRunning(),
-		app.Command("test --name Goravel argument0 argument1").Cron("*/2 * * * * *"),
+		app.Command("test --name Goravel argument0 argument1").Cron("* * * * * *"),
 	})
 
 	go app.Run()
 
-	time.Sleep(4 * time.Second)
-
-	s.NoError(app.Shutdown())
-
-	if env.IsWindows() {
-		// The Windows system is not stable when runing the last time
-		s.True(immediatelyCall >= 3 && immediatelyCall <= 4)
-		s.True(delayIfStillRunningCall >= 3 && delayIfStillRunningCall <= 4)
-		s.True(skipIfStillRunningCall >= 1 && skipIfStillRunningCall <= 2)
-	} else {
-		s.Equal(4, immediatelyCall)
-		s.Equal(4, delayIfStillRunningCall)
-		s.Equal(2, skipIfStillRunningCall)
+	select {
+	case err := <-shutdownErr:
+		s.NoError(err)
+	case <-time.After(10 * time.Second):
+		s.NoError(app.Shutdown())
+		s.FailNow("timed out waiting for scheduler shutdown")
 	}
+
+	s.Equal(int64(3), immediatelyCall.Load())
+	s.Equal(int64(3), delayIfStillRunningCall.Load())
+	s.Equal(int64(1), skipIfStillRunningCall.Load())
+	s.Equal(int64(3), commandCall.Load())
+	s.Equal(int64(3), panicCall.Load())
 }
 
 func (s *ApplicationTestSuite) TestOnOneServer() {

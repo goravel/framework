@@ -1,6 +1,11 @@
 package openai
 
-import contractsai "github.com/goravel/framework/contracts/ai"
+import (
+	"bytes"
+	"context"
+
+	contractsai "github.com/goravel/framework/contracts/ai"
+)
 
 type response struct {
 	text      string
@@ -10,6 +15,12 @@ type response struct {
 
 type storedFileResponse struct {
 	id string
+}
+
+type imageResponse struct {
+	mimeType string
+	content  []byte
+	usage    *usage
 }
 
 func (r *response) Text() string                      { return r.text }
@@ -26,6 +37,22 @@ func (r *response) Then(callback func(contractsai.Response)) contractsai.Respons
 }
 
 func (r *storedFileResponse) ID() string { return r.id }
+
+func (r *imageResponse) Content(context.Context) ([]byte, error) { return bytes.Clone(r.content), nil }
+
+func (r *imageResponse) MimeType() string { return r.mimeType }
+
+func (r *imageResponse) Usage() contractsai.Usage { return r.usage }
+
+func (r *imageResponse) Then(callback func(contractsai.ImageResponse)) contractsai.ImageResponse {
+	if callback == nil {
+		return r
+	}
+
+	callback(r)
+
+	return r
+}
 
 type usage struct{ input, output, total int }
 

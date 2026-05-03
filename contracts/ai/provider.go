@@ -1,6 +1,9 @@
 package ai
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // ProviderState stores provider-scoped conversation state across prompt calls.
 type ProviderState interface {
@@ -21,6 +24,15 @@ type AgentPrompt struct {
 	ProviderState ProviderState
 }
 
+type ImagePrompt struct {
+	Prompt      string
+	Model       string
+	Size        ImageSize
+	Quality     ImageQuality
+	Attachments []Attachment
+	Timeout     time.Duration
+}
+
 // Provider defines low-level model interactions (text generation).
 // Future: extend with TextProvider, ImageProvider, AudioProvider, etc.
 type Provider interface {
@@ -28,6 +40,12 @@ type Provider interface {
 	Prompt(ctx context.Context, prompt AgentPrompt) (Response, error)
 	// Stream executes a streaming model request and returns a streamable response.
 	Stream(ctx context.Context, prompt AgentPrompt) (StreamableResponse, error)
+}
+
+// ImageProvider is implemented by providers that support image generation.
+type ImageProvider interface {
+	// Image executes an image generation or edit request.
+	Image(ctx context.Context, prompt ImagePrompt) (ImageResponse, error)
 }
 
 // FileProvider is implemented by providers that support storing files before they are referenced by prompts.
