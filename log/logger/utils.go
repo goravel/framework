@@ -9,8 +9,6 @@ import (
 var defaultExcludeNames = []string{
 	"GoravelAuthJwt",
 	"goravel_http_client_name",
-	"locale",
-	"fallback_locale",
 }
 
 type excludeSet struct {

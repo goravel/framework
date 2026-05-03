@@ -70,8 +70,6 @@ func TestFilterContextValues(t *testing.T) {
 			values: map[any]any{
 				"GoravelAuthJwt":           "secret",
 				"goravel_http_client_name": "client-a",
-				"locale":                   "en",
-				"fallback_locale":          "en-US",
 				"request_id":               "req-1",
 			},
 			expect: map[string]any{"request_id": "req-1"},
@@ -80,8 +78,7 @@ func TestFilterContextValues(t *testing.T) {
 			name: "framework keys (typed string) dropped by default",
 			values: map[any]any{
 				utilsContextKey("GoravelAuthJwt"): "secret",
-				utilsContextKey("locale"):         "en",
-				utilsContextKey("request_id"):     "req-1",
+				utilsContextKey("request_id"):    "req-1",
 			},
 			expect: map[string]any{"request_id": "req-1"},
 		},
@@ -129,9 +126,9 @@ func TestFilterContextValues(t *testing.T) {
 		{
 			name: "default excludes still apply when keys with the same label collide",
 			values: map[any]any{
-				"locale":                  "en",
-				utilsContextKey("locale"): "fr",
-				"request_id":              "req-1",
+				"GoravelAuthJwt":                  "from-string",
+				utilsContextKey("GoravelAuthJwt"): "from-typed",
+				"request_id":                      "req-1",
 			},
 			expect: map[string]any{"request_id": "req-1"},
 		},
