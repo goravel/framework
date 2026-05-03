@@ -279,7 +279,7 @@ func TestProviderImage(t *testing.T) {
 			}
 
 			require.NotNil(t, response)
-			content, contentErr := response.Content(context.Background())
+			content, contentErr := response.Content()
 			require.NoError(t, contentErr)
 			assert.Equal(t, tt.expectContent, content)
 			assert.Equal(t, tt.expectMime, response.MimeType())

@@ -3,10 +3,7 @@
 package ai
 
 import (
-	context "context"
-
 	ai "github.com/goravel/framework/contracts/ai"
-
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -23,9 +20,9 @@ func (_m *ImageResponse) EXPECT() *ImageResponse_Expecter {
 	return &ImageResponse_Expecter{mock: &_m.Mock}
 }
 
-// Content provides a mock function with given fields: ctx
-func (_m *ImageResponse) Content(ctx context.Context) ([]byte, error) {
-	ret := _m.Called(ctx)
+// Content provides a mock function with no fields
+func (_m *ImageResponse) Content() ([]byte, error) {
+	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Content")
@@ -33,19 +30,19 @@ func (_m *ImageResponse) Content(ctx context.Context) ([]byte, error) {
 
 	var r0 []byte
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) ([]byte, error)); ok {
-		return rf(ctx)
+	if rf, ok := ret.Get(0).(func() ([]byte, error)); ok {
+		return rf()
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) []byte); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func() []byte); ok {
+		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]byte)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -59,14 +56,13 @@ type ImageResponse_Content_Call struct {
 }
 
 // Content is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *ImageResponse_Expecter) Content(ctx interface{}) *ImageResponse_Content_Call {
-	return &ImageResponse_Content_Call{Call: _e.mock.On("Content", ctx)}
+func (_e *ImageResponse_Expecter) Content() *ImageResponse_Content_Call {
+	return &ImageResponse_Content_Call{Call: _e.mock.On("Content")}
 }
 
-func (_c *ImageResponse_Content_Call) Run(run func(ctx context.Context)) *ImageResponse_Content_Call {
+func (_c *ImageResponse_Content_Call) Run(run func()) *ImageResponse_Content_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		run()
 	})
 	return _c
 }
@@ -76,7 +72,7 @@ func (_c *ImageResponse_Content_Call) Return(_a0 []byte, _a1 error) *ImageRespon
 	return _c
 }
 
-func (_c *ImageResponse_Content_Call) RunAndReturn(run func(context.Context) ([]byte, error)) *ImageResponse_Content_Call {
+func (_c *ImageResponse_Content_Call) RunAndReturn(run func() ([]byte, error)) *ImageResponse_Content_Call {
 	_c.Call.Return(run)
 	return _c
 }

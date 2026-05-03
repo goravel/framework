@@ -44,7 +44,7 @@ func (r *response) Then(callback func(contractsai.Response)) contractsai.Respons
 
 func (r *storedFileResponse) ID() string { return r.id }
 
-func (r *imageResponse) Content(context.Context) ([]byte, error) { return bytes.Clone(r.content), nil }
+func (r *imageResponse) Content() ([]byte, error) { return bytes.Clone(r.content), nil }
 
 func (r *imageResponse) MimeType() string { return r.mimeType }
 
