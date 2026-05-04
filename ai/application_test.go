@@ -11,6 +11,7 @@ import (
 	contractsai "github.com/goravel/framework/contracts/ai"
 	"github.com/goravel/framework/errors"
 	mocksai "github.com/goravel/framework/mocks/ai"
+	mocksfilesystem "github.com/goravel/framework/mocks/filesystem"
 )
 
 func TestApplication_Agent(t *testing.T) {
@@ -404,6 +405,60 @@ func TestImageRequest_Generate(t *testing.T) {
 	}, provider.prompt)
 }
 
+func TestImageRequest_Store(t *testing.T) {
+	ctx := context.Background()
+	provider := &applicationImageProviderStub{}
+	storage := mocksfilesystem.NewStorage(t)
+	previousStorageFacade := storageFacade
+	storageFacade = storage
+	t.Cleanup(func() {
+		storageFacade = previousStorageFacade
+	})
+
+	app := NewApplication(context.Background(), contractsai.Config{
+		Default: "default",
+		Providers: map[string]contractsai.ProviderConfig{
+			"default": {Via: provider},
+		},
+	})
+	response := &applicationImageResponseStub{}
+	provider.response = response
+
+	driver := mocksfilesystem.NewDriver(t)
+	storage.EXPECT().Disk("s3").Return(driver).Once()
+	driver.EXPECT().Put("generated.png", "image").Return(nil).Once()
+
+	path, err := app.Image("draw a cat").Store("s3")
+
+	require.NoError(t, err)
+	assert.Equal(t, "generated.png", path)
+	assert.Equal(t, ctx, provider.ctx)
+	assert.Equal(t, "draw a cat", provider.prompt.Prompt)
+	assert.Equal(t, 1, response.storeCalls)
+	assert.Equal(t, 0, response.storeAsCalls)
+	assert.Equal(t, []string{"s3"}, response.storePath)
+}
+
+func TestImageRequest_StoreUsesResponseStore(t *testing.T) {
+	provider := &applicationImageProviderStub{}
+	app := NewApplication(context.Background(), contractsai.Config{
+		Default: "default",
+		Providers: map[string]contractsai.ProviderConfig{
+			"default": {Via: provider},
+		},
+	})
+	response := &applicationImageResponseStub{storePathResult: "images/generated.png"}
+	provider.response = response
+
+	path, err := app.Image("draw a cat").Store()
+
+	require.NoError(t, err)
+	assert.Equal(t, "images/generated.png", path)
+	assert.Equal(t, 1, response.storeCalls)
+	assert.Equal(t, 0, response.storeAsCalls)
+	assert.Empty(t, response.storePath)
+}
+
 func TestApplication_image(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -552,13 +607,48 @@ func (p *applicationImageProviderStub) Image(ctx context.Context, prompt contrac
 	return p.response, p.err
 }
 
-type applicationImageResponseStub struct{}
+type applicationImageResponseStub struct {
+	storePath       []string
+	storePathResult string
+	storeAsName     string
+	storeAsPath     []string
+	storeCalls      int
+	storeAsCalls    int
+}
 
 func (r *applicationImageResponseStub) Content() ([]byte, error) {
 	return []byte("image"), nil
 }
 
 func (r *applicationImageResponseStub) MimeType() string { return "image/png" }
+
+func (r *applicationImageResponseStub) Store(disk ...string) (string, error) {
+	r.storeCalls++
+	r.storePath = append([]string(nil), disk...)
+	if r.storePathResult != "" {
+		return r.storePathResult, nil
+	}
+
+	content, err := r.Content()
+	if err != nil {
+		return "", err
+	}
+
+	return StoreImage(content, "generated.png", disk...)
+}
+
+func (r *applicationImageResponseStub) StoreAs(path string, disk ...string) (string, error) {
+	r.storeAsCalls++
+	r.storeAsName = path
+	r.storeAsPath = append([]string(nil), disk...)
+
+	content, err := r.Content()
+	if err != nil {
+		return "", err
+	}
+
+	return StoreImageContentAs(content, path, disk...)
+}
 
 func (r *applicationImageResponseStub) Usage() contractsai.Usage { return nil }
 

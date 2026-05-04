@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 
+	frameworkai "github.com/goravel/framework/ai"
 	contractsai "github.com/goravel/framework/contracts/ai"
+	"github.com/goravel/framework/support/str"
 )
 
 type response struct {
@@ -21,6 +23,7 @@ type imageResponse struct {
 	mimeType string
 	content  []byte
 	usage    *usage
+	name     string
 }
 
 type fileResponse struct {
@@ -48,6 +51,14 @@ func (r *imageResponse) Content() ([]byte, error) { return bytes.Clone(r.content
 
 func (r *imageResponse) MimeType() string { return r.mimeType }
 
+func (r *imageResponse) Store(disk ...string) (string, error) {
+	return frameworkai.StoreImage(r.content, r.storageName(), disk...)
+}
+
+func (r *imageResponse) StoreAs(path string, disk ...string) (string, error) {
+	return frameworkai.StoreImageContentAs(r.content, path, disk...)
+}
+
 func (r *imageResponse) Usage() contractsai.Usage { return r.usage }
 
 func (r *imageResponse) Then(callback func(contractsai.ImageResponse)) contractsai.ImageResponse {
@@ -58,6 +69,24 @@ func (r *imageResponse) Then(callback func(contractsai.ImageResponse)) contracts
 	callback(r)
 
 	return r
+}
+
+func (r *imageResponse) storageName() string {
+	if r.name != "" {
+		return r.name
+	}
+
+	extension := ".png"
+	switch r.mimeType {
+	case "image/jpeg":
+		extension = ".jpg"
+	case "image/webp":
+		extension = ".webp"
+	}
+
+	r.name = str.Random(40) + extension
+
+	return r.name
 }
 
 func (r *fileResponse) ID() string { return r.id }

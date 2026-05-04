@@ -78,6 +78,24 @@ func (r *imageRequest) Timeout(timeout time.Duration) contractsai.ImageRequest {
 	return r
 }
 
+func (r *imageRequest) Store(disk ...string) (string, error) {
+	response, err := r.Generate()
+	if err != nil {
+		return "", err
+	}
+
+	return response.Store(disk...)
+}
+
+func (r *imageRequest) StoreAs(path string, disk ...string) (string, error) {
+	response, err := r.Generate()
+	if err != nil {
+		return "", err
+	}
+
+	return response.StoreAs(path, disk...)
+}
+
 func (r *imageRequest) Generate() (contractsai.ImageResponse, error) {
 	options := make([]contractsai.Option, 0, 2)
 	if r.provider != "" {

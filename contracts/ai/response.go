@@ -22,6 +22,8 @@ type Usage interface {
 type ImageResponse interface {
 	Content() ([]byte, error)
 	MimeType() string
+	Store(disk ...string) (string, error)
+	StoreAs(path string, disk ...string) (string, error)
 	Usage() Usage
 	Then(callback func(ImageResponse)) ImageResponse
 }
