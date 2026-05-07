@@ -9,7 +9,7 @@ import (
 	"github.com/goravel/framework/support/str"
 )
 
-type response struct {
+type textResponse struct {
 	text      string
 	usage     contractsai.Usage
 	toolCalls []contractsai.ToolCall
@@ -31,8 +31,8 @@ type fileResponse struct {
 
 type usage struct{ input, output, total int }
 
-func NewResponse(text string, usage contractsai.Usage, toolCalls []contractsai.ToolCall) contractsai.Response {
-	return &response{text: text, usage: usage, toolCalls: toolCalls}
+func NewTextResponse(text string, usage contractsai.Usage, toolCalls []contractsai.ToolCall) contractsai.Response {
+	return &textResponse{text: text, usage: usage, toolCalls: toolCalls}
 }
 
 func NewImageResponse(content []byte, mimeType string, usage contractsai.Usage) contractsai.ImageResponse {
@@ -48,10 +48,10 @@ func NewUsage(input, output, total int) contractsai.Usage {
 	return &usage{input: input, output: output, total: total}
 }
 
-func (r *response) Text() string                      { return r.text }
-func (r *response) Usage() contractsai.Usage          { return r.usage }
-func (r *response) ToolCalls() []contractsai.ToolCall { return r.toolCalls }
-func (r *response) Then(callback func(contractsai.Response)) contractsai.Response {
+func (r *textResponse) Text() string                      { return r.text }
+func (r *textResponse) Usage() contractsai.Usage          { return r.usage }
+func (r *textResponse) ToolCalls() []contractsai.ToolCall { return r.toolCalls }
+func (r *textResponse) Then(callback func(contractsai.Response)) contractsai.Response {
 	if callback == nil {
 		return r
 	}

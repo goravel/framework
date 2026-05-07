@@ -45,7 +45,7 @@ var (
 	AIImageNameRequired            = New("ai: image name is required")
 	AIImagePromptRequired          = New("ai: image prompt is required")
 	AIImageResponseIsEmpty         = New("ai: image response is empty")
-	AIImageStoreTooManyPaths       = New("ai: image store accepts at most path and disk")
+	AIImageStoreTooManyPaths       = New("ai: image store accepts at most one disk")
 	AIImageStorePathRequired       = New("ai: image store path is required")
 	AIStoredFileIDEmpty            = New("ai: stored file id cannot be empty")
 	AIResponseIsNil                = New("ai: response is nil")

@@ -2,7 +2,7 @@ package ai
 
 import (
 	pathpkg "path"
-	"path/filepath"
+	"strings"
 
 	contractsai "github.com/goravel/framework/contracts/ai"
 	contractsfilesystem "github.com/goravel/framework/contracts/filesystem"
@@ -24,12 +24,17 @@ func (r imageStorer) StoreAs(content []byte, targetPath string, disk string) (st
 		return "", errors.AIImageStorePathRequired
 	}
 
-	name := filepath.Base(targetPath)
-	if name == "." || name == string(filepath.Separator) || name == "" {
+	normalizedPath := pathpkg.Clean(strings.ReplaceAll(targetPath, "\\", "/"))
+	if normalizedPath == "." || strings.HasSuffix(targetPath, "/") || strings.HasSuffix(targetPath, "\\") {
 		return "", errors.AIImageNameRequired
 	}
 
-	directory := filepath.Dir(targetPath)
+	name := pathpkg.Base(normalizedPath)
+	if name == "." || name == "/" || name == "" {
+		return "", errors.AIImageNameRequired
+	}
+
+	directory := pathpkg.Dir(normalizedPath)
 	if directory == "." {
 		directory = ""
 	}

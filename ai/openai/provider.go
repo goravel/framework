@@ -139,7 +139,7 @@ func (r *Provider) Prompt(ctx context.Context, prompt contractsai.AgentPrompt) (
 		prompt.ProviderState.Set(providerStateResponseID, completion.ID)
 	}
 
-	return frameworkai.NewResponse(text, r.parseUsage(completion.Usage), toolCalls), nil
+	return frameworkai.NewTextResponse(text, r.parseUsage(completion.Usage), toolCalls), nil
 }
 
 func (r *Provider) Stream(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
@@ -202,7 +202,7 @@ func (r *Provider) Stream(ctx context.Context, prompt contractsai.AgentPrompt) (
 			prompt.ProviderState.Set(providerStateResponseID, responseID)
 		}
 
-		return frameworkai.NewResponse(text.String(), currentUsage, toolCalls), nil
+		return frameworkai.NewTextResponse(text.String(), currentUsage, toolCalls), nil
 	}), nil
 }
 
