@@ -18,10 +18,18 @@ type Usage interface {
 	Total() int
 }
 
+// ImageStorer persists generated image bytes.
+type ImageStorer interface {
+	Store(content []byte, name string, disk string) (string, error)
+	StoreAs(content []byte, path string, disk string) (string, error)
+}
+
 // ImageResponse exposes generated image bytes and provider metadata.
 type ImageResponse interface {
 	Content() ([]byte, error)
 	MimeType() string
+	Store(disk ...string) (string, error)
+	StoreAs(path string, disk ...string) (string, error)
 	Usage() Usage
 	Then(callback func(ImageResponse)) ImageResponse
 }

@@ -27,5 +27,7 @@ type ImageRequest interface {
 	Quality(quality ImageQuality) ImageRequest
 	Attachments(attachments ...Attachment) ImageRequest
 	Timeout(timeout time.Duration) ImageRequest
+	Store(disk ...string) (string, error)
+	StoreAs(path string, disk ...string) (string, error)
 	Generate() (ImageResponse, error)
 }

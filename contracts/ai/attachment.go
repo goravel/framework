@@ -24,23 +24,22 @@ type StorableFile interface {
 	Content(ctx context.Context) ([]byte, error)
 }
 
-// FileResponse describes a provider-managed file returned by a get operation.
+// FileResponse describes a provider-managed file handle.
+//
+// Upload operations may return a lightweight handle that only guarantees ID().
+// In that case MimeType() returns an empty string and Content(ctx) returns nil,
+// nil until the file is resolved through the provider.
 type FileResponse interface {
 	ID() string
 	MimeType() string
 	Content(ctx context.Context) ([]byte, error)
 }
 
-// StoredFileResponse describes a provider-managed file that can be referenced later.
-type StoredFileResponse interface {
-	ID() string
-}
-
 // Attachment is request-scoped content sent with a user prompt.
 type Attachment interface {
 	StorableFile
 	Kind() AttachmentKind
-	Put(ctx context.Context, options ...Option) (StoredFileResponse, error)
+	Put(ctx context.Context, options ...Option) (FileResponse, error)
 }
 
 // ProviderFile describes a provider-managed file handle that can be attached to

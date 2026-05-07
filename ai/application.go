@@ -40,7 +40,7 @@ func (r *Application) Image(prompt string, options ...contractsai.Option) contra
 	return NewImageRequest(r.ctx, r, prompt, options...)
 }
 
-func (r *Application) putFile(ctx context.Context, file contractsai.StorableFile, options ...contractsai.Option) (contractsai.StoredFileResponse, error) {
+func (r *Application) putFile(ctx context.Context, file contractsai.StorableFile, options ...contractsai.Option) (contractsai.FileResponse, error) {
 	_, providerName, provider, err := r.resolveProvider(options)
 	if err != nil {
 		return nil, err

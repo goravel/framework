@@ -122,6 +122,146 @@ func (_c *ImageResponse_MimeType_Call) RunAndReturn(run func() string) *ImageRes
 	return _c
 }
 
+// Store provides a mock function with given fields: disk
+func (_m *ImageResponse) Store(disk ...string) (string, error) {
+	_va := make([]interface{}, len(disk))
+	for _i := range disk {
+		_va[_i] = disk[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Store")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(...string) (string, error)); ok {
+		return rf(disk...)
+	}
+	if rf, ok := ret.Get(0).(func(...string) string); ok {
+		r0 = rf(disk...)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(...string) error); ok {
+		r1 = rf(disk...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ImageResponse_Store_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Store'
+type ImageResponse_Store_Call struct {
+	*mock.Call
+}
+
+// Store is a helper method to define mock.On call
+//   - disk ...string
+func (_e *ImageResponse_Expecter) Store(disk ...interface{}) *ImageResponse_Store_Call {
+	return &ImageResponse_Store_Call{Call: _e.mock.On("Store",
+		append([]interface{}{}, disk...)...)}
+}
+
+func (_c *ImageResponse_Store_Call) Run(run func(disk ...string)) *ImageResponse_Store_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *ImageResponse_Store_Call) Return(_a0 string, _a1 error) *ImageResponse_Store_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *ImageResponse_Store_Call) RunAndReturn(run func(...string) (string, error)) *ImageResponse_Store_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// StoreAs provides a mock function with given fields: path, disk
+func (_m *ImageResponse) StoreAs(path string, disk ...string) (string, error) {
+	_va := make([]interface{}, len(disk))
+	for _i := range disk {
+		_va[_i] = disk[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, path)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for StoreAs")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, ...string) (string, error)); ok {
+		return rf(path, disk...)
+	}
+	if rf, ok := ret.Get(0).(func(string, ...string) string); ok {
+		r0 = rf(path, disk...)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(string, ...string) error); ok {
+		r1 = rf(path, disk...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ImageResponse_StoreAs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'StoreAs'
+type ImageResponse_StoreAs_Call struct {
+	*mock.Call
+}
+
+// StoreAs is a helper method to define mock.On call
+//   - path string
+//   - disk ...string
+func (_e *ImageResponse_Expecter) StoreAs(path interface{}, disk ...interface{}) *ImageResponse_StoreAs_Call {
+	return &ImageResponse_StoreAs_Call{Call: _e.mock.On("StoreAs",
+		append([]interface{}{path}, disk...)...)}
+}
+
+func (_c *ImageResponse_StoreAs_Call) Run(run func(path string, disk ...string)) *ImageResponse_StoreAs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *ImageResponse_StoreAs_Call) Return(_a0 string, _a1 error) *ImageResponse_StoreAs_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *ImageResponse_StoreAs_Call) RunAndReturn(run func(string, ...string) (string, error)) *ImageResponse_StoreAs_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Then provides a mock function with given fields: callback
 func (_m *ImageResponse) Then(callback func(ai.ImageResponse)) ai.ImageResponse {
 	ret := _m.Called(callback)
