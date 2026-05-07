@@ -396,7 +396,7 @@ func (_c *ProviderFile_MimeType_Call) RunAndReturn(run func() string) *ProviderF
 }
 
 // Put provides a mock function with given fields: ctx, options
-func (_m *ProviderFile) Put(ctx context.Context, options ...ai.Option) (ai.StoredFileResponse, error) {
+func (_m *ProviderFile) Put(ctx context.Context, options ...ai.Option) (ai.FileResponse, error) {
 	_va := make([]interface{}, len(options))
 	for _i := range options {
 		_va[_i] = options[_i]
@@ -410,16 +410,16 @@ func (_m *ProviderFile) Put(ctx context.Context, options ...ai.Option) (ai.Store
 		panic("no return value specified for Put")
 	}
 
-	var r0 ai.StoredFileResponse
+	var r0 ai.FileResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, ...ai.Option) (ai.StoredFileResponse, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ...ai.Option) (ai.FileResponse, error)); ok {
 		return rf(ctx, options...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, ...ai.Option) ai.StoredFileResponse); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ...ai.Option) ai.FileResponse); ok {
 		r0 = rf(ctx, options...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(ai.StoredFileResponse)
+			r0 = ret.Get(0).(ai.FileResponse)
 		}
 	}
 
@@ -458,12 +458,12 @@ func (_c *ProviderFile_Put_Call) Run(run func(ctx context.Context, options ...ai
 	return _c
 }
 
-func (_c *ProviderFile_Put_Call) Return(_a0 ai.StoredFileResponse, _a1 error) *ProviderFile_Put_Call {
+func (_c *ProviderFile_Put_Call) Return(_a0 ai.FileResponse, _a1 error) *ProviderFile_Put_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *ProviderFile_Put_Call) RunAndReturn(run func(context.Context, ...ai.Option) (ai.StoredFileResponse, error)) *ProviderFile_Put_Call {
+func (_c *ProviderFile_Put_Call) RunAndReturn(run func(context.Context, ...ai.Option) (ai.FileResponse, error)) *ProviderFile_Put_Call {
 	_c.Call.Return(run)
 	return _c
 }

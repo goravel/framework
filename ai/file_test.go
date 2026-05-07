@@ -247,16 +247,18 @@ func TestResolved_Put(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		setup       func(t *testing.T, ctx context.Context, attachment contractsai.Attachment) contractsai.StoredFileResponse
+		setup       func(t *testing.T, ctx context.Context, attachment contractsai.Attachment) contractsai.FileResponse
 		expectError error
 		expectID    string
 	}{
 		{
 			name: "success",
-			setup: func(t *testing.T, ctx context.Context, attachment contractsai.Attachment) contractsai.StoredFileResponse {
+			setup: func(t *testing.T, ctx context.Context, attachment contractsai.Attachment) contractsai.FileResponse {
 				fileProvider := mocksai.NewFileProvider(t)
-				response := mocksai.NewStoredFileResponse(t)
+				response := mocksai.NewFileResponse(t)
 				response.EXPECT().ID().Return("file-456").Once()
+				response.EXPECT().MimeType().Return("").Once()
+				response.EXPECT().Content(ctx).Return(nil, nil).Once()
 
 				fileProvider.EXPECT().PutFile(ctx, attachment).Return(response, nil).Once()
 				aiFacade = &Application{
@@ -281,7 +283,7 @@ func TestResolved_Put(t *testing.T) {
 		},
 		{
 			name: "facade not set",
-			setup: func(t *testing.T, _ context.Context, _ contractsai.Attachment) contractsai.StoredFileResponse {
+			setup: func(t *testing.T, _ context.Context, _ contractsai.Attachment) contractsai.FileResponse {
 				aiFacade = nil
 				return nil
 			},
@@ -306,6 +308,10 @@ func TestResolved_Put(t *testing.T) {
 			require.NotNil(t, stored)
 			assert.Equal(t, response, stored)
 			assert.Equal(t, tt.expectID, stored.ID())
+			assert.Empty(t, stored.MimeType())
+			content, err := stored.Content(ctx)
+			require.NoError(t, err)
+			assert.Nil(t, content)
 		})
 	}
 }

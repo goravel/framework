@@ -692,7 +692,7 @@ func (attachment namedAttachment) MimeType() string                 { return att
 func (attachment namedAttachment) Content(context.Context) ([]byte, error) {
 	return attachment.content, nil
 }
-func (attachment namedAttachment) Put(context.Context, ...contractsai.Option) (contractsai.StoredFileResponse, error) {
+func (attachment namedAttachment) Put(context.Context, ...contractsai.Option) (contractsai.FileResponse, error) {
 	return nil, nil
 }
 
@@ -704,7 +704,7 @@ func (unsupportedAttachment) MimeType() string { return "audio/mpeg" }
 func (unsupportedAttachment) Content(context.Context) ([]byte, error) {
 	return []byte("audio"), nil
 }
-func (unsupportedAttachment) Put(context.Context, ...contractsai.Option) (contractsai.StoredFileResponse, error) {
+func (unsupportedAttachment) Put(context.Context, ...contractsai.Option) (contractsai.FileResponse, error) {
 	return nil, nil
 }
 
@@ -977,6 +977,10 @@ func TestProviderPutFile(t *testing.T) {
 			response, err := provider.PutFile(context.Background(), file)
 			require.NoError(t, err)
 			assert.Equal(t, "file-123", response.ID())
+			assert.Empty(t, response.MimeType())
+			content, err := response.Content(context.Background())
+			require.NoError(t, err)
+			assert.Nil(t, content)
 
 			req, ok := readCapturedFileUploadRequest(t, captured)
 			require.True(t, ok, "expected upload request payload")

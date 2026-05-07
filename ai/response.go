@@ -1,35 +1,51 @@
-package openai
+package ai
 
 import (
 	"bytes"
 	"context"
 
-	frameworkai "github.com/goravel/framework/ai"
 	contractsai "github.com/goravel/framework/contracts/ai"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/str"
 )
 
 type response struct {
 	text      string
-	usage     *usage
+	usage     contractsai.Usage
 	toolCalls []contractsai.ToolCall
-}
-
-type storedFileResponse struct {
-	id string
 }
 
 type imageResponse struct {
 	mimeType string
 	content  []byte
-	usage    *usage
+	usage    contractsai.Usage
 	name     string
+	storer   contractsai.ImageStorer
 }
 
 type fileResponse struct {
 	id       string
 	mimeType string
 	content  []byte
+}
+
+type usage struct{ input, output, total int }
+
+func NewResponse(text string, usage contractsai.Usage, toolCalls []contractsai.ToolCall) contractsai.Response {
+	return &response{text: text, usage: usage, toolCalls: toolCalls}
+}
+
+func NewImageResponse(content []byte, mimeType string, usage contractsai.Usage) contractsai.ImageResponse {
+	storer := NewImageStorer()
+	return &imageResponse{content: content, mimeType: mimeType, usage: usage, storer: storer}
+}
+
+func NewFileResponse(id, mimeType string, content []byte) contractsai.FileResponse {
+	return &fileResponse{id: id, mimeType: mimeType, content: content}
+}
+
+func NewUsage(input, output, total int) contractsai.Usage {
+	return &usage{input: input, output: output, total: total}
 }
 
 func (r *response) Text() string                      { return r.text }
@@ -45,18 +61,26 @@ func (r *response) Then(callback func(contractsai.Response)) contractsai.Respons
 	return r
 }
 
-func (r *storedFileResponse) ID() string { return r.id }
-
 func (r *imageResponse) Content() ([]byte, error) { return bytes.Clone(r.content), nil }
 
 func (r *imageResponse) MimeType() string { return r.mimeType }
 
 func (r *imageResponse) Store(disk ...string) (string, error) {
-	return frameworkai.StoreImage(r.content, r.storageName(), disk...)
+	resolvedDisk, err := resolveImageStoreDisk(disk)
+	if err != nil {
+		return "", err
+	}
+
+	return r.storer.Store(r.content, r.storageName(), resolvedDisk)
 }
 
 func (r *imageResponse) StoreAs(path string, disk ...string) (string, error) {
-	return frameworkai.StoreImageContentAs(r.content, path, disk...)
+	resolvedDisk, err := resolveImageStoreDisk(disk)
+	if err != nil {
+		return "", err
+	}
+
+	return r.storer.StoreAs(r.content, path, resolvedDisk)
 }
 
 func (r *imageResponse) Usage() contractsai.Usage { return r.usage }
@@ -89,13 +113,23 @@ func (r *imageResponse) storageName() string {
 	return r.name
 }
 
+func resolveImageStoreDisk(disk []string) (string, error) {
+	if len(disk) > 1 {
+		return "", errors.AIImageStoreTooManyPaths
+	}
+
+	if len(disk) == 0 {
+		return "", nil
+	}
+
+	return disk[0], nil
+}
+
 func (r *fileResponse) ID() string { return r.id }
 
 func (r *fileResponse) MimeType() string { return r.mimeType }
 
 func (r *fileResponse) Content(context.Context) ([]byte, error) { return bytes.Clone(r.content), nil }
-
-type usage struct{ input, output, total int }
 
 func (r *usage) Input() int  { return r.input }
 func (r *usage) Output() int { return r.output }

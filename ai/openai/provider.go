@@ -139,11 +139,7 @@ func (r *Provider) Prompt(ctx context.Context, prompt contractsai.AgentPrompt) (
 		prompt.ProviderState.Set(providerStateResponseID, completion.ID)
 	}
 
-	return &response{
-		text:      text,
-		toolCalls: toolCalls,
-		usage:     r.parseUsage(completion.Usage),
-	}, nil
+	return frameworkai.NewResponse(text, r.parseUsage(completion.Usage), toolCalls), nil
 }
 
 func (r *Provider) Stream(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
@@ -157,7 +153,7 @@ func (r *Provider) Stream(ctx context.Context, prompt contractsai.AgentPrompt) (
 		defer errors.Ignore(stream.Close)
 
 		text := strings.Builder{}
-		currentUsage := &usage{}
+		currentUsage := contractsai.Usage(frameworkai.NewUsage(0, 0, 0))
 		responseID := ""
 		var toolCalls []contractsai.ToolCall
 
@@ -206,15 +202,11 @@ func (r *Provider) Stream(ctx context.Context, prompt contractsai.AgentPrompt) (
 			prompt.ProviderState.Set(providerStateResponseID, responseID)
 		}
 
-		return &response{
-			text:      text.String(),
-			toolCalls: toolCalls,
-			usage:     currentUsage,
-		}, nil
+		return frameworkai.NewResponse(text.String(), currentUsage, toolCalls), nil
 	}), nil
 }
 
-func (r *Provider) PutFile(ctx context.Context, file contractsai.StorableFile) (contractsai.StoredFileResponse, error) {
+func (r *Provider) PutFile(ctx context.Context, file contractsai.StorableFile) (contractsai.FileResponse, error) {
 	content, err := file.Content(ctx)
 	if err != nil {
 		return nil, err
@@ -230,7 +222,7 @@ func (r *Provider) PutFile(ctx context.Context, file contractsai.StorableFile) (
 		return nil, err
 	}
 
-	return &storedFileResponse{id: upload.ID}, nil
+	return frameworkai.NewFileResponse(upload.ID, "", nil), nil
 }
 
 func (r *Provider) GetFile(ctx context.Context, id string) (contractsai.FileResponse, error) {
@@ -255,7 +247,7 @@ func (r *Provider) GetFile(ctx context.Context, id string) (contractsai.FileResp
 		mimeType = response.Header.Get("Content-Type")
 	}
 
-	return &fileResponse{id: file.ID, mimeType: mimeType, content: content}, nil
+	return frameworkai.NewFileResponse(file.ID, mimeType, content), nil
 }
 
 func (r *Provider) DeleteFile(ctx context.Context, id string) error {
@@ -670,12 +662,8 @@ func (r *Provider) parseOutput(raw []responses.ResponseOutputItemUnion) (string,
 	return text.String(), toolCalls
 }
 
-func (r *Provider) parseUsage(raw responses.ResponseUsage) *usage {
-	return &usage{
-		input:  int(raw.InputTokens),
-		output: int(raw.OutputTokens),
-		total:  int(raw.TotalTokens),
-	}
+func (r *Provider) parseUsage(raw responses.ResponseUsage) contractsai.Usage {
+	return frameworkai.NewUsage(int(raw.InputTokens), int(raw.OutputTokens), int(raw.TotalTokens))
 }
 
 func (r *Provider) parseImageResponse(response *goopenai.ImagesResponse) (contractsai.ImageResponse, error) {
@@ -696,15 +684,11 @@ func (r *Provider) parseImageResponse(response *goopenai.ImagesResponse) (contra
 		mimeType = "image/png"
 	}
 
-	return &imageResponse{
-		mimeType: mimeType,
-		content:  content,
-		usage: &usage{
-			input:  int(response.Usage.InputTokens),
-			output: int(response.Usage.OutputTokens),
-			total:  int(response.Usage.TotalTokens),
-		},
-	}, nil
+	return frameworkai.NewImageResponse(
+		content,
+		mimeType,
+		frameworkai.NewUsage(int(response.Usage.InputTokens), int(response.Usage.OutputTokens), int(response.Usage.TotalTokens)),
+	), nil
 }
 
 func (r *Provider) resolveImageContent(image goopenai.Image) ([]byte, error) {

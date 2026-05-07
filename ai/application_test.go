@@ -289,7 +289,7 @@ func TestApplication_putFile(t *testing.T) {
 			options: []contractsai.Option{WithProvider("openai")},
 			setup: func(t *testing.T, ctx context.Context, file contractsai.StorableFile) contractsai.Config {
 				fileProvider := mocksai.NewFileProvider(t)
-				response := mocksai.NewStoredFileResponse(t)
+				response := mocksai.NewFileResponse(t)
 				response.EXPECT().ID().Return("file-123").Once()
 				fileProvider.EXPECT().PutFile(ctx, file).Return(response, nil).Once()
 
@@ -574,7 +574,7 @@ func (p uploadTestProvider) Stream(context.Context, contractsai.AgentPrompt) (co
 	return nil, nil
 }
 
-func (p uploadTestProvider) PutFile(ctx context.Context, file contractsai.StorableFile) (contractsai.StoredFileResponse, error) {
+func (p uploadTestProvider) PutFile(ctx context.Context, file contractsai.StorableFile) (contractsai.FileResponse, error) {
 	return p.fileProvider.PutFile(ctx, file)
 }
 
@@ -634,7 +634,12 @@ func (r *applicationImageResponseStub) Store(disk ...string) (string, error) {
 		return "", err
 	}
 
-	return StoreImage(content, "generated.png", disk...)
+	resolvedDisk, err := resolveImageStoreDisk(disk)
+	if err != nil {
+		return "", err
+	}
+
+	return imageStorer{}.Store(content, "generated.png", resolvedDisk)
 }
 
 func (r *applicationImageResponseStub) StoreAs(path string, disk ...string) (string, error) {
@@ -647,7 +652,12 @@ func (r *applicationImageResponseStub) StoreAs(path string, disk ...string) (str
 		return "", err
 	}
 
-	return StoreImageContentAs(content, path, disk...)
+	resolvedDisk, err := resolveImageStoreDisk(disk)
+	if err != nil {
+		return "", err
+	}
+
+	return imageStorer{}.StoreAs(content, path, resolvedDisk)
 }
 
 func (r *applicationImageResponseStub) Usage() contractsai.Usage { return nil }

@@ -130,23 +130,23 @@ func (_c *FileProvider_GetFile_Call) RunAndReturn(run func(context.Context, stri
 }
 
 // PutFile provides a mock function with given fields: ctx, file
-func (_m *FileProvider) PutFile(ctx context.Context, file ai.StorableFile) (ai.StoredFileResponse, error) {
+func (_m *FileProvider) PutFile(ctx context.Context, file ai.StorableFile) (ai.FileResponse, error) {
 	ret := _m.Called(ctx, file)
 
 	if len(ret) == 0 {
 		panic("no return value specified for PutFile")
 	}
 
-	var r0 ai.StoredFileResponse
+	var r0 ai.FileResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, ai.StorableFile) (ai.StoredFileResponse, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ai.StorableFile) (ai.FileResponse, error)); ok {
 		return rf(ctx, file)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, ai.StorableFile) ai.StoredFileResponse); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ai.StorableFile) ai.FileResponse); ok {
 		r0 = rf(ctx, file)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(ai.StoredFileResponse)
+			r0 = ret.Get(0).(ai.FileResponse)
 		}
 	}
 
@@ -178,12 +178,12 @@ func (_c *FileProvider_PutFile_Call) Run(run func(ctx context.Context, file ai.S
 	return _c
 }
 
-func (_c *FileProvider_PutFile_Call) Return(_a0 ai.StoredFileResponse, _a1 error) *FileProvider_PutFile_Call {
+func (_c *FileProvider_PutFile_Call) Return(_a0 ai.FileResponse, _a1 error) *FileProvider_PutFile_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *FileProvider_PutFile_Call) RunAndReturn(run func(context.Context, ai.StorableFile) (ai.StoredFileResponse, error)) *FileProvider_PutFile_Call {
+func (_c *FileProvider_PutFile_Call) RunAndReturn(run func(context.Context, ai.StorableFile) (ai.FileResponse, error)) *FileProvider_PutFile_Call {
 	_c.Call.Return(run)
 	return _c
 }

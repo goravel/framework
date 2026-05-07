@@ -307,7 +307,7 @@ func (r *resolved) FileName() string { return r.filename }
 
 func (r *resolved) MimeType() string { return r.mimeType }
 
-func (r *resolved) Put(ctx context.Context, options ...contractsai.Option) (contractsai.StoredFileResponse, error) {
+func (r *resolved) Put(ctx context.Context, options ...contractsai.Option) (contractsai.FileResponse, error) {
 	application, err := resolveApplication()
 	if err != nil {
 		return nil, err
@@ -324,12 +324,12 @@ func (r *stored) FileName() string { return r.filename }
 
 func (r *stored) MimeType() string { return r.mimeType }
 
-func (r *stored) Put(context.Context, ...contractsai.Option) (contractsai.StoredFileResponse, error) {
+func (r *stored) Put(context.Context, ...contractsai.Option) (contractsai.FileResponse, error) {
 	if r.id == "" {
 		return nil, errors.AIStoredFileIDEmpty
 	}
 
-	return &storedFileResponse{id: r.id}, nil
+	return NewFileResponse(r.id, "", nil), nil
 }
 
 func (r *stored) Content(ctx context.Context) ([]byte, error) {
@@ -428,9 +428,3 @@ func (r *resolved) Content(ctx context.Context) ([]byte, error) {
 
 	return bytes.Clone(r.content), nil
 }
-
-type storedFileResponse struct {
-	id string
-}
-
-func (r *storedFileResponse) ID() string { return r.id }

@@ -50,8 +50,9 @@ type ImageProvider interface {
 
 // FileProvider is implemented by providers that support storing files before they are referenced by prompts.
 type FileProvider interface {
-	// PutFile uploads the given file and returns the provider-managed file reference.
-	PutFile(ctx context.Context, file StorableFile) (StoredFileResponse, error)
+	// PutFile uploads the given file and returns the provider-managed file handle.
+	// Providers may return an ID-only handle with empty MimeType()/Content().
+	PutFile(ctx context.Context, file StorableFile) (FileResponse, error)
 	// GetFile resolves a previously stored provider-managed file.
 	GetFile(ctx context.Context, id string) (FileResponse, error)
 	// DeleteFile removes a previously stored provider-managed file.
