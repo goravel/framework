@@ -15,11 +15,11 @@ type testProvider struct {
 	id string
 }
 
-func (t *testProvider) Prompt(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
+func (t *testProvider) Prompt(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.AgentResponse, error) {
 	return nil, nil
 }
 
-func (t *testProvider) Stream(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
+func (t *testProvider) Stream(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.StreamableAgentResponse, error) {
 	return nil, nil
 }
 

@@ -123,7 +123,7 @@ func (r *Provider) Image(ctx context.Context, prompt contractsai.ImagePrompt) (c
 	return r.parseImageResponse(response)
 }
 
-func (r *Provider) Prompt(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
+func (r *Provider) Prompt(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.AgentResponse, error) {
 	params, err := r.buildRequest(ctx, prompt)
 	if err != nil {
 		return nil, err
@@ -142,13 +142,13 @@ func (r *Provider) Prompt(ctx context.Context, prompt contractsai.AgentPrompt) (
 	return frameworkai.NewTextResponse(text, r.parseUsage(completion.Usage), toolCalls), nil
 }
 
-func (r *Provider) Stream(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
+func (r *Provider) Stream(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.StreamableAgentResponse, error) {
 	params, err := r.buildRequest(ctx, prompt)
 	if err != nil {
 		return nil, err
 	}
 
-	return frameworkai.NewStreamableResponse(ctx, func(streamCtx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error) {
+	return frameworkai.NewStreamableResponse(ctx, func(streamCtx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.AgentResponse, error) {
 		stream := r.client.Responses.NewStreaming(streamCtx, params)
 		defer errors.Ignore(stream.Close)
 

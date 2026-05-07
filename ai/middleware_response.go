@@ -3,12 +3,12 @@ package ai
 import contractsai "github.com/goravel/framework/contracts/ai"
 
 type middlewareResponse struct {
-	response  contractsai.Response
-	callbacks []func(contractsai.Response)
+	response  contractsai.AgentResponse
+	callbacks []func(contractsai.AgentResponse)
 	resolved  bool
 }
 
-func newResolvedMiddlewareResponse(response contractsai.Response) *middlewareResponse {
+func newResolvedMiddlewareResponse(response contractsai.AgentResponse) *middlewareResponse {
 	return &middlewareResponse{
 		response: response,
 		resolved: true,
@@ -43,7 +43,7 @@ func (r *middlewareResponse) ToolCalls() []contractsai.ToolCall {
 	return r.response.ToolCalls()
 }
 
-func (r *middlewareResponse) Then(callback func(contractsai.Response)) contractsai.Response {
+func (r *middlewareResponse) Then(callback func(contractsai.AgentResponse)) contractsai.AgentResponse {
 	if callback == nil {
 		return r
 	}
@@ -58,7 +58,7 @@ func (r *middlewareResponse) Then(callback func(contractsai.Response)) contracts
 	return r
 }
 
-func (r *middlewareResponse) Resolve(response contractsai.Response) {
+func (r *middlewareResponse) Resolve(response contractsai.AgentResponse) {
 	r.response = response
 	r.resolved = true
 
@@ -69,7 +69,7 @@ func (r *middlewareResponse) Resolve(response contractsai.Response) {
 	r.callbacks = nil
 }
 
-func (r *middlewareResponse) Unwrap() contractsai.Response {
+func (r *middlewareResponse) Unwrap() contractsai.AgentResponse {
 	if r == nil || r.response == nil {
 		return nil
 	}

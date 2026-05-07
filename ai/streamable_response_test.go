@@ -25,7 +25,7 @@ func (r *streamableTestResponse) Text() string                      { return r.t
 func (r *streamableTestResponse) Usage() contractsai.Usage          { return r.usage }
 func (r *streamableTestResponse) ToolCalls() []contractsai.ToolCall { return nil }
 
-func (r *streamableTestResponse) Then(callback func(contractsai.Response)) contractsai.Response {
+func (r *streamableTestResponse) Then(callback func(contractsai.AgentResponse)) contractsai.AgentResponse {
 	if callback != nil {
 		callback(r)
 	}
@@ -120,7 +120,7 @@ func (s *StreamableResponseTestSuite) TestEach() {
 			{Type: contractsai.StreamEventTypeTextDelta, Delta: "a"},
 			{Type: contractsai.StreamEventTypeTextDelta, Delta: "b"},
 		}
-		stream := NewStreamableResponse(context.Background(), func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error) {
+		stream := NewStreamableResponse(context.Background(), func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.AgentResponse, error) {
 			if err := emit(events[0]); err != nil {
 				return nil, err
 			}
@@ -143,7 +143,7 @@ func (s *StreamableResponseTestSuite) TestEach() {
 
 	s.Run("aborts runner when callback fails", func() {
 		canceled := make(chan struct{})
-		stream := NewStreamableResponse(context.Background(), func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error) {
+		stream := NewStreamableResponse(context.Background(), func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.AgentResponse, error) {
 			if err := emit(contractsai.StreamEvent{Type: contractsai.StreamEventTypeTextDelta, Delta: "first"}); err != nil {
 				return nil, err
 			}
@@ -166,7 +166,7 @@ func (s *StreamableResponseTestSuite) TestEach() {
 	})
 
 	s.Run("supports nil callback", func() {
-		stream := NewStreamableResponse(context.Background(), func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error) {
+		stream := NewStreamableResponse(context.Background(), func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.AgentResponse, error) {
 			if err := emit(contractsai.StreamEvent{Type: contractsai.StreamEventTypeTextDelta, Delta: "ignored"}); err != nil {
 				return nil, err
 			}
@@ -180,8 +180,8 @@ func (s *StreamableResponseTestSuite) TestEach() {
 }
 
 func (s *StreamableResponseTestSuite) TestThen() {
-	makeSuccessStream := func() contractsai.StreamableResponse {
-		return NewStreamableResponse(context.Background(), func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error) {
+	makeSuccessStream := func() contractsai.StreamableAgentResponse {
+		return NewStreamableResponse(context.Background(), func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.AgentResponse, error) {
 			if err := emit(contractsai.StreamEvent{Type: contractsai.StreamEventTypeDone}); err != nil {
 				return nil, err
 			}
@@ -194,7 +194,7 @@ func (s *StreamableResponseTestSuite) TestThen() {
 		stream := makeSuccessStream()
 		called := 0
 
-		stream.Then(func(resp contractsai.Response) {
+		stream.Then(func(resp contractsai.AgentResponse) {
 			called++
 			s.Equal("final", resp.Text())
 		})
@@ -209,7 +209,7 @@ func (s *StreamableResponseTestSuite) TestThen() {
 		s.Require().NoError(stream.Each(nil))
 
 		called := 0
-		stream.Then(func(resp contractsai.Response) {
+		stream.Then(func(resp contractsai.AgentResponse) {
 			called++
 			s.Equal("final", resp.Text())
 		})
@@ -217,13 +217,13 @@ func (s *StreamableResponseTestSuite) TestThen() {
 	})
 
 	s.Run("does not execute callback when stream already failed", func() {
-		stream := NewStreamableResponse(context.Background(), func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error) {
+		stream := NewStreamableResponse(context.Background(), func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.AgentResponse, error) {
 			return nil, assert.AnError
 		})
 		s.Require().Equal(assert.AnError, stream.Each(nil))
 
 		called := 0
-		stream.Then(func(_ contractsai.Response) {
+		stream.Then(func(_ contractsai.AgentResponse) {
 			called++
 		})
 		s.Equal(0, called)
@@ -231,7 +231,7 @@ func (s *StreamableResponseTestSuite) TestThen() {
 }
 
 func (s *StreamableResponseTestSuite) TestHTTPResponse() {
-	prepareHTTP := func(expectHeaders bool, code int, stream contractsai.StreamableResponse, options ...contractsai.StreamOption) (*recordingStreamWriter, error) {
+	prepareHTTP := func(expectHeaders bool, code int, stream contractsai.StreamableAgentResponse, options ...contractsai.StreamOption) (*recordingStreamWriter, error) {
 		s.T().Helper()
 
 		mockCtx := mockshttp.NewContext(s.T())
@@ -259,7 +259,7 @@ func (s *StreamableResponseTestSuite) TestHTTPResponse() {
 	}
 
 	s.Run("renders with default headers and SSE payload", func() {
-		stream := NewStreamableResponse(context.Background(), func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error) {
+		stream := NewStreamableResponse(context.Background(), func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.AgentResponse, error) {
 			if err := emit(contractsai.StreamEvent{Type: contractsai.StreamEventTypeTextDelta, Delta: "hi"}); err != nil {
 				return nil, err
 			}
@@ -282,7 +282,7 @@ func (s *StreamableResponseTestSuite) TestHTTPResponse() {
 	})
 
 	s.Run("uses custom render and code", func() {
-		stream := NewStreamableResponse(context.Background(), func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error) {
+		stream := NewStreamableResponse(context.Background(), func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.AgentResponse, error) {
 			if err := emit(contractsai.StreamEvent{Type: contractsai.StreamEventTypeTextDelta, Delta: "a"}); err != nil {
 				return nil, err
 			}
@@ -309,7 +309,7 @@ func (s *StreamableResponseTestSuite) TestHTTPResponse() {
 	})
 
 	s.Run("suppresses provider error when error event is already rendered", func() {
-		stream := NewStreamableResponse(context.Background(), func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error) {
+		stream := NewStreamableResponse(context.Background(), func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.AgentResponse, error) {
 			if err := emit(contractsai.StreamEvent{Type: contractsai.StreamEventTypeError, Error: "provider failed"}); err != nil {
 				return nil, err
 			}
@@ -328,7 +328,7 @@ func (s *StreamableResponseTestSuite) TestHTTPResponse() {
 
 	s.Run("returns renderer error when renderer fails", func() {
 		renderErr := stderrors.New("render failed")
-		stream := NewStreamableResponse(context.Background(), func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error) {
+		stream := NewStreamableResponse(context.Background(), func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.AgentResponse, error) {
 			if err := emit(contractsai.StreamEvent{Type: contractsai.StreamEventTypeError, Error: "provider failed"}); err != nil {
 				return nil, err
 			}
@@ -344,7 +344,7 @@ func (s *StreamableResponseTestSuite) TestHTTPResponse() {
 	})
 
 	s.Run("returns provider error when no error event is emitted", func() {
-		stream := NewStreamableResponse(context.Background(), func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error) {
+		stream := NewStreamableResponse(context.Background(), func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.AgentResponse, error) {
 			return nil, assert.AnError
 		})
 

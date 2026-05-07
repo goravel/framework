@@ -24,23 +24,23 @@ func (_m *Next) EXPECT() *Next_Expecter {
 }
 
 // Execute provides a mock function with given fields: ctx, prompt
-func (_m *Next) Execute(ctx context.Context, prompt ai.AgentPrompt) (ai.Response, error) {
+func (_m *Next) Execute(ctx context.Context, prompt ai.AgentPrompt) (ai.AgentResponse, error) {
 	ret := _m.Called(ctx, prompt)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Execute")
 	}
 
-	var r0 ai.Response
+	var r0 ai.AgentResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, ai.AgentPrompt) (ai.Response, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ai.AgentPrompt) (ai.AgentResponse, error)); ok {
 		return rf(ctx, prompt)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, ai.AgentPrompt) ai.Response); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ai.AgentPrompt) ai.AgentResponse); ok {
 		r0 = rf(ctx, prompt)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(ai.Response)
+			r0 = ret.Get(0).(ai.AgentResponse)
 		}
 	}
 
@@ -72,12 +72,12 @@ func (_c *Next_Execute_Call) Run(run func(ctx context.Context, prompt ai.AgentPr
 	return _c
 }
 
-func (_c *Next_Execute_Call) Return(_a0 ai.Response, _a1 error) *Next_Execute_Call {
+func (_c *Next_Execute_Call) Return(_a0 ai.AgentResponse, _a1 error) *Next_Execute_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Next_Execute_Call) RunAndReturn(run func(context.Context, ai.AgentPrompt) (ai.Response, error)) *Next_Execute_Call {
+func (_c *Next_Execute_Call) RunAndReturn(run func(context.Context, ai.AgentPrompt) (ai.AgentResponse, error)) *Next_Execute_Call {
 	_c.Call.Return(run)
 	return _c
 }

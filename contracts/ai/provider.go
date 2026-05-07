@@ -37,9 +37,9 @@ type ImagePrompt struct {
 // Future: extend with TextProvider, ImageProvider, AudioProvider, etc.
 type Provider interface {
 	// Prompt executes a non-streaming model request.
-	Prompt(ctx context.Context, prompt AgentPrompt) (Response, error)
+	Prompt(ctx context.Context, prompt AgentPrompt) (AgentResponse, error)
 	// Stream executes a streaming model request and returns a streamable response.
-	Stream(ctx context.Context, prompt AgentPrompt) (StreamableResponse, error)
+	Stream(ctx context.Context, prompt AgentPrompt) (StreamableAgentResponse, error)
 }
 
 // ImageProvider is implemented by providers that support image generation.
