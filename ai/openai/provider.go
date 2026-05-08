@@ -789,7 +789,7 @@ func (r *Provider) parseAudioResponse(response *http.Response, format goopenai.A
 	if mediaType, _, err := mime.ParseMediaType(mimeType); err == nil && mediaType != "" {
 		mimeType = mediaType
 	}
-	if mimeType == "" {
+	if mimeType == "" || mimeType == "text/plain" || mimeType == "application/octet-stream" {
 		mimeType = r.resolveAudioMimeType(format)
 	}
 	if mimeType == "" {

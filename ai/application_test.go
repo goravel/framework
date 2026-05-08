@@ -459,6 +459,154 @@ func TestImageRequest_StoreUsesResponseStore(t *testing.T) {
 	assert.Empty(t, response.storePath)
 }
 
+func TestApplication_Audio(t *testing.T) {
+	ctx := context.Background()
+	config := contractsai.Config{
+		Default: "default",
+		Providers: map[string]contractsai.ProviderConfig{
+			"default": {Via: mocksai.NewProvider(t)},
+		},
+	}
+
+	app := NewApplication(ctx, config)
+	request := app.Audio("welcome to goravel").Provider("default").Model("gpt-4o-mini-tts").Male().Instructions("Speak slowly").Timeout(2 * time.Second)
+
+	req, ok := request.(*audioRequest)
+	assert.True(t, ok)
+	assert.Equal(t, ctx, req.ctx)
+	assert.Equal(t, app, req.app)
+	assert.Equal(t, "welcome to goravel", req.prompt)
+	assert.Equal(t, "default", req.provider)
+	assert.Equal(t, "gpt-4o-mini-tts", req.model)
+	assert.Equal(t, defaultMaleVoice, req.voice)
+	assert.Equal(t, "Speak slowly", req.instructions)
+	assert.Equal(t, 2*time.Second, req.timeout)
+
+	assert.Same(t, req, request.Female())
+	assert.Equal(t, defaultFemaleVoice, req.voice)
+}
+
+func TestAudioRequest_Generate(t *testing.T) {
+	ctx := context.Background()
+	provider := &applicationAudioProviderStub{}
+	config := contractsai.Config{
+		Default: "default",
+		Providers: map[string]contractsai.ProviderConfig{
+			"default": {Via: provider},
+		},
+	}
+
+	app := NewApplication(context.Background(), config)
+	response := &applicationAudioResponseStub{}
+	provider.response = response
+
+	result, err := app.Audio("welcome to goravel").
+		Provider("default").
+		Model("gpt-4o-mini-tts").
+		Male().
+		Instructions("Speak slowly").
+		Timeout(3 * time.Second).
+		Generate()
+
+	require.NoError(t, err)
+	assert.Equal(t, response, result)
+	assert.Equal(t, ctx, provider.ctx)
+	assert.Equal(t, contractsai.AudioPrompt{
+		Prompt:       "welcome to goravel",
+		Model:        "gpt-4o-mini-tts",
+		Voice:        defaultMaleVoice,
+		Instructions: "Speak slowly",
+		Timeout:      3 * time.Second,
+	}, provider.prompt)
+}
+
+func TestAudioRequest_StoreUsesResponseStore(t *testing.T) {
+	provider := &applicationAudioProviderStub{}
+	app := NewApplication(context.Background(), contractsai.Config{
+		Default: "default",
+		Providers: map[string]contractsai.ProviderConfig{
+			"default": {Via: provider},
+		},
+	})
+	response := &applicationAudioResponseStub{storePathResult: "audio/generated.mp3"}
+	provider.response = response
+
+	path, err := app.Audio("welcome to goravel").Store()
+
+	require.NoError(t, err)
+	assert.Equal(t, "audio/generated.mp3", path)
+	assert.Equal(t, 1, response.storeCalls)
+	assert.Equal(t, 0, response.storeAsCalls)
+	assert.Empty(t, response.storePath)
+}
+
+func TestApplication_audio(t *testing.T) {
+	tests := []struct {
+		name         string
+		options      []contractsai.Option
+		prompt       contractsai.AudioPrompt
+		setup        func() contractsai.Config
+		expectError  error
+		expectPrompt contractsai.AudioPrompt
+	}{
+		{
+			name:    "success with default model",
+			options: []contractsai.Option{WithProvider("openai")},
+			prompt: contractsai.AudioPrompt{
+				Prompt: "welcome to goravel",
+				Voice:  defaultFemaleVoice,
+			},
+			setup: func() contractsai.Config {
+				provider := &applicationAudioProviderStub{}
+				provider.response = &applicationAudioResponseStub{}
+				return contractsai.Config{
+					Default: "default",
+					Providers: map[string]contractsai.ProviderConfig{
+						"default": {Via: mocksai.NewProvider(t)},
+						"openai":  {Via: provider},
+					},
+				}
+			},
+			expectPrompt: contractsai.AudioPrompt{
+				Prompt: "welcome to goravel",
+				Voice:  defaultFemaleVoice,
+			},
+		},
+		{
+			name: "provider does not support audio",
+			prompt: contractsai.AudioPrompt{
+				Prompt: "welcome to goravel",
+			},
+			setup: func() contractsai.Config {
+				return contractsai.Config{
+					Default: "default",
+					Providers: map[string]contractsai.ProviderConfig{
+						"default": {Via: mocksai.NewProvider(t)},
+					},
+				}
+			},
+			expectError: errors.AIProviderDoesNotSupportAudio.Args("default"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			app := NewApplication(context.Background(), tt.setup())
+			response, err := app.audio(context.Background(), tt.prompt, tt.options...)
+			assert.Equal(t, tt.expectError, err)
+			if tt.expectError != nil {
+				assert.Nil(t, response)
+				return
+			}
+
+			require.NotNil(t, response)
+			provider, ok := app.config.Providers["openai"].Via.(*applicationAudioProviderStub)
+			require.True(t, ok)
+			assert.Equal(t, tt.expectPrompt, provider.prompt)
+		})
+	}
+}
+
 func TestApplication_image(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -663,6 +811,90 @@ func (r *applicationImageResponseStub) StoreAs(path string, disk ...string) (str
 func (r *applicationImageResponseStub) Usage() contractsai.Usage { return nil }
 
 func (r *applicationImageResponseStub) Then(callback func(contractsai.ImageResponse)) contractsai.ImageResponse {
+	if callback != nil {
+		callback(r)
+	}
+
+	return r
+}
+
+type applicationAudioProviderStub struct {
+	ctx      context.Context
+	prompt   contractsai.AudioPrompt
+	response contractsai.AudioResponse
+	err      error
+}
+
+func (p *applicationAudioProviderStub) Prompt(context.Context, contractsai.AgentPrompt) (contractsai.AgentResponse, error) {
+	return nil, nil
+}
+
+func (p *applicationAudioProviderStub) Stream(context.Context, contractsai.AgentPrompt) (contractsai.StreamableAgentResponse, error) {
+	return nil, nil
+}
+
+func (p *applicationAudioProviderStub) Audio(ctx context.Context, prompt contractsai.AudioPrompt) (contractsai.AudioResponse, error) {
+	p.ctx = ctx
+	p.prompt = prompt
+	return p.response, p.err
+}
+
+type applicationAudioResponseStub struct {
+	storePath       []string
+	storePathResult string
+	storeAsName     string
+	storeAsPath     []string
+	storeCalls      int
+	storeAsCalls    int
+}
+
+func (r *applicationAudioResponseStub) Content() ([]byte, error) {
+	return []byte("audio"), nil
+}
+
+func (r *applicationAudioResponseStub) MimeType() string { return "audio/mpeg" }
+
+func (r *applicationAudioResponseStub) Store(disk ...string) (string, error) {
+	r.storeCalls++
+	r.storePath = append([]string(nil), disk...)
+	if r.storePathResult != "" {
+		return r.storePathResult, nil
+	}
+
+	content, err := r.Content()
+	if err != nil {
+		return "", err
+	}
+
+	resolvedDisk, err := resolveAudioStoreDisk(disk)
+	if err != nil {
+		return "", err
+	}
+
+	return audioStorer{}.Store(content, "generated.mp3", resolvedDisk)
+}
+
+func (r *applicationAudioResponseStub) StoreAs(path string, disk ...string) (string, error) {
+	r.storeAsCalls++
+	r.storeAsName = path
+	r.storeAsPath = append([]string(nil), disk...)
+
+	content, err := r.Content()
+	if err != nil {
+		return "", err
+	}
+
+	resolvedDisk, err := resolveAudioStoreDisk(disk)
+	if err != nil {
+		return "", err
+	}
+
+	return audioStorer{}.StoreAs(content, path, resolvedDisk)
+}
+
+func (r *applicationAudioResponseStub) Usage() contractsai.Usage { return nil }
+
+func (r *applicationAudioResponseStub) Then(callback func(contractsai.AudioResponse)) contractsai.AudioResponse {
 	if callback != nil {
 		callback(r)
 	}

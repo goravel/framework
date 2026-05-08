@@ -23,6 +23,9 @@ func (r audioStorer) StoreAs(content []byte, targetPath string, disk string) (st
 	if normalizedPath == "." || strings.HasSuffix(targetPath, "/") || strings.HasSuffix(targetPath, "\\") {
 		return "", errors.AIAudioNameRequired
 	}
+	if pathpkg.IsAbs(normalizedPath) || hasParentPathSegment(normalizedPath) {
+		return "", errors.AIAudioStorePathInvalid
+	}
 
 	name := pathpkg.Base(normalizedPath)
 	if name == "." || name == "/" || name == "" {

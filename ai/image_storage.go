@@ -28,6 +28,9 @@ func (r imageStorer) StoreAs(content []byte, targetPath string, disk string) (st
 	if normalizedPath == "." || strings.HasSuffix(targetPath, "/") || strings.HasSuffix(targetPath, "\\") {
 		return "", errors.AIImageNameRequired
 	}
+	if pathpkg.IsAbs(normalizedPath) || hasParentPathSegment(normalizedPath) {
+		return "", errors.AIImageStorePathInvalid
+	}
 
 	name := pathpkg.Base(normalizedPath)
 	if name == "." || name == "/" || name == "" {
