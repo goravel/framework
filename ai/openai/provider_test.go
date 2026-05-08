@@ -135,6 +135,7 @@ func TestNewOpenAIUnmarshalError(t *testing.T) {
 			expectConfig: func() *contractsai.ProviderConfig {
 				cfg := contractsai.ProviderConfig{Key: "test-key", Url: "http://localhost:1234"}
 				cfg.Models.Text.Default = DefaultTextModel
+				cfg.Models.Audio.Default = DefaultAudioModel
 				cfg.Models.Image.Default = DefaultImageModel
 				return &cfg
 			}(),
@@ -153,6 +154,7 @@ func TestNewOpenAIUnmarshalError(t *testing.T) {
 			expectConfig: func() *contractsai.ProviderConfig {
 				cfg := contractsai.ProviderConfig{Key: "test-key"}
 				cfg.Models.Text.Default = "gpt-custom"
+				cfg.Models.Audio.Default = DefaultAudioModel
 				cfg.Models.Image.Default = "gpt-image-custom"
 				return &cfg
 			}(),

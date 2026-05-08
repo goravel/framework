@@ -16,6 +16,9 @@ type ModelsConfig struct {
 	Text struct {
 		Default string `json:"default"`
 	} `json:"text"`
+	Audio struct {
+		Default string `json:"default"`
+	} `json:"audio"`
 	Image struct {
 		Default string `json:"default"`
 	} `json:"image"`

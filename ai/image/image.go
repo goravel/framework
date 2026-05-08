@@ -18,6 +18,6 @@ const (
 	SizeLandscape = contractsai.ImageSizeLandscape
 )
 
-func Of(prompt string, options ...contractsai.Option) contractsai.ImageRequest {
-	return facades.AI().Image(prompt, options...)
+func Of(prompt string) contractsai.ImageRequest {
+	return facades.AI().Image(prompt)
 }

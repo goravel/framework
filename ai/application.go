@@ -36,8 +36,12 @@ func (r *Application) Agent(agent contractsai.Agent, options ...contractsai.Opti
 	return NewConversation(r.ctx, agent, provider, model, middlewares), nil
 }
 
-func (r *Application) Image(prompt string, options ...contractsai.Option) contractsai.ImageRequest {
-	return NewImageRequest(r.ctx, r, prompt, options...)
+func (r *Application) Audio(prompt string) contractsai.AudioRequest {
+	return NewAudioRequest(r.ctx, r, prompt)
+}
+
+func (r *Application) Image(prompt string) contractsai.ImageRequest {
+	return NewImageRequest(r.ctx, r, prompt)
 }
 
 func (r *Application) putFile(ctx context.Context, file contractsai.StorableFile, options ...contractsai.Option) (contractsai.FileResponse, error) {
@@ -88,6 +92,23 @@ func (r *Application) deleteFile(ctx context.Context, id string, options ...cont
 	}
 
 	return fileProvider.DeleteFile(ctx, id)
+}
+
+func (r *Application) audio(ctx context.Context, prompt contractsai.AudioPrompt, options ...contractsai.Option) (contractsai.AudioResponse, error) {
+	opts, providerName, provider, err := r.resolveProvider(options)
+	if err != nil {
+		return nil, err
+	}
+	if prompt.Model == "" {
+		prompt.Model = opts.Model
+	}
+
+	audioProvider, ok := provider.(contractsai.AudioProvider)
+	if !ok {
+		return nil, errors.AIProviderDoesNotSupportAudio.Args(providerName)
+	}
+
+	return audioProvider.Audio(ctx, prompt)
 }
 
 func (r *Application) image(ctx context.Context, prompt contractsai.ImagePrompt, options ...contractsai.Option) (contractsai.ImageResponse, error) {

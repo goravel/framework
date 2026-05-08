@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"mime"
+	"net/http"
 	"path/filepath"
 	"strings"
 
@@ -26,6 +27,7 @@ import (
 // The OpenAI provider will be moved into a separate package in the future.
 
 const DefaultTextModel = "gpt-5.4"
+const DefaultAudioModel = "gpt-4o-mini-tts"
 const DefaultImageModel = "gpt-image-2"
 
 const providerStateResponseID = "openai.response_id"
@@ -49,11 +51,44 @@ func NewOpenAI(config contractsconfig.Config, provider string) (*Provider, error
 	if providerConfig.Models.Text.Default == "" {
 		providerConfig.Models.Text.Default = DefaultTextModel
 	}
+	if providerConfig.Models.Audio.Default == "" {
+		providerConfig.Models.Audio.Default = DefaultAudioModel
+	}
 	if providerConfig.Models.Image.Default == "" {
 		providerConfig.Models.Image.Default = DefaultImageModel
 	}
 
 	return &Provider{client: goopenai.NewClient(opts...), config: providerConfig}, nil
+}
+
+func (r *Provider) Audio(ctx context.Context, prompt contractsai.AudioPrompt) (contractsai.AudioResponse, error) {
+	if prompt.Prompt == "" {
+		return nil, errors.AIAudioPromptRequired
+	}
+
+	requestOptions := make([]option.RequestOption, 0, 1)
+	if prompt.Timeout > 0 {
+		requestOptions = append(requestOptions, option.WithRequestTimeout(prompt.Timeout))
+	}
+
+	params := goopenai.AudioSpeechNewParams{
+		Input: prompt.Prompt,
+		Model: goopenai.SpeechModel(r.resolveAudioModel(prompt.Model)),
+		Voice: goopenai.AudioSpeechNewParamsVoiceUnion{
+			OfString: param.NewOpt(r.resolveAudioVoice(prompt.Voice)),
+		},
+		ResponseFormat: goopenai.AudioSpeechNewParamsResponseFormatMP3,
+	}
+	if prompt.Instructions != "" {
+		params.Instructions = param.NewOpt(prompt.Instructions)
+	}
+
+	response, err := r.client.Audio.Speech.New(ctx, params, requestOptions...)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.parseAudioResponse(response, params.ResponseFormat)
 }
 
 func (r *Provider) Image(ctx context.Context, prompt contractsai.ImagePrompt) (contractsai.ImageResponse, error) {
@@ -296,6 +331,25 @@ func (r *Provider) resolveModel(model string) string {
 	}
 
 	return r.config.Models.Text.Default
+}
+
+func (r *Provider) resolveAudioModel(model string) string {
+	if model != "" {
+		return model
+	}
+
+	return r.config.Models.Audio.Default
+}
+
+func (r *Provider) resolveAudioVoice(voice string) string {
+	switch voice {
+	case "", "default-female":
+		return "alloy"
+	case "default-male":
+		return "ash"
+	default:
+		return voice
+	}
 }
 
 func (r *Provider) resolveImageModel(model string) string {
@@ -714,5 +768,52 @@ func (r *Provider) resolveImageMimeType(format goopenai.ImagesResponseOutputForm
 		return "image/png"
 	default:
 		return ""
+	}
+}
+
+func (r *Provider) parseAudioResponse(response *http.Response, format goopenai.AudioSpeechNewParamsResponseFormat) (contractsai.AudioResponse, error) {
+	if response == nil || response.Body == nil {
+		return nil, errors.AIAudioResponseIsEmpty
+	}
+	defer errors.Ignore(response.Body.Close)
+
+	content, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+	if len(content) == 0 {
+		return nil, errors.AIAudioResponseIsEmpty
+	}
+
+	mimeType := response.Header.Get("Content-Type")
+	if mediaType, _, err := mime.ParseMediaType(mimeType); err == nil && mediaType != "" {
+		mimeType = mediaType
+	}
+	if mimeType == "" {
+		mimeType = r.resolveAudioMimeType(format)
+	}
+	if mimeType == "" {
+		mimeType = "audio/mpeg"
+	}
+
+	return frameworkai.NewAudioResponse(content, mimeType, frameworkai.NewUsage(0, 0, 0)), nil
+}
+
+func (r *Provider) resolveAudioMimeType(format goopenai.AudioSpeechNewParamsResponseFormat) string {
+	switch format {
+	case goopenai.AudioSpeechNewParamsResponseFormatWAV:
+		return "audio/wav"
+	case goopenai.AudioSpeechNewParamsResponseFormatFLAC:
+		return "audio/flac"
+	case goopenai.AudioSpeechNewParamsResponseFormatAAC:
+		return "audio/aac"
+	case goopenai.AudioSpeechNewParamsResponseFormatOpus:
+		return "audio/opus"
+	case goopenai.AudioSpeechNewParamsResponseFormatPCM:
+		return "audio/pcm"
+	case goopenai.AudioSpeechNewParamsResponseFormatMP3:
+		fallthrough
+	default:
+		return "audio/mpeg"
 	}
 }

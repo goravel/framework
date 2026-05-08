@@ -23,6 +23,14 @@ type imageResponse struct {
 	storer   contractsai.ImageStorer
 }
 
+type audioResponse struct {
+	mimeType string
+	content  []byte
+	usage    contractsai.Usage
+	name     string
+	storer   audioStorer
+}
+
 type fileResponse struct {
 	id       string
 	mimeType string
@@ -38,6 +46,10 @@ func NewTextResponse(text string, usage contractsai.Usage, toolCalls []contracts
 func NewImageResponse(content []byte, mimeType string, usage contractsai.Usage) contractsai.ImageResponse {
 	storer := NewImageStorer()
 	return &imageResponse{content: content, mimeType: mimeType, usage: usage, storer: storer}
+}
+
+func NewAudioResponse(content []byte, mimeType string, usage contractsai.Usage) contractsai.AudioResponse {
+	return &audioResponse{content: content, mimeType: mimeType, usage: usage, storer: audioStorer{}}
 }
 
 func NewFileResponse(id, mimeType string, content []byte) contractsai.FileResponse {
@@ -95,6 +107,64 @@ func (r *imageResponse) Then(callback func(contractsai.ImageResponse)) contracts
 	return r
 }
 
+func (r *audioResponse) Content() ([]byte, error) { return bytes.Clone(r.content), nil }
+
+func (r *audioResponse) MimeType() string { return r.mimeType }
+
+func (r *audioResponse) Store(disk ...string) (string, error) {
+	resolvedDisk, err := resolveAudioStoreDisk(disk)
+	if err != nil {
+		return "", err
+	}
+
+	return r.storer.Store(r.content, r.storageName(), resolvedDisk)
+}
+
+func (r *audioResponse) StoreAs(path string, disk ...string) (string, error) {
+	resolvedDisk, err := resolveAudioStoreDisk(disk)
+	if err != nil {
+		return "", err
+	}
+
+	return r.storer.StoreAs(r.content, path, resolvedDisk)
+}
+
+func (r *audioResponse) Usage() contractsai.Usage { return r.usage }
+
+func (r *audioResponse) Then(callback func(contractsai.AudioResponse)) contractsai.AudioResponse {
+	if callback == nil {
+		return r
+	}
+
+	callback(r)
+
+	return r
+}
+
+func (r *audioResponse) storageName() string {
+	if r.name != "" {
+		return r.name
+	}
+
+	extension := ".mp3"
+	switch r.mimeType {
+	case "audio/wav", "audio/x-wav":
+		extension = ".wav"
+	case "audio/flac":
+		extension = ".flac"
+	case "audio/aac":
+		extension = ".aac"
+	case "audio/opus", "audio/ogg":
+		extension = ".opus"
+	case "audio/L16", "audio/pcm", "audio/x-pcm":
+		extension = ".pcm"
+	}
+
+	r.name = str.Random(40) + extension
+
+	return r.name
+}
+
 func (r *imageResponse) storageName() string {
 	if r.name != "" {
 		return r.name
@@ -116,6 +186,18 @@ func (r *imageResponse) storageName() string {
 func resolveImageStoreDisk(disk []string) (string, error) {
 	if len(disk) > 1 {
 		return "", errors.AIImageStoreTooManyPaths
+	}
+
+	if len(disk) == 0 {
+		return "", nil
+	}
+
+	return disk[0], nil
+}
+
+func resolveAudioStoreDisk(disk []string) (string, error) {
+	if len(disk) > 1 {
+		return "", errors.AIAudioStoreTooManyPaths
 	}
 
 	if len(disk) == 0 {

@@ -347,7 +347,7 @@ func TestApplication_Image(t *testing.T) {
 	}
 
 	app := NewApplication(ctx, config)
-	request := app.Image("draw a cat", WithProvider("default"), WithModel("gpt-image-1"))
+	request := app.Image("draw a cat").Provider("default").Model("gpt-image-1")
 
 	req, ok := request.(*imageRequest)
 	assert.True(t, ok)

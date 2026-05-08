@@ -96,24 +96,65 @@ func (_c *AI_Agent_Call) RunAndReturn(run func(ai.Agent, ...ai.Option) (ai.Conve
 	return _c
 }
 
-// Image provides a mock function with given fields: prompt, options
-func (_m *AI) Image(prompt string, options ...ai.Option) ai.ImageRequest {
-	_va := make([]interface{}, len(options))
-	for _i := range options {
-		_va[_i] = options[_i]
+// Audio provides a mock function with given fields: prompt
+func (_m *AI) Audio(prompt string) ai.AudioRequest {
+	ret := _m.Called(prompt)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Audio")
 	}
-	var _ca []interface{}
-	_ca = append(_ca, prompt)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
+
+	var r0 ai.AudioRequest
+	if rf, ok := ret.Get(0).(func(string) ai.AudioRequest); ok {
+		r0 = rf(prompt)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(ai.AudioRequest)
+		}
+	}
+
+	return r0
+}
+
+// AI_Audio_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Audio'
+type AI_Audio_Call struct {
+	*mock.Call
+}
+
+// Audio is a helper method to define mock.On call
+//   - prompt string
+func (_e *AI_Expecter) Audio(prompt interface{}) *AI_Audio_Call {
+	return &AI_Audio_Call{Call: _e.mock.On("Audio", prompt)}
+}
+
+func (_c *AI_Audio_Call) Run(run func(prompt string)) *AI_Audio_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *AI_Audio_Call) Return(_a0 ai.AudioRequest) *AI_Audio_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *AI_Audio_Call) RunAndReturn(run func(string) ai.AudioRequest) *AI_Audio_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Image provides a mock function with given fields: prompt
+func (_m *AI) Image(prompt string) ai.ImageRequest {
+	ret := _m.Called(prompt)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Image")
 	}
 
 	var r0 ai.ImageRequest
-	if rf, ok := ret.Get(0).(func(string, ...ai.Option) ai.ImageRequest); ok {
-		r0 = rf(prompt, options...)
+	if rf, ok := ret.Get(0).(func(string) ai.ImageRequest); ok {
+		r0 = rf(prompt)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(ai.ImageRequest)
@@ -130,21 +171,13 @@ type AI_Image_Call struct {
 
 // Image is a helper method to define mock.On call
 //   - prompt string
-//   - options ...ai.Option
-func (_e *AI_Expecter) Image(prompt interface{}, options ...interface{}) *AI_Image_Call {
-	return &AI_Image_Call{Call: _e.mock.On("Image",
-		append([]interface{}{prompt}, options...)...)}
+func (_e *AI_Expecter) Image(prompt interface{}) *AI_Image_Call {
+	return &AI_Image_Call{Call: _e.mock.On("Image", prompt)}
 }
 
-func (_c *AI_Image_Call) Run(run func(prompt string, options ...ai.Option)) *AI_Image_Call {
+func (_c *AI_Image_Call) Run(run func(prompt string)) *AI_Image_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]ai.Option, len(args)-1)
-		for i, a := range args[1:] {
-			if a != nil {
-				variadicArgs[i] = a.(ai.Option)
-			}
-		}
-		run(args[0].(string), variadicArgs...)
+		run(args[0].(string))
 	})
 	return _c
 }
@@ -154,7 +187,7 @@ func (_c *AI_Image_Call) Return(_a0 ai.ImageRequest) *AI_Image_Call {
 	return _c
 }
 
-func (_c *AI_Image_Call) RunAndReturn(run func(string, ...ai.Option) ai.ImageRequest) *AI_Image_Call {
+func (_c *AI_Image_Call) RunAndReturn(run func(string) ai.ImageRequest) *AI_Image_Call {
 	_c.Call.Return(run)
 	return _c
 }
