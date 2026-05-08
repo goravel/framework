@@ -24,23 +24,23 @@ func (_m *Middleware) EXPECT() *Middleware_Expecter {
 }
 
 // Handle provides a mock function with given fields: ctx, prompt, next
-func (_m *Middleware) Handle(ctx context.Context, prompt ai.AgentPrompt, next ai.Next) (ai.Response, error) {
+func (_m *Middleware) Handle(ctx context.Context, prompt ai.AgentPrompt, next ai.Next) (ai.AgentResponse, error) {
 	ret := _m.Called(ctx, prompt, next)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Handle")
 	}
 
-	var r0 ai.Response
+	var r0 ai.AgentResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, ai.AgentPrompt, ai.Next) (ai.Response, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ai.AgentPrompt, ai.Next) (ai.AgentResponse, error)); ok {
 		return rf(ctx, prompt, next)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, ai.AgentPrompt, ai.Next) ai.Response); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ai.AgentPrompt, ai.Next) ai.AgentResponse); ok {
 		r0 = rf(ctx, prompt, next)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(ai.Response)
+			r0 = ret.Get(0).(ai.AgentResponse)
 		}
 	}
 
@@ -73,12 +73,12 @@ func (_c *Middleware_Handle_Call) Run(run func(ctx context.Context, prompt ai.Ag
 	return _c
 }
 
-func (_c *Middleware_Handle_Call) Return(_a0 ai.Response, _a1 error) *Middleware_Handle_Call {
+func (_c *Middleware_Handle_Call) Return(_a0 ai.AgentResponse, _a1 error) *Middleware_Handle_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Middleware_Handle_Call) RunAndReturn(run func(context.Context, ai.AgentPrompt, ai.Next) (ai.Response, error)) *Middleware_Handle_Call {
+func (_c *Middleware_Handle_Call) RunAndReturn(run func(context.Context, ai.AgentPrompt, ai.Next) (ai.AgentResponse, error)) *Middleware_Handle_Call {
 	_c.Call.Return(run)
 	return _c
 }

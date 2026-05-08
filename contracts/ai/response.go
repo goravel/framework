@@ -1,14 +1,22 @@
 package ai
 
-// Response exposes generated text and provider metadata.
-type Response interface {
+import contractshttp "github.com/goravel/framework/contracts/http"
+
+// AgentResponse exposes generated text and provider metadata.
+type AgentResponse interface {
 	Text() string
 	Usage() Usage
 	// ToolCalls returns any tool invocations the model requested.
 	// Returns nil or an empty slice when the model returns plain text.
 	ToolCalls() []ToolCall
 	// Then registers a callback against the resolved response.
-	Then(callback func(Response)) Response
+	Then(callback func(AgentResponse)) AgentResponse
+}
+
+type StreamableAgentResponse interface {
+	Each(callback func(StreamEvent) error) error
+	Then(callback func(AgentResponse)) StreamableAgentResponse
+	HTTPResponse(ctx contractshttp.Context, options ...StreamOption) contractshttp.Response
 }
 
 // Usage contains token statistics for a response.
@@ -16,12 +24,6 @@ type Usage interface {
 	Input() int
 	Output() int
 	Total() int
-}
-
-// ImageStorer persists generated image bytes.
-type ImageStorer interface {
-	Store(content []byte, name string, disk string) (string, error)
-	StoreAs(content []byte, path string, disk string) (string, error)
 }
 
 // ImageResponse exposes generated image bytes and provider metadata.

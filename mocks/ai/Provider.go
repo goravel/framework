@@ -24,23 +24,23 @@ func (_m *Provider) EXPECT() *Provider_Expecter {
 }
 
 // Prompt provides a mock function with given fields: ctx, prompt
-func (_m *Provider) Prompt(ctx context.Context, prompt ai.AgentPrompt) (ai.Response, error) {
+func (_m *Provider) Prompt(ctx context.Context, prompt ai.AgentPrompt) (ai.AgentResponse, error) {
 	ret := _m.Called(ctx, prompt)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Prompt")
 	}
 
-	var r0 ai.Response
+	var r0 ai.AgentResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, ai.AgentPrompt) (ai.Response, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ai.AgentPrompt) (ai.AgentResponse, error)); ok {
 		return rf(ctx, prompt)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, ai.AgentPrompt) ai.Response); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ai.AgentPrompt) ai.AgentResponse); ok {
 		r0 = rf(ctx, prompt)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(ai.Response)
+			r0 = ret.Get(0).(ai.AgentResponse)
 		}
 	}
 
@@ -72,34 +72,34 @@ func (_c *Provider_Prompt_Call) Run(run func(ctx context.Context, prompt ai.Agen
 	return _c
 }
 
-func (_c *Provider_Prompt_Call) Return(_a0 ai.Response, _a1 error) *Provider_Prompt_Call {
+func (_c *Provider_Prompt_Call) Return(_a0 ai.AgentResponse, _a1 error) *Provider_Prompt_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Provider_Prompt_Call) RunAndReturn(run func(context.Context, ai.AgentPrompt) (ai.Response, error)) *Provider_Prompt_Call {
+func (_c *Provider_Prompt_Call) RunAndReturn(run func(context.Context, ai.AgentPrompt) (ai.AgentResponse, error)) *Provider_Prompt_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Stream provides a mock function with given fields: ctx, prompt
-func (_m *Provider) Stream(ctx context.Context, prompt ai.AgentPrompt) (ai.StreamableResponse, error) {
+func (_m *Provider) Stream(ctx context.Context, prompt ai.AgentPrompt) (ai.StreamableAgentResponse, error) {
 	ret := _m.Called(ctx, prompt)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Stream")
 	}
 
-	var r0 ai.StreamableResponse
+	var r0 ai.StreamableAgentResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, ai.AgentPrompt) (ai.StreamableResponse, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ai.AgentPrompt) (ai.StreamableAgentResponse, error)); ok {
 		return rf(ctx, prompt)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, ai.AgentPrompt) ai.StreamableResponse); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ai.AgentPrompt) ai.StreamableAgentResponse); ok {
 		r0 = rf(ctx, prompt)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(ai.StreamableResponse)
+			r0 = ret.Get(0).(ai.StreamableAgentResponse)
 		}
 	}
 
@@ -131,12 +131,12 @@ func (_c *Provider_Stream_Call) Run(run func(ctx context.Context, prompt ai.Agen
 	return _c
 }
 
-func (_c *Provider_Stream_Call) Return(_a0 ai.StreamableResponse, _a1 error) *Provider_Stream_Call {
+func (_c *Provider_Stream_Call) Return(_a0 ai.StreamableAgentResponse, _a1 error) *Provider_Stream_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Provider_Stream_Call) RunAndReturn(run func(context.Context, ai.AgentPrompt) (ai.StreamableResponse, error)) *Provider_Stream_Call {
+func (_c *Provider_Stream_Call) RunAndReturn(run func(context.Context, ai.AgentPrompt) (ai.StreamableAgentResponse, error)) *Provider_Stream_Call {
 	_c.Call.Return(run)
 	return _c
 }

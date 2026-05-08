@@ -68,7 +68,7 @@ func (_c *Conversation_Messages_Call) RunAndReturn(run func() []ai.Message) *Con
 }
 
 // Prompt provides a mock function with given fields: input, options
-func (_m *Conversation) Prompt(input string, options ...ai.ConversationOption) (ai.Response, error) {
+func (_m *Conversation) Prompt(input string, options ...ai.ConversationOption) (ai.AgentResponse, error) {
 	_va := make([]interface{}, len(options))
 	for _i := range options {
 		_va[_i] = options[_i]
@@ -82,16 +82,16 @@ func (_m *Conversation) Prompt(input string, options ...ai.ConversationOption) (
 		panic("no return value specified for Prompt")
 	}
 
-	var r0 ai.Response
+	var r0 ai.AgentResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, ...ai.ConversationOption) (ai.Response, error)); ok {
+	if rf, ok := ret.Get(0).(func(string, ...ai.ConversationOption) (ai.AgentResponse, error)); ok {
 		return rf(input, options...)
 	}
-	if rf, ok := ret.Get(0).(func(string, ...ai.ConversationOption) ai.Response); ok {
+	if rf, ok := ret.Get(0).(func(string, ...ai.ConversationOption) ai.AgentResponse); ok {
 		r0 = rf(input, options...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(ai.Response)
+			r0 = ret.Get(0).(ai.AgentResponse)
 		}
 	}
 
@@ -130,12 +130,12 @@ func (_c *Conversation_Prompt_Call) Run(run func(input string, options ...ai.Con
 	return _c
 }
 
-func (_c *Conversation_Prompt_Call) Return(_a0 ai.Response, _a1 error) *Conversation_Prompt_Call {
+func (_c *Conversation_Prompt_Call) Return(_a0 ai.AgentResponse, _a1 error) *Conversation_Prompt_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Conversation_Prompt_Call) RunAndReturn(run func(string, ...ai.ConversationOption) (ai.Response, error)) *Conversation_Prompt_Call {
+func (_c *Conversation_Prompt_Call) RunAndReturn(run func(string, ...ai.ConversationOption) (ai.AgentResponse, error)) *Conversation_Prompt_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -173,7 +173,7 @@ func (_c *Conversation_Reset_Call) RunAndReturn(run func()) *Conversation_Reset_
 }
 
 // Stream provides a mock function with given fields: input, options
-func (_m *Conversation) Stream(input string, options ...ai.ConversationOption) (ai.StreamableResponse, error) {
+func (_m *Conversation) Stream(input string, options ...ai.ConversationOption) (ai.StreamableAgentResponse, error) {
 	_va := make([]interface{}, len(options))
 	for _i := range options {
 		_va[_i] = options[_i]
@@ -187,16 +187,16 @@ func (_m *Conversation) Stream(input string, options ...ai.ConversationOption) (
 		panic("no return value specified for Stream")
 	}
 
-	var r0 ai.StreamableResponse
+	var r0 ai.StreamableAgentResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, ...ai.ConversationOption) (ai.StreamableResponse, error)); ok {
+	if rf, ok := ret.Get(0).(func(string, ...ai.ConversationOption) (ai.StreamableAgentResponse, error)); ok {
 		return rf(input, options...)
 	}
-	if rf, ok := ret.Get(0).(func(string, ...ai.ConversationOption) ai.StreamableResponse); ok {
+	if rf, ok := ret.Get(0).(func(string, ...ai.ConversationOption) ai.StreamableAgentResponse); ok {
 		r0 = rf(input, options...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(ai.StreamableResponse)
+			r0 = ret.Get(0).(ai.StreamableAgentResponse)
 		}
 	}
 
@@ -235,12 +235,12 @@ func (_c *Conversation_Stream_Call) Run(run func(input string, options ...ai.Con
 	return _c
 }
 
-func (_c *Conversation_Stream_Call) Return(_a0 ai.StreamableResponse, _a1 error) *Conversation_Stream_Call {
+func (_c *Conversation_Stream_Call) Return(_a0 ai.StreamableAgentResponse, _a1 error) *Conversation_Stream_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Conversation_Stream_Call) RunAndReturn(run func(string, ...ai.ConversationOption) (ai.StreamableResponse, error)) *Conversation_Stream_Call {
+func (_c *Conversation_Stream_Call) RunAndReturn(run func(string, ...ai.ConversationOption) (ai.StreamableAgentResponse, error)) *Conversation_Stream_Call {
 	_c.Call.Return(run)
 	return _c
 }

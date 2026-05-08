@@ -15,9 +15,9 @@ type AI interface {
 // Conversation is a stateful chat session.
 type Conversation interface {
 	// Prompt sends a non-streaming input and updates the conversation history.
-	Prompt(input string, options ...ConversationOption) (Response, error)
+	Prompt(input string, options ...ConversationOption) (AgentResponse, error)
 	// Stream sends a streaming input and returns a streamable response object.
-	Stream(input string, options ...ConversationOption) (StreamableResponse, error)
+	Stream(input string, options ...ConversationOption) (StreamableAgentResponse, error)
 	// Messages returns current conversation history.
 	Messages() []Message
 	// Reset clears runtime history and restores initial agent messages.

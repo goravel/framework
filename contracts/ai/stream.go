@@ -27,9 +27,3 @@ type StreamOptions struct {
 	Code   int
 	Render RenderFunc
 }
-
-type StreamableResponse interface {
-	Each(callback func(StreamEvent) error) error
-	Then(callback func(Response)) StreamableResponse
-	HTTPResponse(ctx contractshttp.Context, options ...StreamOption) contractshttp.Response
-}

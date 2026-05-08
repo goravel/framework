@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	_ contractsai.StreamableResponse = (*streamableResponse)(nil)
+	_ contractsai.StreamableAgentResponse = (*streamableResponse)(nil)
 )
 
 const (
@@ -21,7 +21,7 @@ const (
 	streamConnection          = "keep-alive"
 )
 
-type StreamRunner func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error)
+type StreamRunner func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.AgentResponse, error)
 
 type streamableResponse struct {
 	ctx    context.Context
@@ -34,13 +34,13 @@ type streamableResponse struct {
 	cancel   context.CancelFunc
 
 	events   []contractsai.StreamEvent
-	response contractsai.Response
+	response contractsai.AgentResponse
 	err      error
 
-	thenCallbacks []func(contractsai.Response)
+	thenCallbacks []func(contractsai.AgentResponse)
 }
 
-func NewStreamableResponse(ctx context.Context, runner StreamRunner) contractsai.StreamableResponse {
+func NewStreamableResponse(ctx context.Context, runner StreamRunner) contractsai.StreamableAgentResponse {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -88,7 +88,7 @@ func (r *streamableResponse) Each(callback func(contractsai.StreamEvent) error) 
 	}
 }
 
-func (r *streamableResponse) Then(callback func(contractsai.Response)) contractsai.StreamableResponse {
+func (r *streamableResponse) Then(callback func(contractsai.AgentResponse)) contractsai.StreamableAgentResponse {
 	if callback == nil {
 		return r
 	}
@@ -242,8 +242,8 @@ func (r *streamableResponse) run(ctx context.Context) {
 	r.complete(response, err)
 }
 
-func (r *streamableResponse) complete(response contractsai.Response, err error) {
-	var callbacks []func(contractsai.Response)
+func (r *streamableResponse) complete(response contractsai.AgentResponse, err error) {
+	var callbacks []func(contractsai.AgentResponse)
 
 	r.mu.Lock()
 	r.response = response

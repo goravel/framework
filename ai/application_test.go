@@ -117,9 +117,9 @@ func TestApplication_Agent(t *testing.T) {
 
 			agent.EXPECT().Tools().Return(nil).Once()
 
-			var response *mocksai.Response
+			var response *mocksai.AgentResponse
 			if tt.expectResponse {
-				response = mocksai.NewResponse(t)
+				response = mocksai.NewAgentResponse(t)
 				response.EXPECT().ToolCalls().Return(nil).Once()
 				response.EXPECT().Text().Return(tt.responseText).Once()
 			}
@@ -566,11 +566,11 @@ type uploadTestProvider struct {
 	fileProvider contractsai.FileProvider
 }
 
-func (p uploadTestProvider) Prompt(context.Context, contractsai.AgentPrompt) (contractsai.Response, error) {
+func (p uploadTestProvider) Prompt(context.Context, contractsai.AgentPrompt) (contractsai.AgentResponse, error) {
 	return nil, nil
 }
 
-func (p uploadTestProvider) Stream(context.Context, contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
+func (p uploadTestProvider) Stream(context.Context, contractsai.AgentPrompt) (contractsai.StreamableAgentResponse, error) {
 	return nil, nil
 }
 
@@ -593,11 +593,11 @@ type applicationImageProviderStub struct {
 	err      error
 }
 
-func (p *applicationImageProviderStub) Prompt(context.Context, contractsai.AgentPrompt) (contractsai.Response, error) {
+func (p *applicationImageProviderStub) Prompt(context.Context, contractsai.AgentPrompt) (contractsai.AgentResponse, error) {
 	return nil, nil
 }
 
-func (p *applicationImageProviderStub) Stream(context.Context, contractsai.AgentPrompt) (contractsai.StreamableResponse, error) {
+func (p *applicationImageProviderStub) Stream(context.Context, contractsai.AgentPrompt) (contractsai.StreamableAgentResponse, error) {
 	return nil, nil
 }
 
@@ -670,13 +670,13 @@ func (r *applicationImageResponseStub) Then(callback func(contractsai.ImageRespo
 	return r
 }
 
-func (m *applicationTestMiddleware) Handle(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.Response, error) {
+func (m *applicationTestMiddleware) Handle(ctx context.Context, prompt contractsai.AgentPrompt, next contractsai.Next) (contractsai.AgentResponse, error) {
 	response, err := next(ctx, prompt)
 	if err != nil {
 		return nil, err
 	}
 
-	return response.Then(func(response contractsai.Response) {
+	return response.Then(func(response contractsai.AgentResponse) {
 		if stub, ok := response.(*middlewareResponse); ok {
 			stub.response = &stubResponse{text: response.Text() + " after middleware"}
 		}

@@ -63,7 +63,7 @@ func (r *conversation) Messages() []contractsai.Message {
 
 func (r *conversation) Tools() []contractsai.Tool { return r.agent.Tools() }
 
-func (r *conversation) Prompt(input string, options ...contractsai.ConversationOption) (contractsai.Response, error) {
+func (r *conversation) Prompt(input string, options ...contractsai.ConversationOption) (contractsai.AgentResponse, error) {
 	// Serialize concurrent calls to prevent one failure from corrupting
 	// history written by another in-flight Prompt.
 	r.promptMu.Lock()
@@ -102,7 +102,7 @@ func (r *conversation) Prompt(input string, options ...contractsai.ConversationO
 	}
 
 	var (
-		resp contractsai.Response
+		resp contractsai.AgentResponse
 		err  error
 	)
 
@@ -179,8 +179,8 @@ func (r *conversation) Prompt(input string, options ...contractsai.ConversationO
 	return resp, nil
 }
 
-func (r *conversation) prompt(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
-	return r.runMiddlewarePipeline(ctx, prompt, contractsai.Next(func(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
+func (r *conversation) prompt(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.AgentResponse, error) {
+	return r.runMiddlewarePipeline(ctx, prompt, contractsai.Next(func(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.AgentResponse, error) {
 		response, err := r.provider.Prompt(ctx, prompt)
 		if err != nil {
 			return nil, err
@@ -190,7 +190,7 @@ func (r *conversation) prompt(ctx context.Context, prompt contractsai.AgentPromp
 	}))
 }
 
-func (r *conversation) Stream(input string, options ...contractsai.ConversationOption) (contractsai.StreamableResponse, error) {
+func (r *conversation) Stream(input string, options ...contractsai.ConversationOption) (contractsai.StreamableAgentResponse, error) {
 	tools := r.agent.Tools()
 	conversationOptions := r.applyConversationOptions(options)
 	initialPrompt := contractsai.AgentPrompt{
@@ -217,7 +217,7 @@ func (r *conversation) Stream(input string, options ...contractsai.ConversationO
 
 	if shortCircuitResponse != nil {
 		cancelInitial()
-		return NewStreamableResponse(r.ctx, func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error) {
+		return NewStreamableResponse(r.ctx, func(ctx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.AgentResponse, error) {
 			defer clearPending()
 
 			r.mu.RLock()
@@ -245,7 +245,7 @@ func (r *conversation) Stream(input string, options ...contractsai.ConversationO
 		return nil, err
 	}
 
-	return NewStreamableResponse(r.ctx, func(streamCtx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.Response, error) {
+	return NewStreamableResponse(r.ctx, func(streamCtx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.AgentResponse, error) {
 		defer clearPending()
 
 		r.promptMu.Lock()
@@ -270,7 +270,7 @@ func (r *conversation) Stream(input string, options ...contractsai.ConversationO
 
 		for i := range MaxToolCallIterations {
 			var (
-				innerStream        contractsai.StreamableResponse
+				innerStream        contractsai.StreamableAgentResponse
 				middlewareResponse *middlewareResponse
 			)
 
@@ -299,8 +299,8 @@ func (r *conversation) Stream(input string, options ...contractsai.ConversationO
 				}
 			}
 
-			var resp contractsai.Response
-			innerStream.Then(func(res contractsai.Response) {
+			var resp contractsai.AgentResponse
+			innerStream.Then(func(res contractsai.AgentResponse) {
 				resp = res
 			})
 
@@ -382,12 +382,12 @@ func (r *conversation) Stream(input string, options ...contractsai.ConversationO
 	}), nil
 }
 
-func (r *conversation) prepareStreamPrompt(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.AgentPrompt, *middlewareResponse, contractsai.Response, error) {
+func (r *conversation) prepareStreamPrompt(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.AgentPrompt, *middlewareResponse, contractsai.AgentResponse, error) {
 	resolvedPrompt := prompt
 	deferredResponse := newDeferredMiddlewareResponse()
 	calledNext := false
 
-	response, err := r.runMiddlewarePipeline(ctx, prompt, contractsai.Next(func(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
+	response, err := r.runMiddlewarePipeline(ctx, prompt, contractsai.Next(func(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.AgentResponse, error) {
 		calledNext = true
 		resolvedPrompt = prompt
 		return deferredResponse, nil
@@ -407,14 +407,14 @@ func (r *conversation) prepareStreamPrompt(ctx context.Context, prompt contracts
 	return resolvedPrompt, deferredResponse, nil, nil
 }
 
-func (r *conversation) runMiddlewarePipeline(ctx context.Context, prompt contractsai.AgentPrompt, destination contractsai.Next) (contractsai.Response, error) {
+func (r *conversation) runMiddlewarePipeline(ctx context.Context, prompt contractsai.AgentPrompt, destination contractsai.Next) (contractsai.AgentResponse, error) {
 	next := destination
 	activeMiddlewares := slices.Clone(r.middlewares)
 
 	for i := len(activeMiddlewares) - 1; i >= 0; i-- {
 		middleware := activeMiddlewares[i]
 		nextHandler := next
-		next = contractsai.Next(func(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.Response, error) {
+		next = contractsai.Next(func(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.AgentResponse, error) {
 			return middleware.Handle(ctx, prompt, nextHandler)
 		})
 	}
@@ -443,7 +443,7 @@ func (r *conversation) applyConversationOptions(options []contractsai.Conversati
 	return conversationOptions
 }
 
-func finalizeMiddlewareResponse(middlewareResponse *middlewareResponse, response contractsai.Response) contractsai.Response {
+func finalizeMiddlewareResponse(middlewareResponse *middlewareResponse, response contractsai.AgentResponse) contractsai.AgentResponse {
 	if middlewareResponse == nil {
 		return response
 	}
@@ -453,7 +453,7 @@ func finalizeMiddlewareResponse(middlewareResponse *middlewareResponse, response
 	return middlewareResponse.Unwrap()
 }
 
-func (r *conversation) commitConversation(working []contractsai.Message, input string, response contractsai.Response) {
+func (r *conversation) commitConversation(working []contractsai.Message, input string, response contractsai.AgentResponse) {
 	if r.pending == nil {
 		working = append(working, contractsai.Message{Role: contractsai.RoleUser, Content: input})
 	}

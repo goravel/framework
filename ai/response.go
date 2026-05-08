@@ -31,7 +31,7 @@ type fileResponse struct {
 
 type usage struct{ input, output, total int }
 
-func NewTextResponse(text string, usage contractsai.Usage, toolCalls []contractsai.ToolCall) contractsai.Response {
+func NewTextResponse(text string, usage contractsai.Usage, toolCalls []contractsai.ToolCall) contractsai.AgentResponse {
 	return &textResponse{text: text, usage: usage, toolCalls: toolCalls}
 }
 
@@ -51,7 +51,7 @@ func NewUsage(input, output, total int) contractsai.Usage {
 func (r *textResponse) Text() string                      { return r.text }
 func (r *textResponse) Usage() contractsai.Usage          { return r.usage }
 func (r *textResponse) ToolCalls() []contractsai.ToolCall { return r.toolCalls }
-func (r *textResponse) Then(callback func(contractsai.Response)) contractsai.Response {
+func (r *textResponse) Then(callback func(contractsai.AgentResponse)) contractsai.AgentResponse {
 	if callback == nil {
 		return r
 	}
