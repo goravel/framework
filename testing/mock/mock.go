@@ -166,10 +166,6 @@ func (r *factory) Orm() *mocksorm.Orm {
 	return mockOrm
 }
 
-func (r *factory) OrmAssociation() *mocksorm.Association {
-	return &mocksorm.Association{}
-}
-
 func (r *factory) OrmQuery() *mocksorm.Query {
 	return &mocksorm.Query{}
 }
