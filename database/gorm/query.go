@@ -94,12 +94,6 @@ func BuildQuery(ctx context.Context, config config.Config, connection string, lo
 	return NewQuery(ctx, config, pool.Writers[0], gorm, driver.Grammar(), log, modelToObserver, nil), pool.Writers[0], nil
 }
 
-func (r *Query) Association(association string) contractsorm.Association {
-	query := r.buildConditions()
-
-	return query.instance.Association(association)
-}
-
 // DEPRECATED Use BeginTransaction instead.
 func (r *Query) Begin() (contractsorm.Query, error) {
 	return r.BeginTransaction()
@@ -156,9 +150,7 @@ func (r *Query) Create(value any) error {
 }
 
 func (r *Query) Cursor() chan contractsdb.Row {
-	with := r.conditions.with
 	query := r.addGlobalScopes().buildConditions()
-	r.conditions.with = with
 
 	cursorChan := make(chan contractsdb.Row)
 	go func() {
@@ -464,6 +456,34 @@ func (r *Query) Limit(limit int) contractsorm.Query {
 	return r.setConditions(conditions)
 }
 
+func (r *Query) OfMany(column, aggregate string) contractsorm.Query {
+	if column == "" {
+		column = "id"
+	}
+	if aggregate == "" {
+		aggregate = "MAX"
+	}
+	conditions := r.conditions
+	conditions.oneOfMany = &oneOfManyConfig{column: column, aggregate: aggregate}
+	return r.setConditions(conditions)
+}
+
+func (r *Query) LatestOfMany(column ...string) contractsorm.Query {
+	col := ""
+	if len(column) > 0 {
+		col = column[0]
+	}
+	return r.OfMany(col, "MAX")
+}
+
+func (r *Query) OldestOfMany(column ...string) contractsorm.Query {
+	col := ""
+	if len(column) > 0 {
+		col = column[0]
+	}
+	return r.OfMany(col, "MIN")
+}
+
 func (r *Query) Load(model any, relation string, args ...any) error {
 	if relation == "" {
 		return errors.OrmQueryEmptyRelation
@@ -479,7 +499,7 @@ func (r *Query) Load(model any, relation string, args ...any) error {
 	}
 
 	copyDest := copyStruct(model)
-	err := r.With(relation, args...).Find(model)
+	err := r.With(append([]any{relation}, args...)...).Find(model)
 
 	relationRoot := relation
 	if dotIndex := strings.Index(relation, "."); dotIndex > 0 {
@@ -1152,16 +1172,6 @@ func (r *Query) WhereNull(column string) contractsorm.Query {
 	return r.Where(fmt.Sprintf("%s IS NULL", column))
 }
 
-func (r *Query) With(query string, args ...any) contractsorm.Query {
-	conditions := r.conditions
-	conditions.with = deep.Append(r.conditions.with, With{
-		query: query,
-		args:  args,
-	})
-
-	return r.setConditions(conditions)
-}
-
 func (r *Query) WithoutEvents() contractsorm.Query {
 	conditions := r.conditions
 	conditions.withoutEvents = true
@@ -1260,11 +1270,12 @@ func (r *Query) buildConditions() *Query {
 	db = query.buildOmit(db)
 	db = query.buildScopes(db)
 	db = query.buildSelectColumns(db)
+	db = query.buildSelectSubAggregates(db)
 	db = query.buildSharedLock(db)
 	db = query.buildTable(db)
-	db = query.buildWith(db)
 	db = query.buildWithTrashed(db)
 	db = query.buildWhere(db)
+	db = query.buildRelations(db)
 
 	return query.new(db)
 }
@@ -1537,41 +1548,6 @@ func (r *Query) buildWherePlaceholder(query string, args ...any) string {
 	return query
 }
 
-func (r *Query) buildWith(db *gormio.DB) *gormio.DB {
-	if len(r.conditions.with) == 0 {
-		return db
-	}
-
-	for _, item := range r.conditions.with {
-		isSet := false
-		if len(item.args) == 1 {
-			if arg, ok := item.args[0].(func(contractsorm.Query) contractsorm.Query); ok {
-				newArgs := []any{
-					func(tx *gormio.DB) *gormio.DB {
-						queryImpl := NewQuery(r.ctx, r.config, r.dbConfig, tx, r.grammar, r.log, r.modelToObserver, nil)
-						query := arg(queryImpl)
-						queryImpl = query.(*Query)
-						queryImpl = queryImpl.buildConditions()
-
-						return queryImpl.instance
-					},
-				}
-
-				db = db.Preload(item.query, newArgs...)
-				isSet = true
-			}
-		}
-
-		if !isSet {
-			db = db.Preload(item.query, item.args...)
-		}
-	}
-
-	r.conditions.with = nil
-
-	return db
-}
-
 func (r *Query) buildWithTrashed(db *gormio.DB) *gormio.DB {
 	if !r.conditions.withTrashed {
 		return db
@@ -1834,6 +1810,9 @@ func (r *Query) restoring(dest any) error {
 }
 
 func (r *Query) retrieved(dest any) error {
+	if err := r.applyEagerLoads(dest); err != nil {
+		return err
+	}
 	if isSlice(dest) {
 		return nil
 	}

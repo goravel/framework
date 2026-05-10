@@ -20,15 +20,16 @@ func (r *Row) Scan(value any) error {
 		return err
 	}
 
-	for _, item := range r.query.conditions.with {
-		// Need to new a query, avoid to clear the conditions
-		query := r.query.new(r.query.instance)
-		// The new query must be cleared
-		query.clearConditions()
-		if err := query.Load(value, item.query, item.args...); err != nil {
-			return err
-		}
+	if len(r.query.conditions.eagerLoad) == 0 {
+		return nil
 	}
 
-	return nil
+	// Per-row eager loading for the Cursor() path. applyEagerLoads consumes its own slice
+	// (sets it to nil after running), so we copy into a fresh query so subsequent rows in the
+	// cursor still see the queued entries.
+	query := r.query.new(r.query.instance)
+	query.clearConditions()
+	query.conditions.eagerLoad = append([]eagerLoadEntry(nil), r.query.conditions.eagerLoad...)
+
+	return query.applyEagerLoads(value)
 }
