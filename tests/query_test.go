@@ -83,7 +83,7 @@ func (s *QueryTestSuite) TestAssociation() {
 					s.True(user1.ID > 0)
 
 					var userAddress Address
-					s.Nil(query.Query().Model(&user1).Association("Address").Find(&userAddress))
+					s.Nil(query.Query().Related(&user1, "Address").First(&userAddress))
 					s.True(userAddress.ID > 0)
 					s.Equal("association_find_address", userAddress.Name)
 				},
@@ -105,7 +105,7 @@ func (s *QueryTestSuite) TestAssociation() {
 					var user1 User
 					s.Nil(query.Query().Find(&user1, user.ID), driver)
 					s.True(user1.ID > 0, driver)
-					s.Nil(query.Query().Model(&user1).Association("Address").Append(&Address{Name: "association_has_one_append_address1"}), driver)
+					s.Nil(query.Query().Relation(&user1, "Address").Save(&Address{Name: "association_has_one_append_address1"}), driver)
 
 					s.Nil(query.Query().Load(&user1, "Address"), driver)
 					s.True(user1.Address.ID > 0, driver)
@@ -131,7 +131,7 @@ func (s *QueryTestSuite) TestAssociation() {
 					var user1 User
 					s.Nil(query.Query().Find(&user1, user.ID))
 					s.True(user1.ID > 0)
-					s.Nil(query.Query().Model(&user1).Association("Books").Append(&Book{Name: "association_has_many_append_address3"}))
+					s.Nil(query.Query().Relation(&user1, "Books").Save(&Book{Name: "association_has_many_append_address3"}))
 
 					s.Nil(query.Query().Load(&user1, "Books"))
 					s.Equal(3, len(user1.Books))
@@ -155,7 +155,7 @@ func (s *QueryTestSuite) TestAssociation() {
 					var user1 User
 					s.Nil(query.Query().Find(&user1, user.ID))
 					s.True(user1.ID > 0)
-					s.Nil(query.Query().Model(&user1).Association("Address").Replace(&Address{Name: "association_has_one_append_address1"}))
+					s.Nil(query.Query().Relation(&user1, "Address").Save(&Address{Name: "association_has_one_append_address1"}))
 
 					s.Nil(query.Query().Load(&user1, "Address"))
 					s.True(user1.Address.ID > 0)
@@ -181,7 +181,9 @@ func (s *QueryTestSuite) TestAssociation() {
 					var user1 User
 					s.Nil(query.Query().Find(&user1, user.ID))
 					s.True(user1.ID > 0)
-					s.Nil(query.Query().Model(&user1).Association("Books").Replace(&Book{Name: "association_has_many_replace_address3"}))
+					// New design: explicit two-step for HasMany replace (old .Replace would fail on NOT NULL FK)
+					s.Nil(query.Query().Related(&user1, "Books").Delete())
+					s.Nil(query.Query().Relation(&user1, "Books").Save(&Book{Name: "association_has_many_replace_address3"}))
 
 					s.Nil(query.Query().Load(&user1, "Books"))
 					s.Equal(1, len(user1.Books))
@@ -202,15 +204,14 @@ func (s *QueryTestSuite) TestAssociation() {
 					s.True(user.ID > 0)
 					s.True(user.Address.ID > 0)
 
-					// No ID when Delete
+					// No ID when Delete — new design: true delete (not nullify FK)
 					var user1 User
 					s.Nil(query.Query().Find(&user1, user.ID))
 					s.True(user1.ID > 0)
-					s.Nil(query.Query().Model(&user1).Association("Address").Delete(&Address{Name: "association_delete_address"}))
+					s.Nil(query.Query().Related(&user1, "Address").Where("name", "association_delete_address").Delete())
 
 					s.Nil(query.Query().Load(&user1, "Address"))
-					s.True(user1.Address.ID > 0)
-					s.Equal("association_delete_address", user1.Address.Name)
+					s.Nil(user1.Address)
 
 					// Has ID when Delete
 					var user2 User
@@ -218,7 +219,7 @@ func (s *QueryTestSuite) TestAssociation() {
 					s.True(user2.ID > 0)
 					var userAddress Address
 					userAddress.ID = user1.Address.ID
-					s.Nil(query.Query().Model(&user2).Association("Address").Delete(&userAddress))
+					s.Nil(query.Query().Related(&user2, "Address").Where("id", userAddress.ID).Delete())
 
 					s.Nil(query.Query().Load(&user2, "Address"))
 					s.Nil(user2.Address)
@@ -242,7 +243,7 @@ func (s *QueryTestSuite) TestAssociation() {
 					var user1 User
 					s.Nil(query.Query().Find(&user1, user.ID))
 					s.True(user1.ID > 0)
-					s.Nil(query.Query().Model(&user1).Association("Address").Clear())
+					s.Nil(query.Query().Related(&user1, "Address").Delete())
 
 					s.Nil(query.Query().Load(&user1, "Address"))
 					s.Nil(user1.Address)
@@ -267,7 +268,9 @@ func (s *QueryTestSuite) TestAssociation() {
 					var user1 User
 					s.Nil(query.Query().Find(&user1, user.ID))
 					s.True(user1.ID > 0)
-					s.Equal(int64(2), query.Query().Model(&user1).Association("Books").Count())
+					count, err := query.Query().Related(&user1, "Books").Count()
+					s.Nil(err)
+					s.Equal(int64(2), count)
 				},
 			},
 		}
@@ -3418,7 +3421,9 @@ func (s *QueryTestSuite) TestLoad() {
 					s.True(user1.ID > 0)
 					s.Nil(user1.Address)
 					s.Equal(0, len(user1.Books))
-					s.Nil(query.Query().Load(&user1, "Books", "name = ?", "load_book0"))
+					s.Nil(query.Query().Load(&user1, "Books", func(query contractsorm.Query) contractsorm.Query {
+						return query.Where("name = ?", "load_book0")
+					}))
 					s.True(user1.ID > 0)
 					s.Nil(user1.Address)
 					s.Equal(1, len(user1.Books))
@@ -3531,7 +3536,9 @@ func (s *QueryTestSuite) TestLoadMissing() {
 					description: "don't load when not missing",
 					setup: func(description string) {
 						var user1 User
-						s.Nil(query.Query().With("Books", "name = ?", "load_missing_book0").Find(&user1, user.ID))
+						s.Nil(query.Query().With("Books", func(query contractsorm.Query) contractsorm.Query {
+							return query.Where("name = ?", "load_missing_book0")
+						}).Find(&user1, user.ID))
 						s.True(user1.ID > 0)
 						s.Nil(user1.Address)
 						s.True(len(user1.Books) == 1)
@@ -4630,7 +4637,9 @@ func (s *QueryTestSuite) TestWith() {
 					description: "with simple conditions",
 					setup: func(description string) {
 						var user1 User
-						s.Nil(query.Query().With("Books", "name = ?", "with_book0").Find(&user1, user.ID))
+						s.Nil(query.Query().With("Books", func(query contractsorm.Query) contractsorm.Query {
+							return query.Where("name = ?", "with_book0")
+						}).Find(&user1, user.ID))
 						s.True(user1.ID > 0)
 						s.Nil(user1.Address)
 						s.Equal(1, len(user1.Books))
