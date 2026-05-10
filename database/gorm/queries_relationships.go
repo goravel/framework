@@ -914,13 +914,7 @@ func aggregateAlias(relation, fn, column string) string {
 // emit the bare identifier and let the dialects accept it - all tested dialects parse unquoted
 // identifiers when the names are simple snake_case.
 func quoteIdent(name string) string {
-	if name == "" {
-		return ""
-	}
-	if strings.ContainsAny(name, " (.") {
-		return name
-	}
-	return name
+	return strings.NewReplacer("`", "", "'", "", `"`, "").Replace(name)
 }
 
 // Sanity: ensure *Query satisfies contractsorm.QueryWithRelations at compile time.
