@@ -2,11 +2,14 @@ package ai
 
 import (
 	pathpkg "path"
+	"regexp"
 	"strings"
 
 	contractsfilesystem "github.com/goravel/framework/contracts/filesystem"
 	"github.com/goravel/framework/errors"
 )
+
+var windowsVolumePathRegex = regexp.MustCompile(`^[A-Za-z]:/`)
 
 type storePathErrors struct {
 	pathRequired error
@@ -23,7 +26,7 @@ func normalizeStoreTargetPath(targetPath string, pathErrors storePathErrors) (st
 	if normalizedPath == "." || strings.HasSuffix(targetPath, "/") || strings.HasSuffix(targetPath, "\\") {
 		return "", "", pathErrors.nameRequired
 	}
-	if pathpkg.IsAbs(normalizedPath) || hasParentPathSegment(normalizedPath) {
+	if isAbsoluteStoragePath(normalizedPath) || hasParentPathSegment(normalizedPath) {
 		return "", "", pathErrors.pathInvalid
 	}
 
@@ -73,4 +76,8 @@ func hasParentPathSegment(path string) bool {
 	}
 
 	return false
+}
+
+func isAbsoluteStoragePath(path string) bool {
+	return pathpkg.IsAbs(path) || windowsVolumePathRegex.MatchString(path)
 }

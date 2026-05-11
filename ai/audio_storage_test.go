@@ -107,6 +107,11 @@ func TestAudioStorer_StoreAsRejectsInvalidPaths(t *testing.T) {
 			targetPath: "/tmp/voice.mp3",
 			expectErr:  errors.AIAudioStorePathInvalid,
 		},
+		{
+			name:       "windows volume path",
+			targetPath: `C:\tmp\voice.mp3`,
+			expectErr:  errors.AIAudioStorePathInvalid,
+		},
 	}
 
 	for _, tt := range tests {
@@ -226,6 +231,7 @@ func TestAudioResponse_StorageNameUsesMimeType(t *testing.T) {
 		{name: "flac", mimeType: "audio/flac", suffix: ".flac"},
 		{name: "aac", mimeType: "audio/aac", suffix: ".aac"},
 		{name: "opus", mimeType: "audio/opus", suffix: ".opus"},
+		{name: "l16", mimeType: "audio/l16", suffix: ".pcm"},
 		{name: "pcm", mimeType: "audio/pcm", suffix: ".pcm"},
 	}
 

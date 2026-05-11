@@ -107,6 +107,11 @@ func TestImageStorer_StoreAsRequiresFileName(t *testing.T) {
 			targetPath: "/tmp/avatar.png",
 			expectErr:  errors.AIImageStorePathInvalid,
 		},
+		{
+			name:       "windows volume path",
+			targetPath: `C:\tmp\avatar.png`,
+			expectErr:  errors.AIImageStorePathInvalid,
+		},
 	}
 
 	for _, tt := range tests {

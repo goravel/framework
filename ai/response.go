@@ -3,6 +3,7 @@ package ai
 import (
 	"bytes"
 	"context"
+	"strings"
 
 	contractsai "github.com/goravel/framework/contracts/ai"
 	"github.com/goravel/framework/errors"
@@ -147,7 +148,7 @@ func (r *audioResponse) storageName() string {
 	}
 
 	extension := ".mp3"
-	switch r.mimeType {
+	switch strings.ToLower(r.mimeType) {
 	case "audio/wav", "audio/x-wav":
 		extension = ".wav"
 	case "audio/flac":
@@ -156,7 +157,7 @@ func (r *audioResponse) storageName() string {
 		extension = ".aac"
 	case "audio/opus", "audio/ogg":
 		extension = ".opus"
-	case "audio/L16", "audio/pcm", "audio/x-pcm":
+	case "audio/l16", "audio/pcm", "audio/x-pcm":
 		extension = ".pcm"
 	}
 
