@@ -19,22 +19,11 @@ type imageRequest struct {
 	timeout     time.Duration
 }
 
-func NewImageRequest(ctx context.Context, app *Application, prompt string, options ...contractsai.Option) contractsai.ImageRequest {
-	resolvedOptions := &contractsai.Options{}
-	for _, option := range options {
-		if option == nil {
-			continue
-		}
-
-		option(resolvedOptions)
-	}
-
+func NewImageRequest(ctx context.Context, app *Application, prompt string) contractsai.ImageRequest {
 	return &imageRequest{
-		ctx:      ctx,
-		app:      app,
-		prompt:   prompt,
-		provider: resolvedOptions.Provider,
-		model:    resolvedOptions.Model,
+		ctx:    ctx,
+		app:    app,
+		prompt: prompt,
 	}
 }
 

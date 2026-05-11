@@ -35,3 +35,13 @@ type ImageResponse interface {
 	Usage() Usage
 	Then(callback func(ImageResponse)) ImageResponse
 }
+
+// AudioResponse exposes generated audio bytes and provider metadata.
+type AudioResponse interface {
+	Content() ([]byte, error)
+	MimeType() string
+	Store(disk ...string) (string, error)
+	StoreAs(path string, disk ...string) (string, error)
+	Usage() Usage
+	Then(callback func(AudioResponse)) AudioResponse
+}
