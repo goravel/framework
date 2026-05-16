@@ -206,6 +206,50 @@ func TestNewOpenAIUnmarshalError(t *testing.T) {
 	}
 }
 
+func TestProviderResolveTranscriptionModel(t *testing.T) {
+	tests := []struct {
+		name         string
+		defaultModel string
+		model        string
+		diarize      bool
+		expectModel  string
+	}{
+		{
+			name:         "uses explicit model",
+			defaultModel: DefaultTranscriptionModel,
+			model:        "gpt-custom",
+			diarize:      true,
+			expectModel:  "gpt-custom",
+		},
+		{
+			name:         "uses diarized fallback for zero config",
+			defaultModel: DefaultTranscriptionModel,
+			diarize:      true,
+			expectModel:  DefaultDiarizedTranscriptionModel,
+		},
+		{
+			name:         "uses custom configured default for diarized request",
+			defaultModel: "gpt-transcription-custom",
+			diarize:      true,
+			expectModel:  "gpt-transcription-custom",
+		},
+		{
+			name:        "uses default transcription model when unset",
+			diarize:     false,
+			expectModel: DefaultTranscriptionModel,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			provider := &Provider{}
+			provider.config.Models.Transcription.Default = tt.defaultModel
+
+			assert.Equal(t, tt.expectModel, provider.resolveTranscriptionModel(tt.model, tt.diarize))
+		})
+	}
+}
+
 func TestProviderImage(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -516,6 +560,21 @@ func TestProviderTranscription(t *testing.T) {
 			status:       http.StatusOK,
 			responseBody: `{}`,
 			expectError:  errors.AITranscriptionResponseIsEmpty,
+		},
+		{
+			name: "allows empty transcript text",
+			prompt: contractsai.TranscriptionPrompt{
+				File: namedAttachment{kind: contractsai.AttachmentKindFile, filename: "call.mp3", mimeType: "audio/mpeg", content: []byte("audio")},
+			},
+			status:       http.StatusOK,
+			responseBody: `{"text":""}`,
+			expectPath:   "/audio/transcriptions",
+			expectForm: map[string]string{
+				"model":           "gpt-transcription-default",
+				"response_format": "json",
+			},
+			expectFile: capturedImageFile{fieldName: "file", fileName: "call.mp3", mimeType: "audio/mpeg", body: []byte("audio")},
+			expectText: "",
 		},
 	}
 

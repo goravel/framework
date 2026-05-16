@@ -384,7 +384,14 @@ func (r *Provider) resolveTranscriptionModel(model string, diarize bool) string 
 		return model
 	}
 	if diarize {
+		if r.config.Models.Transcription.Default != "" && r.config.Models.Transcription.Default != DefaultTranscriptionModel {
+			return r.config.Models.Transcription.Default
+		}
+
 		return DefaultDiarizedTranscriptionModel
+	}
+	if r.config.Models.Transcription.Default == "" {
+		return DefaultTranscriptionModel
 	}
 
 	return r.config.Models.Transcription.Default
@@ -865,7 +872,7 @@ func (r *Provider) parseTranscriptionResponse(response *goopenai.AudioTranscript
 	if err != nil {
 		return nil, err
 	}
-	if response.Text == "" && len(segments) == 0 {
+	if !response.JSON.Text.Valid() && !response.JSON.Segments.Valid() {
 		return nil, errors.AITranscriptionResponseIsEmpty
 	}
 
