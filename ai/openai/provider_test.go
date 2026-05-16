@@ -99,7 +99,6 @@ type capturedTranscriptionRequest struct {
 	path          string
 	authorization string
 	contentType   string
-	body          []byte
 	formValues    map[string]string
 	fileName      string
 	fileMimeType  string
