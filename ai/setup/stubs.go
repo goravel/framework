@@ -26,15 +26,21 @@ func init() {
 		// Here you may configure each AI provider used by your application.
 		// A variety of drivers are available, and each provider may also
 		// configure the models available to your application.
-		"providers": map[string]any{
-			"openai": map[string]any{
-				"key": "",
-				"models": map[string]any{
-					"text": map[string]any{
-						"default": "",
-					},
-					"image": map[string]any{
-						"default": "",
+			"providers": map[string]any{
+				"openai": map[string]any{
+					"key": "",
+					"models": map[string]any{
+						"text": map[string]any{
+							"default": "",
+						},
+						"audio": map[string]any{
+							"default": "",
+						},
+						"transcription": map[string]any{
+							"default": "",
+						},
+						"image": map[string]any{
+							"default": "",
 					},
 				},
 				"url": "",

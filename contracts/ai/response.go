@@ -45,3 +45,11 @@ type AudioResponse interface {
 	Usage() Usage
 	Then(callback func(AudioResponse)) AudioResponse
 }
+
+// TranscriptionResponse exposes generated transcript text and provider metadata.
+type TranscriptionResponse interface {
+	Text() string
+	Segments() []TranscriptionSegment
+	Usage() Usage
+	Then(callback func(TranscriptionResponse)) TranscriptionResponse
+}

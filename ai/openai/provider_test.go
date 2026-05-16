@@ -63,6 +63,12 @@ type normalizedCapturedStreamRequest struct {
 	stream        bool
 }
 
+type usageCheck struct {
+	input  int
+	output int
+	total  int
+}
+
 type capturedFileUploadRequest struct {
 	path          string
 	authorization string
@@ -87,6 +93,17 @@ type capturedAudioRequest struct {
 	contentType   string
 	body          map[string]any
 	accept        string
+}
+
+type capturedTranscriptionRequest struct {
+	path          string
+	authorization string
+	contentType   string
+	body          []byte
+	formValues    map[string]string
+	fileName      string
+	fileMimeType  string
+	fileBody      []byte
 }
 
 type capturedImageFile struct {
@@ -144,6 +161,7 @@ func TestNewOpenAIUnmarshalError(t *testing.T) {
 				cfg := contractsai.ProviderConfig{Key: "test-key", Url: "http://localhost:1234"}
 				cfg.Models.Text.Default = DefaultTextModel
 				cfg.Models.Audio.Default = DefaultAudioModel
+				cfg.Models.Transcription.Default = DefaultTranscriptionModel
 				cfg.Models.Image.Default = DefaultImageModel
 				return &cfg
 			}(),
@@ -163,6 +181,7 @@ func TestNewOpenAIUnmarshalError(t *testing.T) {
 				cfg := contractsai.ProviderConfig{Key: "test-key"}
 				cfg.Models.Text.Default = "gpt-custom"
 				cfg.Models.Audio.Default = DefaultAudioModel
+				cfg.Models.Transcription.Default = DefaultTranscriptionModel
 				cfg.Models.Image.Default = "gpt-image-custom"
 				return &cfg
 			}(),
@@ -419,6 +438,118 @@ func TestProviderAudio(t *testing.T) {
 			assert.Equal(t, "Bearer test-key", req.authorization)
 			assert.Equal(t, "application/octet-stream", req.accept)
 			assert.Equal(t, tt.expectBody, req.body)
+		})
+	}
+}
+
+func TestProviderTranscription(t *testing.T) {
+	tests := []struct {
+		name          string
+		prompt        contractsai.TranscriptionPrompt
+		status        int
+		responseBody  string
+		expectError   error
+		expectPath    string
+		expectForm    map[string]string
+		expectFile    capturedImageFile
+		expectText    string
+		expectUsage   usageCheck
+		expectSegment []contractsai.TranscriptionSegment
+	}{
+		{
+			name: "transcribes audio with defaults",
+			prompt: contractsai.TranscriptionPrompt{
+				File: namedAttachment{kind: contractsai.AttachmentKindFile, filename: "call.mp3", mimeType: "audio/mpeg", content: []byte("audio")},
+			},
+			status:       http.StatusOK,
+			responseBody: transcriptionResponseBody(t, "hello world", nil, map[string]any{"type": "tokens", "input_tokens": 3, "output_tokens": 4, "total_tokens": 7}),
+			expectPath:   "/audio/transcriptions",
+			expectForm: map[string]string{
+				"model":           "gpt-transcription-default",
+				"response_format": "json",
+			},
+			expectFile:  capturedImageFile{fieldName: "file", fileName: "call.mp3", mimeType: "audio/mpeg", body: []byte("audio")},
+			expectText:  "hello world",
+			expectUsage: usageCheck{input: 3, output: 4, total: 7},
+		},
+		{
+			name: "uses diarized response format and language",
+			prompt: contractsai.TranscriptionPrompt{
+				File:     namedAttachment{kind: contractsai.AttachmentKindFile, filename: "call.mp3", mimeType: "audio/mpeg", content: []byte("audio")},
+				Model:    "gpt-4o-transcribe-diarize",
+				Language: "en",
+				Diarize:  true,
+				Timeout:  2 * time.Second,
+			},
+			status: http.StatusOK,
+			responseBody: transcriptionResponseBody(t, "hello there", []map[string]any{{
+				"speaker": "speaker_0",
+				"start":   0.1,
+				"end":     1.2,
+				"text":    "hello there",
+			}}, map[string]any{"type": "duration", "seconds": 1.2}),
+			expectPath: "/audio/transcriptions",
+			expectForm: map[string]string{
+				"model":           "gpt-4o-transcribe-diarize",
+				"language":        "en",
+				"response_format": "diarized_json",
+			},
+			expectFile: capturedImageFile{fieldName: "file", fileName: "call.mp3", mimeType: "audio/mpeg", body: []byte("audio")},
+			expectText: "hello there",
+			expectSegment: []contractsai.TranscriptionSegment{{
+				Speaker: "speaker_0",
+				Start:   100 * time.Millisecond,
+				End:     1200 * time.Millisecond,
+				Text:    "hello there",
+			}},
+		},
+		{
+			name:        "returns error for nil file",
+			prompt:      contractsai.TranscriptionPrompt{},
+			expectError: errors.AITranscriptionFileRequired,
+		},
+		{
+			name: "returns error for empty response",
+			prompt: contractsai.TranscriptionPrompt{
+				File: namedAttachment{kind: contractsai.AttachmentKindFile, filename: "call.mp3", mimeType: "audio/mpeg", content: []byte("audio")},
+			},
+			status:       http.StatusOK,
+			responseBody: `{}`,
+			expectError:  errors.AITranscriptionResponseIsEmpty,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			captured := make(chan capturedTranscriptionRequest, 1)
+			server := newTranscriptionServer(t, tt.status, tt.responseBody, captured)
+			defer server.Close()
+
+			provider := &Provider{client: goopenai.NewClient(option.WithAPIKey("test-key"), option.WithBaseURL(server.URL))}
+			provider.config.Models.Transcription.Default = "gpt-transcription-default"
+
+			response, err := provider.Transcription(context.Background(), tt.prompt)
+			assert.Equal(t, tt.expectError, err)
+			if tt.expectError != nil {
+				assert.Nil(t, response)
+				return
+			}
+
+			require.NotNil(t, response)
+			assert.Equal(t, tt.expectText, response.Text())
+			assert.Equal(t, tt.expectSegment, response.Segments())
+			if response.Usage() != nil {
+				assert.Equal(t, tt.expectUsage, usageCheck{input: response.Usage().Input(), output: response.Usage().Output(), total: response.Usage().Total()})
+			}
+
+			req, ok := readCapturedTranscriptionRequest(t, captured)
+			require.True(t, ok, "expected transcription request payload")
+			assert.Equal(t, tt.expectPath, req.path)
+			assert.Equal(t, "Bearer test-key", req.authorization)
+			assert.Equal(t, tt.expectForm, req.formValues)
+			assert.Equal(t, tt.expectFile.fileName, req.fileName)
+			assert.Equal(t, tt.expectFile.mimeType, req.fileMimeType)
+			assert.Equal(t, tt.expectFile.body, req.fileBody)
 		})
 	}
 }
@@ -1565,6 +1696,68 @@ func readCapturedAudioRequest(t *testing.T, captured <-chan capturedAudioRequest
 	}
 }
 
+func newTranscriptionServer(t *testing.T, status int, responseBody string, captured chan<- capturedTranscriptionRequest) *httptest.Server {
+	t.Helper()
+
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		defer errors.Ignore(r.Body.Close)
+
+		reader, err := r.MultipartReader()
+		require.NoError(t, err)
+
+		capturedRequest := capturedTranscriptionRequest{
+			path:          r.URL.Path,
+			authorization: r.Header.Get("Authorization"),
+			contentType:   r.Header.Get("Content-Type"),
+			formValues:    make(map[string]string),
+		}
+		for {
+			part, err := reader.NextPart()
+			if err == io.EOF {
+				break
+			}
+			require.NoError(t, err)
+
+			body, readErr := io.ReadAll(part)
+			require.NoError(t, readErr)
+
+			if part.FileName() != "" {
+				capturedRequest.fileName = part.FileName()
+				capturedRequest.fileMimeType = part.Header.Get("Content-Type")
+				capturedRequest.fileBody = body
+				continue
+			}
+
+			capturedRequest.formValues[part.FormName()] = string(body)
+		}
+
+		select {
+		case captured <- capturedRequest:
+		default:
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(status)
+		_, _ = w.Write([]byte(responseBody))
+	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/audio/transcriptions", handler)
+	mux.HandleFunc("/v1/audio/transcriptions", handler)
+
+	return httptest.NewServer(mux)
+}
+
+func readCapturedTranscriptionRequest(t *testing.T, captured <-chan capturedTranscriptionRequest) (capturedTranscriptionRequest, bool) {
+	t.Helper()
+	select {
+	case req := <-captured:
+		return req, true
+	default:
+		return capturedTranscriptionRequest{}, false
+	}
+}
+
 func decodeBodyMap(t *testing.T, r *http.Request) map[string]any {
 	t.Helper()
 	body, err := io.ReadAll(r.Body)
@@ -1701,6 +1894,24 @@ func imageResponseBody(t *testing.T, format, content string, inputTokens, output
 			"output_tokens":        outputTokens,
 			"total_tokens":         totalTokens,
 		},
+	}
+
+	encoded, err := json.Marshal(body)
+	require.NoError(t, err)
+	return string(encoded)
+}
+
+func transcriptionResponseBody(t *testing.T, text string, segments []map[string]any, usage map[string]any) string {
+	t.Helper()
+
+	body := map[string]any{
+		"text": text,
+	}
+	if segments != nil {
+		body["segments"] = segments
+	}
+	if usage != nil {
+		body["usage"] = usage
 	}
 
 	encoded, err := json.Marshal(body)
