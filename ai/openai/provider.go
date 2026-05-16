@@ -10,6 +10,7 @@ import (
 	"mime"
 	"net/http"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"time"
 
@@ -98,7 +99,7 @@ func (r *Provider) Audio(ctx context.Context, prompt contractsai.AudioPrompt) (c
 }
 
 func (r *Provider) Transcription(ctx context.Context, prompt contractsai.TranscriptionPrompt) (contractsai.TranscriptionResponse, error) {
-	if prompt.File == nil {
+	if isNilInterface(prompt.File) {
 		return nil, errors.AITranscriptionFileRequired
 	}
 
@@ -950,5 +951,19 @@ func (r *Provider) resolveAudioMimeType(format goopenai.AudioSpeechNewParamsResp
 		fallthrough
 	default:
 		return "audio/mpeg"
+	}
+}
+
+func isNilInterface(value any) bool {
+	if value == nil {
+		return true
+	}
+
+	reflectValue := reflect.ValueOf(value)
+	switch reflectValue.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return reflectValue.IsNil()
+	default:
+		return false
 	}
 }

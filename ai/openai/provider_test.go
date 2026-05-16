@@ -112,6 +112,8 @@ type capturedImageFile struct {
 	body      []byte
 }
 
+type nilNamedAttachment struct{}
+
 type streamUsageSnapshot struct {
 	input  int
 	output int
@@ -549,6 +551,13 @@ func TestProviderTranscription(t *testing.T) {
 		{
 			name:        "returns error for nil file",
 			prompt:      contractsai.TranscriptionPrompt{},
+			expectError: errors.AITranscriptionFileRequired,
+		},
+		{
+			name: "returns error for typed nil file",
+			prompt: contractsai.TranscriptionPrompt{
+				File: (*nilNamedAttachment)(nil),
+			},
 			expectError: errors.AITranscriptionFileRequired,
 		},
 		{
@@ -1011,6 +1020,18 @@ func (attachment namedAttachment) Content(context.Context) ([]byte, error) {
 	return attachment.content, nil
 }
 func (attachment namedAttachment) Put(context.Context, ...contractsai.Option) (contractsai.FileResponse, error) {
+	return nil, nil
+}
+
+func (attachment *nilNamedAttachment) Kind() contractsai.AttachmentKind {
+	return contractsai.AttachmentKindFile
+}
+func (attachment *nilNamedAttachment) FileName() string { return "" }
+func (attachment *nilNamedAttachment) MimeType() string { return "" }
+func (attachment *nilNamedAttachment) Content(context.Context) ([]byte, error) {
+	return nil, nil
+}
+func (attachment *nilNamedAttachment) Put(context.Context, ...contractsai.Option) (contractsai.FileResponse, error) {
 	return nil, nil
 }
 
