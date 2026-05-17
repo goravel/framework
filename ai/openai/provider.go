@@ -33,6 +33,8 @@ const DefaultAudioModel = "gpt-4o-mini-tts"
 const DefaultTranscriptionModel = "gpt-4o-mini-transcribe"
 const DefaultDiarizedTranscriptionModel = "gpt-4o-transcribe-diarize"
 const DefaultImageModel = "gpt-image-2"
+const DefaultFemaleVoice = "alloy"
+const DefaultMaleVoice = "ash"
 
 const providerStateResponseID = "openai.response_id"
 
@@ -408,10 +410,10 @@ func (r *Provider) resolveTranscriptionResponseFormat(diarize bool) goopenai.Aud
 
 func (r *Provider) resolveAudioVoice(voice string) string {
 	switch voice {
-	case "", "default-female":
-		return "alloy"
-	case "default-male":
-		return "ash"
+	case "", frameworkai.DefaultFemaleVoice:
+		return string(goopenai.AudioSpeechNewParamsVoiceString2Alloy)
+	case frameworkai.DefaultMaleVoice:
+		return string(goopenai.AudioSpeechNewParamsVoiceString2Ash)
 	default:
 		return voice
 	}

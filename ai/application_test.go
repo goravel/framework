@@ -478,12 +478,12 @@ func TestApplication_Audio(t *testing.T) {
 	assert.Equal(t, "welcome to goravel", req.prompt)
 	assert.Equal(t, "default", req.provider)
 	assert.Equal(t, "gpt-4o-mini-tts", req.model)
-	assert.Equal(t, defaultMaleVoice, req.voice)
+	assert.Equal(t, DefaultMaleVoice, req.voice)
 	assert.Equal(t, "Speak slowly", req.instructions)
 	assert.Equal(t, 2*time.Second, req.timeout)
 
 	assert.Same(t, req, request.Female())
-	assert.Equal(t, defaultFemaleVoice, req.voice)
+	assert.Equal(t, DefaultFemaleVoice, req.voice)
 }
 
 func TestApplication_Transcription(t *testing.T) {
@@ -574,7 +574,7 @@ func TestAudioRequest_Generate(t *testing.T) {
 	assert.Equal(t, contractsai.AudioPrompt{
 		Prompt:       "welcome to goravel",
 		Model:        "gpt-4o-mini-tts",
-		Voice:        defaultMaleVoice,
+		Voice:        DefaultMaleVoice,
 		Instructions: "Speak slowly",
 		Timeout:      3 * time.Second,
 	}, provider.prompt)
@@ -614,7 +614,7 @@ func TestApplication_audio(t *testing.T) {
 			options: []contractsai.Option{WithProvider("openai")},
 			prompt: contractsai.AudioPrompt{
 				Prompt: "welcome to goravel",
-				Voice:  defaultFemaleVoice,
+				Voice:  DefaultFemaleVoice,
 			},
 			setup: func() contractsai.Config {
 				provider := &applicationAudioProviderStub{}
@@ -629,7 +629,7 @@ func TestApplication_audio(t *testing.T) {
 			},
 			expectPrompt: contractsai.AudioPrompt{
 				Prompt: "welcome to goravel",
-				Voice:  defaultFemaleVoice,
+				Voice:  DefaultFemaleVoice,
 			},
 		},
 		{

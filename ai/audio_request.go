@@ -23,7 +23,7 @@ func NewAudioRequest(ctx context.Context, app *Application, prompt string) contr
 		ctx:    ctx,
 		app:    app,
 		prompt: prompt,
-		voice:  defaultFemaleVoice,
+		voice:  DefaultFemaleVoice,
 	}
 }
 
@@ -43,12 +43,12 @@ func (r *audioRequest) Voice(voice string) contractsai.AudioRequest {
 }
 
 func (r *audioRequest) Male() contractsai.AudioRequest {
-	r.voice = defaultMaleVoice
+	r.voice = DefaultMaleVoice
 	return r
 }
 
 func (r *audioRequest) Female() contractsai.AudioRequest {
-	r.voice = defaultFemaleVoice
+	r.voice = DefaultFemaleVoice
 	return r
 }
 
