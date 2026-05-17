@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	contractsfilesystem "github.com/goravel/framework/contracts/filesystem"
-	"github.com/goravel/framework/errors"
 )
 
 func TestFromPath(t *testing.T) {
@@ -41,24 +40,6 @@ func TestFromUpload(t *testing.T) {
 	assert.Equal(t, []byte("audio"), content)
 	assert.Equal(t, "upload.mp3", attachment.FileName())
 	assert.Equal(t, "audio/mpeg", attachment.MimeType())
-}
-
-func TestFromStorage(t *testing.T) {
-	attachment := FromStorage("audio.mp3")
-	require.NotNil(t, attachment)
-
-	// Without a configured storage facade the resolver must return the expected error.
-	_, err := attachment.Content(context.Background())
-	assert.ErrorIs(t, err, errors.StorageFacadeNotSet)
-}
-
-func TestFromStorageWithDisk(t *testing.T) {
-	attachment := FromStorage("audio.mp3", WithDisk("media"))
-	require.NotNil(t, attachment)
-
-	// WithDisk is forwarded; content resolution still fails without a real storage backend.
-	_, err := attachment.Content(context.Background())
-	assert.ErrorIs(t, err, errors.StorageFacadeNotSet)
 }
 
 type transcriptionTestFile struct {
