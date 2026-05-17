@@ -33,6 +33,12 @@ func init() {
 					"text": map[string]any{
 						"default": "",
 					},
+					"audio": map[string]any{
+						"default": "",
+					},
+					"transcription": map[string]any{
+						"default": "",
+					},
 					"image": map[string]any{
 						"default": "",
 					},

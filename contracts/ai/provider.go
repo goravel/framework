@@ -41,6 +41,14 @@ type AudioPrompt struct {
 	Timeout      time.Duration
 }
 
+type TranscriptionPrompt struct {
+	File     StorableFile
+	Model    string
+	Language string
+	Diarize  bool
+	Timeout  time.Duration
+}
+
 // Provider defines low-level model interactions (text generation).
 // Future: extend with TextProvider, ImageProvider, AudioProvider, etc.
 type Provider interface {
@@ -60,6 +68,12 @@ type ImageProvider interface {
 type AudioProvider interface {
 	// Audio executes a text-to-speech request.
 	Audio(ctx context.Context, prompt AudioPrompt) (AudioResponse, error)
+}
+
+// TranscriptionProvider is implemented by providers that support speech-to-text.
+type TranscriptionProvider interface {
+	// Transcription executes a speech-to-text request.
+	Transcription(ctx context.Context, prompt TranscriptionPrompt) (TranscriptionResponse, error)
 }
 
 // FileProvider is implemented by providers that support storing files before they are referenced by prompts.

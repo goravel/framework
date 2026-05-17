@@ -44,6 +44,10 @@ func (r *Application) Image(prompt string) contractsai.ImageRequest {
 	return NewImageRequest(r.ctx, r, prompt)
 }
 
+func (r *Application) Transcription(file contractsai.StorableFile) contractsai.TranscriptionRequest {
+	return NewTranscriptionRequest(r.ctx, r, file)
+}
+
 func (r *Application) putFile(ctx context.Context, file contractsai.StorableFile, options ...contractsai.Option) (contractsai.FileResponse, error) {
 	_, providerName, provider, err := r.resolveProvider(options)
 	if err != nil {
@@ -126,6 +130,23 @@ func (r *Application) image(ctx context.Context, prompt contractsai.ImagePrompt,
 	}
 
 	return imageProvider.Image(ctx, prompt)
+}
+
+func (r *Application) transcription(ctx context.Context, prompt contractsai.TranscriptionPrompt, options ...contractsai.Option) (contractsai.TranscriptionResponse, error) {
+	opts, providerName, provider, err := r.resolveProvider(options)
+	if err != nil {
+		return nil, err
+	}
+	if prompt.Model == "" {
+		prompt.Model = opts.Model
+	}
+
+	transcriptionProvider, ok := provider.(contractsai.TranscriptionProvider)
+	if !ok {
+		return nil, errors.AIProviderDoesNotSupportTranscription.Args(providerName)
+	}
+
+	return transcriptionProvider.Transcription(ctx, prompt)
 }
 
 func (r *Application) resolveProvider(options []contractsai.Option) (*contractsai.Options, string, contractsai.Provider, error) {

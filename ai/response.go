@@ -32,6 +32,12 @@ type audioResponse struct {
 	storer   audioStorer
 }
 
+type transcriptionResponse struct {
+	text     string
+	segments []contractsai.TranscriptionSegment
+	usage    contractsai.Usage
+}
+
 type fileResponse struct {
 	id       string
 	mimeType string
@@ -51,6 +57,10 @@ func NewImageResponse(content []byte, mimeType string, usage contractsai.Usage) 
 
 func NewAudioResponse(content []byte, mimeType string, usage contractsai.Usage) contractsai.AudioResponse {
 	return &audioResponse{content: content, mimeType: mimeType, usage: usage, storer: audioStorer{}}
+}
+
+func NewTranscriptionResponse(text string, segments []contractsai.TranscriptionSegment, usage contractsai.Usage) contractsai.TranscriptionResponse {
+	return &transcriptionResponse{text: text, segments: cloneTranscriptionSegments(segments), usage: usage}
 }
 
 func NewFileResponse(id, mimeType string, content []byte) contractsai.FileResponse {
@@ -142,6 +152,24 @@ func (r *audioResponse) Then(callback func(contractsai.AudioResponse)) contracts
 	return r
 }
 
+func (r *transcriptionResponse) Text() string { return r.text }
+
+func (r *transcriptionResponse) Segments() []contractsai.TranscriptionSegment {
+	return cloneTranscriptionSegments(r.segments)
+}
+
+func (r *transcriptionResponse) Usage() contractsai.Usage { return r.usage }
+
+func (r *transcriptionResponse) Then(callback func(contractsai.TranscriptionResponse)) contractsai.TranscriptionResponse {
+	if callback == nil {
+		return r
+	}
+
+	callback(r)
+
+	return r
+}
+
 func (r *audioResponse) storageName() string {
 	if r.name != "" {
 		return r.name
@@ -217,3 +245,11 @@ func (r *fileResponse) Content(context.Context) ([]byte, error) { return bytes.C
 func (r *usage) Input() int  { return r.input }
 func (r *usage) Output() int { return r.output }
 func (r *usage) Total() int  { return r.total }
+
+func cloneTranscriptionSegments(segments []contractsai.TranscriptionSegment) []contractsai.TranscriptionSegment {
+	if len(segments) == 0 {
+		return nil
+	}
+
+	return append([]contractsai.TranscriptionSegment(nil), segments...)
+}

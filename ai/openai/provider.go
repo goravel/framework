@@ -10,7 +10,9 @@ import (
 	"mime"
 	"net/http"
 	"path/filepath"
+	"reflect"
 	"strings"
+	"time"
 
 	goopenai "github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
@@ -28,7 +30,11 @@ import (
 
 const DefaultTextModel = "gpt-5.4"
 const DefaultAudioModel = "gpt-4o-mini-tts"
+const DefaultTranscriptionModel = "gpt-4o-mini-transcribe"
+const DefaultDiarizedTranscriptionModel = "gpt-4o-transcribe-diarize"
 const DefaultImageModel = "gpt-image-2"
+const DefaultFemaleVoice = "alloy"
+const DefaultMaleVoice = "ash"
 
 const providerStateResponseID = "openai.response_id"
 
@@ -53,6 +59,9 @@ func NewOpenAI(config contractsconfig.Config, provider string) (*Provider, error
 	}
 	if providerConfig.Models.Audio.Default == "" {
 		providerConfig.Models.Audio.Default = DefaultAudioModel
+	}
+	if providerConfig.Models.Transcription.Default == "" {
+		providerConfig.Models.Transcription.Default = DefaultTranscriptionModel
 	}
 	if providerConfig.Models.Image.Default == "" {
 		providerConfig.Models.Image.Default = DefaultImageModel
@@ -89,6 +98,38 @@ func (r *Provider) Audio(ctx context.Context, prompt contractsai.AudioPrompt) (c
 	}
 
 	return r.parseAudioResponse(response, params.ResponseFormat)
+}
+
+func (r *Provider) Transcription(ctx context.Context, prompt contractsai.TranscriptionPrompt) (contractsai.TranscriptionResponse, error) {
+	if isNilInterface(prompt.File) {
+		return nil, errors.AITranscriptionFileRequired
+	}
+
+	content, err := prompt.File.Content(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	requestOptions := make([]option.RequestOption, 0, 1)
+	if prompt.Timeout > 0 {
+		requestOptions = append(requestOptions, option.WithRequestTimeout(prompt.Timeout))
+	}
+
+	params := goopenai.AudioTranscriptionNewParams{
+		File:           goopenai.File(bytes.NewReader(content), r.uploadFilename(prompt.File), prompt.File.MimeType()),
+		Model:          goopenai.AudioModel(r.resolveTranscriptionModel(prompt.Model, prompt.Diarize)),
+		ResponseFormat: r.resolveTranscriptionResponseFormat(prompt.Diarize),
+	}
+	if prompt.Language != "" {
+		params.Language = param.NewOpt(prompt.Language)
+	}
+
+	response, err := r.client.Audio.Transcriptions.New(ctx, params, requestOptions...)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.parseTranscriptionResponse(response, prompt.Diarize)
 }
 
 func (r *Provider) Image(ctx context.Context, prompt contractsai.ImagePrompt) (contractsai.ImageResponse, error) {
@@ -341,12 +382,38 @@ func (r *Provider) resolveAudioModel(model string) string {
 	return r.config.Models.Audio.Default
 }
 
+func (r *Provider) resolveTranscriptionModel(model string, diarize bool) string {
+	if model != "" {
+		return model
+	}
+	if diarize {
+		if r.config.Models.Transcription.Default != "" && r.config.Models.Transcription.Default != DefaultTranscriptionModel {
+			return r.config.Models.Transcription.Default
+		}
+
+		return DefaultDiarizedTranscriptionModel
+	}
+	if r.config.Models.Transcription.Default == "" {
+		return DefaultTranscriptionModel
+	}
+
+	return r.config.Models.Transcription.Default
+}
+
+func (r *Provider) resolveTranscriptionResponseFormat(diarize bool) goopenai.AudioResponseFormat {
+	if diarize {
+		return goopenai.AudioResponseFormatDiarizedJSON
+	}
+
+	return goopenai.AudioResponseFormatJSON
+}
+
 func (r *Provider) resolveAudioVoice(voice string) string {
 	switch voice {
-	case "", "default-female":
-		return "alloy"
-	case "default-male":
-		return "ash"
+	case "", frameworkai.DefaultFemaleVoice:
+		return string(goopenai.AudioSpeechNewParamsVoiceString2Alloy)
+	case frameworkai.DefaultMaleVoice:
+		return string(goopenai.AudioSpeechNewParamsVoiceString2Ash)
 	default:
 		return voice
 	}
@@ -799,6 +866,77 @@ func (r *Provider) parseAudioResponse(response *http.Response, format goopenai.A
 	return frameworkai.NewAudioResponse(content, mimeType, frameworkai.NewUsage(0, 0, 0)), nil
 }
 
+func (r *Provider) parseTranscriptionResponse(response *goopenai.AudioTranscriptionNewResponseUnion, diarize bool) (contractsai.TranscriptionResponse, error) {
+	if response == nil {
+		return nil, errors.AITranscriptionResponseIsEmpty
+	}
+
+	segments, err := r.resolveTranscriptionSegments(response, diarize)
+	if err != nil {
+		return nil, err
+	}
+	if !response.JSON.Text.Valid() && !response.JSON.Segments.Valid() {
+		return nil, errors.AITranscriptionResponseIsEmpty
+	}
+
+	return frameworkai.NewTranscriptionResponse(response.Text, segments, r.parseTranscriptionUsage(response.Usage)), nil
+}
+
+func (r *Provider) resolveTranscriptionSegments(response *goopenai.AudioTranscriptionNewResponseUnion, diarize bool) ([]contractsai.TranscriptionSegment, error) {
+	if response == nil {
+		return nil, nil
+	}
+
+	if diarize {
+		type rawSegment struct {
+			Speaker string  `json:"speaker"`
+			Start   float64 `json:"start"`
+			End     float64 `json:"end"`
+			Text    string  `json:"text"`
+		}
+		type rawResponse struct {
+			Segments []rawSegment `json:"segments"`
+		}
+
+		var raw rawResponse
+		if err := json.Unmarshal([]byte(response.RawJSON()), &raw); err != nil {
+			return nil, err
+		}
+		if len(raw.Segments) > 0 {
+			segments := make([]contractsai.TranscriptionSegment, 0, len(raw.Segments))
+			for _, segment := range raw.Segments {
+				segments = append(segments, contractsai.TranscriptionSegment{
+					Speaker: segment.Speaker,
+					Start:   time.Duration(segment.Start * float64(time.Second)),
+					End:     time.Duration(segment.End * float64(time.Second)),
+					Text:    segment.Text,
+				})
+			}
+
+			return segments, nil
+		}
+	}
+
+	if len(response.Segments) == 0 {
+		return nil, nil
+	}
+
+	segments := make([]contractsai.TranscriptionSegment, 0, len(response.Segments))
+	for _, segment := range response.Segments {
+		segments = append(segments, contractsai.TranscriptionSegment{
+			Start: time.Duration(segment.Start * float64(time.Second)),
+			End:   time.Duration(segment.End * float64(time.Second)),
+			Text:  segment.Text,
+		})
+	}
+
+	return segments, nil
+}
+
+func (r *Provider) parseTranscriptionUsage(raw goopenai.AudioTranscriptionNewResponseUnionUsage) contractsai.Usage {
+	return frameworkai.NewUsage(int(raw.InputTokens), int(raw.OutputTokens), int(raw.TotalTokens))
+}
+
 func (r *Provider) resolveAudioMimeType(format goopenai.AudioSpeechNewParamsResponseFormat) string {
 	switch format {
 	case goopenai.AudioSpeechNewParamsResponseFormatWAV:
@@ -815,5 +953,19 @@ func (r *Provider) resolveAudioMimeType(format goopenai.AudioSpeechNewParamsResp
 		fallthrough
 	default:
 		return "audio/mpeg"
+	}
+}
+
+func isNilInterface(value any) bool {
+	if value == nil {
+		return true
+	}
+
+	reflectValue := reflect.ValueOf(value)
+	switch reflectValue.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return reflectValue.IsNil()
+	default:
+		return false
 	}
 }

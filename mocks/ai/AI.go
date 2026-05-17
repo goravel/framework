@@ -192,6 +192,54 @@ func (_c *AI_Image_Call) RunAndReturn(run func(string) ai.ImageRequest) *AI_Imag
 	return _c
 }
 
+// Transcription provides a mock function with given fields: file
+func (_m *AI) Transcription(file ai.StorableFile) ai.TranscriptionRequest {
+	ret := _m.Called(file)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Transcription")
+	}
+
+	var r0 ai.TranscriptionRequest
+	if rf, ok := ret.Get(0).(func(ai.StorableFile) ai.TranscriptionRequest); ok {
+		r0 = rf(file)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(ai.TranscriptionRequest)
+		}
+	}
+
+	return r0
+}
+
+// AI_Transcription_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Transcription'
+type AI_Transcription_Call struct {
+	*mock.Call
+}
+
+// Transcription is a helper method to define mock.On call
+//   - file ai.StorableFile
+func (_e *AI_Expecter) Transcription(file interface{}) *AI_Transcription_Call {
+	return &AI_Transcription_Call{Call: _e.mock.On("Transcription", file)}
+}
+
+func (_c *AI_Transcription_Call) Run(run func(file ai.StorableFile)) *AI_Transcription_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(ai.StorableFile))
+	})
+	return _c
+}
+
+func (_c *AI_Transcription_Call) Return(_a0 ai.TranscriptionRequest) *AI_Transcription_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *AI_Transcription_Call) RunAndReturn(run func(ai.StorableFile) ai.TranscriptionRequest) *AI_Transcription_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // WithContext provides a mock function with given fields: ctx
 func (_m *AI) WithContext(ctx context.Context) ai.AI {
 	ret := _m.Called(ctx)

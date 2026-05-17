@@ -1,4 +1,4 @@
 package ai
 
-const defaultMaleVoice = "default-male"
-const defaultFemaleVoice = "default-female"
+const DefaultMaleVoice = "default-male"
+const DefaultFemaleVoice = "default-female"

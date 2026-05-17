@@ -10,6 +10,8 @@ type AI interface {
 	Audio(prompt string) AudioRequest
 	// Image creates a fluent image generation request.
 	Image(prompt string) ImageRequest
+	// Transcription creates a fluent speech-to-text request.
+	Transcription(file StorableFile) TranscriptionRequest
 	// WithContext returns a new AI instance that carries the provided context for all operations.
 	WithContext(ctx context.Context) AI
 }

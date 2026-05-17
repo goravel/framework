@@ -478,12 +478,72 @@ func TestApplication_Audio(t *testing.T) {
 	assert.Equal(t, "welcome to goravel", req.prompt)
 	assert.Equal(t, "default", req.provider)
 	assert.Equal(t, "gpt-4o-mini-tts", req.model)
-	assert.Equal(t, defaultMaleVoice, req.voice)
+	assert.Equal(t, DefaultMaleVoice, req.voice)
 	assert.Equal(t, "Speak slowly", req.instructions)
 	assert.Equal(t, 2*time.Second, req.timeout)
 
 	assert.Same(t, req, request.Female())
-	assert.Equal(t, defaultFemaleVoice, req.voice)
+	assert.Equal(t, DefaultFemaleVoice, req.voice)
+}
+
+func TestApplication_Transcription(t *testing.T) {
+	ctx := context.Background()
+	config := contractsai.Config{
+		Default: "default",
+		Providers: map[string]contractsai.ProviderConfig{
+			"default": {Via: mocksai.NewProvider(t)},
+		},
+	}
+	file := mocksai.NewStorableFile(t)
+
+	app := NewApplication(ctx, config)
+	request := app.Transcription(file).Provider("default").Model("gpt-4o-mini-transcribe").Language("en").Diarize().Timeout(2 * time.Second)
+
+	req, ok := request.(*transcriptionRequest)
+	assert.True(t, ok)
+	assert.Equal(t, ctx, req.ctx)
+	assert.Equal(t, app, req.app)
+	assert.Equal(t, file, req.file)
+	assert.Equal(t, "default", req.provider)
+	assert.Equal(t, "gpt-4o-mini-transcribe", req.model)
+	assert.Equal(t, "en", req.language)
+	assert.True(t, req.diarize)
+	assert.Equal(t, 2*time.Second, req.timeout)
+}
+
+func TestTranscriptionRequest_Generate(t *testing.T) {
+	ctx := context.Background()
+	provider := &applicationTranscriptionProviderStub{}
+	config := contractsai.Config{
+		Default: "default",
+		Providers: map[string]contractsai.ProviderConfig{
+			"default": {Via: provider},
+		},
+	}
+	file := mocksai.NewStorableFile(t)
+
+	app := NewApplication(context.Background(), config)
+	response := &applicationTranscriptionResponseStub{}
+	provider.response = response
+
+	result, err := app.Transcription(file).
+		Provider("default").
+		Model("gpt-4o-mini-transcribe").
+		Language("en").
+		Diarize().
+		Timeout(3 * time.Second).
+		Generate()
+
+	require.NoError(t, err)
+	assert.Equal(t, response, result)
+	assert.Equal(t, ctx, provider.ctx)
+	assert.Equal(t, contractsai.TranscriptionPrompt{
+		File:     file,
+		Model:    "gpt-4o-mini-transcribe",
+		Language: "en",
+		Diarize:  true,
+		Timeout:  3 * time.Second,
+	}, provider.prompt)
 }
 
 func TestAudioRequest_Generate(t *testing.T) {
@@ -514,7 +574,7 @@ func TestAudioRequest_Generate(t *testing.T) {
 	assert.Equal(t, contractsai.AudioPrompt{
 		Prompt:       "welcome to goravel",
 		Model:        "gpt-4o-mini-tts",
-		Voice:        defaultMaleVoice,
+		Voice:        DefaultMaleVoice,
 		Instructions: "Speak slowly",
 		Timeout:      3 * time.Second,
 	}, provider.prompt)
@@ -554,7 +614,7 @@ func TestApplication_audio(t *testing.T) {
 			options: []contractsai.Option{WithProvider("openai")},
 			prompt: contractsai.AudioPrompt{
 				Prompt: "welcome to goravel",
-				Voice:  defaultFemaleVoice,
+				Voice:  DefaultFemaleVoice,
 			},
 			setup: func() contractsai.Config {
 				provider := &applicationAudioProviderStub{}
@@ -569,7 +629,7 @@ func TestApplication_audio(t *testing.T) {
 			},
 			expectPrompt: contractsai.AudioPrompt{
 				Prompt: "welcome to goravel",
-				Voice:  defaultFemaleVoice,
+				Voice:  DefaultFemaleVoice,
 			},
 		},
 		{
@@ -601,6 +661,70 @@ func TestApplication_audio(t *testing.T) {
 
 			require.NotNil(t, response)
 			provider, ok := app.config.Providers["openai"].Via.(*applicationAudioProviderStub)
+			require.True(t, ok)
+			assert.Equal(t, tt.expectPrompt, provider.prompt)
+		})
+	}
+}
+
+func TestApplication_transcription(t *testing.T) {
+	file := mocksai.NewStorableFile(t)
+	tests := []struct {
+		name         string
+		options      []contractsai.Option
+		prompt       contractsai.TranscriptionPrompt
+		setup        func() contractsai.Config
+		expectError  error
+		expectPrompt contractsai.TranscriptionPrompt
+	}{
+		{
+			name:    "success with default model",
+			options: []contractsai.Option{WithProvider("openai")},
+			prompt: contractsai.TranscriptionPrompt{
+				File: file,
+			},
+			setup: func() contractsai.Config {
+				provider := &applicationTranscriptionProviderStub{}
+				provider.response = &applicationTranscriptionResponseStub{}
+				return contractsai.Config{
+					Default: "default",
+					Providers: map[string]contractsai.ProviderConfig{
+						"default": {Via: mocksai.NewProvider(t)},
+						"openai":  {Via: provider},
+					},
+				}
+			},
+			expectPrompt: contractsai.TranscriptionPrompt{File: file},
+		},
+		{
+			name: "provider does not support transcription",
+			prompt: contractsai.TranscriptionPrompt{
+				File: file,
+			},
+			setup: func() contractsai.Config {
+				return contractsai.Config{
+					Default: "default",
+					Providers: map[string]contractsai.ProviderConfig{
+						"default": {Via: mocksai.NewProvider(t)},
+					},
+				}
+			},
+			expectError: errors.AIProviderDoesNotSupportTranscription.Args("default"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			app := NewApplication(context.Background(), tt.setup())
+			response, err := app.transcription(context.Background(), tt.prompt, tt.options...)
+			assert.Equal(t, tt.expectError, err)
+			if tt.expectError != nil {
+				assert.Nil(t, response)
+				return
+			}
+
+			require.NotNil(t, response)
+			provider, ok := app.config.Providers["openai"].Via.(*applicationTranscriptionProviderStub)
 			require.True(t, ok)
 			assert.Equal(t, tt.expectPrompt, provider.prompt)
 		})
@@ -825,6 +949,13 @@ type applicationAudioProviderStub struct {
 	err      error
 }
 
+type applicationTranscriptionProviderStub struct {
+	ctx      context.Context
+	prompt   contractsai.TranscriptionPrompt
+	response contractsai.TranscriptionResponse
+	err      error
+}
+
 func (p *applicationAudioProviderStub) Prompt(context.Context, contractsai.AgentPrompt) (contractsai.AgentResponse, error) {
 	return nil, nil
 }
@@ -834,6 +965,20 @@ func (p *applicationAudioProviderStub) Stream(context.Context, contractsai.Agent
 }
 
 func (p *applicationAudioProviderStub) Audio(ctx context.Context, prompt contractsai.AudioPrompt) (contractsai.AudioResponse, error) {
+	p.ctx = ctx
+	p.prompt = prompt
+	return p.response, p.err
+}
+
+func (p *applicationTranscriptionProviderStub) Prompt(context.Context, contractsai.AgentPrompt) (contractsai.AgentResponse, error) {
+	return nil, nil
+}
+
+func (p *applicationTranscriptionProviderStub) Stream(context.Context, contractsai.AgentPrompt) (contractsai.StreamableAgentResponse, error) {
+	return nil, nil
+}
+
+func (p *applicationTranscriptionProviderStub) Transcription(ctx context.Context, prompt contractsai.TranscriptionPrompt) (contractsai.TranscriptionResponse, error) {
 	p.ctx = ctx
 	p.prompt = prompt
 	return p.response, p.err
@@ -895,6 +1040,28 @@ func (r *applicationAudioResponseStub) StoreAs(path string, disk ...string) (str
 func (r *applicationAudioResponseStub) Usage() contractsai.Usage { return nil }
 
 func (r *applicationAudioResponseStub) Then(callback func(contractsai.AudioResponse)) contractsai.AudioResponse {
+	if callback != nil {
+		callback(r)
+	}
+
+	return r
+}
+
+type applicationTranscriptionResponseStub struct {
+	text     string
+	segments []contractsai.TranscriptionSegment
+	usage    contractsai.Usage
+}
+
+func (r *applicationTranscriptionResponseStub) Text() string { return r.text }
+
+func (r *applicationTranscriptionResponseStub) Segments() []contractsai.TranscriptionSegment {
+	return append([]contractsai.TranscriptionSegment(nil), r.segments...)
+}
+
+func (r *applicationTranscriptionResponseStub) Usage() contractsai.Usage { return r.usage }
+
+func (r *applicationTranscriptionResponseStub) Then(callback func(contractsai.TranscriptionResponse)) contractsai.TranscriptionResponse {
 	if callback != nil {
 		callback(r)
 	}
