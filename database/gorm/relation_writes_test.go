@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	dbcontract "github.com/goravel/framework/contracts/database/db"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/errors"
 )
@@ -620,3 +621,124 @@ func TestResolvePivotTimestamps_StructHasOneCol_FallbackFillsOther(t *testing.T)
 	assert.Equal(t, "created_at", created, "struct-provided column wins")
 	assert.Equal(t, "updated_at", updated, "fallback fills the column the struct didn't provide")
 }
+
+// syncResultChanged is a pure function used by syncCore/syncCoreWithPivot to decide whether to
+// call touchIfTouching. Test all branches.
+
+func TestSyncResultChanged_AllEmpty(t *testing.T) {
+	out := &dbcontract.SyncResult{}
+	assert.False(t, syncResultChanged(out))
+}
+
+func TestSyncResultChanged_HasAttached(t *testing.T) {
+	out := &dbcontract.SyncResult{Attached: []any{1}}
+	assert.True(t, syncResultChanged(out))
+}
+
+func TestSyncResultChanged_HasDetached(t *testing.T) {
+	out := &dbcontract.SyncResult{Detached: []any{2}}
+	assert.True(t, syncResultChanged(out))
+}
+
+func TestSyncResultChanged_HasUpdated(t *testing.T) {
+	out := &dbcontract.SyncResult{Updated: []any{3}}
+	assert.True(t, syncResultChanged(out))
+}
+
+func TestSyncResultChanged_AllPopulated(t *testing.T) {
+	out := &dbcontract.SyncResult{Attached: []any{1}, Detached: []any{2}, Updated: []any{3}}
+	assert.True(t, syncResultChanged(out))
+}
+
+// applyAttrMap overlays an attrs map onto a target struct via GORM's schema. Tests cover the
+// happy path, the early-return for empty attrs, and the silent skip for unknown columns.
+
+func TestApplyAttrMap_EmptyAttrs_NoOp(t *testing.T) {
+	q := newRelQueryWith(t, &relUser{})
+	dest := &relUser{ID: 5}
+	err := q.applyAttrMap(dest, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, uint(5), dest.ID, "dest unchanged")
+}
+
+func TestApplyAttrMap_EmptyMap_NoOp(t *testing.T) {
+	q := newRelQueryWith(t, &relUser{})
+	dest := &relUser{ID: 5}
+	err := q.applyAttrMap(dest, map[string]any{})
+	assert.NoError(t, err)
+	assert.Equal(t, uint(5), dest.ID, "dest unchanged")
+}
+
+func TestApplyAttrMap_UnknownColumn_Skipped(t *testing.T) {
+	q := newRelQueryWith(t, &relUser{})
+	dest := &relUser{ID: 5}
+	// "no_such_column" doesn't map to any field — applyAttrMap silently skips.
+	err := q.applyAttrMap(dest, map[string]any{"no_such_column": "x"})
+	assert.NoError(t, err)
+	assert.Equal(t, uint(5), dest.ID, "dest unchanged")
+}
+
+// CreateRelation additional coverage for Many2Many path
+
+// FindOrNewRelation additional coverage
+
+// FirstOrCreateRelation additional coverage for Many2Many path
+
+func TestKindName_AllKinds(t *testing.T) {
+	assert.Equal(t, "hasOne", kindName(relKindHasOne))
+	assert.Equal(t, "hasMany", kindName(relKindHasMany))
+	assert.Equal(t, "belongsTo", kindName(relKindBelongsTo))
+	assert.Equal(t, "many2Many", kindName(relKindMany2Many))
+	assert.Equal(t, "morphOne", kindName(relKindMorphOne))
+	assert.Equal(t, "morphMany", kindName(relKindMorphMany))
+	assert.Equal(t, "morphTo", kindName(relKindMorphTo))
+	assert.Equal(t, "morphToMany", kindName(relKindMorphToMany))
+	assert.Equal(t, "hasOneThrough", kindName(relKindHasOneThrough))
+	assert.Equal(t, "hasManyThrough", kindName(relKindHasManyThrough))
+	assert.Equal(t, "kind=999", kindName(999))
+}
+
+// SaveRelationWithPivot coverage
+
+func TestSaveRelationWithPivot_UnsupportedKind_BelongsTo(t *testing.T) {
+	q := newRelQueryWith(t, &relBook{})
+	err := q.SaveRelationWithPivot(&relBook{ID: 1}, "Author", &relUser{}, nil)
+	assert.True(t, errors.Is(err, errors.OrmRelationKindNotSupported))
+}
+
+func TestSaveRelationWithPivot_NotPointerParent(t *testing.T) {
+	q := newRelQueryWith(t, &relUser{})
+	err := q.SaveRelationWithPivot(relUser{}, "Roles", &relRole{}, nil)
+	assert.True(t, errors.Is(err, errors.OrmRelationParentNotPointer))
+}
+
+func TestSaveRelationWithPivot_NilChild(t *testing.T) {
+	q := newRelQueryWith(t, &relUser{})
+	err := q.SaveRelationWithPivot(&relUser{ID: 1}, "Roles", nil, nil)
+	assert.True(t, errors.Is(err, errors.OrmRelationParentNotPointer))
+}
+
+// SaveManyRelationWithPivot coverage
+
+func TestSaveManyRelationWithPivot_NonSlice(t *testing.T) {
+	q := newRelQueryWith(t, &relUser{})
+	err := q.SaveManyRelationWithPivot(&relUser{ID: 1}, "Roles", "not a slice", nil)
+	assert.True(t, errors.Is(err, errors.OrmRelationKindNotSupported))
+}
+
+func TestSaveManyRelationWithPivot_InvalidElement(t *testing.T) {
+	q := newRelQueryWith(t, &relUser{})
+	// Slice of non-struct/non-pointer elements
+	err := q.SaveManyRelationWithPivot(&relUser{ID: 1}, "Roles", []int{1, 2, 3}, nil)
+	assert.True(t, errors.Is(err, errors.OrmRelationKindNotSupported))
+}
+
+// CreateManyRelation coverage
+
+func TestCreateManyRelation_NonSlice(t *testing.T) {
+	q := newRelQueryWith(t, &relUser{})
+	err := q.CreateManyRelation(&relUser{ID: 1}, "Books", "not a slice")
+	assert.True(t, errors.Is(err, errors.OrmRelationUnsupported))
+}
+
+// Additional error path coverage

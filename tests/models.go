@@ -58,11 +58,11 @@ func (r *User) Relations() map[string]contractsorm.Relation {
 		},
 		"House": contractsorm.MorphOne{
 			Related: &House{},
-			Name:    "Houseable",
+			Name:    "houseable",
 		},
 		"Phones": contractsorm.MorphMany{
 			Related: &Phone{},
-			Name:    "Phoneable",
+			Name:    "phoneable",
 		},
 		"Roles": contractsorm.Many2Many{
 			Related: &Role{},

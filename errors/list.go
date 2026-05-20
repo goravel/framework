@@ -165,7 +165,6 @@ var (
 	OrmInitConnection               = New("init %s connection error: %v")
 	OrmMissingWhereClause           = New("WHERE conditions required")
 	OrmNoDialectorsFound            = New("no dialectors found")
-	OrmQueryAssociationsConflict    = New("cannot set orm.Associations and other fields at the same time")
 	OrmQueryConditionRequired       = New("query condition is required")
 	OrmQueryEmptyId                 = New("id can't be empty")
 	OrmQueryEmptyRelation           = New("relation can't be empty")

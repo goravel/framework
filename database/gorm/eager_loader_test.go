@@ -437,3 +437,92 @@ func mustPivotPlan(t *testing.T, fieldName string, pivotProto any) *pivotHydrati
 		fieldByColumn: byCol,
 	}
 }
+
+// Additional edge case coverage
+
+func TestDictKey_AdditionalTypes(t *testing.T) {
+	assert.Equal(t, "123", dictKey(uint64(123)))
+	assert.Equal(t, "123.45", dictKey(float64(123.45)))
+	assert.Equal(t, "true", dictKey(true))
+	assert.Equal(t, "false", dictKey(false))
+}
+
+func TestCollectEagerParents_EdgeCases(t *testing.T) {
+	// Empty slice
+	users := []relUser{}
+	out, err := collectEagerParents(&users)
+	assert.NoError(t, err)
+	assert.Empty(t, out)
+
+	// Slice with all nils
+	nilUsers := []*relUser{nil, nil, nil}
+	out, err = collectEagerParents(&nilUsers)
+	assert.NoError(t, err)
+	assert.Empty(t, out)
+}
+
+func TestSetRelationField_EdgeCases(t *testing.T) {
+	// Clearing slice field
+	parent := withSlicePtrRel{Books: []*relBook{{Title: "old"}}}
+	rv := reflect.ValueOf(&parent).Elem()
+	err := setRelationField(rv, "Books", nil)
+	assert.NoError(t, err)
+	assert.Empty(t, parent.Books)
+
+	// Empty slice of structs
+	parent2 := withSliceStructRel{Books: []relBook{{Title: "old"}}}
+	rv2 := reflect.ValueOf(&parent2).Elem()
+	err = setRelationField(rv2, "Books", []reflect.Value{})
+	assert.NoError(t, err)
+	assert.Empty(t, parent2.Books)
+}
+
+func TestWritePivotField_EdgeCases(t *testing.T) {
+	// Empty data
+	role := &roleWithPivot{ID: 1, Name: "admin"}
+	plan := mustPivotPlan(t, "Pivot", &roleUserPivot{})
+	err := writePivotField(t.Context(), reflect.ValueOf(role), map[string]any{}, plan)
+	assert.NoError(t, err)
+	assert.Equal(t, "", role.Pivot.Priority)
+
+	// Nil data
+	role2 := &roleWithPivot{ID: 2, Name: "user"}
+	err = writePivotField(t.Context(), reflect.ValueOf(role2), nil, plan)
+	assert.NoError(t, err)
+}
+
+func TestExtractKeys_EmptyInput(t *testing.T) {
+	db := newStubGormDB(t)
+	s, err := parseGormSchema(db, &relUser{})
+	assert.NoError(t, err)
+	idField := s.FieldsByDBName["id"]
+
+	q := NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, nil, nil, nil, &Conditions{})
+	keys := extractKeys(q, []reflect.Value{}, idField)
+	assert.Empty(t, keys)
+}
+
+func TestNewSampleModel_WithPointer(t *testing.T) {
+	u := &relUser{ID: 1}
+	rv := reflect.ValueOf(u)
+	got := newSampleModel(rv)
+	rt := reflect.TypeOf(got)
+	assert.Equal(t, reflect.Pointer, rt.Kind())
+	// When input is a pointer, output is pointer-to-pointer
+	assert.Equal(t, reflect.Pointer, rt.Elem().Kind())
+}
+
+func TestApplyEagerLoads_WithNilDest(t *testing.T) {
+	q := newRelQuery(t)
+	q.conditions.eagerLoad = []eagerLoadEntry{{relation: "Books"}}
+	err := q.applyEagerLoads(nil)
+	assert.NoError(t, err)
+}
+
+func TestRunEagerLoads_InvalidRelation(t *testing.T) {
+	q := newRelQuery(t)
+	parents := []reflect.Value{reflect.ValueOf(relUser{ID: 1})}
+	err := q.runEagerLoads(parents, []eagerLoadEntry{{relation: "NonExistent"}})
+	assert.Error(t, err)
+}
+

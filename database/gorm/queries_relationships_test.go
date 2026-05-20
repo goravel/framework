@@ -268,11 +268,11 @@ func TestWithOnly(t *testing.T) {
 func TestParseRelationArgsAllShapes(t *testing.T) {
 	cb := contractsorm.RelationCallback(func(q contractsorm.Query) contractsorm.Query { return q })
 	cases := []struct {
-		name      string
-		args      []any
-		op        string
-		count     int
-		hasCb     bool
+		name  string
+		args  []any
+		op    string
+		count int
+		hasCb bool
 	}{
 		{"empty", nil, ">=", 1, false},
 		{"callback", []any{cb}, ">=", 1, true},

@@ -2,12 +2,9 @@ package orm
 
 import (
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 
 	"github.com/goravel/framework/support/carbon"
 )
-
-const Associations = clause.Associations
 
 // Model is the base model for all models in the application.
 type Model struct {

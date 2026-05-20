@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/database/orm"
 )
 
 // WithTestSuite covers the With / Without / WithOnly methods, which run Goravel's own eager
@@ -50,10 +49,12 @@ func (s *WithTestSuite) sqlite() *TestQuery {
 func (s *WithTestSuite) TestWith_HasMany() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			alice := &User{Name: "wr_hm_alice", Books: []*Book{{Name: "wr_hm_a1"}, {Name: "wr_hm_a2"}}}
-			s.Nil(query.Query().Select(orm.Associations).Create(&alice))
-			bob := &User{Name: "wr_hm_bob", Books: []*Book{{Name: "wr_hm_b1"}}}
-			s.Nil(query.Query().Select(orm.Associations).Create(&bob))
+			alice := &User{Name: "wr_hm_alice"}
+			s.Nil(query.Query().Create(&alice))
+			s.Nil(query.Query().Relation(alice, "Books").SaveMany([]*Book{{Name: "wr_hm_a1"}, {Name: "wr_hm_a2"}}))
+			bob := &User{Name: "wr_hm_bob"}
+			s.Nil(query.Query().Create(&bob))
+			s.Nil(query.Query().Relation(bob, "Books").SaveMany([]*Book{{Name: "wr_hm_b1"}}))
 
 			var users []User
 			s.Nil(query.Query().Where("name like ?", "wr_hm_%").OrderBy("name").
@@ -70,8 +71,9 @@ func (s *WithTestSuite) TestWith_HasMany() {
 func (s *WithTestSuite) TestWith_HasOne() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			u := &User{Name: "wr_ho_user", Address: &Address{Name: "wr_ho_addr", Province: "X"}}
-			s.Nil(query.Query().Select(orm.Associations).Create(&u))
+			u := &User{Name: "wr_ho_user"}
+			s.Nil(query.Query().Create(&u))
+			s.Nil(query.Query().Relation(u, "Address").Save(&Address{Name: "wr_ho_addr", Province: "X"}))
 
 			var loaded User
 			s.Nil(query.Query().Where("name = ?", "wr_ho_user").
@@ -85,8 +87,11 @@ func (s *WithTestSuite) TestWith_HasOne() {
 func (s *WithTestSuite) TestWith_BelongsTo() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			u := &User{Name: "wr_bt_user", Address: &Address{Name: "wr_bt_addr"}}
-			s.Nil(query.Query().Select(orm.Associations).Create(&u))
+			u := &User{Name: "wr_bt_user"}
+			s.Nil(query.Query().Create(&u))
+			addr := &Address{Name: "wr_bt_addr"}
+			s.Nil(query.Query().Create(&addr))
+			s.Nil(query.Query().Relation(addr, "User").Associate(u))
 
 			var addrs []Address
 			s.Nil(query.Query().Where("name = ?", "wr_bt_addr").
@@ -103,8 +108,9 @@ func (s *WithTestSuite) TestWith_Many2Many() {
 		s.Run(driver, func() {
 			role := &Role{Name: "wr_m2m_role"}
 			s.Nil(query.Query().Create(&role))
-			u := &User{Name: "wr_m2m_user", Roles: []*Role{role}}
-			s.Nil(query.Query().Select(orm.Associations).Create(&u))
+			u := &User{Name: "wr_m2m_user"}
+			s.Nil(query.Query().Create(&u))
+			s.Nil(query.Query().Relation(u, "Roles").Save(role))
 
 			var loaded User
 			s.Nil(query.Query().Where("name = ?", "wr_m2m_user").
@@ -118,8 +124,9 @@ func (s *WithTestSuite) TestWith_Many2Many() {
 func (s *WithTestSuite) TestWith_MorphOne() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			u := &User{Name: "wr_mo_user", House: &House{Name: "wr_mo_house"}}
-			s.Nil(query.Query().Select(orm.Associations).Create(&u))
+			u := &User{Name: "wr_mo_user"}
+			s.Nil(query.Query().Create(&u))
+			s.Nil(query.Query().Relation(u, "House").Save(&House{Name: "wr_mo_house"}))
 
 			var loaded User
 			s.Nil(query.Query().Where("name = ?", "wr_mo_user").
@@ -133,8 +140,9 @@ func (s *WithTestSuite) TestWith_MorphOne() {
 func (s *WithTestSuite) TestWith_MorphMany() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			u := &User{Name: "wr_mm_user", Phones: []*Phone{{Name: "wr_mm_p1"}, {Name: "wr_mm_p2"}}}
-			s.Nil(query.Query().Select(orm.Associations).Create(&u))
+			u := &User{Name: "wr_mm_user"}
+			s.Nil(query.Query().Create(&u))
+			s.Nil(query.Query().Relation(u, "Phones").SaveMany([]*Phone{{Name: "wr_mm_p1"}, {Name: "wr_mm_p2"}}))
 
 			var loaded User
 			s.Nil(query.Query().Where("name = ?", "wr_mm_user").
@@ -148,10 +156,20 @@ func (s *WithTestSuite) TestWith_HasManyThrough() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
 			// User -> Books -> Authors (declared via userWithThrough.ThroughRelations()).
-			u1 := &User{Name: "wr_th_u1", Books: []*Book{{Name: "wr_th_b1", Author: &Author{Name: "wr_th_a1"}}}}
-			s.Nil(query.Query().Select(orm.Associations).Create(&u1))
-			u2 := &User{Name: "wr_th_u2", Books: []*Book{{Name: "wr_th_b2", Author: &Author{Name: "wr_th_a2"}}, {Name: "wr_th_b3", Author: &Author{Name: "wr_th_a3"}}}}
-			s.Nil(query.Query().Select(orm.Associations).Create(&u2))
+			u1 := &User{Name: "wr_th_u1"}
+			s.Nil(query.Query().Create(&u1))
+			b1 := &Book{Name: "wr_th_b1"}
+			s.Nil(query.Query().Relation(u1, "Books").Save(b1))
+			s.Nil(query.Query().Relation(b1, "Author").Save(&Author{Name: "wr_th_a1"}))
+
+			u2 := &User{Name: "wr_th_u2"}
+			s.Nil(query.Query().Create(&u2))
+			b2 := &Book{Name: "wr_th_b2"}
+			s.Nil(query.Query().Relation(u2, "Books").Save(b2))
+			s.Nil(query.Query().Relation(b2, "Author").Save(&Author{Name: "wr_th_a2"}))
+			b3 := &Book{Name: "wr_th_b3"}
+			s.Nil(query.Query().Relation(u2, "Books").Save(b3))
+			s.Nil(query.Query().Relation(b3, "Author").Save(&Author{Name: "wr_th_a3"}))
 
 			// Reuse the userAuthorsThrough model (defined below) which carries the through
 			// declaration but reads from the same users table.
@@ -170,8 +188,11 @@ func (s *WithTestSuite) TestWith_HasManyThrough() {
 func (s *WithTestSuite) TestWith_Nested() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			u := &User{Name: "wr_n_user", Books: []*Book{{Name: "wr_n_b1", Author: &Author{Name: "wr_n_a1"}}}}
-			s.Nil(query.Query().Select(orm.Associations).Create(&u))
+			u := &User{Name: "wr_n_user"}
+			s.Nil(query.Query().Create(&u))
+			b1 := &Book{Name: "wr_n_b1"}
+			s.Nil(query.Query().Relation(u, "Books").Save(b1))
+			s.Nil(query.Query().Relation(b1, "Author").Save(&Author{Name: "wr_n_a1"}))
 
 			var loaded User
 			s.Nil(query.Query().Where("name = ?", "wr_n_user").
@@ -186,8 +207,9 @@ func (s *WithTestSuite) TestWith_Nested() {
 func (s *WithTestSuite) TestWith_Callback() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			u := &User{Name: "wr_cb_user", Books: []*Book{{Name: "wr_cb_keep"}, {Name: "wr_cb_drop"}}}
-			s.Nil(query.Query().Select(orm.Associations).Create(&u))
+			u := &User{Name: "wr_cb_user"}
+			s.Nil(query.Query().Create(&u))
+			s.Nil(query.Query().Relation(u, "Books").SaveMany([]*Book{{Name: "wr_cb_keep"}, {Name: "wr_cb_drop"}}))
 
 			var loaded User
 			cb := func(q contractsorm.Query) contractsorm.Query {
@@ -206,8 +228,10 @@ func (s *WithTestSuite) TestWith_Map() {
 		s.Run(driver, func() {
 			role := &Role{Name: "wr_map_role"}
 			s.Nil(query.Query().Create(&role))
-			u := &User{Name: "wr_map_user", Books: []*Book{{Name: "wr_map_book"}}, Roles: []*Role{role}}
-			s.Nil(query.Query().Select(orm.Associations).Create(&u))
+			u := &User{Name: "wr_map_user"}
+			s.Nil(query.Query().Create(&u))
+			s.Nil(query.Query().Relation(u, "Books").Save(&Book{Name: "wr_map_book"}))
+			s.Nil(query.Query().Relation(u, "Roles").Save(role))
 
 			var loaded User
 			s.Nil(query.Query().Where("name = ?", "wr_map_user").
@@ -224,8 +248,9 @@ func (s *WithTestSuite) TestWith_Map() {
 func (s *WithTestSuite) TestWith_Columns() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			u := &User{Name: "wr_col_user", Books: []*Book{{Name: "wr_col_b1"}}}
-			s.Nil(query.Query().Select(orm.Associations).Create(&u))
+			u := &User{Name: "wr_col_user"}
+			s.Nil(query.Query().Create(&u))
+			s.Nil(query.Query().Relation(u, "Books").Save(&Book{Name: "wr_col_b1"}))
 
 			var loaded User
 			s.Nil(query.Query().Where("name = ?", "wr_col_user").
@@ -243,8 +268,10 @@ func (s *WithTestSuite) TestWith_Columns() {
 func (s *WithTestSuite) TestWithout() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			u := &User{Name: "wrr_user", Books: []*Book{{Name: "wrr_b"}}, Address: &Address{Name: "wrr_a"}}
-			s.Nil(query.Query().Select(orm.Associations).Create(&u))
+			u := &User{Name: "wrr_user"}
+			s.Nil(query.Query().Create(&u))
+			s.Nil(query.Query().Relation(u, "Books").Save(&Book{Name: "wrr_b"}))
+			s.Nil(query.Query().Relation(u, "Address").Save(&Address{Name: "wrr_a"}))
 
 			var loaded User
 			s.Nil(query.Query().Where("name = ?", "wrr_user").
@@ -260,8 +287,10 @@ func (s *WithTestSuite) TestWithout() {
 func (s *WithTestSuite) TestWithOnly() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			u := &User{Name: "wro_user", Books: []*Book{{Name: "wro_b"}}, Address: &Address{Name: "wro_a"}}
-			s.Nil(query.Query().Select(orm.Associations).Create(&u))
+			u := &User{Name: "wro_user"}
+			s.Nil(query.Query().Create(&u))
+			s.Nil(query.Query().Relation(u, "Books").Save(&Book{Name: "wro_b"}))
+			s.Nil(query.Query().Relation(u, "Address").Save(&Address{Name: "wro_a"}))
 
 			var loaded User
 			s.Nil(query.Query().Where("name = ?", "wro_user").
@@ -285,8 +314,9 @@ func (s *WithTestSuite) TestWith_ChunkedIN() {
 	const total = 1100 // > SQLite's default SQLITE_MAX_VARIABLE_NUMBER of 999
 
 	for i := 0; i < total; i++ {
-		u := &User{Name: fmt.Sprintf("wr_chunk_%04d", i), Books: []*Book{{Name: fmt.Sprintf("wr_chunk_b_%04d", i)}}}
-		s.Nil(q.Query().Select(orm.Associations).Create(&u))
+		u := &User{Name: fmt.Sprintf("wr_chunk_%04d", i)}
+		s.Nil(q.Query().Create(&u))
+		s.Nil(q.Query().Relation(u, "Books").Save(&Book{Name: fmt.Sprintf("wr_chunk_b_%04d", i)}))
 	}
 
 	var users []User
