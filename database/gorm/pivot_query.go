@@ -86,3 +86,67 @@ func applyOnPivotQuery(q *gormio.DB, desc *relationDescriptor) *gormio.DB {
 	desc.onPivotQuery(pq)
 	return pq.db
 }
+
+// queryPivotQuery adapts a contractsorm.Query to the PivotQuery interface so OnPivotQuery
+// callbacks can be threaded through builder-level reads (e.g. Query.Related). Each Where* call
+// is rewritten with the pivot table qualifier before being appended to the underlying Query.
+type queryPivotQuery struct {
+	q         contractsorm.Query
+	tableName string
+}
+
+func newQueryPivotQuery(q contractsorm.Query, tableName string) *queryPivotQuery {
+	return &queryPivotQuery{q: q, tableName: tableName}
+}
+
+func (p *queryPivotQuery) qualified(column string) string {
+	return fmt.Sprintf("%s.%s", quoteIdent(p.tableName), quoteIdent(column))
+}
+
+func (p *queryPivotQuery) Where(column string, args ...any) contractsorm.PivotQuery {
+	switch len(args) {
+	case 1:
+		p.q = p.q.Where(fmt.Sprintf("%s = ?", p.qualified(column)), args[0])
+	case 2:
+		op, ok := args[0].(string)
+		if !ok {
+			p.q = p.q.Where(fmt.Sprintf("%s = ?", p.qualified(column)), args[0]).
+				Where(fmt.Sprintf("%s = ?", p.qualified(column)), args[1])
+			return p
+		}
+		p.q = p.q.Where(fmt.Sprintf("%s %s ?", p.qualified(column), op), args[1])
+	}
+	return p
+}
+
+func (p *queryPivotQuery) WhereIn(column string, values []any) contractsorm.PivotQuery {
+	p.q = p.q.Where(fmt.Sprintf("%s IN ?", p.qualified(column)), values)
+	return p
+}
+
+func (p *queryPivotQuery) WhereNotIn(column string, values []any) contractsorm.PivotQuery {
+	p.q = p.q.Where(fmt.Sprintf("%s NOT IN ?", p.qualified(column)), values)
+	return p
+}
+
+func (p *queryPivotQuery) WhereNull(column string) contractsorm.PivotQuery {
+	p.q = p.q.Where(fmt.Sprintf("%s IS NULL", p.qualified(column)))
+	return p
+}
+
+func (p *queryPivotQuery) WhereNotNull(column string) contractsorm.PivotQuery {
+	p.q = p.q.Where(fmt.Sprintf("%s IS NOT NULL", p.qualified(column)))
+	return p
+}
+
+// applyOnPivotQueryToQuery is the contractsorm.Query equivalent of applyOnPivotQuery, for code
+// paths that surface a builder rather than a raw *gormio.DB (e.g. Query.Related's many-to-many
+// read path).
+func applyOnPivotQueryToQuery(q contractsorm.Query, desc *relationDescriptor) contractsorm.Query {
+	if desc.onPivotQuery == nil {
+		return q
+	}
+	pq := newQueryPivotQuery(q, desc.pivotTable)
+	desc.onPivotQuery(pq)
+	return pq.q
+}

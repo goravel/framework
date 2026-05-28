@@ -426,17 +426,18 @@ func (r *Query) loadMany2Many(parents []reflect.Value, parentModel any, desc *re
 		pivotSelectCols = append(pivotSelectCols, pivotPlan.extraColumns...)
 	}
 
-	// Convert []string to []interface{} for GORM's Select signature.
-	selectArgs := make([]interface{}, len(pivotSelectCols))
+	// Convert []string to []any for GORM's Select signature.
+	selectArgs := make([]any, len(pivotSelectCols))
 	for i, col := range pivotSelectCols {
 		selectArgs[i] = col
 	}
 
 	pivotRows, err := r.chunkedFindMaps(keys, func(chunk []any) *gormio.DB {
-		return r.freshSession().
+		q := r.freshSession().
 			Table(desc.pivotTable).
 			Select(selectArgs[0], selectArgs[1:]...).
 			Where(fmt.Sprintf("%s.%s IN ?", quoteIdent(desc.pivotTable), quoteIdent(pivotParentCol)), chunk)
+		return applyOnPivotQuery(q, desc)
 	})
 	if err != nil {
 		return err
@@ -476,49 +477,45 @@ func (r *Query) loadMany2Many(parents []reflect.Value, parentModel any, desc *re
 		relatedByID[dictKey(val)] = row
 	}
 
-	// Build pivot data map: key = relatedID, value = map of pivot column values to hydrate.
-	var pivotDataByRelatedID map[string]map[string]any
+	// Walk pivot rows and assemble per-parent dictionaries. When a Pivot field is in play we
+	// clone the related row per pivot row so each parent's pivot attributes land on its own
+	// instance — sharing a single row across parents would let one parent's pivot values
+	// silently overwrite another's. When there's no Pivot field we share the template row,
+	// since nothing parent-specific is being written onto it.
+	dict := make(map[string][]reflect.Value, len(parents))
+	nestedRows := rows
 	if pivotPlan != nil {
-		pivotDataByRelatedID = make(map[string]map[string]any, len(pivotRows))
-		for _, p := range pivotRows {
-			relatedKey := dictKey(p[pivotRelatedCol])
+		nestedRows = make([]reflect.Value, 0, len(pivotRows))
+	}
+	for _, p := range pivotRows {
+		parentKey := dictKey(p[pivotParentCol])
+		relatedKey := dictKey(p[pivotRelatedCol])
+		template, ok := relatedByID[relatedKey]
+		if !ok {
+			continue
+		}
+		row := template
+		if pivotPlan != nil {
+			row = cloneRelatedRow(template)
 			data := make(map[string]any, len(pivotPlan.extraColumns))
 			for _, col := range pivotPlan.extraColumns {
 				if val, ok := p[col]; ok {
 					data[col] = val
 				}
 			}
-			pivotDataByRelatedID[relatedKey] = data
+			if err := writePivotField(r.ctx, row, data, pivotPlan); err != nil {
+				return err
+			}
+			nestedRows = append(nestedRows, row)
 		}
-	}
-
-	dict := make(map[string][]reflect.Value, len(parents))
-	for _, p := range pivotRows {
-		parentKey := dictKey(p[pivotParentCol])
-		relatedKey := dictKey(p[pivotRelatedCol])
-		if rel, ok := relatedByID[relatedKey]; ok {
-			dict[parentKey] = append(dict[parentKey], rel)
-		}
+		dict[parentKey] = append(dict[parentKey], row)
 	}
 
 	if err := r.assignToParents(parents, parentField, entry.relation, dict, true); err != nil {
 		return err
 	}
 
-	// Hydrate Pivot field on each related row if we have pivot data.
-	if pivotPlan != nil && len(pivotDataByRelatedID) > 0 {
-		for _, row := range rows {
-			val, _ := relatedPKField.ValueOf(r.ctx, row.Elem())
-			relatedKey := dictKey(val)
-			if data, ok := pivotDataByRelatedID[relatedKey]; ok {
-				if err := writePivotField(r.ctx, row, data, pivotPlan); err != nil {
-					return err
-				}
-			}
-		}
-	}
-
-	return r.recurseNested(rows, nested)
+	return r.recurseNested(nestedRows, nested)
 }
 
 // loadMorphToMany eager-loads polymorphic many-to-many. Mirrors loadMany2Many with one extra
@@ -562,18 +559,19 @@ func (r *Query) loadMorphToMany(parents []reflect.Value, parentModel any, desc *
 		pivotSelectCols = append(pivotSelectCols, pivotPlan.extraColumns...)
 	}
 
-	// Convert []string to []interface{} for GORM's Select signature.
-	selectArgs := make([]interface{}, len(pivotSelectCols))
+	// Convert []string to []any for GORM's Select signature.
+	selectArgs := make([]any, len(pivotSelectCols))
 	for i, col := range pivotSelectCols {
 		selectArgs[i] = col
 	}
 
 	pivotRows, err := r.chunkedFindMaps(keys, func(chunk []any) *gormio.DB {
-		return r.freshSession().
+		q := r.freshSession().
 			Table(desc.pivotTable).
 			Select(selectArgs[0], selectArgs[1:]...).
 			Where(fmt.Sprintf("%s.%s IN ?", quoteIdent(desc.pivotTable), quoteIdent(pivotParentCol)), chunk).
 			Where(fmt.Sprintf("%s.%s = ?", quoteIdent(desc.pivotTable), quoteIdent(desc.morphTypeColumn)), desc.morphValue)
+		return applyOnPivotQuery(q, desc)
 	})
 	if err != nil {
 		return err
@@ -613,49 +611,41 @@ func (r *Query) loadMorphToMany(parents []reflect.Value, parentModel any, desc *
 		relatedByID[dictKey(val)] = row
 	}
 
-	// Build pivot data map: key = relatedID, value = map of pivot column values to hydrate.
-	var pivotDataByRelatedID map[string]map[string]any
+	// See loadMany2Many for the rationale; same per-pivot cloning applies here.
+	dict := make(map[string][]reflect.Value, len(parents))
+	nestedRows := rows
 	if pivotPlan != nil {
-		pivotDataByRelatedID = make(map[string]map[string]any, len(pivotRows))
-		for _, p := range pivotRows {
-			relatedKey := dictKey(p[pivotRelatedCol])
+		nestedRows = make([]reflect.Value, 0, len(pivotRows))
+	}
+	for _, p := range pivotRows {
+		parentKey := dictKey(p[pivotParentCol])
+		relatedKey := dictKey(p[pivotRelatedCol])
+		template, ok := relatedByID[relatedKey]
+		if !ok {
+			continue
+		}
+		row := template
+		if pivotPlan != nil {
+			row = cloneRelatedRow(template)
 			data := make(map[string]any, len(pivotPlan.extraColumns))
 			for _, col := range pivotPlan.extraColumns {
 				if val, ok := p[col]; ok {
 					data[col] = val
 				}
 			}
-			pivotDataByRelatedID[relatedKey] = data
+			if err := writePivotField(r.ctx, row, data, pivotPlan); err != nil {
+				return err
+			}
+			nestedRows = append(nestedRows, row)
 		}
-	}
-
-	dict := make(map[string][]reflect.Value, len(parents))
-	for _, p := range pivotRows {
-		parentKey := dictKey(p[pivotParentCol])
-		relatedKey := dictKey(p[pivotRelatedCol])
-		if rel, ok := relatedByID[relatedKey]; ok {
-			dict[parentKey] = append(dict[parentKey], rel)
-		}
+		dict[parentKey] = append(dict[parentKey], row)
 	}
 
 	if err := r.assignToParents(parents, parentField, entry.relation, dict, true); err != nil {
 		return err
 	}
 
-	// Hydrate Pivot field on each related row if we have pivot data.
-	if pivotPlan != nil && len(pivotDataByRelatedID) > 0 {
-		for _, row := range rows {
-			val, _ := relatedPKField.ValueOf(r.ctx, row.Elem())
-			relatedKey := dictKey(val)
-			if data, ok := pivotDataByRelatedID[relatedKey]; ok {
-				if err := writePivotField(r.ctx, row, data, pivotPlan); err != nil {
-					return err
-				}
-			}
-		}
-	}
-
-	return r.recurseNested(rows, nested)
+	return r.recurseNested(nestedRows, nested)
 }
 
 func (r *Query) loadThrough(parents []reflect.Value, parentModel any, desc *relationDescriptor, entry eagerLoadEntry, nested []eagerLoadEntry, isMany bool) error {
@@ -978,16 +968,12 @@ func dictKey(v any) string {
 }
 
 // chunkSize returns the eager-load IN-clause chunk size, falling back to the default when the
-// config value is unset or invalid. A non-positive value disables chunking.
+// config key is absent. A non-positive value disables chunking.
 func (r *Query) chunkSize() int {
 	if r.config == nil {
 		return defaultEagerLoadChunkSize
 	}
-	v := r.config.GetInt("database.eager_load_chunk_size", defaultEagerLoadChunkSize)
-	if v == 0 {
-		return defaultEagerLoadChunkSize
-	}
-	return v
+	return r.config.GetInt("database.eager_load_chunk_size", defaultEagerLoadChunkSize)
 }
 
 // chunkKeys splits keys into batches of at most size. Returns the input unchanged in a single
@@ -1138,6 +1124,25 @@ func preparePivotHydration(r *Query, desc *relationDescriptor) (*pivotHydrationP
 		extraColumns:  cols,
 		fieldByColumn: byCol,
 	}, nil
+}
+
+// cloneRelatedRow returns a fresh pointer of the same concrete type as rv with rv's elem
+// field-by-field shallow-copied in. Used by the many-to-many eager loaders so each pivot row can
+// own its own related-row instance — necessary when a Pivot field is in play, since the same
+// related model can appear under multiple parents with parent-specific pivot attributes.
+//
+// Shallow copy is sufficient at this point in the load pipeline: scalar fields are value-typed,
+// the Pivot field is written separately per clone, and nested relation fields are zero-valued
+// until recurseNested runs (which then sets them per-clone).
+func cloneRelatedRow(rv reflect.Value) reflect.Value {
+	if rv.Kind() != reflect.Pointer {
+		dup := reflect.New(rv.Type()).Elem()
+		dup.Set(rv)
+		return dup
+	}
+	ptr := reflect.New(rv.Elem().Type())
+	ptr.Elem().Set(rv.Elem())
+	return ptr
 }
 
 // writePivotField copies the column values in data into rv's pivot struct field (named

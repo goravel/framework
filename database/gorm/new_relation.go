@@ -153,7 +153,7 @@ func (r *Query) newMany2ManyQuery(parent any, desc *relationDescriptor, isMorph 
 	if isMorph {
 		q = q.Where(fmt.Sprintf("%s.%s = ?", quoteIdent(pivotTable), quoteIdent(desc.morphTypeColumn)), desc.morphValue)
 	}
-	return q
+	return applyOnPivotQueryToQuery(q, desc)
 }
 
 // newThroughQuery:
