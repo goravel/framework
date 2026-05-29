@@ -208,6 +208,218 @@ func (s *QueriesRelationshipsTestSuite) TestNestedHas() {
 	}
 }
 
+func (s *QueriesRelationshipsTestSuite) TestOrHas() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			withBooks := &User{Name: "rel_or_has_books"}
+			s.Nil(query.Query().Create(withBooks))
+			s.Nil(query.Query().Relation(withBooks, "Books").Save(&Book{Name: "orb1"}))
+			withRoles := &User{Name: "rel_or_has_roles"}
+			s.Nil(query.Query().Create(withRoles))
+			s.Nil(query.Query().Relation(withRoles, "Roles").Save(&Role{Name: "orr1"}))
+			withNeither := &User{Name: "rel_or_has_neither"}
+			s.Nil(query.Query().Create(withNeither))
+
+			rq := rq(query.Query())
+			var users []User
+			s.Nil(rq.Where("name like ?", "rel_or_has_%").
+				Has("Books").OrHas("Roles").Get(&users))
+			names := namesOf(users)
+			s.ElementsMatch([]string{"rel_or_has_books", "rel_or_has_roles"}, names)
+		})
+	}
+}
+
+func (s *QueriesRelationshipsTestSuite) TestOrDoesntHave() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			withBooks := &User{Name: "rel_or_dh_books"}
+			s.Nil(query.Query().Create(withBooks))
+			s.Nil(query.Query().Relation(withBooks, "Books").Save(&Book{Name: "ordh1"}))
+			withRoles := &User{Name: "rel_or_dh_roles"}
+			s.Nil(query.Query().Create(withRoles))
+			s.Nil(query.Query().Relation(withRoles, "Roles").Save(&Role{Name: "ordh2"}))
+			withBoth := &User{Name: "rel_or_dh_both"}
+			s.Nil(query.Query().Create(withBoth))
+			s.Nil(query.Query().Relation(withBoth, "Books").Save(&Book{Name: "ordh3"}))
+			s.Nil(query.Query().Relation(withBoth, "Roles").Save(&Role{Name: "ordh4"}))
+
+			rq := rq(query.Query())
+			var users []User
+			s.Nil(rq.Where("name like ?", "rel_or_dh_%").
+				DoesntHave("Books").OrDoesntHave("Roles").Get(&users))
+			names := namesOf(users)
+			s.ElementsMatch([]string{"rel_or_dh_books", "rel_or_dh_roles"}, names)
+		})
+	}
+}
+
+func (s *QueriesRelationshipsTestSuite) TestOrWhereHas() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			alice := &User{Name: "rel_or_wh_alice"}
+			s.Nil(query.Query().Create(alice))
+			s.Nil(query.Query().Relation(alice, "Books").Save(&Book{Name: "target_book"}))
+			bob := &User{Name: "rel_or_wh_bob"}
+			s.Nil(query.Query().Create(bob))
+			s.Nil(query.Query().Relation(bob, "Roles").Save(&Role{Name: "target_role"}))
+			carol := &User{Name: "rel_or_wh_carol"}
+			s.Nil(query.Query().Create(carol))
+			s.Nil(query.Query().Relation(carol, "Books").Save(&Book{Name: "other_book"}))
+
+			rq := rq(query.Query())
+			cbBook := func(q contractsorm.Query) contractsorm.Query {
+				return q.Where("name = ?", "target_book")
+			}
+			cbRole := func(q contractsorm.Query) contractsorm.Query {
+				return q.Where("name = ?", "target_role")
+			}
+			var users []User
+			s.Nil(rq.Where("name like ?", "rel_or_wh_%").
+				WhereHas("Books", cbBook).OrWhereHas("Roles", cbRole).Get(&users))
+			names := namesOf(users)
+			s.ElementsMatch([]string{"rel_or_wh_alice", "rel_or_wh_bob"}, names)
+		})
+	}
+}
+
+func (s *QueriesRelationshipsTestSuite) TestOrWhereDoesntHave() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			alice := &User{Name: "rel_or_wdh_alice"}
+			s.Nil(query.Query().Create(alice))
+			s.Nil(query.Query().Relation(alice, "Books").Save(&Book{Name: "target_book"}))
+			bob := &User{Name: "rel_or_wdh_bob"}
+			s.Nil(query.Query().Create(bob))
+			s.Nil(query.Query().Relation(bob, "Roles").Save(&Role{Name: "target_role"}))
+			carol := &User{Name: "rel_or_wdh_carol"}
+			s.Nil(query.Query().Create(carol))
+			s.Nil(query.Query().Relation(carol, "Books").Save(&Book{Name: "other_book"}))
+			s.Nil(query.Query().Relation(carol, "Roles").Save(&Role{Name: "other_role"}))
+
+			rq := rq(query.Query())
+			cbBook := func(q contractsorm.Query) contractsorm.Query {
+				return q.Where("name = ?", "target_book")
+			}
+			cbRole := func(q contractsorm.Query) contractsorm.Query {
+				return q.Where("name = ?", "target_role")
+			}
+			var users []User
+			s.Nil(rq.Where("name like ?", "rel_or_wdh_%").
+				WhereDoesntHave("Books", cbBook).OrWhereDoesntHave("Roles", cbRole).Get(&users))
+			names := namesOf(users)
+			s.ElementsMatch([]string{"rel_or_wdh_bob", "rel_or_wdh_carol"}, names)
+		})
+	}
+}
+
+func (s *QueriesRelationshipsTestSuite) TestOrHasMorph() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			withHouse := &User{Name: "rel_or_hm_house"}
+			s.Nil(query.Query().Create(withHouse))
+			s.Nil(query.Query().Relation(withHouse, "House").Save(&House{Name: "orhm_house"}))
+			withPhone := &User{Name: "rel_or_hm_phone"}
+			s.Nil(query.Query().Create(withPhone))
+			s.Nil(query.Query().Relation(withPhone, "Phones").Save(&Phone{Name: "555-0001"}))
+			withNeither := &User{Name: "rel_or_hm_neither"}
+			s.Nil(query.Query().Create(withNeither))
+
+			rq := rq(query.Query())
+			var users []User
+			s.Nil(rq.Where("name like ?", "rel_or_hm_%").
+				HasMorph("House", []any{&User{}}).OrHasMorph("Phones", []any{&User{}}).Get(&users))
+			names := namesOf(users)
+			s.ElementsMatch([]string{"rel_or_hm_house", "rel_or_hm_phone"}, names)
+		})
+	}
+}
+
+func (s *QueriesRelationshipsTestSuite) TestOrDoesntHaveMorph() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			withHouse := &User{Name: "rel_or_dhm_house"}
+			s.Nil(query.Query().Create(withHouse))
+			s.Nil(query.Query().Relation(withHouse, "House").Save(&House{Name: "ordhm_house"}))
+			withPhone := &User{Name: "rel_or_dhm_phone"}
+			s.Nil(query.Query().Create(withPhone))
+			s.Nil(query.Query().Relation(withPhone, "Phones").Save(&Phone{Name: "555-0002"}))
+			withBoth := &User{Name: "rel_or_dhm_both"}
+			s.Nil(query.Query().Create(withBoth))
+			s.Nil(query.Query().Relation(withBoth, "House").Save(&House{Name: "ordhm_house2"}))
+			s.Nil(query.Query().Relation(withBoth, "Phones").Save(&Phone{Name: "555-0003"}))
+
+			rq := rq(query.Query())
+			var users []User
+			s.Nil(rq.Where("name like ?", "rel_or_dhm_%").
+				DoesntHaveMorph("House", []any{&User{}}).OrDoesntHaveMorph("Phones", []any{&User{}}).Get(&users))
+			names := namesOf(users)
+			s.ElementsMatch([]string{"rel_or_dhm_house", "rel_or_dhm_phone"}, names)
+		})
+	}
+}
+
+func (s *QueriesRelationshipsTestSuite) TestOrWhereHasMorph() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			alice := &User{Name: "rel_or_whm_alice"}
+			s.Nil(query.Query().Create(alice))
+			s.Nil(query.Query().Relation(alice, "House").Save(&House{Name: "target_house"}))
+			bob := &User{Name: "rel_or_whm_bob"}
+			s.Nil(query.Query().Create(bob))
+			s.Nil(query.Query().Relation(bob, "Phones").Save(&Phone{Name: "555-9999"}))
+			carol := &User{Name: "rel_or_whm_carol"}
+			s.Nil(query.Query().Create(carol))
+			s.Nil(query.Query().Relation(carol, "House").Save(&House{Name: "other_house"}))
+
+			rq := rq(query.Query())
+			cbHouse := func(q contractsorm.Query) contractsorm.Query {
+				return q.Where("name = ?", "target_house")
+			}
+			cbPhone := func(q contractsorm.Query) contractsorm.Query {
+				return q.Where("name = ?", "555-9999")
+			}
+			var users []User
+			s.Nil(rq.Where("name like ?", "rel_or_whm_%").
+				WhereHasMorph("House", []any{&User{}}, cbHouse).
+				OrWhereHasMorph("Phones", []any{&User{}}, cbPhone).Get(&users))
+			names := namesOf(users)
+			s.ElementsMatch([]string{"rel_or_whm_alice", "rel_or_whm_bob"}, names)
+		})
+	}
+}
+
+func (s *QueriesRelationshipsTestSuite) TestOrWhereDoesntHaveMorph() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			alice := &User{Name: "rel_or_wdhm_alice"}
+			s.Nil(query.Query().Create(alice))
+			s.Nil(query.Query().Relation(alice, "House").Save(&House{Name: "target_house"}))
+			bob := &User{Name: "rel_or_wdhm_bob"}
+			s.Nil(query.Query().Create(bob))
+			s.Nil(query.Query().Relation(bob, "Phones").Save(&Phone{Name: "555-8888"}))
+			carol := &User{Name: "rel_or_wdhm_carol"}
+			s.Nil(query.Query().Create(carol))
+			s.Nil(query.Query().Relation(carol, "House").Save(&House{Name: "other_house"}))
+			s.Nil(query.Query().Relation(carol, "Phones").Save(&Phone{Name: "555-7777"}))
+
+			rq := rq(query.Query())
+			cbHouse := func(q contractsorm.Query) contractsorm.Query {
+				return q.Where("name = ?", "target_house")
+			}
+			cbPhone := func(q contractsorm.Query) contractsorm.Query {
+				return q.Where("name = ?", "555-8888")
+			}
+			var users []User
+			s.Nil(rq.Where("name like ?", "rel_or_wdhm_%").
+				WhereDoesntHaveMorph("House", []any{&User{}}, cbHouse).
+				OrWhereDoesntHaveMorph("Phones", []any{&User{}}, cbPhone).Get(&users))
+			names := namesOf(users)
+			s.ElementsMatch([]string{"rel_or_wdhm_bob", "rel_or_wdhm_carol"}, names)
+		})
+	}
+}
+
 // ---------------------------------------------------------------------------
 // helpers
 // ---------------------------------------------------------------------------
@@ -384,6 +596,102 @@ func (s *QueriesRelationshipsTestSuite) TestSQL_OrDoesntHave() {
 	sql := rq.Where("name = ?", "x").OrDoesntHave("Books").ToRawSql().Get(&users)
 	s.Equal(
 		"SELECT * FROM `users` WHERE (name = 'x' OR NOT EXISTS (SELECT 1 FROM `books` WHERE books.user_id = users.id)) AND `users`.`deleted_at` IS NULL",
+		sql,
+	)
+}
+
+func (s *QueriesRelationshipsTestSuite) TestSQL_OrWhereHas() {
+	q := sqliteOnly(s)
+	if q == nil {
+		return
+	}
+	rq := rq(q.Query().Model(&User{}))
+	var users []User
+	cb := func(q contractsorm.Query) contractsorm.Query {
+		return q.Where("name = ?", "target")
+	}
+	sql := rq.Where("id = ?", 1).OrWhereHas("Books", cb).ToRawSql().Get(&users)
+	s.Equal(
+		"SELECT * FROM `users` WHERE (id = 1 OR EXISTS (SELECT 1 FROM `books` WHERE books.user_id = users.id AND name = 'target')) AND `users`.`deleted_at` IS NULL",
+		sql,
+	)
+}
+
+func (s *QueriesRelationshipsTestSuite) TestSQL_OrWhereDoesntHave() {
+	q := sqliteOnly(s)
+	if q == nil {
+		return
+	}
+	rq := rq(q.Query().Model(&User{}))
+	var users []User
+	cb := func(q contractsorm.Query) contractsorm.Query {
+		return q.Where("name = ?", "target")
+	}
+	sql := rq.Where("id = ?", 1).OrWhereDoesntHave("Books", cb).ToRawSql().Get(&users)
+	s.Equal(
+		"SELECT * FROM `users` WHERE (id = 1 OR NOT EXISTS (SELECT 1 FROM `books` WHERE books.user_id = users.id AND name = 'target')) AND `users`.`deleted_at` IS NULL",
+		sql,
+	)
+}
+
+func (s *QueriesRelationshipsTestSuite) TestSQL_OrHasMorph() {
+	q := sqliteOnly(s)
+	if q == nil {
+		return
+	}
+	rq := rq(q.Query().Model(&User{}))
+	var users []User
+	sql := rq.Where("name = ?", "x").OrHasMorph("House", []any{&User{}}).ToRawSql().Get(&users)
+	s.Equal(
+		"SELECT * FROM `users` WHERE (name = 'x' OR EXISTS (SELECT 1 FROM `houses` WHERE houses.houseable_id = users.id AND houses.houseable_type = 'users')) AND `users`.`deleted_at` IS NULL",
+		sql,
+	)
+}
+
+func (s *QueriesRelationshipsTestSuite) TestSQL_OrDoesntHaveMorph() {
+	q := sqliteOnly(s)
+	if q == nil {
+		return
+	}
+	rq := rq(q.Query().Model(&User{}))
+	var users []User
+	sql := rq.Where("name = ?", "x").OrDoesntHaveMorph("House", []any{&User{}}).ToRawSql().Get(&users)
+	s.Equal(
+		"SELECT * FROM `users` WHERE (name = 'x' OR NOT EXISTS (SELECT 1 FROM `houses` WHERE houses.houseable_id = users.id AND houses.houseable_type = 'users')) AND `users`.`deleted_at` IS NULL",
+		sql,
+	)
+}
+
+func (s *QueriesRelationshipsTestSuite) TestSQL_OrWhereHasMorph() {
+	q := sqliteOnly(s)
+	if q == nil {
+		return
+	}
+	rq := rq(q.Query().Model(&User{}))
+	var users []User
+	cb := func(q contractsorm.Query) contractsorm.Query {
+		return q.Where("name = ?", "target")
+	}
+	sql := rq.Where("id = ?", 1).OrWhereHasMorph("House", []any{&User{}}, cb).ToRawSql().Get(&users)
+	s.Equal(
+		"SELECT * FROM `users` WHERE (id = 1 OR EXISTS (SELECT 1 FROM `houses` WHERE houses.houseable_id = users.id AND houses.houseable_type = 'users' AND name = 'target')) AND `users`.`deleted_at` IS NULL",
+		sql,
+	)
+}
+
+func (s *QueriesRelationshipsTestSuite) TestSQL_OrWhereDoesntHaveMorph() {
+	q := sqliteOnly(s)
+	if q == nil {
+		return
+	}
+	rq := rq(q.Query().Model(&User{}))
+	var users []User
+	cb := func(q contractsorm.Query) contractsorm.Query {
+		return q.Where("name = ?", "target")
+	}
+	sql := rq.Where("id = ?", 1).OrWhereDoesntHaveMorph("House", []any{&User{}}, cb).ToRawSql().Get(&users)
+	s.Equal(
+		"SELECT * FROM `users` WHERE (id = 1 OR NOT EXISTS (SELECT 1 FROM `houses` WHERE houses.houseable_id = users.id AND houses.houseable_type = 'users' AND name = 'target')) AND `users`.`deleted_at` IS NULL",
 		sql,
 	)
 }
