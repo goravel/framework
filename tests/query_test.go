@@ -305,7 +305,7 @@ func (s *QueryTestSuite) TestBelongsTo() {
 				Name: "belongs_to_name",
 			}
 
-			s.Nil(query.Query().Create(&user))
+			s.Nil(query.Query().Create(user))
 			s.True(user.ID > 0)
 			addr := &Address{Name: "belongs_to_address"}
 			s.Nil(query.Query().Relation(user, "Address").Save(addr))
