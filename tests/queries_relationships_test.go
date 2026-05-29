@@ -308,7 +308,7 @@ func (s *QueriesRelationshipsTestSuite) TestOrWhereDoesntHave() {
 			s.Nil(rq.Where("name like ?", "rel_or_wdh_%").
 				WhereDoesntHave("Books", cbBook).OrWhereDoesntHave("Roles", cbRole).Get(&users))
 			names := namesOf(users)
-			s.ElementsMatch([]string{"rel_or_wdh_bob", "rel_or_wdh_carol"}, names)
+			s.ElementsMatch([]string{"rel_or_wdh_alice", "rel_or_wdh_bob", "rel_or_wdh_carol"}, names)
 		})
 	}
 }
@@ -415,7 +415,7 @@ func (s *QueriesRelationshipsTestSuite) TestOrWhereDoesntHaveMorph() {
 				WhereDoesntHaveMorph("House", []any{&User{}}, cbHouse).
 				OrWhereDoesntHaveMorph("Phones", []any{&User{}}, cbPhone).Get(&users))
 			names := namesOf(users)
-			s.ElementsMatch([]string{"rel_or_wdhm_bob", "rel_or_wdhm_carol"}, names)
+			s.ElementsMatch([]string{"rel_or_wdhm_alice", "rel_or_wdhm_bob", "rel_or_wdhm_carol"}, names)
 		})
 	}
 }
