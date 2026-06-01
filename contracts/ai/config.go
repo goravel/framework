@@ -14,7 +14,8 @@ type ProviderConfig struct {
 
 type ModelsConfig struct {
 	Text struct {
-		Default string `json:"default"`
+		Default   string `json:"default"`
+		MaxTokens int    `json:"max_tokens"`
 	} `json:"text"`
 	Audio struct {
 		Default string `json:"default"`
