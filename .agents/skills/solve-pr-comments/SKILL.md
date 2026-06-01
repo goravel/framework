@@ -84,10 +84,14 @@ when Y?", "Is this thread-safe?". These need an answer, not a code change.
 
 1. **Fetch comments**
    ```bash
-   gh pr view {pr_number} --json comments,reviewThreads
+  gh pr view {pr_number} --json comments,reviewThreads --jq '{comments: .comments, reviewThreads: [.reviewThreads[] | select(.isResolved | not)]}'
    # or for inline review comments:
-   gh api repos/{owner}/{repo}/pulls/{pr_number}/comments
+  gh api repos/{owner}/{repo}/pulls/{pr_number}/comments
    ```
+  Ignore resolved review threads and resolved comments. Only triage unresolved
+  feedback that still needs action. If you use the inline comment endpoint,
+  cross-check each comment against `reviewThreads` and skip any comment whose
+  thread is already resolved.
 
 2. **Inspect the worktree before editing**
    ```bash
@@ -96,7 +100,7 @@ when Y?", "Is this thread-safe?". These need an answer, not a code change.
    Note any pre-existing changes. Do not stage, commit, revert, or overwrite
    unrelated user changes.
 
-3. **Triage each comment** using the decision tree above.
+3. **Triage each unresolved comment** using the decision tree above.
 
 4. **Group related changes** — if multiple comments touch the same file or
    function, batch the edits together before replying.
@@ -165,6 +169,8 @@ when Y?", "Is this thread-safe?". These need an answer, not a code change.
 - Never leave valid code-change comments only in the local worktree. If code
   changed, the normal terminal state is: tests run, changes committed, branch
   pushed, comments replied to, and changed threads resolved.
+- Resolved threads are out of scope for this workflow. Do not re-triage,
+  re-answer, or reopen resolved feedback unless the user explicitly asks you to.
 - If commit or push fails, do not resolve the thread. Report the exact blocker
   and leave the branch in a reviewable state.
 - Do not resolve question-only or no-change comments after replying unless the
