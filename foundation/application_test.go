@@ -2,6 +2,7 @@ package foundation
 
 import (
 	"context"
+	"io"
 	"os"
 	"path/filepath"
 	"sync"
@@ -9,11 +10,13 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/stats"
 
+	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/contracts/database/seeder"
@@ -23,7 +26,9 @@ import (
 	"github.com/goravel/framework/contracts/schedule"
 	"github.com/goravel/framework/contracts/validation"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
+	mockstelemetry "github.com/goravel/framework/mocks/telemetry"
 	"github.com/goravel/framework/support"
+	"github.com/goravel/framework/support/color"
 )
 
 type ApplicationTestSuite struct {
@@ -1251,4 +1256,24 @@ func TestSetEnv_DebugBinaryWithTestArgs(t *testing.T) {
 
 	assert.Equal(t, support.RuntimeTest, support.RuntimeMode)
 	assert.True(t, support.DontVerifyAppKey)
+}
+
+func (s *ApplicationTestSuite) TestStart_ShutdownsTelemetry() {
+	mockTelemetry := mockstelemetry.NewTelemetry(s.T())
+	mockTelemetry.EXPECT().Shutdown(mock.Anything).Return(nil).Once()
+	s.app.Instance(binding.Telemetry, mockTelemetry)
+
+	s.app.Start()
+}
+
+func (s *ApplicationTestSuite) TestStart_ShutdownsTelemetryError() {
+	mockTelemetry := mockstelemetry.NewTelemetry(s.T())
+	mockTelemetry.EXPECT().Shutdown(mock.Anything).Return(assert.AnError).Once()
+	s.app.Instance(binding.Telemetry, mockTelemetry)
+
+	output := color.CaptureOutput(func(io.Writer) {
+		s.app.Start()
+	})
+
+	s.Contains(output, "failed to shutdown telemetry")
 }
