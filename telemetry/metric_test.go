@@ -194,34 +194,67 @@ func TestNewMetricReader_Config(t *testing.T) {
 }
 
 func TestGetTemporalitySelector(t *testing.T) {
+	allKinds := []sdkmetric.InstrumentKind{
+		sdkmetric.InstrumentKindCounter,
+		sdkmetric.InstrumentKindHistogram,
+		sdkmetric.InstrumentKindObservableCounter,
+		sdkmetric.InstrumentKindUpDownCounter,
+		sdkmetric.InstrumentKindObservableUpDownCounter,
+		sdkmetric.InstrumentKindObservableGauge,
+	}
+
+	cumulativeAll := map[sdkmetric.InstrumentKind]metricdata.Temporality{}
+	for _, kind := range allKinds {
+		cumulativeAll[kind] = metricdata.CumulativeTemporality
+	}
+
 	tests := []struct {
 		name        string
 		temporality MetricTemporality
-		expected    metricdata.Temporality
+		expected    map[sdkmetric.InstrumentKind]metricdata.Temporality
 	}{
 		{
 			name:        "Default (Cumulative)",
 			temporality: "",
-			expected:    metricdata.CumulativeTemporality,
+			expected:    cumulativeAll,
 		},
 		{
 			name:        "Explicit Cumulative",
 			temporality: TemporalityCumulative,
-			expected:    metricdata.CumulativeTemporality,
+			expected:    cumulativeAll,
 		},
 		{
-			name:        "Explicit Delta",
+			name:        "Delta keeps levels cumulative",
 			temporality: TemporalityDelta,
-			expected:    metricdata.DeltaTemporality,
+			expected: map[sdkmetric.InstrumentKind]metricdata.Temporality{
+				sdkmetric.InstrumentKindCounter:                 metricdata.DeltaTemporality,
+				sdkmetric.InstrumentKindHistogram:               metricdata.DeltaTemporality,
+				sdkmetric.InstrumentKindObservableCounter:       metricdata.DeltaTemporality,
+				sdkmetric.InstrumentKindUpDownCounter:           metricdata.CumulativeTemporality,
+				sdkmetric.InstrumentKindObservableUpDownCounter: metricdata.CumulativeTemporality,
+				sdkmetric.InstrumentKindObservableGauge:         metricdata.CumulativeTemporality,
+			},
+		},
+		{
+			name:        "LowMemory",
+			temporality: TemporalityLowMemory,
+			expected: map[sdkmetric.InstrumentKind]metricdata.Temporality{
+				sdkmetric.InstrumentKindCounter:                 metricdata.DeltaTemporality,
+				sdkmetric.InstrumentKindHistogram:               metricdata.DeltaTemporality,
+				sdkmetric.InstrumentKindObservableCounter:       metricdata.CumulativeTemporality,
+				sdkmetric.InstrumentKindUpDownCounter:           metricdata.CumulativeTemporality,
+				sdkmetric.InstrumentKindObservableUpDownCounter: metricdata.CumulativeTemporality,
+				sdkmetric.InstrumentKindObservableGauge:         metricdata.CumulativeTemporality,
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			selector := getTemporalitySelector(tt.temporality)
-			// Check Counter kind (usually what we care about for Delta vs Cumulative)
-			result := selector(sdkmetric.InstrumentKindCounter)
-			assert.Equal(t, tt.expected, result)
+			for kind, expected := range tt.expected {
+				assert.Equal(t, expected, selector(kind), "kind %v", kind)
+			}
 		})
 	}
 }

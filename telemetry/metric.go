@@ -13,7 +13,6 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/noop"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
-	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 
 	"github.com/goravel/framework/errors"
 )
@@ -29,6 +28,7 @@ type MetricTemporality string
 const (
 	TemporalityCumulative MetricTemporality = "cumulative"
 	TemporalityDelta      MetricTemporality = "delta"
+	TemporalityLowMemory  MetricTemporality = "lowmemory"
 )
 
 const (
@@ -164,10 +164,12 @@ func newConsoleMetricExporter(cfg ExporterEntry) (sdkmetric.Exporter, error) {
 }
 
 func getTemporalitySelector(t MetricTemporality) sdkmetric.TemporalitySelector {
-	return func(kind sdkmetric.InstrumentKind) metricdata.Temporality {
-		if t == TemporalityDelta {
-			return metricdata.DeltaTemporality
-		}
-		return metricdata.CumulativeTemporality
+	switch t {
+	case TemporalityDelta:
+		return sdkmetric.DeltaTemporalitySelector
+	case TemporalityLowMemory:
+		return sdkmetric.LowMemoryTemporalitySelector
+	default:
+		return sdkmetric.DefaultTemporalitySelector
 	}
 }

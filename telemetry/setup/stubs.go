@@ -220,9 +220,10 @@ func init() {
 				// Format: Duration string (e.g., "10s", "500ms").
 				"timeout": config.Env("OTEL_EXPORTER_OTLP_METRICS_TIMEOUT", "10s"),
 
-				// Metric Temporality: "cumulative" or "delta".
+				// Metric Temporality: "cumulative", "delta" or "lowmemory".
 				// - "cumulative": Standard for Prometheus (counts never reset).
-				// - "delta": Standard for Datadog/StatsD (counts per interval).
+				// - "delta": Standard for Datadog/StatsD. UpDownCounters stay cumulative per the OTLP spec.
+				// - "lowmemory": Delta for synchronous Counter/Histogram only.
 				"metric_temporality": config.Env("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY", "cumulative"),
 			},
 
