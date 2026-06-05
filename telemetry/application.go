@@ -24,6 +24,7 @@ type Application struct {
 	tracerProvider oteltrace.TracerProvider
 	propagator     propagation.TextMapPropagator
 	shutdownFuncs  []ShutdownFunc
+	flushFuncs     []func(context.Context) error
 }
 
 func NewApplication(cfg Config) (*Application, error) {
@@ -57,6 +58,13 @@ func NewApplication(cfg Config) (*Application, error) {
 		return nil, err
 	}
 
+	var flushFuncs []func(context.Context) error
+	for _, provider := range []any{traceProvider, meterProvider, loggerProvider} {
+		if flusher, ok := provider.(interface{ ForceFlush(context.Context) error }); ok {
+			flushFuncs = append(flushFuncs, flusher.ForceFlush)
+		}
+	}
+
 	return &Application{
 		loggerProvider: loggerProvider,
 		meterProvider:  meterProvider,
@@ -67,7 +75,20 @@ func NewApplication(cfg Config) (*Application, error) {
 			metricShutdown,
 			loggerShutdown,
 		},
+		flushFuncs: flushFuncs,
 	}, nil
+}
+
+func (r *Application) ForceFlush(ctx context.Context) error {
+	var err error
+
+	for _, fn := range r.flushFuncs {
+		if e := fn(ctx); e != nil {
+			err = errors.Join(err, e)
+		}
+	}
+
+	return err
 }
 
 func (r *Application) Logger(name string, opts ...otellog.LoggerOption) otellog.Logger {
