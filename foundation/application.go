@@ -24,7 +24,6 @@ import (
 	"github.com/goravel/framework/contracts/binding"
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
-	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation/configuration"
@@ -40,8 +39,6 @@ import (
 
 var App foundation.Application
 var _ = flag.String("env", support.EnvFilePath, "custom .env path")
-
-const telemetryShutdownTimeout = 15 * time.Second
 
 type RunnerWithInfo struct {
 	signature string
@@ -223,8 +220,6 @@ func (r *Application) Restart() error {
 }
 
 func (r *Application) Start() {
-	telemetry := r.MakeTelemetry()
-
 	var (
 		errsMu sync.Mutex
 		errs   []error
@@ -260,8 +255,6 @@ func (r *Application) Start() {
 	}
 
 	r.runnerWg.Wait()
-
-	r.shutdownTelemetry(telemetry)
 
 	if len(errs) > 0 {
 		panic(errors.Join(errs...))
@@ -318,19 +311,6 @@ func (r *Application) runnersByShutdownPriority() [][]*RunnerWithInfo {
 	}
 
 	return ordered
-}
-
-func (r *Application) shutdownTelemetry(telemetry contractstelemetry.Telemetry) {
-	if telemetry == nil {
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), telemetryShutdownTimeout)
-	defer cancel()
-
-	if err := telemetry.Shutdown(ctx); err != nil {
-		color.Warningln("failed to shutdown telemetry:", err)
-	}
 }
 
 func (r *Application) SetBuilder(builder foundation.ApplicationBuilder) foundation.Application {

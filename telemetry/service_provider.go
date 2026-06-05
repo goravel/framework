@@ -46,3 +46,9 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 	Facade = app.MakeTelemetry()
 	ConfigFacade = app.MakeConfig()
 }
+
+func (r *ServiceProvider) Runners(app foundation.Application) []foundation.Runner {
+	return []foundation.Runner{
+		NewRunner(ConfigFacade, Facade),
+	}
+}
