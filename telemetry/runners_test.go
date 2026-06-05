@@ -11,45 +11,54 @@ import (
 	mockstelemetry "github.com/goravel/framework/mocks/telemetry"
 )
 
-func TestTelemetryRunner_Signature(t *testing.T) {
-	assert.Equal(t, "telemetry", NewTelemetryRunner(nil, nil).Signature())
-}
+func TestTelemetryRunner(t *testing.T) {
+	t.Run("signature", func(t *testing.T) {
+		runner := &TelemetryRunner{}
+		assert.Equal(t, "telemetry", runner.Signature())
+	})
 
-func TestTelemetryRunner_ShouldRun(t *testing.T) {
-	assert.False(t, NewTelemetryRunner(nil, nil).ShouldRun())
-	assert.True(t, NewTelemetryRunner(nil, mockstelemetry.NewTelemetry(t)).ShouldRun())
-}
+	t.Run("shutdown priority", func(t *testing.T) {
+		runner := &TelemetryRunner{}
+		assert.Equal(t, 100, runner.ShutdownPriority())
+	})
 
-func TestTelemetryRunner_ShutdownPriority(t *testing.T) {
-	assert.Equal(t, 100, NewTelemetryRunner(nil, nil).ShutdownPriority())
-}
+	t.Run("should run when telemetry facade set", func(t *testing.T) {
+		runner := NewTelemetryRunner(nil, mockstelemetry.NewTelemetry(t))
+		assert.True(t, runner.ShouldRun())
+	})
 
-func TestTelemetryRunner_Shutdown_UnblocksRun(t *testing.T) {
-	mockTelemetry := mockstelemetry.NewTelemetry(t)
-	mockTelemetry.EXPECT().Shutdown(mock.Anything).Return(nil).Once()
+	t.Run("should not run when telemetry facade not set", func(t *testing.T) {
+		runner := NewTelemetryRunner(nil, nil)
+		assert.False(t, runner.ShouldRun())
+	})
 
-	runner := NewTelemetryRunner(nil, mockTelemetry)
+	t.Run("shutdown unblocks run", func(t *testing.T) {
+		telemetry := mockstelemetry.NewTelemetry(t)
+		telemetry.EXPECT().Shutdown(mock.Anything).Return(nil).Once()
 
-	ran := make(chan error, 1)
-	go func() { ran <- runner.Run() }()
+		runner := NewTelemetryRunner(nil, telemetry)
 
-	assert.NoError(t, runner.Shutdown())
+		ran := make(chan error, 1)
+		go func() { ran <- runner.Run() }()
 
-	select {
-	case err := <-ran:
-		assert.NoError(t, err)
-	case <-time.After(time.Second):
-		t.Fatal("Run did not unblock after Shutdown")
-	}
-}
+		assert.NoError(t, runner.Shutdown())
 
-func TestTelemetryRunner_Shutdown_UsesConfiguredTimeout(t *testing.T) {
-	mockConfig := mocksconfig.NewConfig(t)
-	mockConfig.EXPECT().GetDuration("telemetry.shutdown_timeout", defaultShutdownTimeout).Return(2 * time.Second).Once()
+		select {
+		case err := <-ran:
+			assert.NoError(t, err)
+		case <-time.After(time.Second):
+			t.Fatal("Run did not unblock after Shutdown")
+		}
+	})
 
-	mockTelemetry := mockstelemetry.NewTelemetry(t)
-	mockTelemetry.EXPECT().Shutdown(mock.Anything).Return(assert.AnError).Once()
+	t.Run("shutdown uses configured timeout", func(t *testing.T) {
+		config := mocksconfig.NewConfig(t)
+		config.EXPECT().GetDuration("telemetry.shutdown_timeout", defaultShutdownTimeout).Return(2 * time.Second).Once()
 
-	runner := NewTelemetryRunner(mockConfig, mockTelemetry)
-	assert.Equal(t, assert.AnError, runner.Shutdown())
+		telemetry := mockstelemetry.NewTelemetry(t)
+		telemetry.EXPECT().Shutdown(mock.Anything).Return(assert.AnError).Once()
+
+		runner := NewTelemetryRunner(config, telemetry)
+		assert.Equal(t, assert.AnError, runner.Shutdown())
+	})
 }

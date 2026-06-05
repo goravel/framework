@@ -261,57 +261,55 @@ func TestApplication_MeterProvider(t *testing.T) {
 	})
 }
 
-func TestForceFlush(t *testing.T) {
-	tests := []struct {
-		name   string
-		config Config
-	}{
-		{
-			name: "No exporters: flushing noop providers succeeds",
-			config: Config{
-				Service:     ServiceConfig{Name: "goravel"},
-				Propagators: "tracecontext",
-			},
-		},
-		{
-			name: "Console exporters: flushing SDK providers succeeds",
-			config: Config{
-				Service:     ServiceConfig{Name: "test-service"},
-				Propagators: "tracecontext",
-				Traces:      TracesConfig{Exporter: "console"},
-				Metrics:     MetricsConfig{Exporter: "console"},
-				Logs:        LogsConfig{Exporter: "console"},
-				Exporters: map[string]ExporterEntry{
-					"console": {Driver: TraceExporterDriverConsole},
-				},
-			},
-		},
-	}
+func TestApplication_ForceFlush(t *testing.T) {
+	t.Run("executes all flush functions", func(t *testing.T) {
+		flushCallCount := 0
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			app, err := NewApplication(tt.config)
+		mockFlush := func(ctx context.Context) error {
+			flushCallCount++
+			return nil
+		}
 
-			assert.NoError(t, err)
-			assert.NoError(t, app.ForceFlush(context.Background()))
-			assert.NoError(t, app.Shutdown(context.Background()))
+		app := &Application{
+			flushFuncs: []FlushFunc{mockFlush, mockFlush},
+		}
+
+		err := app.ForceFlush(context.Background())
+		assert.NoError(t, err)
+		assert.Equal(t, 2, flushCallCount, "ForceFlush should have been called twice")
+	})
+
+	t.Run("aggregates errors", func(t *testing.T) {
+		app := &Application{
+			flushFuncs: []FlushFunc{
+				func(ctx context.Context) error { return errors.New("error 1") },
+				func(ctx context.Context) error { return nil },
+				func(ctx context.Context) error { return errors.New("error 2") },
+			},
+		}
+
+		err := app.ForceFlush(context.Background())
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "error 1")
+		assert.Contains(t, err.Error(), "error 2")
+	})
+
+	t.Run("flushes providers end to end", func(t *testing.T) {
+		app, err := NewApplication(Config{
+			Service:     ServiceConfig{Name: "test-service"},
+			Propagators: "tracecontext",
+			Traces:      TracesConfig{Exporter: "console"},
+			Metrics:     MetricsConfig{Exporter: "console"},
+			Logs:        LogsConfig{Exporter: "console"},
+			Exporters: map[string]ExporterEntry{
+				"console": {Driver: TraceExporterDriverConsole},
+			},
 		})
-	}
-}
 
-func TestForceFlush_AggregatesErrors(t *testing.T) {
-	app := &Application{
-		flushFuncs: []FlushFunc{
-			func(ctx context.Context) error { return errors.New("flush error 1") },
-			func(ctx context.Context) error { return nil },
-			func(ctx context.Context) error { return errors.New("flush error 2") },
-		},
-	}
-
-	err := app.ForceFlush(context.Background())
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "flush error 1")
-	assert.Contains(t, err.Error(), "flush error 2")
+		assert.NoError(t, err)
+		assert.NoError(t, app.ForceFlush(context.Background()))
+		assert.NoError(t, app.Shutdown(context.Background()))
+	})
 }
 
 func TestNewApplication_SetsErrorHandler(t *testing.T) {
