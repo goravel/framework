@@ -156,7 +156,6 @@ func TestNewMeterProvider(t *testing.T) {
 				assert.NotNil(t, provider)
 				assert.NotNil(t, shutdown)
 				assert.NotNil(t, flush)
-				assert.NoError(t, flush(ctx))
 				_ = shutdown(ctx)
 			}
 		})

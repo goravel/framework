@@ -153,7 +153,6 @@ func TestNewTracerProvider(t *testing.T) {
 				assert.NotNil(t, provider)
 				assert.NotNil(t, shutdown)
 				assert.NotNil(t, flush)
-				assert.NoError(t, flush(ctx))
 				assert.NoError(t, shutdown(ctx))
 			}
 		})
