@@ -56,8 +56,11 @@ type ExporterEntry struct {
 	Timeout  time.Duration
 
 	// OTLP-specific
-	Protocol Protocol
-	Headers  map[string]string
+	Protocol    Protocol
+	Headers     map[string]string
+	Compression string
+	TLS         TLSConfig
+	Retry       RetryConfig
 
 	// Metric Specific
 	MetricTemporality MetricTemporality `json:"metric_temporality"`
@@ -67,6 +70,23 @@ type ExporterEntry struct {
 
 	// For custom Exporter
 	Via any
+}
+
+type TLSConfig struct {
+	CA   string
+	Cert string
+	Key  string
+}
+
+type RetryConfig struct {
+	Enabled         *bool
+	InitialInterval time.Duration
+	MaxInterval     time.Duration
+	MaxElapsedTime  time.Duration
+}
+
+func (r RetryConfig) IsEnabled() bool {
+	return r.Enabled == nil || *r.Enabled
 }
 
 func (c Config) GetExporter(name string) (ExporterEntry, bool) {

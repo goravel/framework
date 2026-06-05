@@ -288,6 +288,10 @@ var (
 	TelemetryGrpcServerStatsHandlerDisabled = New("Facade not initialized. gRPC server stats instrumentation is disabled.").SetModule(ModuleTelemetry)
 	TelemetryGrpcClientStatsHandlerDisabled = New("Facade not initialized. gRPC client stats instrumentation is disabled.").SetModule(ModuleTelemetry)
 	TelemetryUnsupportedProtocol            = New("unsupported telemetry exporter protocol: %s").SetModule(ModuleTelemetry)
+	TelemetryTLSConflictsWithInsecure       = New("telemetry exporter tls config conflicts with insecure").SetModule(ModuleTelemetry)
+	TelemetryTLSClientCertIncomplete        = New("telemetry exporter tls client cert and key must both be set").SetModule(ModuleTelemetry)
+	TelemetryTLSInvalidCA                   = New("telemetry exporter tls ca file contains no valid certificates").SetModule(ModuleTelemetry)
+	TelemetryUnsupportedCompression         = New("unsupported telemetry exporter compression: %s").SetModule(ModuleTelemetry)
 
 	TestingImageBuildFailed   = New("init %s docker error: %v")
 	TestingImageNoContainerId = New("no container id return when creating %s docker")
