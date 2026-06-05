@@ -203,6 +203,26 @@ func init() {
 				// Timeout: Max time to wait for the backend to acknowledge.
 				// Format: Duration string (e.g., "10s", "500ms").
 				"timeout": config.Env("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT", "10s"),
+
+				// Compression: "gzip" or "" (none).
+				"compression": config.Env("OTEL_EXPORTER_OTLP_TRACES_COMPRESSION", ""),
+
+				// TLS certificate file paths. Leave empty to use system roots.
+				// Conflicts with "insecure".
+				"tls": map[string]any{
+					"ca":   config.Env("OTEL_EXPORTER_OTLP_TRACES_CERTIFICATE", ""),
+					"cert": config.Env("OTEL_EXPORTER_OTLP_TRACES_CLIENT_CERTIFICATE", ""),
+					"key":  config.Env("OTEL_EXPORTER_OTLP_TRACES_CLIENT_KEY", ""),
+				},
+
+				// Retry with exponential backoff on export failure.
+				// Zero durations use the SDK defaults shown below.
+				"retry": map[string]any{
+					"enabled":          true,
+					"initial_interval": "5s",
+					"max_interval":     "30s",
+					"max_elapsed_time": "1m",
+				},
 			},
 
 			// OTLP Metric Exporter
@@ -225,6 +245,26 @@ func init() {
 				// - "delta": Standard for Datadog/StatsD. UpDownCounters stay cumulative per the OTLP spec.
 				// - "lowmemory": Delta for synchronous Counter/Histogram only.
 				"metric_temporality": config.Env("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY", "cumulative"),
+
+				// Compression: "gzip" or "" (none).
+				"compression": config.Env("OTEL_EXPORTER_OTLP_METRICS_COMPRESSION", ""),
+
+				// TLS certificate file paths. Leave empty to use system roots.
+				// Conflicts with "insecure".
+				"tls": map[string]any{
+					"ca":   config.Env("OTEL_EXPORTER_OTLP_METRICS_CERTIFICATE", ""),
+					"cert": config.Env("OTEL_EXPORTER_OTLP_METRICS_CLIENT_CERTIFICATE", ""),
+					"key":  config.Env("OTEL_EXPORTER_OTLP_METRICS_CLIENT_KEY", ""),
+				},
+
+				// Retry with exponential backoff on export failure.
+				// Zero durations use the SDK defaults shown below.
+				"retry": map[string]any{
+					"enabled":          true,
+					"initial_interval": "5s",
+					"max_interval":     "30s",
+					"max_elapsed_time": "1m",
+				},
 			},
 
 			// OTLP Log Exporter
@@ -241,6 +281,26 @@ func init() {
 				// Timeout: Max time to wait for the backend to acknowledge.
 				// Format: Duration string (e.g., "10s", "500ms").
 				"timeout": config.Env("OTEL_EXPORTER_OTLP_LOGS_TIMEOUT", "10s"),
+
+				// Compression: "gzip" or "" (none).
+				"compression": config.Env("OTEL_EXPORTER_OTLP_LOGS_COMPRESSION", ""),
+
+				// TLS certificate file paths. Leave empty to use system roots.
+				// Conflicts with "insecure".
+				"tls": map[string]any{
+					"ca":   config.Env("OTEL_EXPORTER_OTLP_LOGS_CERTIFICATE", ""),
+					"cert": config.Env("OTEL_EXPORTER_OTLP_LOGS_CLIENT_CERTIFICATE", ""),
+					"key":  config.Env("OTEL_EXPORTER_OTLP_LOGS_CLIENT_KEY", ""),
+				},
+
+				// Retry with exponential backoff on export failure.
+				// Zero durations use the SDK defaults shown below.
+				"retry": map[string]any{
+					"enabled":          true,
+					"initial_interval": "5s",
+					"max_interval":     "30s",
+					"max_elapsed_time": "1m",
+				},
 			},
 
 			// Console Exporter (Debugging)
