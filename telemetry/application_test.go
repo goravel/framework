@@ -263,20 +263,18 @@ func TestApplication_MeterProvider(t *testing.T) {
 
 func TestForceFlush(t *testing.T) {
 	tests := []struct {
-		name           string
-		config         Config
-		expectFlushers int
+		name   string
+		config Config
 	}{
 		{
-			name: "No exporters: noop providers expose no flushers",
+			name: "No exporters: flushing noop providers succeeds",
 			config: Config{
 				Service:     ServiceConfig{Name: "goravel"},
 				Propagators: "tracecontext",
 			},
-			expectFlushers: 0,
 		},
 		{
-			name: "Console exporters: all three providers are flushable",
+			name: "Console exporters: flushing SDK providers succeeds",
 			config: Config{
 				Service:     ServiceConfig{Name: "test-service"},
 				Propagators: "tracecontext",
@@ -287,7 +285,6 @@ func TestForceFlush(t *testing.T) {
 					"console": {Driver: TraceExporterDriverConsole},
 				},
 			},
-			expectFlushers: 3,
 		},
 	}
 
@@ -296,7 +293,6 @@ func TestForceFlush(t *testing.T) {
 			app, err := NewApplication(tt.config)
 
 			assert.NoError(t, err)
-			assert.Len(t, app.flushFuncs, tt.expectFlushers)
 			assert.NoError(t, app.ForceFlush(context.Background()))
 			assert.NoError(t, app.Shutdown(context.Background()))
 		})
@@ -305,7 +301,7 @@ func TestForceFlush(t *testing.T) {
 
 func TestForceFlush_AggregatesErrors(t *testing.T) {
 	app := &Application{
-		flushFuncs: []func(context.Context) error{
+		flushFuncs: []FlushFunc{
 			func(ctx context.Context) error { return errors.New("flush error 1") },
 			func(ctx context.Context) error { return nil },
 			func(ctx context.Context) error { return errors.New("flush error 2") },

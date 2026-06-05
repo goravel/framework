@@ -147,7 +147,7 @@ func TestNewLoggerProvider(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			provider, shutdown, err := NewLoggerProvider(ctx, tt.config)
+			provider, shutdown, flush, err := NewLoggerProvider(ctx, tt.config)
 
 			if tt.expectError != nil {
 				assert.Equal(t, tt.expectError, err, tt.description)
@@ -159,6 +159,8 @@ func TestNewLoggerProvider(t *testing.T) {
 				assert.NoError(t, err, tt.description)
 				assert.NotNil(t, provider)
 				assert.NotNil(t, shutdown)
+				assert.NotNil(t, flush)
+				assert.NoError(t, flush(ctx))
 				assert.NoError(t, shutdown(ctx))
 			}
 		})

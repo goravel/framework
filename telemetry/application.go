@@ -25,7 +25,7 @@ type Application struct {
 	tracerProvider oteltrace.TracerProvider
 	propagator     propagation.TextMapPropagator
 	shutdownFuncs  []ShutdownFunc
-	flushFuncs     []func(context.Context) error
+	flushFuncs     []FlushFunc
 }
 
 func NewApplication(cfg Config) (*Application, error) {
@@ -44,29 +44,22 @@ func NewApplication(cfg Config) (*Application, error) {
 		return nil, err
 	}
 
-	traceProvider, traceShutdown, err := NewTracerProvider(ctx, cfg, sdktrace.WithResource(resource))
+	traceProvider, traceShutdown, traceFlush, err := NewTracerProvider(ctx, cfg, sdktrace.WithResource(resource))
 	if err != nil {
 		return nil, err
 	}
 
-	meterProvider, metricShutdown, err := NewMeterProvider(ctx, cfg, sdkmetric.WithResource(resource))
+	meterProvider, metricShutdown, metricFlush, err := NewMeterProvider(ctx, cfg, sdkmetric.WithResource(resource))
 	if err != nil {
 		_ = traceShutdown(ctx)
 		return nil, err
 	}
 
-	loggerProvider, loggerShutdown, err := NewLoggerProvider(ctx, cfg, sdklog.WithResource(resource))
+	loggerProvider, loggerShutdown, loggerFlush, err := NewLoggerProvider(ctx, cfg, sdklog.WithResource(resource))
 	if err != nil {
 		_ = traceShutdown(ctx)
 		_ = metricShutdown(ctx)
 		return nil, err
-	}
-
-	var flushFuncs []func(context.Context) error
-	for _, provider := range []any{traceProvider, meterProvider, loggerProvider} {
-		if flusher, ok := provider.(interface{ ForceFlush(context.Context) error }); ok {
-			flushFuncs = append(flushFuncs, flusher.ForceFlush)
-		}
 	}
 
 	return &Application{
@@ -79,7 +72,11 @@ func NewApplication(cfg Config) (*Application, error) {
 			metricShutdown,
 			loggerShutdown,
 		},
-		flushFuncs: flushFuncs,
+		flushFuncs: []FlushFunc{
+			traceFlush,
+			metricFlush,
+			loggerFlush,
+		},
 	}, nil
 }
 

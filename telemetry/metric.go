@@ -41,22 +41,22 @@ const (
 	defaultMetricExportTimeout = 30 * time.Second
 )
 
-func NewMeterProvider(ctx context.Context, cfg Config, opts ...sdkmetric.Option) (metric.MeterProvider, ShutdownFunc, error) {
+func NewMeterProvider(ctx context.Context, cfg Config, opts ...sdkmetric.Option) (metric.MeterProvider, ShutdownFunc, FlushFunc, error) {
 	exporterName := cfg.Metrics.Exporter
 	if exporterName == "" {
 		mp := noop.NewMeterProvider()
 		otel.SetMeterProvider(mp)
-		return mp, NoopShutdown(), nil
+		return mp, NoopShutdown(), NoopFlush(), nil
 	}
 
 	exporterCfg, ok := cfg.GetExporter(exporterName)
 	if !ok {
-		return nil, NoopShutdown(), errors.TelemetryExporterNotFound
+		return nil, NoopShutdown(), NoopFlush(), errors.TelemetryExporterNotFound
 	}
 
 	reader, err := newMetricReader(ctx, exporterCfg, cfg.Metrics.Reader)
 	if err != nil {
-		return nil, NoopShutdown(), err
+		return nil, NoopShutdown(), NoopFlush(), err
 	}
 
 	providerOptions := []sdkmetric.Option{
@@ -67,7 +67,7 @@ func NewMeterProvider(ctx context.Context, cfg Config, opts ...sdkmetric.Option)
 	mp := sdkmetric.NewMeterProvider(providerOptions...)
 	otel.SetMeterProvider(mp)
 
-	return mp, mp.Shutdown, nil
+	return mp, mp.Shutdown, mp.ForceFlush, nil
 }
 
 func newMetricReader(ctx context.Context, cfg ExporterEntry, readerCfg MetricsReaderConfig) (sdkmetric.Reader, error) {

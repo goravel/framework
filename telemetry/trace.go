@@ -24,24 +24,24 @@ const (
 	TraceExporterDriverConsole ExporterDriver = "console"
 )
 
-func NewTracerProvider(ctx context.Context, cfg Config, opts ...sdktrace.TracerProviderOption) (oteltrace.TracerProvider, ShutdownFunc, error) {
+func NewTracerProvider(ctx context.Context, cfg Config, opts ...sdktrace.TracerProviderOption) (oteltrace.TracerProvider, ShutdownFunc, FlushFunc, error) {
 	exporterName := cfg.Traces.Exporter
 
 	// 1. If disabled, return the true No-Op provider (Zero overhead)
 	if exporterName == "" {
 		tp := noop.NewTracerProvider()
 		otel.SetTracerProvider(tp)
-		return tp, NoopShutdown(), nil
+		return tp, NoopShutdown(), NoopFlush(), nil
 	}
 
 	exporterCfg, ok := cfg.GetExporter(exporterName)
 	if !ok {
-		return nil, NoopShutdown(), errors.TelemetryExporterNotFound
+		return nil, NoopShutdown(), NoopFlush(), errors.TelemetryExporterNotFound
 	}
 
 	exporter, err := newTraceExporter(ctx, exporterCfg)
 	if err != nil {
-		return nil, NoopShutdown(), err
+		return nil, NoopShutdown(), NoopFlush(), err
 	}
 
 	providerOptions := []sdktrace.TracerProviderOption{
@@ -53,7 +53,7 @@ func NewTracerProvider(ctx context.Context, cfg Config, opts ...sdktrace.TracerP
 	tp := sdktrace.NewTracerProvider(providerOptions...)
 	otel.SetTracerProvider(tp)
 
-	return tp, tp.Shutdown, nil
+	return tp, tp.Shutdown, tp.ForceFlush, nil
 }
 
 func newTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.SpanExporter, error) {

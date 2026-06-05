@@ -139,7 +139,7 @@ func TestNewTracerProvider(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			provider, shutdown, err := NewTracerProvider(ctx, tt.config)
+			provider, shutdown, flush, err := NewTracerProvider(ctx, tt.config)
 
 			if tt.expectError != nil {
 				assert.Equal(t, tt.expectError, err)
@@ -152,6 +152,8 @@ func TestNewTracerProvider(t *testing.T) {
 				assert.NoError(t, err)
 				assert.NotNil(t, provider)
 				assert.NotNil(t, shutdown)
+				assert.NotNil(t, flush)
+				assert.NoError(t, flush(ctx))
 				assert.NoError(t, shutdown(ctx))
 			}
 		})
