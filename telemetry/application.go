@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"context"
+	"sync"
 
 	"go.opentelemetry.io/otel"
 	otellog "go.opentelemetry.io/otel/log"
@@ -13,11 +14,14 @@ import (
 	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"github.com/goravel/framework/contracts/telemetry"
-	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/color"
 )
 
 var _ telemetry.Telemetry = (*Application)(nil)
+
+// errorHandlerOnce ensures the default error handler is set once, so a custom
+// handler installed by the application is not overwritten on Restart.
+var errorHandlerOnce sync.Once
 
 type Application struct {
 	loggerProvider otellog.LoggerProvider
@@ -34,9 +38,11 @@ func NewApplication(cfg Config) (*Application, error) {
 		return nil, err
 	}
 	otel.SetTextMapPropagator(propagator)
-	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
-		color.Warningln("[Telemetry]", err)
-	}))
+	errorHandlerOnce.Do(func() {
+		otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
+			color.Warningln("[Telemetry]", err)
+		}))
+	})
 
 	ctx := context.Background()
 	resource, err := newResource(ctx, cfg)
@@ -81,15 +87,7 @@ func NewApplication(cfg Config) (*Application, error) {
 }
 
 func (r *Application) ForceFlush(ctx context.Context) error {
-	var err error
-
-	for _, fn := range r.flushFuncs {
-		if e := fn(ctx); e != nil {
-			err = errors.Join(err, e)
-		}
-	}
-
-	return err
+	return callAll(ctx, r.flushFuncs)
 }
 
 func (r *Application) Logger(name string, opts ...otellog.LoggerOption) otellog.Logger {
@@ -109,18 +107,7 @@ func (r *Application) Propagator() propagation.TextMapPropagator {
 }
 
 func (r *Application) Shutdown(ctx context.Context) error {
-	var err error
-
-	for _, fn := range r.shutdownFuncs {
-		if fn == nil {
-			continue
-		}
-		if e := fn(ctx); e != nil {
-			err = errors.Join(err, e)
-		}
-	}
-
-	return err
+	return callAll(ctx, r.shutdownFuncs)
 }
 
 func (r *Application) Tracer(name string, opts ...oteltrace.TracerOption) oteltrace.Tracer {

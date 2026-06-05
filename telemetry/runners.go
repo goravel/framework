@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/goravel/framework/contracts/config"
@@ -14,33 +15,34 @@ const (
 	defaultShutdownTimeout = 15 * time.Second
 )
 
-var _ contractsfoundation.RunnerWithShutdownPriority = (*Runner)(nil)
+var _ contractsfoundation.RunnerWithShutdownPriority = (*TelemetryRunner)(nil)
 
-type Runner struct {
+type TelemetryRunner struct {
 	config    config.Config
 	telemetry contractstelemetry.Telemetry
 	done      chan struct{}
+	closeOnce sync.Once
 }
 
-func NewRunner(config config.Config, telemetry contractstelemetry.Telemetry) *Runner {
-	return &Runner{
+func NewTelemetryRunner(config config.Config, telemetry contractstelemetry.Telemetry) *TelemetryRunner {
+	return &TelemetryRunner{
 		config:    config,
 		telemetry: telemetry,
 		done:      make(chan struct{}),
 	}
 }
 
-func (r *Runner) Run() error {
+func (r *TelemetryRunner) Run() error {
 	<-r.done
 	return nil
 }
 
-func (r *Runner) ShouldRun() bool {
+func (r *TelemetryRunner) ShouldRun() bool {
 	return r.telemetry != nil
 }
 
-func (r *Runner) Shutdown() error {
-	defer close(r.done)
+func (r *TelemetryRunner) Shutdown() error {
+	defer r.closeOnce.Do(func() { close(r.done) })
 
 	timeout := defaultShutdownTimeout
 	if r.config != nil {
@@ -53,10 +55,10 @@ func (r *Runner) Shutdown() error {
 	return r.telemetry.Shutdown(ctx)
 }
 
-func (r *Runner) ShutdownPriority() int {
+func (r *TelemetryRunner) ShutdownPriority() int {
 	return runnerShutdownPriority
 }
 
-func (r *Runner) Signature() string {
+func (r *TelemetryRunner) Signature() string {
 	return "telemetry"
 }
