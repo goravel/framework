@@ -1277,3 +1277,51 @@ func (s *ApplicationTestSuite) TestStart_ShutdownsTelemetryError() {
 
 	s.Contains(output, "failed to shutdown telemetry")
 }
+
+type orderedRunner struct {
+	signature string
+	priority  int
+	order     *[]string
+	mu        *sync.Mutex
+	done      chan struct{}
+}
+
+func (r *orderedRunner) Signature() string { return r.signature }
+func (r *orderedRunner) ShouldRun() bool   { return true }
+func (r *orderedRunner) Run() error        { <-r.done; return nil }
+func (r *orderedRunner) Shutdown() error {
+	r.mu.Lock()
+	*r.order = append(*r.order, r.signature)
+	r.mu.Unlock()
+	close(r.done)
+	return nil
+}
+func (r *orderedRunner) ShutdownPriority() int { return r.priority }
+
+func (s *ApplicationTestSuite) TestStart_ShutdownPriorityOrdering() {
+	var (
+		mu    sync.Mutex
+		order []string
+	)
+
+	newRunner := func(signature string, priority int) *orderedRunner {
+		return &orderedRunner{signature: signature, priority: priority, order: &order, mu: &mu, done: make(chan struct{})}
+	}
+
+	s.app.runnersToRun = []*RunnerWithInfo{
+		{signature: "late", runner: newRunner("late", 100)},
+		{signature: "workload-a", runner: newRunner("workload-a", 0)},
+		{signature: "workload-b", runner: newRunner("workload-b", 0)},
+	}
+
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		s.app.cancel()
+	}()
+
+	s.app.Start()
+
+	s.Len(order, 3)
+	s.Equal("late", order[2])
+	s.ElementsMatch([]string{"workload-a", "workload-b"}, order[:2])
+}

@@ -249,31 +249,14 @@ func (r *Application) Start() {
 			}
 			// Run may be a blocking call, so don't write anything after it.
 		}()
-
-		go func() {
-			defer runner.doneOnce.Do(func() {
-				r.runnerWg.Done()
-			})
-
-			<-r.ctx.Done()
-
-			// Only call Shutdown if the runner is still running (Run didn't error)
-			if !runner.running.Load() {
-				return
-			}
-
-			if err := runner.runner.Shutdown(); err != nil {
-				if log := r.MakeLog(); log != nil {
-					log.Errorf("failed to shutdown %s: %v\n", runner.signature, err)
-				}
-			}
-
-			runner.running.Store(false)
-		}()
 	}
 
 	for _, runner := range r.runnersToRun {
 		run(runner)
+	}
+
+	if len(r.runnersToRun) > 0 {
+		go r.shutdownRunners()
 	}
 
 	r.runnerWg.Wait()
@@ -283,6 +266,58 @@ func (r *Application) Start() {
 	if len(errs) > 0 {
 		panic(errors.Join(errs...))
 	}
+}
+
+func (r *Application) shutdownRunners() {
+	<-r.ctx.Done()
+
+	for _, group := range r.runnersByShutdownPriority() {
+		var wg sync.WaitGroup
+
+		for _, runner := range group {
+			wg.Add(1)
+
+			go func(runner *RunnerWithInfo) {
+				defer wg.Done()
+				defer runner.doneOnce.Do(func() {
+					r.runnerWg.Done()
+				})
+
+				// Only call Shutdown if the runner is still running (Run didn't error)
+				if !runner.running.Load() {
+					return
+				}
+
+				if err := runner.runner.Shutdown(); err != nil {
+					if log := r.MakeLog(); log != nil {
+						log.Errorf("failed to shutdown %s: %v\n", runner.signature, err)
+					}
+				}
+
+				runner.running.Store(false)
+			}(runner)
+		}
+
+		wg.Wait()
+	}
+}
+
+func (r *Application) runnersByShutdownPriority() [][]*RunnerWithInfo {
+	groups := map[int][]*RunnerWithInfo{}
+	for _, runner := range r.runnersToRun {
+		priority := 0
+		if p, ok := runner.runner.(foundation.RunnerWithShutdownPriority); ok {
+			priority = p.ShutdownPriority()
+		}
+		groups[priority] = append(groups[priority], runner)
+	}
+
+	ordered := make([][]*RunnerWithInfo, 0, len(groups))
+	for _, priority := range slices.Sorted(maps.Keys(groups)) {
+		ordered = append(ordered, groups[priority])
+	}
+
+	return ordered
 }
 
 func (r *Application) shutdownTelemetry(telemetry contractstelemetry.Telemetry) {
