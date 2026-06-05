@@ -2,10 +2,12 @@ package telemetry
 
 import (
 	"context"
+	"io"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"go.opentelemetry.io/otel"
 	lognoop "go.opentelemetry.io/otel/log/noop"
 	metricnoop "go.opentelemetry.io/otel/metric/noop"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
@@ -14,6 +16,7 @@ import (
 	tracenoop "go.opentelemetry.io/otel/trace/noop"
 
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/color"
 )
 
 func TestNewApplication(t *testing.T) {
@@ -313,6 +316,19 @@ func TestForceFlush_AggregatesErrors(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "flush error 1")
 	assert.Contains(t, err.Error(), "flush error 2")
+}
+
+func TestNewApplication_SetsErrorHandler(t *testing.T) {
+	_, err := NewApplication(Config{
+		Service:     ServiceConfig{Name: "goravel"},
+		Propagators: "tracecontext",
+	})
+	assert.NoError(t, err)
+
+	output := color.CaptureOutput(func(io.Writer) {
+		otel.Handle(assert.AnError)
+	})
+	assert.Contains(t, output, assert.AnError.Error())
 }
 
 func TestConfig_GetExporter(t *testing.T) {

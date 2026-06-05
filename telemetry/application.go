@@ -14,6 +14,7 @@ import (
 
 	"github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/color"
 )
 
 var _ telemetry.Telemetry = (*Application)(nil)
@@ -33,6 +34,9 @@ func NewApplication(cfg Config) (*Application, error) {
 		return nil, err
 	}
 	otel.SetTextMapPropagator(propagator)
+	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
+		color.Warningln("[Telemetry]", err)
+	}))
 
 	ctx := context.Background()
 	resource, err := newResource(ctx, cfg)
