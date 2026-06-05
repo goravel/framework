@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"os"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/noop"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"google.golang.org/grpc/credentials"
 
 	"github.com/goravel/framework/errors"
 )
@@ -125,21 +127,51 @@ func newOTLPMetricExporter(ctx context.Context, cfg ExporterEntry) (sdkmetric.Ex
 
 	switch cfg.Protocol {
 	case ProtocolGRPC:
-		opts := buildOTLPOptions(cfg,
-			otlpmetricgrpc.WithEndpoint,
-			otlpmetricgrpc.WithInsecure,
-			otlpmetricgrpc.WithTimeout,
-			otlpmetricgrpc.WithHeaders,
-		)
+		opts, err := buildOTLPOptions(cfg, otlpOptions[otlpmetricgrpc.Option]{
+			withEndpoint:    otlpmetricgrpc.WithEndpoint,
+			withEndpointURL: otlpmetricgrpc.WithEndpointURL,
+			withInsecure:    otlpmetricgrpc.WithInsecure,
+			withTimeout:     otlpmetricgrpc.WithTimeout,
+			withHeaders:     otlpmetricgrpc.WithHeaders,
+			withCompression: func() otlpmetricgrpc.Option { return otlpmetricgrpc.WithCompressor(CompressionGzip) },
+			withTLS: func(config *tls.Config) otlpmetricgrpc.Option {
+				return otlpmetricgrpc.WithTLSCredentials(credentials.NewTLS(config))
+			},
+			withRetry: func(retry RetryConfig) otlpmetricgrpc.Option {
+				return otlpmetricgrpc.WithRetry(otlpmetricgrpc.RetryConfig{
+					Enabled:         retry.IsEnabled(),
+					InitialInterval: retry.InitialInterval,
+					MaxInterval:     retry.MaxInterval,
+					MaxElapsedTime:  retry.MaxElapsedTime,
+				})
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
 		opts = append(opts, otlpmetricgrpc.WithTemporalitySelector(temporalitySelector))
 		return otlpmetricgrpc.New(ctx, opts...)
 	case ProtocolHTTPProtobuf, "":
-		opts := buildOTLPOptions(cfg,
-			otlpmetrichttp.WithEndpoint,
-			otlpmetrichttp.WithInsecure,
-			otlpmetrichttp.WithTimeout,
-			otlpmetrichttp.WithHeaders,
-		)
+		opts, err := buildOTLPOptions(cfg, otlpOptions[otlpmetrichttp.Option]{
+			withEndpoint:    otlpmetrichttp.WithEndpoint,
+			withEndpointURL: otlpmetrichttp.WithEndpointURL,
+			withInsecure:    otlpmetrichttp.WithInsecure,
+			withTimeout:     otlpmetrichttp.WithTimeout,
+			withHeaders:     otlpmetrichttp.WithHeaders,
+			withCompression: func() otlpmetrichttp.Option { return otlpmetrichttp.WithCompression(otlpmetrichttp.GzipCompression) },
+			withTLS:         otlpmetrichttp.WithTLSClientConfig,
+			withRetry: func(retry RetryConfig) otlpmetrichttp.Option {
+				return otlpmetrichttp.WithRetry(otlpmetrichttp.RetryConfig{
+					Enabled:         retry.IsEnabled(),
+					InitialInterval: retry.InitialInterval,
+					MaxInterval:     retry.MaxInterval,
+					MaxElapsedTime:  retry.MaxElapsedTime,
+				})
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
 		opts = append(opts, otlpmetrichttp.WithTemporalitySelector(temporalitySelector))
 		return otlpmetrichttp.New(ctx, opts...)
 	default:

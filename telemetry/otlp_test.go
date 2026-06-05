@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
@@ -21,30 +22,32 @@ import (
 
 type MockOption string
 
-var withEndpoint = func(s string) MockOption {
-	return MockOption("endpoint=" + s)
-}
-
-var withInsecure = func() MockOption {
-	return MockOption("insecure=true")
-}
-
-var withTimeout = func(d time.Duration) MockOption {
-	return MockOption("timeout=" + d.String())
-}
-
-var withHeaders = func(h map[string]string) MockOption {
-	if val, ok := h["Authorization"]; ok {
-		return MockOption("header_auth=" + val)
-	}
-	return MockOption("headers_present")
+var mockOTLPOptions = otlpOptions[MockOption]{
+	withEndpoint:    func(s string) MockOption { return MockOption("endpoint=" + s) },
+	withEndpointURL: func(s string) MockOption { return MockOption("endpoint_url=" + s) },
+	withInsecure:    func() MockOption { return MockOption("insecure=true") },
+	withTimeout:     func(d time.Duration) MockOption { return MockOption("timeout=" + d.String()) },
+	withHeaders: func(h map[string]string) MockOption {
+		if val, ok := h["Authorization"]; ok {
+			return MockOption("header_auth=" + val)
+		}
+		return MockOption("headers_present")
+	},
+	withCompression: func() MockOption { return MockOption("compression=gzip") },
+	withTLS:         func(*tls.Config) MockOption { return MockOption("tls=true") },
+	withRetry: func(r RetryConfig) MockOption {
+		return MockOption("retry=" + r.MaxElapsedTime.String())
+	},
 }
 
 func TestBuildOTLPOptions(t *testing.T) {
+	caFile, _, _ := writeTestCerts(t)
+
 	tests := []struct {
-		name     string
-		cfg      ExporterEntry
-		expected []MockOption
+		name        string
+		cfg         ExporterEntry
+		expected    []MockOption
+		expectError error
 	}{
 		{
 			name: "Empty Config (Defaults)",
@@ -54,9 +57,9 @@ func TestBuildOTLPOptions(t *testing.T) {
 			},
 		},
 		{
-			name: "Endpoint Stripping (HTTP)",
+			name: "Endpoint Without Scheme",
 			cfg: ExporterEntry{
-				Endpoint: "http://localhost:4318",
+				Endpoint: "localhost:4318",
 			},
 			expected: []MockOption{
 				"endpoint=localhost:4318",
@@ -64,12 +67,12 @@ func TestBuildOTLPOptions(t *testing.T) {
 			},
 		},
 		{
-			name: "Endpoint Stripping (HTTPS)",
+			name: "Endpoint With URL",
 			cfg: ExporterEntry{
-				Endpoint: "https://otel.com",
+				Endpoint: "https://otel.com/otel",
 			},
 			expected: []MockOption{
-				"endpoint=otel.com",
+				"endpoint_url=https://otel.com/otel",
 				"timeout=10s",
 			},
 		},
@@ -107,33 +110,59 @@ func TestBuildOTLPOptions(t *testing.T) {
 			},
 		},
 		{
-			name: "Full Configuration",
+			name: "With Compression And Retry",
 			cfg: ExporterEntry{
-				Endpoint: "https://api.honeycomb.io",
-				Insecure: false,
-				Timeout:  500 * time.Millisecond,
-				Headers: map[string]string{
-					"Authorization": "key",
-				},
+				Endpoint:    "localhost:4318",
+				Compression: "gzip",
+				Retry:       RetryConfig{MaxElapsedTime: 10 * time.Second},
 			},
 			expected: []MockOption{
-				"endpoint=api.honeycomb.io",
-				"timeout=500ms",
-				"header_auth=key",
+				"endpoint=localhost:4318",
+				"timeout=10s",
+				"compression=gzip",
+				"retry=10s",
 			},
+		},
+		{
+			name: "With TLS",
+			cfg: ExporterEntry{
+				Endpoint: "localhost:4318",
+				TLS:      TLSConfig{CA: caFile},
+			},
+			expected: []MockOption{
+				"endpoint=localhost:4318",
+				"timeout=10s",
+				"tls=true",
+			},
+		},
+		{
+			name: "Unsupported Compression",
+			cfg: ExporterEntry{
+				Compression: "zstd",
+			},
+			expectError: errors.TelemetryUnsupportedCompression.Args("zstd"),
+		},
+		{
+			name: "TLS Conflicts With Insecure",
+			cfg: ExporterEntry{
+				Insecure: true,
+				TLS:      TLSConfig{CA: caFile},
+			},
+			expectError: errors.TelemetryTLSConflictsWithInsecure,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			opts := buildOTLPOptions(
-				tt.cfg,
-				withEndpoint,
-				withInsecure,
-				withTimeout,
-				withHeaders,
-			)
+			opts, err := buildOTLPOptions(tt.cfg, mockOTLPOptions)
 
+			if tt.expectError != nil {
+				assert.Equal(t, tt.expectError, err)
+				assert.Nil(t, opts)
+				return
+			}
+
+			assert.NoError(t, err)
 			assert.Equal(t, tt.expected, opts)
 		})
 	}

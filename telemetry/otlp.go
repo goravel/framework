@@ -21,36 +21,63 @@ const defaultOTLPTimeout = 10 * time.Second
 
 const CompressionGzip = "gzip"
 
-func buildOTLPOptions[T any](
-	cfg ExporterEntry,
-	withEndpoint func(string) T,
-	withInsecure func() T,
-	withTimeout func(time.Duration) T,
-	withHeaders func(map[string]string) T,
-) []T {
+type otlpOptions[T any] struct {
+	withEndpoint    func(string) T
+	withEndpointURL func(string) T
+	withInsecure    func() T
+	withTimeout     func(time.Duration) T
+	withHeaders     func(map[string]string) T
+	withCompression func() T
+	withTLS         func(*tls.Config) T
+	withRetry       func(RetryConfig) T
+}
+
+func buildOTLPOptions[T any](cfg ExporterEntry, builders otlpOptions[T]) ([]T, error) {
 	var opts []T
 
 	if cfg.Endpoint != "" {
-		endpoint := strings.TrimPrefix(cfg.Endpoint, "http://")
-		endpoint = strings.TrimPrefix(endpoint, "https://")
-		opts = append(opts, withEndpoint(endpoint))
+		if strings.Contains(cfg.Endpoint, "://") {
+			opts = append(opts, builders.withEndpointURL(cfg.Endpoint))
+		} else {
+			opts = append(opts, builders.withEndpoint(cfg.Endpoint))
+		}
 	}
 
 	if cfg.Insecure {
-		opts = append(opts, withInsecure())
+		opts = append(opts, builders.withInsecure())
 	}
 
 	timeout := defaultOTLPTimeout
 	if cfg.Timeout > 0 {
 		timeout = cfg.Timeout
 	}
-	opts = append(opts, withTimeout(timeout))
+	opts = append(opts, builders.withTimeout(timeout))
 
-	if headers := cfg.Headers; len(headers) > 0 {
-		opts = append(opts, withHeaders(headers))
+	if len(cfg.Headers) > 0 {
+		opts = append(opts, builders.withHeaders(cfg.Headers))
 	}
 
-	return opts
+	switch cfg.Compression {
+	case CompressionGzip:
+		opts = append(opts, builders.withCompression())
+	case "":
+	default:
+		return nil, errors.TelemetryUnsupportedCompression.Args(cfg.Compression)
+	}
+
+	tlsConfig, err := newTLSConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+	if tlsConfig != nil {
+		opts = append(opts, builders.withTLS(tlsConfig))
+	}
+
+	if cfg.Retry != (RetryConfig{}) {
+		opts = append(opts, builders.withRetry(cfg.Retry.withDefaults()))
+	}
+
+	return opts, nil
 }
 
 func newTLSConfig(cfg ExporterEntry) (*tls.Config, error) {

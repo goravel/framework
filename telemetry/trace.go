@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"os"
 
@@ -12,6 +13,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	oteltrace "go.opentelemetry.io/otel/trace"
 	"go.opentelemetry.io/otel/trace/noop"
+	"google.golang.org/grpc/credentials"
 
 	"github.com/goravel/framework/errors"
 )
@@ -84,20 +86,50 @@ func newTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.SpanExpo
 func newOTLPTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.SpanExporter, error) {
 	switch cfg.Protocol {
 	case ProtocolGRPC:
-		opts := buildOTLPOptions(cfg,
-			otlptracegrpc.WithEndpoint,
-			otlptracegrpc.WithInsecure,
-			otlptracegrpc.WithTimeout,
-			otlptracegrpc.WithHeaders,
-		)
+		opts, err := buildOTLPOptions(cfg, otlpOptions[otlptracegrpc.Option]{
+			withEndpoint:    otlptracegrpc.WithEndpoint,
+			withEndpointURL: otlptracegrpc.WithEndpointURL,
+			withInsecure:    otlptracegrpc.WithInsecure,
+			withTimeout:     otlptracegrpc.WithTimeout,
+			withHeaders:     otlptracegrpc.WithHeaders,
+			withCompression: func() otlptracegrpc.Option { return otlptracegrpc.WithCompressor(CompressionGzip) },
+			withTLS: func(config *tls.Config) otlptracegrpc.Option {
+				return otlptracegrpc.WithTLSCredentials(credentials.NewTLS(config))
+			},
+			withRetry: func(retry RetryConfig) otlptracegrpc.Option {
+				return otlptracegrpc.WithRetry(otlptracegrpc.RetryConfig{
+					Enabled:         retry.IsEnabled(),
+					InitialInterval: retry.InitialInterval,
+					MaxInterval:     retry.MaxInterval,
+					MaxElapsedTime:  retry.MaxElapsedTime,
+				})
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
 		return otlptracegrpc.New(ctx, opts...)
 	case ProtocolHTTPProtobuf, "":
-		opts := buildOTLPOptions(cfg,
-			otlptracehttp.WithEndpoint,
-			otlptracehttp.WithInsecure,
-			otlptracehttp.WithTimeout,
-			otlptracehttp.WithHeaders,
-		)
+		opts, err := buildOTLPOptions(cfg, otlpOptions[otlptracehttp.Option]{
+			withEndpoint:    otlptracehttp.WithEndpoint,
+			withEndpointURL: otlptracehttp.WithEndpointURL,
+			withInsecure:    otlptracehttp.WithInsecure,
+			withTimeout:     otlptracehttp.WithTimeout,
+			withHeaders:     otlptracehttp.WithHeaders,
+			withCompression: func() otlptracehttp.Option { return otlptracehttp.WithCompression(otlptracehttp.GzipCompression) },
+			withTLS:         otlptracehttp.WithTLSClientConfig,
+			withRetry: func(retry RetryConfig) otlptracehttp.Option {
+				return otlptracehttp.WithRetry(otlptracehttp.RetryConfig{
+					Enabled:         retry.IsEnabled(),
+					InitialInterval: retry.InitialInterval,
+					MaxInterval:     retry.MaxInterval,
+					MaxElapsedTime:  retry.MaxElapsedTime,
+				})
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
 		return otlptracehttp.New(ctx, opts...)
 	default:
 		return nil, errors.TelemetryUnsupportedProtocol.Args(string(cfg.Protocol))

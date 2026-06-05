@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"os"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"go.opentelemetry.io/otel/log/global"
 	"go.opentelemetry.io/otel/log/noop"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
+	"google.golang.org/grpc/credentials"
 
 	"github.com/goravel/framework/errors"
 )
@@ -101,20 +103,50 @@ func newLogExporter(ctx context.Context, cfg ExporterEntry) (sdklog.Exporter, er
 func newOTLPLogExporter(ctx context.Context, cfg ExporterEntry) (sdklog.Exporter, error) {
 	switch cfg.Protocol {
 	case ProtocolGRPC:
-		opts := buildOTLPOptions[otlploggrpc.Option](cfg,
-			otlploggrpc.WithEndpoint,
-			otlploggrpc.WithInsecure,
-			otlploggrpc.WithTimeout,
-			otlploggrpc.WithHeaders,
-		)
+		opts, err := buildOTLPOptions(cfg, otlpOptions[otlploggrpc.Option]{
+			withEndpoint:    otlploggrpc.WithEndpoint,
+			withEndpointURL: otlploggrpc.WithEndpointURL,
+			withInsecure:    otlploggrpc.WithInsecure,
+			withTimeout:     otlploggrpc.WithTimeout,
+			withHeaders:     otlploggrpc.WithHeaders,
+			withCompression: func() otlploggrpc.Option { return otlploggrpc.WithCompressor(CompressionGzip) },
+			withTLS: func(config *tls.Config) otlploggrpc.Option {
+				return otlploggrpc.WithTLSCredentials(credentials.NewTLS(config))
+			},
+			withRetry: func(retry RetryConfig) otlploggrpc.Option {
+				return otlploggrpc.WithRetry(otlploggrpc.RetryConfig{
+					Enabled:         retry.IsEnabled(),
+					InitialInterval: retry.InitialInterval,
+					MaxInterval:     retry.MaxInterval,
+					MaxElapsedTime:  retry.MaxElapsedTime,
+				})
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
 		return otlploggrpc.New(ctx, opts...)
 	case ProtocolHTTPProtobuf, "":
-		opts := buildOTLPOptions[otlploghttp.Option](cfg,
-			otlploghttp.WithEndpoint,
-			otlploghttp.WithInsecure,
-			otlploghttp.WithTimeout,
-			otlploghttp.WithHeaders,
-		)
+		opts, err := buildOTLPOptions(cfg, otlpOptions[otlploghttp.Option]{
+			withEndpoint:    otlploghttp.WithEndpoint,
+			withEndpointURL: otlploghttp.WithEndpointURL,
+			withInsecure:    otlploghttp.WithInsecure,
+			withTimeout:     otlploghttp.WithTimeout,
+			withHeaders:     otlploghttp.WithHeaders,
+			withCompression: func() otlploghttp.Option { return otlploghttp.WithCompression(otlploghttp.GzipCompression) },
+			withTLS:         otlploghttp.WithTLSClientConfig,
+			withRetry: func(retry RetryConfig) otlploghttp.Option {
+				return otlploghttp.WithRetry(otlploghttp.RetryConfig{
+					Enabled:         retry.IsEnabled(),
+					InitialInterval: retry.InitialInterval,
+					MaxInterval:     retry.MaxInterval,
+					MaxElapsedTime:  retry.MaxElapsedTime,
+				})
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
 		return otlploghttp.New(ctx, opts...)
 	default:
 		return nil, errors.TelemetryUnsupportedProtocol.Args(string(cfg.Protocol))

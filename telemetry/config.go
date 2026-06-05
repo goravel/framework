@@ -89,6 +89,19 @@ func (r RetryConfig) IsEnabled() bool {
 	return r.Enabled == nil || *r.Enabled
 }
 
+func (r RetryConfig) withDefaults() RetryConfig {
+	if r.InitialInterval == 0 {
+		r.InitialInterval = 5 * time.Second
+	}
+	if r.MaxInterval == 0 {
+		r.MaxInterval = 30 * time.Second
+	}
+	if r.MaxElapsedTime == 0 {
+		r.MaxElapsedTime = time.Minute
+	}
+	return r
+}
+
 func (c Config) GetExporter(name string) (ExporterEntry, bool) {
 	entry, ok := c.Exporters[name]
 	return entry, ok

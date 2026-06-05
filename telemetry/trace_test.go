@@ -147,6 +147,62 @@ func TestNewTracerProvider(t *testing.T) {
 			},
 			expectError: errors.TelemetryUnsupportedProtocol.Args("http/json"),
 		},
+		{
+			name: "Success: OTLP Endpoint With URL Path",
+			config: Config{
+				Traces: TracesConfig{Exporter: "otlp"},
+				Exporters: map[string]ExporterEntry{
+					"otlp": {
+						Driver:   TraceExporterDriverOTLP,
+						Endpoint: "https://collector.example.com/otel",
+					},
+				},
+			},
+		},
+		{
+			name: "Success: OTLP With Compression And Retry",
+			config: Config{
+				Traces: TracesConfig{Exporter: "otlp"},
+				Exporters: map[string]ExporterEntry{
+					"otlp": {
+						Driver:      TraceExporterDriverOTLP,
+						Endpoint:    "localhost:4318",
+						Insecure:    true,
+						Compression: "gzip",
+						Retry:       RetryConfig{MaxElapsedTime: 10 * time.Second},
+					},
+				},
+			},
+		},
+		{
+			name: "Error: Unsupported Compression",
+			config: Config{
+				Traces: TracesConfig{Exporter: "otlp"},
+				Exporters: map[string]ExporterEntry{
+					"otlp": {
+						Driver:      TraceExporterDriverOTLP,
+						Endpoint:    "localhost:4318",
+						Compression: "zstd",
+					},
+				},
+			},
+			expectError: errors.TelemetryUnsupportedCompression.Args("zstd"),
+		},
+		{
+			name: "Error: TLS Conflicts With Insecure",
+			config: Config{
+				Traces: TracesConfig{Exporter: "otlp"},
+				Exporters: map[string]ExporterEntry{
+					"otlp": {
+						Driver:   TraceExporterDriverOTLP,
+						Endpoint: "localhost:4318",
+						Insecure: true,
+						TLS:      TLSConfig{CA: "/tmp/ca.pem"},
+					},
+				},
+			},
+			expectError: errors.TelemetryTLSConflictsWithInsecure,
+		},
 	}
 
 	for _, tt := range tests {
