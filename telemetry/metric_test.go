@@ -137,6 +137,20 @@ func TestNewMeterProvider(t *testing.T) {
 			},
 			expectError: errors.TelemetryMetricViaTypeMismatch.Args("string"),
 		},
+		{
+			name: "Error: Unsupported Protocol",
+			config: Config{
+				Metrics: MetricsConfig{Exporter: "otlp"},
+				Exporters: map[string]ExporterEntry{
+					"otlp": {
+						Driver:   MetricsExporterDriverOTLP,
+						Endpoint: "localhost:4318",
+						Protocol: "http/json",
+					},
+				},
+			},
+			expectError: errors.TelemetryUnsupportedProtocol.Args("http/json"),
+		},
 	}
 
 	for _, tt := range tests {

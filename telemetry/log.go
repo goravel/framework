@@ -99,12 +99,7 @@ func newLogExporter(ctx context.Context, cfg ExporterEntry) (sdklog.Exporter, er
 }
 
 func newOTLPLogExporter(ctx context.Context, cfg ExporterEntry) (sdklog.Exporter, error) {
-	protocol := cfg.Protocol
-	if protocol == "" {
-		protocol = ProtocolHTTPProtobuf
-	}
-
-	switch protocol {
+	switch cfg.Protocol {
 	case ProtocolGRPC:
 		opts := buildOTLPOptions[otlploggrpc.Option](cfg,
 			otlploggrpc.WithEndpoint,
@@ -113,7 +108,7 @@ func newOTLPLogExporter(ctx context.Context, cfg ExporterEntry) (sdklog.Exporter
 			otlploggrpc.WithHeaders,
 		)
 		return otlploggrpc.New(ctx, opts...)
-	default:
+	case ProtocolHTTPProtobuf, "":
 		opts := buildOTLPOptions[otlploghttp.Option](cfg,
 			otlploghttp.WithEndpoint,
 			otlploghttp.WithInsecure,
@@ -121,6 +116,8 @@ func newOTLPLogExporter(ctx context.Context, cfg ExporterEntry) (sdklog.Exporter
 			otlploghttp.WithHeaders,
 		)
 		return otlploghttp.New(ctx, opts...)
+	default:
+		return nil, errors.TelemetryUnsupportedProtocol.Args(string(cfg.Protocol))
 	}
 }
 

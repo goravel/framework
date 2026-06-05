@@ -133,6 +133,20 @@ func TestNewTracerProvider(t *testing.T) {
 			},
 			expectError: errors.TelemetryTraceViaTypeMismatch.Args("string"),
 		},
+		{
+			name: "Error: Unsupported Protocol",
+			config: Config{
+				Traces: TracesConfig{Exporter: "otlp"},
+				Exporters: map[string]ExporterEntry{
+					"otlp": {
+						Driver:   TraceExporterDriverOTLP,
+						Endpoint: "localhost:4318",
+						Protocol: "http/json",
+					},
+				},
+			},
+			expectError: errors.TelemetryUnsupportedProtocol.Args("http/json"),
+		},
 	}
 
 	for _, tt := range tests {

@@ -194,7 +194,7 @@ func init() {
 				"driver":   "otlp",
 				"endpoint": config.Env("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "http://localhost:4318"),
 
-				// Protocol: "http/protobuf", "http/json" or "grpc".
+				// Protocol: "http/protobuf" or "grpc".
 				"protocol": config.Env("OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "http/protobuf"),
 
 				// Set to false to require TLS/SSL.
@@ -210,7 +210,7 @@ func init() {
 				"driver":   "otlp",
 				"endpoint": config.Env("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", "http://localhost:4318"),
 
-				// Protocol: "http/protobuf", "http/json" or "grpc".
+				// Protocol: "http/protobuf" or "grpc".
 				"protocol": config.Env("OTEL_EXPORTER_OTLP_METRICS_PROTOCOL", "http/protobuf"),
 
 				// Set to false to require TLS/SSL.
@@ -232,7 +232,7 @@ func init() {
 				"driver":   "otlp",
 				"endpoint": config.Env("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", "http://localhost:4318"),
 
-				// Protocol: "http/protobuf", "http/json" or "grpc".
+				// Protocol: "http/protobuf" or "grpc".
 				"protocol": config.Env("OTEL_EXPORTER_OTLP_LOGS_PROTOCOL", "http/protobuf"),
 
 				// Set to false to require TLS/SSL.

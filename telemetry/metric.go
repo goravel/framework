@@ -121,14 +121,9 @@ func newMetricReader(ctx context.Context, cfg ExporterEntry, readerCfg MetricsRe
 }
 
 func newOTLPMetricExporter(ctx context.Context, cfg ExporterEntry) (sdkmetric.Exporter, error) {
-	protocol := cfg.Protocol
-	if protocol == "" {
-		protocol = ProtocolHTTPProtobuf
-	}
-
 	temporalitySelector := getTemporalitySelector(cfg.MetricTemporality)
 
-	switch protocol {
+	switch cfg.Protocol {
 	case ProtocolGRPC:
 		opts := buildOTLPOptions(cfg,
 			otlpmetricgrpc.WithEndpoint,
@@ -138,8 +133,7 @@ func newOTLPMetricExporter(ctx context.Context, cfg ExporterEntry) (sdkmetric.Ex
 		)
 		opts = append(opts, otlpmetricgrpc.WithTemporalitySelector(temporalitySelector))
 		return otlpmetricgrpc.New(ctx, opts...)
-
-	default:
+	case ProtocolHTTPProtobuf, "":
 		opts := buildOTLPOptions(cfg,
 			otlpmetrichttp.WithEndpoint,
 			otlpmetrichttp.WithInsecure,
@@ -148,6 +142,8 @@ func newOTLPMetricExporter(ctx context.Context, cfg ExporterEntry) (sdkmetric.Ex
 		)
 		opts = append(opts, otlpmetrichttp.WithTemporalitySelector(temporalitySelector))
 		return otlpmetrichttp.New(ctx, opts...)
+	default:
+		return nil, errors.TelemetryUnsupportedProtocol.Args(string(cfg.Protocol))
 	}
 }
 

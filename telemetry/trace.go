@@ -82,12 +82,7 @@ func newTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.SpanExpo
 }
 
 func newOTLPTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.SpanExporter, error) {
-	protocol := cfg.Protocol
-	if protocol == "" {
-		protocol = ProtocolHTTPProtobuf
-	}
-
-	switch protocol {
+	switch cfg.Protocol {
 	case ProtocolGRPC:
 		opts := buildOTLPOptions(cfg,
 			otlptracegrpc.WithEndpoint,
@@ -96,7 +91,7 @@ func newOTLPTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.Span
 			otlptracegrpc.WithHeaders,
 		)
 		return otlptracegrpc.New(ctx, opts...)
-	default:
+	case ProtocolHTTPProtobuf, "":
 		opts := buildOTLPOptions(cfg,
 			otlptracehttp.WithEndpoint,
 			otlptracehttp.WithInsecure,
@@ -104,6 +99,8 @@ func newOTLPTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.Span
 			otlptracehttp.WithHeaders,
 		)
 		return otlptracehttp.New(ctx, opts...)
+	default:
+		return nil, errors.TelemetryUnsupportedProtocol.Args(string(cfg.Protocol))
 	}
 }
 
