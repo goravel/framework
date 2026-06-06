@@ -1,6 +1,7 @@
 package telemetry
 
 import (
+	"cmp"
 	"crypto/tls"
 	"crypto/x509"
 	"net/url"
@@ -18,13 +19,20 @@ const (
 	ProtocolHTTPProtobuf Protocol = "http/protobuf"
 )
 
-const defaultOTLPTimeout = 10 * time.Second
+const (
+	defaultOTLPTimeout          = 10 * time.Second
+	defaultRetryInitialInterval = 5 * time.Second
+	defaultRetryMaxInterval     = 30 * time.Second
+	defaultRetryMaxElapsedTime  = time.Minute
+)
 
-const CompressionGzip = "gzip"
+type Compression string
+
+const CompressionGzip Compression = "gzip"
 
 type otlpOptions[T any] struct {
 	withEndpoint    func(string) T
-	withEndpointURL func(string) T
+	withURLPath     func(string) T // nil when the protocol has no URL path (gRPC)
 	withInsecure    func() T
 	withTimeout     func(time.Duration) T
 	withHeaders     func(map[string]string) T
@@ -37,31 +45,14 @@ func buildOTLPOptions[T any](cfg ExporterEntry, builders otlpOptions[T]) ([]T, e
 	var opts []T
 
 	if cfg.Endpoint != "" {
-		// otlploghttp's WithEndpointURL overrides the default /v1/logs path even
-		// when the URL has no path, so only use it when a path is actually given.
-		if endpointURL, err := url.Parse(cfg.Endpoint); err == nil && endpointURL.Scheme != "" && strings.Contains(cfg.Endpoint, "://") {
-			if endpointURL.Path == "" || endpointURL.Path == "/" {
-				opts = append(opts, builders.withEndpoint(endpointURL.Host))
-				if endpointURL.Scheme == "http" {
-					opts = append(opts, builders.withInsecure())
-				}
-			} else {
-				opts = append(opts, builders.withEndpointURL(cfg.Endpoint))
-			}
-		} else {
-			opts = append(opts, builders.withEndpoint(cfg.Endpoint))
-		}
+		opts = append(opts, endpointOptions(cfg.Endpoint, builders)...)
 	}
 
 	if cfg.Insecure {
 		opts = append(opts, builders.withInsecure())
 	}
 
-	timeout := defaultOTLPTimeout
-	if cfg.Timeout > 0 {
-		timeout = cfg.Timeout
-	}
-	opts = append(opts, builders.withTimeout(timeout))
+	opts = append(opts, builders.withTimeout(cmp.Or(cfg.Timeout, defaultOTLPTimeout)))
 
 	if len(cfg.Headers) > 0 {
 		opts = append(opts, builders.withHeaders(cfg.Headers))
@@ -72,7 +63,7 @@ func buildOTLPOptions[T any](cfg ExporterEntry, builders otlpOptions[T]) ([]T, e
 		opts = append(opts, builders.withCompression())
 	case "":
 	default:
-		return nil, errors.TelemetryUnsupportedCompression.Args(cfg.Compression)
+		return nil, errors.TelemetryUnsupportedCompression.Args(string(cfg.Compression))
 	}
 
 	tlsConfig, err := newTLSConfig(cfg)
@@ -88,6 +79,23 @@ func buildOTLPOptions[T any](cfg ExporterEntry, builders otlpOptions[T]) ([]T, e
 	}
 
 	return opts, nil
+}
+
+func endpointOptions[T any](endpoint string, builders otlpOptions[T]) []T {
+	endpointURL, err := url.Parse(endpoint)
+	if err != nil || !strings.Contains(endpoint, "://") {
+		return []T{builders.withEndpoint(endpoint)}
+	}
+
+	opts := []T{builders.withEndpoint(endpointURL.Host)}
+	if endpointURL.Scheme == "http" {
+		opts = append(opts, builders.withInsecure())
+	}
+	if path := endpointURL.Path; path != "" && path != "/" && builders.withURLPath != nil {
+		opts = append(opts, builders.withURLPath(path))
+	}
+
+	return opts
 }
 
 func newTLSConfig(cfg ExporterEntry) (*tls.Config, error) {

@@ -88,11 +88,10 @@ func newOTLPTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.Span
 	case ProtocolGRPC:
 		opts, err := buildOTLPOptions(cfg, otlpOptions[otlptracegrpc.Option]{
 			withEndpoint:    otlptracegrpc.WithEndpoint,
-			withEndpointURL: otlptracegrpc.WithEndpointURL,
 			withInsecure:    otlptracegrpc.WithInsecure,
 			withTimeout:     otlptracegrpc.WithTimeout,
 			withHeaders:     otlptracegrpc.WithHeaders,
-			withCompression: func() otlptracegrpc.Option { return otlptracegrpc.WithCompressor(CompressionGzip) },
+			withCompression: func() otlptracegrpc.Option { return otlptracegrpc.WithCompressor(string(CompressionGzip)) },
 			withTLS: func(config *tls.Config) otlptracegrpc.Option {
 				return otlptracegrpc.WithTLSCredentials(credentials.NewTLS(config))
 			},
@@ -112,7 +111,7 @@ func newOTLPTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.Span
 	case ProtocolHTTPProtobuf, "":
 		opts, err := buildOTLPOptions(cfg, otlpOptions[otlptracehttp.Option]{
 			withEndpoint:    otlptracehttp.WithEndpoint,
-			withEndpointURL: otlptracehttp.WithEndpointURL,
+			withURLPath:     otlptracehttp.WithURLPath,
 			withInsecure:    otlptracehttp.WithInsecure,
 			withTimeout:     otlptracehttp.WithTimeout,
 			withHeaders:     otlptracehttp.WithHeaders,

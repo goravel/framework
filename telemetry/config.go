@@ -58,7 +58,7 @@ type ExporterEntry struct {
 	// OTLP-specific
 	Protocol    Protocol
 	Headers     map[string]string
-	Compression string
+	Compression Compression
 	TLS         TLSConfig
 	Retry       RetryConfig
 
@@ -91,13 +91,13 @@ func (r RetryConfig) IsEnabled() bool {
 
 func (r RetryConfig) withDefaults() RetryConfig {
 	if r.InitialInterval == 0 {
-		r.InitialInterval = 5 * time.Second
+		r.InitialInterval = defaultRetryInitialInterval
 	}
 	if r.MaxInterval == 0 {
-		r.MaxInterval = 30 * time.Second
+		r.MaxInterval = defaultRetryMaxInterval
 	}
 	if r.MaxElapsedTime == 0 {
-		r.MaxElapsedTime = time.Minute
+		r.MaxElapsedTime = defaultRetryMaxElapsedTime
 	}
 	return r
 }

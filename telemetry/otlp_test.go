@@ -23,10 +23,10 @@ import (
 type MockOption string
 
 var mockOTLPOptions = otlpOptions[MockOption]{
-	withEndpoint:    func(s string) MockOption { return MockOption("endpoint=" + s) },
-	withEndpointURL: func(s string) MockOption { return MockOption("endpoint_url=" + s) },
-	withInsecure:    func() MockOption { return MockOption("insecure=true") },
-	withTimeout:     func(d time.Duration) MockOption { return MockOption("timeout=" + d.String()) },
+	withEndpoint: func(s string) MockOption { return MockOption("endpoint=" + s) },
+	withURLPath:  func(s string) MockOption { return MockOption("url_path=" + s) },
+	withInsecure: func() MockOption { return MockOption("insecure=true") },
+	withTimeout:  func(d time.Duration) MockOption { return MockOption("timeout=" + d.String()) },
 	withHeaders: func(h map[string]string) MockOption {
 		if val, ok := h["Authorization"]; ok {
 			return MockOption("header_auth=" + val)
@@ -72,7 +72,8 @@ func TestBuildOTLPOptions(t *testing.T) {
 				Endpoint: "https://otel.com/otel",
 			},
 			expected: []MockOption{
-				"endpoint_url=https://otel.com/otel",
+				"endpoint=otel.com",
+				"url_path=/otel",
 				"timeout=10s",
 			},
 		},
@@ -300,4 +301,12 @@ func writeTestCerts(t *testing.T) (caFile, certFile, keyFile string) {
 func testCAFile(t *testing.T) string {
 	caFile, _, _ := writeTestCerts(t)
 	return caFile
+}
+
+func TestEndpointOptionsSkipsPathWithoutBuilder(t *testing.T) {
+	builders := mockOTLPOptions
+	builders.withURLPath = nil
+
+	opts := endpointOptions("https://otel.com/otel", builders)
+	assert.Equal(t, []MockOption{"endpoint=otel.com"}, opts)
 }

@@ -105,11 +105,10 @@ func newOTLPLogExporter(ctx context.Context, cfg ExporterEntry) (sdklog.Exporter
 	case ProtocolGRPC:
 		opts, err := buildOTLPOptions(cfg, otlpOptions[otlploggrpc.Option]{
 			withEndpoint:    otlploggrpc.WithEndpoint,
-			withEndpointURL: otlploggrpc.WithEndpointURL,
 			withInsecure:    otlploggrpc.WithInsecure,
 			withTimeout:     otlploggrpc.WithTimeout,
 			withHeaders:     otlploggrpc.WithHeaders,
-			withCompression: func() otlploggrpc.Option { return otlploggrpc.WithCompressor(CompressionGzip) },
+			withCompression: func() otlploggrpc.Option { return otlploggrpc.WithCompressor(string(CompressionGzip)) },
 			withTLS: func(config *tls.Config) otlploggrpc.Option {
 				return otlploggrpc.WithTLSCredentials(credentials.NewTLS(config))
 			},
@@ -129,7 +128,7 @@ func newOTLPLogExporter(ctx context.Context, cfg ExporterEntry) (sdklog.Exporter
 	case ProtocolHTTPProtobuf, "":
 		opts, err := buildOTLPOptions(cfg, otlpOptions[otlploghttp.Option]{
 			withEndpoint:    otlploghttp.WithEndpoint,
-			withEndpointURL: otlploghttp.WithEndpointURL,
+			withURLPath:     otlploghttp.WithURLPath,
 			withInsecure:    otlploghttp.WithInsecure,
 			withTimeout:     otlploghttp.WithTimeout,
 			withHeaders:     otlploghttp.WithHeaders,
