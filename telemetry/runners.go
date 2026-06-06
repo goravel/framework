@@ -44,11 +44,7 @@ func (r *TelemetryRunner) ShouldRun() bool {
 func (r *TelemetryRunner) Shutdown() error {
 	defer r.closeOnce.Do(func() { close(r.done) })
 
-	timeout := defaultShutdownTimeout
-	if r.config != nil {
-		timeout = r.config.GetDuration("telemetry.shutdown_timeout", defaultShutdownTimeout)
-	}
-
+	timeout := r.config.GetDuration("telemetry.shutdown_timeout", defaultShutdownTimeout)
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 

@@ -44,10 +44,13 @@ func TestTelemetryRunner(t *testing.T) {
 	})
 
 	t.Run("shutdown unblocks run", func(t *testing.T) {
+		config := mocksconfig.NewConfig(t)
+		config.EXPECT().GetDuration("telemetry.shutdown_timeout", defaultShutdownTimeout).Return(defaultShutdownTimeout).Once()
+
 		telemetry := mockstelemetry.NewTelemetry(t)
 		telemetry.EXPECT().Shutdown(mock.Anything).Return(nil).Once()
 
-		runner := NewTelemetryRunner(nil, telemetry)
+		runner := NewTelemetryRunner(config, telemetry)
 
 		ran := make(chan error, 1)
 		go func() { ran <- runner.Run() }()
