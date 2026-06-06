@@ -259,6 +259,27 @@ func TestNewOTLPLogExporter(t *testing.T) {
 			},
 		},
 		{
+			name: "HTTP With Compression Retry And TLS",
+			cfg: ExporterEntry{
+				Driver:      LogExporterDriverOTLP,
+				Endpoint:    "https://otel.com",
+				Compression: "gzip",
+				TLS:         TLSConfig{CA: testCAFile(t)},
+				Retry:       RetryConfig{MaxElapsedTime: 5 * time.Second},
+			},
+		},
+		{
+			name: "GRPC With Compression Retry And TLS",
+			cfg: ExporterEntry{
+				Driver:      LogExporterDriverOTLP,
+				Endpoint:    "otel.com:4317",
+				Protocol:    ProtocolGRPC,
+				Compression: "gzip",
+				TLS:         TLSConfig{CA: testCAFile(t)},
+				Retry:       RetryConfig{MaxElapsedTime: 5 * time.Second},
+			},
+		},
+		{
 			name: "With Headers and Timeout",
 			cfg: ExporterEntry{
 				Driver:   LogExporterDriverOTLP,

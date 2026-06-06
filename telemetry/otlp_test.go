@@ -67,12 +67,33 @@ func TestBuildOTLPOptions(t *testing.T) {
 			},
 		},
 		{
-			name: "Endpoint With URL",
+			name: "Endpoint With URL Path",
 			cfg: ExporterEntry{
 				Endpoint: "https://otel.com/otel",
 			},
 			expected: []MockOption{
 				"endpoint_url=https://otel.com/otel",
+				"timeout=10s",
+			},
+		},
+		{
+			name: "Endpoint With HTTP Scheme Without Path Keeps Default Signal Path",
+			cfg: ExporterEntry{
+				Endpoint: "http://localhost:4318",
+			},
+			expected: []MockOption{
+				"endpoint=localhost:4318",
+				"insecure=true",
+				"timeout=10s",
+			},
+		},
+		{
+			name: "Endpoint With HTTPS Scheme Without Path",
+			cfg: ExporterEntry{
+				Endpoint: "https://otel.com",
+			},
+			expected: []MockOption{
+				"endpoint=otel.com",
 				"timeout=10s",
 			},
 		},
@@ -274,4 +295,9 @@ func writeTestCerts(t *testing.T) (caFile, certFile, keyFile string) {
 	require.NoError(t, os.WriteFile(certFile, certPEM, 0600))
 	require.NoError(t, os.WriteFile(keyFile, keyPEM, 0600))
 	return caFile, certFile, keyFile
+}
+
+func testCAFile(t *testing.T) string {
+	caFile, _, _ := writeTestCerts(t)
+	return caFile
 }

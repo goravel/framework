@@ -3,6 +3,7 @@ package telemetry
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -36,8 +37,17 @@ func buildOTLPOptions[T any](cfg ExporterEntry, builders otlpOptions[T]) ([]T, e
 	var opts []T
 
 	if cfg.Endpoint != "" {
-		if strings.Contains(cfg.Endpoint, "://") {
-			opts = append(opts, builders.withEndpointURL(cfg.Endpoint))
+		// otlploghttp's WithEndpointURL overrides the default /v1/logs path even
+		// when the URL has no path, so only use it when a path is actually given.
+		if endpointURL, err := url.Parse(cfg.Endpoint); err == nil && endpointURL.Scheme != "" && strings.Contains(cfg.Endpoint, "://") {
+			if endpointURL.Path == "" || endpointURL.Path == "/" {
+				opts = append(opts, builders.withEndpoint(endpointURL.Host))
+				if endpointURL.Scheme == "http" {
+					opts = append(opts, builders.withInsecure())
+				}
+			} else {
+				opts = append(opts, builders.withEndpointURL(cfg.Endpoint))
+			}
 		} else {
 			opts = append(opts, builders.withEndpoint(cfg.Endpoint))
 		}

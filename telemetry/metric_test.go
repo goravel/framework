@@ -315,6 +315,25 @@ func TestNewOTLPMetricExporter(t *testing.T) {
 			},
 		},
 		{
+			name: "HTTP With Compression Retry And TLS",
+			cfg: ExporterEntry{
+				Endpoint:    "https://otel.com",
+				Compression: "gzip",
+				TLS:         TLSConfig{CA: testCAFile(t)},
+				Retry:       RetryConfig{MaxElapsedTime: 5 * time.Second},
+			},
+		},
+		{
+			name: "GRPC With Compression Retry And TLS",
+			cfg: ExporterEntry{
+				Endpoint:    "otel.com:4317",
+				Protocol:    ProtocolGRPC,
+				Compression: "gzip",
+				TLS:         TLSConfig{CA: testCAFile(t)},
+				Retry:       RetryConfig{MaxElapsedTime: 5 * time.Second},
+			},
+		},
+		{
 			name: "With Temporality Delta",
 			cfg: ExporterEntry{
 				Endpoint:          "localhost:4318",
