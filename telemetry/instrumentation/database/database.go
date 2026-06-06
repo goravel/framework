@@ -36,6 +36,10 @@ var (
 
 func operationDuration() metric.Float64Histogram {
 	durationOnce.Do(func() {
+		if telemetry.Facade == nil {
+			return
+		}
+
 		meter := telemetry.Facade.Meter(instrumentationName)
 		durationHist, _ = meter.Float64Histogram(metricOperationDuration,
 			metric.WithUnit(unitSeconds),
