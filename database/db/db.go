@@ -217,7 +217,7 @@ func (r *Tx) Select(dest any, sql string, args ...any) error {
 
 	rowsAffected := int64(1)
 	if destValue.Kind() == reflect.Slice {
-		if err = builder.SelectContext(r.ctx, dest, realSql, args...); err != nil {
+		if err = builder.SelectContext(r.ctx, dest, sql, args...); err != nil {
 			r.logger.Trace(r.ctx, carbon.Now(), realSql, -1, err)
 
 			return err
@@ -225,7 +225,7 @@ func (r *Tx) Select(dest any, sql string, args ...any) error {
 
 		rowsAffected = int64(destValue.Len())
 	} else {
-		if err = builder.GetContext(r.ctx, dest, realSql, args...); err != nil {
+		if err = builder.GetContext(r.ctx, dest, sql, args...); err != nil {
 			r.logger.Trace(r.ctx, carbon.Now(), realSql, -1, err)
 
 			return err
