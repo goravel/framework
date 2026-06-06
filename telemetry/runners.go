@@ -38,7 +38,7 @@ func (r *TelemetryRunner) Run() error {
 }
 
 func (r *TelemetryRunner) ShouldRun() bool {
-	return r.telemetry != nil
+	return r.telemetry != nil && r.config.GetBool("app.auto_run", true)
 }
 
 func (r *TelemetryRunner) Shutdown() error {
