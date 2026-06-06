@@ -225,6 +225,9 @@ func (r *Application) Start() {
 		errs   []error
 	)
 
+	// Restart replaces r.cancel; an erroring runner must cancel the context it was started with.
+	cancel := r.cancel
+
 	run := func(runner *RunnerWithInfo) {
 		r.runnerWg.Add(1)
 
@@ -240,7 +243,7 @@ func (r *Application) Start() {
 					log.Errorf("failed to run %s: %v\n", runner.signature, err)
 				}
 
-				r.cancel()
+				cancel()
 			}
 			// Run may be a blocking call, so don't write anything after it.
 		}()
@@ -255,6 +258,10 @@ func (r *Application) Start() {
 	}
 
 	r.runnerWg.Wait()
+
+	// Run may error after its shutdown completed, so reading errs still needs the lock.
+	errsMu.Lock()
+	defer errsMu.Unlock()
 
 	if len(errs) > 0 {
 		panic(errors.Join(errs...))
