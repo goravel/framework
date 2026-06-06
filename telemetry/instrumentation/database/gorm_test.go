@@ -3,32 +3,15 @@ package database
 import (
 	"context"
 	"strings"
-	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	metricnoop "go.opentelemetry.io/otel/metric/noop"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"gorm.io/gorm"
 	gormtests "gorm.io/gorm/utils/tests"
 
-	mockstelemetry "github.com/goravel/framework/mocks/telemetry"
 	"github.com/goravel/framework/telemetry"
 )
-
-type recordingSpanExporter struct {
-	mu    sync.Mutex
-	spans []sdktrace.ReadOnlySpan
-}
-
-func (r *recordingSpanExporter) ExportSpans(ctx context.Context, spans []sdktrace.ReadOnlySpan) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.spans = append(r.spans, spans...)
-	return nil
-}
-
-func (r *recordingSpanExporter) Shutdown(ctx context.Context) error { return nil }
 
 type testUser struct {
 	ID   uint
@@ -38,17 +21,7 @@ type testUser struct {
 func setupTracedGorm(t *testing.T) (*gorm.DB, *recordingSpanExporter) {
 	t.Helper()
 
-	exporter := &recordingSpanExporter{}
-	provider := sdktrace.NewTracerProvider(sdktrace.WithSyncer(exporter))
-	t.Cleanup(func() { _ = provider.Shutdown(context.Background()) })
-
-	mockTelemetry := mockstelemetry.NewTelemetry(t)
-	mockTelemetry.EXPECT().Tracer(instrumentationName).Return(provider.Tracer(instrumentationName)).Maybe()
-	mockTelemetry.EXPECT().Meter(instrumentationName).Return(metricnoop.NewMeterProvider().Meter(instrumentationName)).Maybe()
-
-	original := telemetry.Facade
-	telemetry.Facade = mockTelemetry
-	t.Cleanup(func() { telemetry.Facade = original })
+	exporter := setupRecordingTelemetry(t)
 
 	db, err := gorm.Open(gormtests.DummyDialector{}, &gorm.Config{SkipDefaultTransaction: true, DryRun: true})
 	assert.NoError(t, err)
