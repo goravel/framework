@@ -19,8 +19,7 @@ import (
 
 var _ telemetry.Telemetry = (*Application)(nil)
 
-// errorHandlerOnce ensures the default error handler is set once, so a custom
-// handler installed by the application is not overwritten on Restart.
+// Set once so a custom handler installed via otel.SetErrorHandler survives Restart.
 var errorHandlerOnce sync.Once
 
 type Application struct {

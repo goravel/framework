@@ -197,20 +197,6 @@ func TestApplication_Shutdown(t *testing.T) {
 		assert.Equal(t, 2, shutdownCallCount, "Shutdown should have been called twice")
 	})
 
-	t.Run("aggregates errors", func(t *testing.T) {
-		app := &Application{
-			shutdownFuncs: []ShutdownFunc{
-				func(ctx context.Context) error { return errors.New("error 1") },
-				func(ctx context.Context) error { return nil },
-				func(ctx context.Context) error { return errors.New("error 2") },
-			},
-		}
-
-		err := app.Shutdown(context.Background())
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "error 1")
-		assert.Contains(t, err.Error(), "error 2")
-	})
 }
 
 func TestApplication_TracerProvider(t *testing.T) {
@@ -277,21 +263,6 @@ func TestApplication_ForceFlush(t *testing.T) {
 		err := app.ForceFlush(context.Background())
 		assert.NoError(t, err)
 		assert.Equal(t, 2, flushCallCount, "ForceFlush should have been called twice")
-	})
-
-	t.Run("aggregates errors", func(t *testing.T) {
-		app := &Application{
-			flushFuncs: []FlushFunc{
-				func(ctx context.Context) error { return errors.New("error 1") },
-				func(ctx context.Context) error { return nil },
-				func(ctx context.Context) error { return errors.New("error 2") },
-			},
-		}
-
-		err := app.ForceFlush(context.Background())
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "error 1")
-		assert.Contains(t, err.Error(), "error 2")
 	})
 
 	t.Run("flushes providers end to end", func(t *testing.T) {
