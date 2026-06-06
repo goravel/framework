@@ -2,10 +2,14 @@ package database
 
 import (
 	"context"
+	"database/sql"
+	"sync"
 	"time"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 	"gorm.io/gorm"
+
+	"github.com/goravel/framework/support/color"
 )
 
 type contextWrapper struct {
@@ -14,10 +18,19 @@ type contextWrapper struct {
 	start  time.Time
 }
 
-type GormPlugin struct{}
+type GormPlugin struct {
+	sqlDB      *sql.DB
+	driverName string
+	poolName   string
+	poolOnce   sync.Once
+}
 
 func NewGormPlugin() *GormPlugin {
 	return &GormPlugin{}
+}
+
+func NewGormPluginWithPool(sqlDB *sql.DB, driverName, poolName string) *GormPlugin {
+	return &GormPlugin{sqlDB: sqlDB, driverName: driverName, poolName: poolName}
 }
 
 func (r *GormPlugin) Name() string {
@@ -68,6 +81,14 @@ func (r *GormPlugin) before(spanName string) func(*gorm.DB) {
 		spanCtx, _, ok := startSpan(parent, spanName)
 		if !ok {
 			return
+		}
+
+		if r.sqlDB != nil {
+			r.poolOnce.Do(func() {
+				if err := RegisterPoolMetrics(r.sqlDB, r.driverName, r.poolName); err != nil {
+					color.Warningln("failed to register database pool metrics:", err)
+				}
+			})
 		}
 
 		tx.Statement.Context = contextWrapper{Context: spanCtx, parent: parent, start: time.Now()}

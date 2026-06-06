@@ -38,7 +38,7 @@ func TestRegisterPoolMetrics(t *testing.T) {
 	db := openStubDB()
 	defer db.Close()
 
-	assert.NoError(t, RegisterPoolMetrics(db, "postgres"))
+	assert.NoError(t, RegisterPoolMetrics(db, "postgres", "primary"))
 
 	var rm metricdata.ResourceMetrics
 	assert.NoError(t, reader.Collect(context.Background(), &rm))
@@ -47,6 +47,14 @@ func TestRegisterPoolMetrics(t *testing.T) {
 	for _, sm := range rm.ScopeMetrics {
 		for _, m := range sm.Metrics {
 			names[m.Name] = true
+
+			if m.Name == "db.client.connection.max" {
+				data := m.Data.(metricdata.Sum[int64])
+				assert.NotEmpty(t, data.DataPoints)
+				poolName, ok := data.DataPoints[0].Attributes.Value(poolNameKey)
+				assert.True(t, ok)
+				assert.Equal(t, "primary", poolName.AsString())
+			}
 		}
 	}
 	assert.True(t, names["db.client.connection.count"])
@@ -63,5 +71,5 @@ func TestRegisterPoolMetrics_NilFacade(t *testing.T) {
 	db := openStubDB()
 	defer db.Close()
 
-	assert.NoError(t, RegisterPoolMetrics(db, "postgres"))
+	assert.NoError(t, RegisterPoolMetrics(db, "postgres", "primary"))
 }

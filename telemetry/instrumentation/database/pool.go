@@ -16,22 +16,25 @@ const (
 	metricConnectionWaitTime = "db.client.connection.wait_time"
 	metricConnectionWaits    = "db.client.connection.waits"
 
-	stateKey = attribute.Key("db.client.connection.state")
+	stateKey    = attribute.Key("db.client.connection.state")
+	poolNameKey = attribute.Key("db.client.connection.pool.name")
 )
 
-func RegisterPoolMetrics(db *sql.DB, driverName string) error {
+// RegisterPoolMetrics exports sql.DBStats as observable metrics. Call once per *sql.DB.
+func RegisterPoolMetrics(db *sql.DB, driverName, poolName string) error {
 	if telemetry.Facade == nil {
 		return nil
 	}
 
 	meter := telemetry.Facade.Meter(instrumentationName)
 	system := dbSystem(driverName)
+	pool := poolNameKey.String(poolName)
 
 	count, err := meter.Int64ObservableUpDownCounter(metricConnectionCount, metric.WithUnit("{connection}"), metric.WithDescription("Open connections by state"))
 	if err != nil {
 		return err
 	}
-	max, err := meter.Int64ObservableUpDownCounter(metricConnectionMax, metric.WithUnit("{connection}"), metric.WithDescription("Maximum open connections allowed"))
+	maxConns, err := meter.Int64ObservableUpDownCounter(metricConnectionMax, metric.WithUnit("{connection}"), metric.WithDescription("Maximum open connections allowed"))
 	if err != nil {
 		return err
 	}
@@ -46,13 +49,13 @@ func RegisterPoolMetrics(db *sql.DB, driverName string) error {
 
 	_, err = meter.RegisterCallback(func(ctx context.Context, observer metric.Observer) error {
 		stats := db.Stats()
-		observer.ObserveInt64(count, int64(stats.InUse), metric.WithAttributes(system, stateKey.String("used")))
-		observer.ObserveInt64(count, int64(stats.Idle), metric.WithAttributes(system, stateKey.String("idle")))
-		observer.ObserveInt64(max, int64(stats.MaxOpenConnections), metric.WithAttributes(system))
-		observer.ObserveFloat64(waitTime, stats.WaitDuration.Seconds(), metric.WithAttributes(system))
-		observer.ObserveInt64(waits, stats.WaitCount, metric.WithAttributes(system))
+		observer.ObserveInt64(count, int64(stats.InUse), metric.WithAttributes(system, pool, stateKey.String("used")))
+		observer.ObserveInt64(count, int64(stats.Idle), metric.WithAttributes(system, pool, stateKey.String("idle")))
+		observer.ObserveInt64(maxConns, int64(stats.MaxOpenConnections), metric.WithAttributes(system, pool))
+		observer.ObserveFloat64(waitTime, stats.WaitDuration.Seconds(), metric.WithAttributes(system, pool))
+		observer.ObserveInt64(waits, stats.WaitCount, metric.WithAttributes(system, pool))
 		return nil
-	}, count, max, waitTime, waits)
+	}, count, maxConns, waitTime, waits)
 
 	return err
 }

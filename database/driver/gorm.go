@@ -1,6 +1,7 @@
 package driver
 
 import (
+	"database/sql"
 	"sync"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/color"
+	instrumentationdatabase "github.com/goravel/framework/telemetry/instrumentation/database"
 )
 
 var (
@@ -87,6 +89,10 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 		db.SetConnMaxIdleTime(connMaxIdleTime * time.Second)
 		db.SetConnMaxLifetime(connMaxLifetime * time.Second)
 
+		if err := registerInstrumentation(config, instance, db, pool.Writers[0].Driver, connection); err != nil {
+			return nil, err
+		}
+
 		connectionToDB.Store(connection, instance)
 
 		return instance, nil
@@ -117,9 +123,26 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 		return nil, err
 	}
 
+	sqlDB, err := instance.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := registerInstrumentation(config, instance, sqlDB, pool.Writers[0].Driver, connection); err != nil {
+		return nil, err
+	}
+
 	connectionToDB.Store(connection, instance)
 
 	return instance, nil
+}
+
+func registerInstrumentation(config config.Config, instance *gorm.DB, sqlDB *sql.DB, driverName, connection string) error {
+	if !config.GetBool("telemetry.instrumentation.database.enabled") {
+		return nil
+	}
+
+	return instance.Use(instrumentationdatabase.NewGormPluginWithPool(sqlDB, driverName, connection))
 }
 
 func ResetConnections() {

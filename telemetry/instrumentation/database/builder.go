@@ -19,6 +19,29 @@ func WrapBuilder(inner contractsdb.CommonBuilder, driverName string) contractsdb
 	return &tracedCommonBuilder{inner: inner, system: driverName}
 }
 
+type tracedBuilder struct {
+	*tracedCommonBuilder
+	inner contractsdb.Builder
+}
+
+func (r *tracedBuilder) Beginx() (*sqlx.Tx, error) { return r.inner.Beginx() }
+
+func WrapBuilderFull(inner contractsdb.Builder, driverName string) contractsdb.Builder {
+	return &tracedBuilder{tracedCommonBuilder: &tracedCommonBuilder{inner: inner, system: driverName}, inner: inner}
+}
+
+type tracedTxBuilder struct {
+	*tracedCommonBuilder
+	inner contractsdb.TxBuilder
+}
+
+func (r *tracedTxBuilder) Commit() error   { return r.inner.Commit() }
+func (r *tracedTxBuilder) Rollback() error { return r.inner.Rollback() }
+
+func WrapTxBuilder(inner contractsdb.TxBuilder, driverName string) contractsdb.TxBuilder {
+	return &tracedTxBuilder{tracedCommonBuilder: &tracedCommonBuilder{inner: inner, system: driverName}, inner: inner}
+}
+
 func (r *tracedCommonBuilder) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	spanCtx, span, ok := startSpan(ctx, operationName(query))
 	if !ok {
