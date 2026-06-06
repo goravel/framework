@@ -104,7 +104,7 @@ func newTLSConfig(cfg ExporterEntry) (*tls.Config, error) {
 		return nil, nil
 	}
 
-	if cfg.Insecure {
+	if cfg.Insecure || strings.HasPrefix(cfg.Endpoint, "http://") {
 		return nil, errors.TelemetryTLSConflictsWithInsecure
 	}
 

@@ -80,9 +80,9 @@ type TLSConfig struct {
 
 type RetryConfig struct {
 	Enabled         *bool
-	InitialInterval time.Duration
-	MaxInterval     time.Duration
-	MaxElapsedTime  time.Duration
+	InitialInterval time.Duration `json:"initial_interval"`
+	MaxInterval     time.Duration `json:"max_interval"`
+	MaxElapsedTime  time.Duration `json:"max_elapsed_time"`
 }
 
 func (r RetryConfig) IsEnabled() bool {

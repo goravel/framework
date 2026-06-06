@@ -223,6 +223,16 @@ func TestNewTLSConfig(t *testing.T) {
 			expectError: errors.TelemetryTLSConflictsWithInsecure,
 		},
 		{
+			name:        "Conflicts with http endpoint",
+			entry:       ExporterEntry{Endpoint: "http://localhost:4318", TLS: TLSConfig{CA: caFile}},
+			expectError: errors.TelemetryTLSConflictsWithInsecure,
+		},
+		{
+			name:     "Allows https endpoint",
+			entry:    ExporterEntry{Endpoint: "https://otel.com", TLS: TLSConfig{CA: caFile}},
+			expectCA: true,
+		},
+		{
 			name:        "Cert without key",
 			entry:       ExporterEntry{TLS: TLSConfig{Cert: certFile}},
 			expectError: errors.TelemetryTLSClientCertIncomplete,
