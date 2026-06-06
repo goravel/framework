@@ -44,8 +44,13 @@ func NewTracerProvider(ctx context.Context, cfg Config, opts ...sdktrace.TracerP
 		return nil, NoopShutdown(), err
 	}
 
+	processorOption, err := newTraceProcessorOption(exporter, cfg.Traces.Processor)
+	if err != nil {
+		return nil, NoopShutdown(), err
+	}
+
 	providerOptions := []sdktrace.TracerProviderOption{
-		sdktrace.WithBatcher(exporter),
+		processorOption,
 		sdktrace.WithSampler(newTraceSampler(cfg.Traces.Sampler)),
 	}
 	providerOptions = append(providerOptions, opts...)
@@ -54,6 +59,30 @@ func NewTracerProvider(ctx context.Context, cfg Config, opts ...sdktrace.TracerP
 	otel.SetTracerProvider(tp)
 
 	return tp, tp.Shutdown, nil
+}
+
+func newTraceProcessorOption(exporter sdktrace.SpanExporter, cfg ProcessorConfig) (sdktrace.TracerProviderOption, error) {
+	switch cfg.Type {
+	case ProcessorSimple:
+		return sdktrace.WithSyncer(exporter), nil
+	case ProcessorBatch, "":
+		var opts []sdktrace.BatchSpanProcessorOption
+		if cfg.Interval > 0 {
+			opts = append(opts, sdktrace.WithBatchTimeout(cfg.Interval))
+		}
+		if cfg.Timeout > 0 {
+			opts = append(opts, sdktrace.WithExportTimeout(cfg.Timeout))
+		}
+		if cfg.MaxQueueSize > 0 {
+			opts = append(opts, sdktrace.WithMaxQueueSize(cfg.MaxQueueSize))
+		}
+		if cfg.MaxBatchSize > 0 {
+			opts = append(opts, sdktrace.WithMaxExportBatchSize(cfg.MaxBatchSize))
+		}
+		return sdktrace.WithBatcher(exporter, opts...), nil
+	default:
+		return nil, errors.TelemetryUnsupportedProcessor.Args(cfg.Type)
+	}
 }
 
 func newTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.SpanExporter, error) {
