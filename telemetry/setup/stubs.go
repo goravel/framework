@@ -78,6 +78,33 @@ func init() {
 				// e.g., 0.1 records ~10% of traces.
 				"ratio": config.Env("OTEL_TRACES_SAMPLER_RATIO", 0.05),
 			},
+
+			// Processor Configuration
+			//
+			// Controls how finished spans are handed to the exporter.
+			"processor": map[string]any{
+				// Type: "batch" buffers spans for performance (recommended);
+				// "simple" exports each span synchronously (debugging, short-lived CLIs).
+				"type": config.Env("OTEL_TRACE_PROCESSOR_TYPE", "batch"),
+
+				// Zero/empty values use the SDK defaults shown.
+				"interval":       config.Env("OTEL_BSP_SCHEDULE_DELAY", ""),       // 5s
+				"timeout":        config.Env("OTEL_BSP_EXPORT_TIMEOUT", ""),       // 30s
+				"max_queue_size": config.Env("OTEL_BSP_MAX_QUEUE_SIZE", 0),        // 2048
+				"max_batch_size": config.Env("OTEL_BSP_MAX_EXPORT_BATCH_SIZE", 0), // 512
+			},
+
+			// Span Limits
+			//
+			// Guards against unbounded span cardinality. 0 = SDK default, -1 = unlimited.
+			"limits": map[string]any{
+				"attribute_value_length":    config.Env("OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT", 0),
+				"attribute_count":           config.Env("OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT", 0),
+				"event_count":               config.Env("OTEL_SPAN_EVENT_COUNT_LIMIT", 0),
+				"link_count":                config.Env("OTEL_SPAN_LINK_COUNT_LIMIT", 0),
+				"attribute_per_event_count": config.Env("OTEL_EVENT_ATTRIBUTE_COUNT_LIMIT", 0),
+				"attribute_per_link_count":  config.Env("OTEL_LINK_ATTRIBUTE_COUNT_LIMIT", 0),
+			},
 		},
 
 		// Metrics Configuration
@@ -121,13 +148,17 @@ func init() {
 			//
 			// Configures the BatchLogProcessor, which batches logs before export.
 			"processor": map[string]any{
-				// Interval: How often logs are flushed.
-				// Format: Duration string (e.g., "1s", "500ms").
-				"interval": config.Env("OTEL_LOG_EXPORT_INTERVAL", "1s"),
+				// Type: "batch" buffers logs for performance (recommended);
+				// "simple" exports each record synchronously (debugging).
+				"type": config.Env("OTEL_LOG_PROCESSOR_TYPE", "batch"),
 
-				// Timeout: Max time allowed for export before cancelling.
-				// Format: Duration string (e.g., "30s").
-				"timeout": config.Env("OTEL_LOG_EXPORT_TIMEOUT", "30s"),
+				// Zero/empty values use the SDK defaults shown.
+				// Format: Duration string (e.g., "1s", "500ms").
+				"interval": config.Env("OTEL_BLRP_SCHEDULE_DELAY", ""), // 1s
+				"timeout":  config.Env("OTEL_BLRP_EXPORT_TIMEOUT", ""), // 30s
+
+				"max_queue_size": config.Env("OTEL_BLRP_MAX_QUEUE_SIZE", 0),        // 2048
+				"max_batch_size": config.Env("OTEL_BLRP_MAX_EXPORT_BATCH_SIZE", 0), // 512
 			},
 		},
 
