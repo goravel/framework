@@ -287,6 +287,7 @@ var (
 	TelemetryLogViaTypeMismatch             = New("custom logger driver requires func(context.Context) (sdklog.Exporter, error), received %s").SetModule(ModuleTelemetry)
 	TelemetryGrpcServerStatsHandlerDisabled = New("Facade not initialized. gRPC server stats instrumentation is disabled.").SetModule(ModuleTelemetry)
 	TelemetryGrpcClientStatsHandlerDisabled = New("Facade not initialized. gRPC client stats instrumentation is disabled.").SetModule(ModuleTelemetry)
+	TelemetryUnsupportedProcessor           = New("unsupported telemetry processor type: %s").SetModule(ModuleTelemetry)
 
 	TestingImageBuildFailed   = New("init %s docker error: %v")
 	TestingImageNoContainerId = New("no container id return when creating %s docker")

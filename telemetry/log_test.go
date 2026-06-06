@@ -33,7 +33,7 @@ func TestNewLoggerProvider(t *testing.T) {
 			config: Config{
 				Logs: LogsConfig{
 					Exporter: "console",
-					Processor: LogsProcessorConfig{
+					Processor: ProcessorConfig{
 						Interval: 5000 * time.Millisecond,
 						Timeout:  2000 * time.Millisecond,
 					},

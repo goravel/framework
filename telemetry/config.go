@@ -19,8 +19,32 @@ type ServiceConfig struct {
 }
 
 type TracesConfig struct {
-	Exporter string
-	Sampler  SamplerConfig
+	Exporter  string
+	Sampler   SamplerConfig
+	Processor ProcessorConfig
+	Limits    SpanLimitsConfig
+}
+
+const (
+	ProcessorBatch  = "batch"
+	ProcessorSimple = "simple"
+)
+
+type ProcessorConfig struct {
+	Type         string
+	Interval     time.Duration
+	Timeout      time.Duration
+	MaxQueueSize int `json:"max_queue_size"`
+	MaxBatchSize int `json:"max_batch_size"`
+}
+
+type SpanLimitsConfig struct {
+	AttributeValueLength   int `json:"attribute_value_length"`
+	AttributeCount         int `json:"attribute_count"`
+	EventCount             int `json:"event_count"`
+	LinkCount              int `json:"link_count"`
+	AttributePerEventCount int `json:"attribute_per_event_count"`
+	AttributePerLinkCount  int `json:"attribute_per_link_count"`
 }
 
 type MetricsConfig struct {
@@ -30,12 +54,7 @@ type MetricsConfig struct {
 
 type LogsConfig struct {
 	Exporter  string
-	Processor LogsProcessorConfig
-}
-
-type LogsProcessorConfig struct {
-	Interval time.Duration
-	Timeout  time.Duration
+	Processor ProcessorConfig
 }
 
 type MetricsReaderConfig struct {
