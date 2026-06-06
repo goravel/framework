@@ -53,6 +53,11 @@ func NewTracerProvider(ctx context.Context, cfg Config, opts ...sdktrace.TracerP
 		processorOption,
 		sdktrace.WithSampler(newTraceSampler(cfg.Traces.Sampler)),
 	}
+
+	if limitsOption, ok := newSpanLimitsOption(cfg.Traces.Limits); ok {
+		providerOptions = append(providerOptions, limitsOption)
+	}
+
 	providerOptions = append(providerOptions, opts...)
 
 	tp := sdktrace.NewTracerProvider(providerOptions...)
@@ -83,6 +88,34 @@ func newTraceProcessorOption(exporter sdktrace.SpanExporter, cfg ProcessorConfig
 	default:
 		return nil, errors.TelemetryUnsupportedProcessor.Args(cfg.Type)
 	}
+}
+
+func newSpanLimitsOption(cfg SpanLimitsConfig) (sdktrace.TracerProviderOption, bool) {
+	if cfg == (SpanLimitsConfig{}) {
+		return nil, false
+	}
+
+	limits := sdktrace.NewSpanLimits()
+	if cfg.AttributeValueLength != 0 {
+		limits.AttributeValueLengthLimit = cfg.AttributeValueLength
+	}
+	if cfg.AttributeCount != 0 {
+		limits.AttributeCountLimit = cfg.AttributeCount
+	}
+	if cfg.EventCount != 0 {
+		limits.EventCountLimit = cfg.EventCount
+	}
+	if cfg.LinkCount != 0 {
+		limits.LinkCountLimit = cfg.LinkCount
+	}
+	if cfg.AttributePerEventCount != 0 {
+		limits.AttributePerEventCountLimit = cfg.AttributePerEventCount
+	}
+	if cfg.AttributePerLinkCount != 0 {
+		limits.AttributePerLinkCountLimit = cfg.AttributePerLinkCount
+	}
+
+	return sdktrace.WithRawSpanLimits(limits), true
 }
 
 func newTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.SpanExporter, error) {

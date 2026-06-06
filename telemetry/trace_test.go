@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"go.opentelemetry.io/otel/attribute"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/goravel/framework/errors"
@@ -299,4 +300,30 @@ func TestNewTracerProvider_ProcessorTypes(t *testing.T) {
 		assert.NoError(t, shutdown(ctx))
 		assert.Equal(t, 1, exporter.count())
 	})
+}
+
+func TestNewTracerProvider_SpanLimits(t *testing.T) {
+	ctx := context.Background()
+	exporter := &recordingSpanExporter{}
+
+	provider, shutdown, err := NewTracerProvider(ctx, Config{
+		Traces: TracesConfig{
+			Exporter:  "custom",
+			Processor: ProcessorConfig{Type: ProcessorSimple},
+			Limits:    SpanLimitsConfig{AttributeCount: 1},
+		},
+		Exporters: map[string]ExporterEntry{
+			"custom": {Driver: TraceExporterDriverCustom, Via: exporter},
+		},
+	})
+	assert.NoError(t, err)
+
+	_, span := provider.Tracer("test").Start(ctx, "operation")
+	span.SetAttributes(attribute.String("first", "1"), attribute.String("second", "2"))
+	span.End()
+
+	assert.Equal(t, 1, exporter.count())
+	assert.Len(t, exporter.spans[0].Attributes(), 1)
+	assert.Equal(t, 1, exporter.spans[0].DroppedAttributes())
+	assert.NoError(t, shutdown(ctx))
 }
