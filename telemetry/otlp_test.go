@@ -172,6 +172,29 @@ func TestBuildOTLPOptions(t *testing.T) {
 			},
 			expectError: errors.TelemetryTLSConflictsWithInsecure,
 		},
+		{
+			name: "HTTPS Scheme Takes Precedence Over Insecure",
+			cfg: ExporterEntry{
+				Endpoint: "https://otel.com",
+				Insecure: true,
+			},
+			expected: []MockOption{
+				"endpoint=otel.com",
+				"timeout=10s",
+			},
+		},
+		{
+			name: "Insecure With HTTP Scheme Applies Once",
+			cfg: ExporterEntry{
+				Endpoint: "http://localhost:4318",
+				Insecure: true,
+			},
+			expected: []MockOption{
+				"endpoint=localhost:4318",
+				"insecure=true",
+				"timeout=10s",
+			},
+		},
 	}
 
 	for _, tt := range tests {

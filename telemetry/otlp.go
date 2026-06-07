@@ -48,7 +48,8 @@ func buildOTLPOptions[T any](cfg ExporterEntry, builders otlpOptions[T]) ([]T, e
 		opts = append(opts, endpointOptions(cfg.Endpoint, builders)...)
 	}
 
-	if cfg.Insecure {
+	// Per the OTLP spec, an endpoint scheme takes precedence over the insecure setting.
+	if cfg.Insecure && !strings.Contains(cfg.Endpoint, "://") {
 		opts = append(opts, builders.withInsecure())
 	}
 
