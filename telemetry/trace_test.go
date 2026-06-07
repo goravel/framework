@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -203,6 +204,16 @@ func TestNewTracerProvider(t *testing.T) {
 			},
 			expectError: errors.TelemetryTLSConflictsWithInsecure,
 		},
+		{
+			name: "Error: Unsupported Processor",
+			config: Config{
+				Traces: TracesConfig{Exporter: "console", Processor: ProcessorConfig{Type: "alien"}},
+				Exporters: map[string]ExporterEntry{
+					"console": {Driver: TraceExporterDriverConsole},
+				},
+			},
+			expectError: errors.TelemetryUnsupportedProcessor.Args("alien"),
+		},
 	}
 
 	for _, tt := range tests {
@@ -319,4 +330,62 @@ func (m *MockSpanExporter) ExportSpans(ctx context.Context, ss []sdktrace.ReadOn
 
 func (m *MockSpanExporter) Shutdown(ctx context.Context) error {
 	return nil
+}
+
+type recordingSpanExporter struct {
+	mu    sync.Mutex
+	spans []sdktrace.ReadOnlySpan
+}
+
+func (r *recordingSpanExporter) ExportSpans(ctx context.Context, spans []sdktrace.ReadOnlySpan) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.spans = append(r.spans, spans...)
+	return nil
+}
+
+func (r *recordingSpanExporter) Shutdown(ctx context.Context) error { return nil }
+
+func (r *recordingSpanExporter) count() int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return len(r.spans)
+}
+
+func TestNewTracerProvider_ProcessorTypes(t *testing.T) {
+	ctx := context.Background()
+
+	newConfig := func(exporter sdktrace.SpanExporter, processor ProcessorConfig) Config {
+		return Config{
+			Traces: TracesConfig{Exporter: "custom", Processor: processor},
+			Exporters: map[string]ExporterEntry{
+				"custom": {Driver: TraceExporterDriverCustom, Via: exporter},
+			},
+		}
+	}
+
+	t.Run("simple exports on span end", func(t *testing.T) {
+		exporter := &recordingSpanExporter{}
+		provider, shutdown, err := NewTracerProvider(ctx, newConfig(exporter, ProcessorConfig{Type: ProcessorSimple}))
+		assert.NoError(t, err)
+
+		_, span := provider.Tracer("test").Start(ctx, "operation")
+		span.End()
+
+		assert.Equal(t, 1, exporter.count())
+		assert.NoError(t, shutdown(ctx))
+	})
+
+	t.Run("batch defers export until shutdown", func(t *testing.T) {
+		exporter := &recordingSpanExporter{}
+		provider, shutdown, err := NewTracerProvider(ctx, newConfig(exporter, ProcessorConfig{Type: ProcessorBatch, Interval: time.Hour}))
+		assert.NoError(t, err)
+
+		_, span := provider.Tracer("test").Start(ctx, "operation")
+		span.End()
+
+		assert.Equal(t, 0, exporter.count())
+		assert.NoError(t, shutdown(ctx))
+		assert.Equal(t, 1, exporter.count())
+	})
 }

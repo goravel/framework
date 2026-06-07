@@ -292,6 +292,7 @@ var (
 	TelemetryTLSClientCertIncomplete        = New("telemetry exporter tls client cert and key must both be set").SetModule(ModuleTelemetry)
 	TelemetryTLSInvalidCA                   = New("telemetry exporter tls ca file contains no valid certificates").SetModule(ModuleTelemetry)
 	TelemetryUnsupportedCompression         = New("unsupported telemetry exporter compression: %s").SetModule(ModuleTelemetry)
+	TelemetryUnsupportedProcessor           = New("unsupported telemetry processor type: %s").SetModule(ModuleTelemetry)
 
 	TestingImageBuildFailed   = New("init %s docker error: %v")
 	TestingImageNoContainerId = New("no container id return when creating %s docker")

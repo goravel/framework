@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"os"
-	"time"
 
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
@@ -23,11 +22,6 @@ const (
 	LogExporterDriverCustom  ExporterDriver = "custom"
 	LogExporterDriverOTLP    ExporterDriver = "otlp"
 	LogExporterDriverConsole ExporterDriver = "console"
-)
-
-const (
-	defaultLogExportInterval = 1 * time.Second
-	defaultLogExportTimeout  = 30 * time.Second
 )
 
 func NewLoggerProvider(ctx context.Context, cfg Config, opts ...sdklog.LoggerProviderOption) (log.LoggerProvider, ShutdownFunc, error) {
@@ -48,24 +42,13 @@ func NewLoggerProvider(ctx context.Context, cfg Config, opts ...sdklog.LoggerPro
 		return nil, NoopShutdown(), err
 	}
 
-	interval := cfg.Logs.Processor.Interval
-	timeout := cfg.Logs.Processor.Timeout
-
-	if interval == 0 {
-		interval = defaultLogExportInterval
-	}
-	if timeout == 0 {
-		timeout = defaultLogExportTimeout
-	}
-
-	processorOptions := []sdklog.BatchProcessorOption{
-		sdklog.WithExportInterval(interval),
-		sdklog.WithExportTimeout(timeout),
+	processor, err := newLogProcessor(exporter, cfg.Logs.Processor)
+	if err != nil {
+		return nil, NoopShutdown(), err
 	}
 
 	providerOptions := []sdklog.LoggerProviderOption{
-		// TODO: add support for SimpleProcessor
-		sdklog.WithProcessor(sdklog.NewBatchProcessor(exporter, processorOptions...)),
+		sdklog.WithProcessor(processor),
 	}
 	providerOptions = append(providerOptions, opts...)
 
@@ -73,6 +56,24 @@ func NewLoggerProvider(ctx context.Context, cfg Config, opts ...sdklog.LoggerPro
 	global.SetLoggerProvider(lp)
 
 	return lp, lp.Shutdown, nil
+}
+
+func newLogProcessor(exporter sdklog.Exporter, cfg ProcessorConfig) (sdklog.Processor, error) {
+	switch cfg.Type {
+	case ProcessorSimple:
+		return sdklog.NewSimpleProcessor(exporter), nil
+	case ProcessorBatch, "":
+		var batchOptions []sdklog.BatchProcessorOption
+		if cfg.Interval > 0 {
+			batchOptions = append(batchOptions, sdklog.WithExportInterval(cfg.Interval))
+		}
+		if cfg.Timeout > 0 {
+			batchOptions = append(batchOptions, sdklog.WithExportTimeout(cfg.Timeout))
+		}
+		return sdklog.NewBatchProcessor(exporter, batchOptions...), nil
+	default:
+		return nil, errors.TelemetryUnsupportedProcessor.Args(cfg.Type)
+	}
 }
 
 func newLogExporter(ctx context.Context, cfg ExporterEntry) (sdklog.Exporter, error) {

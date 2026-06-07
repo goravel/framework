@@ -19,8 +19,20 @@ type ServiceConfig struct {
 }
 
 type TracesConfig struct {
-	Exporter string
-	Sampler  SamplerConfig
+	Exporter  string
+	Sampler   SamplerConfig
+	Processor ProcessorConfig
+}
+
+const (
+	ProcessorBatch  = "batch"
+	ProcessorSimple = "simple"
+)
+
+type ProcessorConfig struct {
+	Type     string
+	Interval time.Duration
+	Timeout  time.Duration
 }
 
 type MetricsConfig struct {
@@ -30,12 +42,7 @@ type MetricsConfig struct {
 
 type LogsConfig struct {
 	Exporter  string
-	Processor LogsProcessorConfig
-}
-
-type LogsProcessorConfig struct {
-	Interval time.Duration
-	Timeout  time.Duration
+	Processor ProcessorConfig
 }
 
 type MetricsReaderConfig struct {

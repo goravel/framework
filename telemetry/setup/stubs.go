@@ -78,6 +78,23 @@ func init() {
 				// e.g., 0.1 records ~10% of traces.
 				"ratio": config.Env("OTEL_TRACES_SAMPLER_RATIO", 0.05),
 			},
+
+			// Processor Configuration
+			//
+			// Controls how finished spans are handed to the exporter.
+			"processor": map[string]any{
+				// Type: "batch" buffers spans for performance (recommended);
+				// "simple" exports each span synchronously (debugging).
+				"type": config.Env("OTEL_TRACE_PROCESSOR_TYPE", "batch"),
+
+				// Interval: How often buffered spans are pushed.
+				// Format: Duration string (e.g., "5s", "1m", "500ms").
+				"interval": config.Env("OTEL_TRACE_EXPORT_INTERVAL", "5s"),
+
+				// Timeout: Max time allowed for export before cancelling.
+				// Format: Duration string (e.g., "30s", "10s").
+				"timeout": config.Env("OTEL_TRACE_EXPORT_TIMEOUT", "30s"),
+			},
 		},
 
 		// Metrics Configuration
@@ -119,14 +136,18 @@ func init() {
 
 			// Processor Configuration
 			//
-			// Configures the BatchLogProcessor, which batches logs before export.
+			// Controls how log records are handed to the exporter.
 			"processor": map[string]any{
-				// Interval: How often logs are flushed.
-				// Format: Duration string (e.g., "1s", "500ms").
+				// Type: "batch" buffers records for performance (recommended);
+				// "simple" exports each record synchronously (debugging).
+				"type": config.Env("OTEL_LOG_PROCESSOR_TYPE", "batch"),
+
+				// Interval: How often buffered records are pushed.
+				// Format: Duration string (e.g., "1s", "1m", "500ms").
 				"interval": config.Env("OTEL_LOG_EXPORT_INTERVAL", "1s"),
 
 				// Timeout: Max time allowed for export before cancelling.
-				// Format: Duration string (e.g., "30s").
+				// Format: Duration string (e.g., "30s", "10s").
 				"timeout": config.Env("OTEL_LOG_EXPORT_TIMEOUT", "30s"),
 			},
 		},
