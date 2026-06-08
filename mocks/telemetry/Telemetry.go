@@ -28,6 +28,52 @@ func (_m *Telemetry) EXPECT() *Telemetry_Expecter {
 	return &Telemetry_Expecter{mock: &_m.Mock}
 }
 
+// ForceFlush provides a mock function with given fields: ctx
+func (_m *Telemetry) ForceFlush(ctx context.Context) error {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ForceFlush")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Telemetry_ForceFlush_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ForceFlush'
+type Telemetry_ForceFlush_Call struct {
+	*mock.Call
+}
+
+// ForceFlush is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *Telemetry_Expecter) ForceFlush(ctx interface{}) *Telemetry_ForceFlush_Call {
+	return &Telemetry_ForceFlush_Call{Call: _e.mock.On("ForceFlush", ctx)}
+}
+
+func (_c *Telemetry_ForceFlush_Call) Run(run func(ctx context.Context)) *Telemetry_ForceFlush_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *Telemetry_ForceFlush_Call) Return(_a0 error) *Telemetry_ForceFlush_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Telemetry_ForceFlush_Call) RunAndReturn(run func(context.Context) error) *Telemetry_ForceFlush_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Logger provides a mock function with given fields: name, opts
 func (_m *Telemetry) Logger(name string, opts ...log.LoggerOption) log.Logger {
 	_va := make([]interface{}, len(opts))

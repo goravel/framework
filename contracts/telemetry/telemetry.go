@@ -12,6 +12,10 @@ import (
 type Resolver = func() Telemetry
 
 type Telemetry interface {
+	// ForceFlush immediately exports all telemetry data that has not yet been exported.
+	// Unlike Shutdown, the providers remain usable afterward.
+	ForceFlush(ctx context.Context) error
+
 	// Logger returns a log.Logger instance for emitting structured log records under the given instrumentation name.
 	// Optional log.LoggerOption parameters allow customization of logger behavior.
 	Logger(name string, opts ...otellog.LoggerOption) otellog.Logger
