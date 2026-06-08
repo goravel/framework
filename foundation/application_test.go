@@ -940,6 +940,33 @@ func (s *ApplicationTestSuite) TestStart() {
 	}
 }
 
+func (s *ApplicationTestSuite) TestStart_ShutdownPriorityOrdering() {
+	shutdowns := make(chan string, 3)
+
+	s.app.runnersToRun = []*RunnerWithInfo{
+		{signature: "late", runner: &orderedRunner{signature: "late", priority: 100, shutdowns: shutdowns}},
+		{signature: "workload-a", runner: &orderedRunner{signature: "workload-a", shutdowns: shutdowns}},
+		{signature: "workload-b", runner: &orderedRunner{signature: "workload-b", shutdowns: shutdowns}},
+	}
+
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		s.app.cancel()
+	}()
+
+	s.app.Start()
+
+	close(shutdowns)
+	var order []string
+	for signature := range shutdowns {
+		order = append(order, signature)
+	}
+
+	s.Len(order, 3)
+	s.Equal("late", order[2])
+	s.ElementsMatch([]string{"workload-a", "workload-b"}, order[:2])
+}
+
 func (s *ApplicationTestSuite) TestStoragePath() {
 	s.Contains(s.app.StoragePath("goravel.go"), filepath.Join("framework", "storage", "goravel.go"))
 }
@@ -1252,3 +1279,15 @@ func TestSetEnv_DebugBinaryWithTestArgs(t *testing.T) {
 	assert.Equal(t, support.RuntimeTest, support.RuntimeMode)
 	assert.True(t, support.DontVerifyAppKey)
 }
+
+type orderedRunner struct {
+	signature string
+	priority  int
+	shutdowns chan<- string
+}
+
+func (r *orderedRunner) Signature() string     { return r.signature }
+func (r *orderedRunner) ShouldRun() bool       { return true }
+func (r *orderedRunner) Run() error            { return nil }
+func (r *orderedRunner) Shutdown() error       { r.shutdowns <- r.signature; return nil }
+func (r *orderedRunner) ShutdownPriority() int { return r.priority }

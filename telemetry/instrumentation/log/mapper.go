@@ -96,10 +96,10 @@ func toValue(v any) otellog.Value {
 		r := otellog.Float64("r", real(val))
 		i := otellog.Float64("i", imag(val))
 		return otellog.MapValue(r, i)
-	case fmt.Stringer:
-		return otellog.StringValue(val.String())
 	case attribute.Value:
 		return otellog.ValueFromAttribute(val)
+	case fmt.Stringer:
+		return otellog.StringValue(val.String())
 	}
 
 	return toReflectedValue(v)

@@ -49,6 +49,12 @@ func init() {
 		// - "b3multi": B3 Multi Header
 		"propagators": config.Env("OTEL_PROPAGATORS", "tracecontext"),
 
+		// Shutdown Timeout
+		//
+		// Max time to wait for flushing buffered telemetry when the application stops.
+		// Format: Duration string (e.g., "15s", "30s").
+		"shutdown_timeout": config.Env("OTEL_SHUTDOWN_TIMEOUT", "15s"),
+
 		// Traces Configuration
 		//
 		// Configures the distributed tracing signal. Traces record the path of

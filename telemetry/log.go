@@ -24,22 +24,27 @@ const (
 	LogExporterDriverConsole ExporterDriver = "console"
 )
 
-func NewLoggerProvider(ctx context.Context, cfg Config, opts ...sdklog.LoggerProviderOption) (log.LoggerProvider, ShutdownFunc, error) {
+const (
+	defaultLogExportInterval = 1 * time.Second
+	defaultLogExportTimeout  = 30 * time.Second
+)
+
+func NewLoggerProvider(ctx context.Context, cfg Config, opts ...sdklog.LoggerProviderOption) (log.LoggerProvider, ShutdownFunc, FlushFunc, error) {
 	exporterName := cfg.Logs.Exporter
 	if exporterName == "" {
 		lp := noop.NewLoggerProvider()
 		global.SetLoggerProvider(lp)
-		return lp, NoopShutdown(), nil
+		return lp, NoopShutdown(), NoopFlush(), nil
 	}
 
 	exporterCfg, ok := cfg.GetExporter(exporterName)
 	if !ok {
-		return nil, NoopShutdown(), errors.TelemetryExporterNotFound
+		return nil, NoopShutdown(), NoopFlush(), errors.TelemetryExporterNotFound
 	}
 
 	exporter, err := newLogExporter(ctx, exporterCfg)
 	if err != nil {
-		return nil, NoopShutdown(), err
+		return nil, NoopShutdown(), NoopFlush(), err
 	}
 
 	processor, err := newLogProcessor(exporter, cfg.Logs.Processor)
@@ -55,7 +60,7 @@ func NewLoggerProvider(ctx context.Context, cfg Config, opts ...sdklog.LoggerPro
 	lp := sdklog.NewLoggerProvider(providerOptions...)
 	global.SetLoggerProvider(lp)
 
-	return lp, lp.Shutdown, nil
+	return lp, lp.Shutdown, lp.ForceFlush, nil
 }
 
 func newLogProcessor(exporter sdklog.Exporter, cfg ProcessorConfig) (sdklog.Processor, error) {
