@@ -48,8 +48,7 @@ func buildOTLPOptions[T any](cfg ExporterEntry, builders otlpOptions[T]) ([]T, e
 		opts = append(opts, endpointOptions(cfg.Endpoint, builders)...)
 	}
 
-	// Per the OTLP spec, an endpoint scheme takes precedence over the insecure setting.
-	if cfg.Insecure && !strings.Contains(cfg.Endpoint, "://") {
+	if usesInsecureTransport(cfg) {
 		opts = append(opts, builders.withInsecure())
 	}
 
@@ -82,6 +81,21 @@ func buildOTLPOptions[T any](cfg ExporterEntry, builders otlpOptions[T]) ([]T, e
 	return opts, nil
 }
 
+// usesInsecureTransport reports whether the exporter connects over plaintext.
+// An explicit endpoint scheme wins over the insecure flag, per the OTLP spec:
+// https:// is always secure, http:// is always insecure, and a scheme-less
+// endpoint falls back to the flag.
+func usesInsecureTransport(cfg ExporterEntry) bool {
+	switch {
+	case strings.HasPrefix(cfg.Endpoint, "https://"):
+		return false
+	case strings.HasPrefix(cfg.Endpoint, "http://"):
+		return true
+	default:
+		return cfg.Insecure
+	}
+}
+
 func endpointOptions[T any](endpoint string, builders otlpOptions[T]) []T {
 	endpointURL, err := url.Parse(endpoint)
 	if err != nil || !strings.Contains(endpoint, "://") {
@@ -89,9 +103,6 @@ func endpointOptions[T any](endpoint string, builders otlpOptions[T]) []T {
 	}
 
 	opts := []T{builders.withEndpoint(endpointURL.Host)}
-	if endpointURL.Scheme == "http" {
-		opts = append(opts, builders.withInsecure())
-	}
 	if path := endpointURL.Path; path != "" && path != "/" && builders.withURLPath != nil {
 		opts = append(opts, builders.withURLPath(path))
 	}
@@ -105,7 +116,7 @@ func newTLSConfig(cfg ExporterEntry) (*tls.Config, error) {
 		return nil, nil
 	}
 
-	if cfg.Insecure || strings.HasPrefix(cfg.Endpoint, "http://") {
+	if usesInsecureTransport(cfg) {
 		return nil, errors.TelemetryTLSConflictsWithInsecure
 	}
 

@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"os"
+	"time"
 
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
@@ -49,7 +50,7 @@ func NewLoggerProvider(ctx context.Context, cfg Config, opts ...sdklog.LoggerPro
 
 	processor, err := newLogProcessor(exporter, cfg.Logs.Processor)
 	if err != nil {
-		return nil, NoopShutdown(), err
+		return nil, NoopShutdown(), NoopFlush(), err
 	}
 
 	providerOptions := []sdklog.LoggerProviderOption{
@@ -68,14 +69,18 @@ func newLogProcessor(exporter sdklog.Exporter, cfg ProcessorConfig) (sdklog.Proc
 	case ProcessorSimple:
 		return sdklog.NewSimpleProcessor(exporter), nil
 	case ProcessorBatch, "":
-		var batchOptions []sdklog.BatchProcessorOption
-		if cfg.Interval > 0 {
-			batchOptions = append(batchOptions, sdklog.WithExportInterval(cfg.Interval))
+		interval := cfg.Interval
+		if interval == 0 {
+			interval = defaultLogExportInterval
 		}
-		if cfg.Timeout > 0 {
-			batchOptions = append(batchOptions, sdklog.WithExportTimeout(cfg.Timeout))
+		timeout := cfg.Timeout
+		if timeout == 0 {
+			timeout = defaultLogExportTimeout
 		}
-		return sdklog.NewBatchProcessor(exporter, batchOptions...), nil
+		return sdklog.NewBatchProcessor(exporter,
+			sdklog.WithExportInterval(interval),
+			sdklog.WithExportTimeout(timeout),
+		), nil
 	default:
 		return nil, errors.TelemetryUnsupportedProcessor.Args(cfg.Type)
 	}

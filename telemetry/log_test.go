@@ -395,7 +395,7 @@ func TestNewLoggerProvider_ProcessorTypes(t *testing.T) {
 
 	t.Run("simple exports on emit", func(t *testing.T) {
 		exporter := &recordingLogExporter{}
-		provider, shutdown, err := NewLoggerProvider(ctx, newConfig(exporter, ProcessorConfig{Type: ProcessorSimple}))
+		provider, shutdown, _, err := NewLoggerProvider(ctx, newConfig(exporter, ProcessorConfig{Type: ProcessorSimple}))
 		assert.NoError(t, err)
 
 		emit(provider)
@@ -406,7 +406,7 @@ func TestNewLoggerProvider_ProcessorTypes(t *testing.T) {
 
 	t.Run("batch defers export until shutdown", func(t *testing.T) {
 		exporter := &recordingLogExporter{}
-		provider, shutdown, err := NewLoggerProvider(ctx, newConfig(exporter, ProcessorConfig{Type: ProcessorBatch, Interval: time.Hour}))
+		provider, shutdown, _, err := NewLoggerProvider(ctx, newConfig(exporter, ProcessorConfig{Type: ProcessorBatch, Interval: time.Hour}))
 		assert.NoError(t, err)
 
 		emit(provider)

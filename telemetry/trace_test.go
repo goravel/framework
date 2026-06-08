@@ -367,7 +367,7 @@ func TestNewTracerProvider_ProcessorTypes(t *testing.T) {
 
 	t.Run("simple exports on span end", func(t *testing.T) {
 		exporter := &recordingSpanExporter{}
-		provider, shutdown, err := NewTracerProvider(ctx, newConfig(exporter, ProcessorConfig{Type: ProcessorSimple}))
+		provider, shutdown, _, err := NewTracerProvider(ctx, newConfig(exporter, ProcessorConfig{Type: ProcessorSimple}))
 		assert.NoError(t, err)
 
 		_, span := provider.Tracer("test").Start(ctx, "operation")
@@ -379,7 +379,7 @@ func TestNewTracerProvider_ProcessorTypes(t *testing.T) {
 
 	t.Run("batch defers export until shutdown", func(t *testing.T) {
 		exporter := &recordingSpanExporter{}
-		provider, shutdown, err := NewTracerProvider(ctx, newConfig(exporter, ProcessorConfig{Type: ProcessorBatch, Interval: time.Hour}))
+		provider, shutdown, _, err := NewTracerProvider(ctx, newConfig(exporter, ProcessorConfig{Type: ProcessorBatch, Interval: time.Hour}))
 		assert.NoError(t, err)
 
 		_, span := provider.Tracer("test").Start(ctx, "operation")

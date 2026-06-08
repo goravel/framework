@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"os"
+	"time"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -24,6 +25,11 @@ const (
 	TraceExporterDriverCustom  ExporterDriver = "custom"
 	TraceExporterDriverOTLP    ExporterDriver = "otlp"
 	TraceExporterDriverConsole ExporterDriver = "console"
+)
+
+const (
+	defaultTraceExportInterval = 5 * time.Second
+	defaultTraceExportTimeout  = 30 * time.Second
 )
 
 func NewTracerProvider(ctx context.Context, cfg Config, opts ...sdktrace.TracerProviderOption) (oteltrace.TracerProvider, ShutdownFunc, FlushFunc, error) {
@@ -48,7 +54,7 @@ func NewTracerProvider(ctx context.Context, cfg Config, opts ...sdktrace.TracerP
 
 	processorOption, err := newTraceProcessorOption(exporter, cfg.Traces.Processor)
 	if err != nil {
-		return nil, NoopShutdown(), err
+		return nil, NoopShutdown(), NoopFlush(), err
 	}
 
 	providerOptions := []sdktrace.TracerProviderOption{
@@ -68,14 +74,18 @@ func newTraceProcessorOption(exporter sdktrace.SpanExporter, cfg ProcessorConfig
 	case ProcessorSimple:
 		return sdktrace.WithSyncer(exporter), nil
 	case ProcessorBatch, "":
-		var batchOptions []sdktrace.BatchSpanProcessorOption
-		if cfg.Interval > 0 {
-			batchOptions = append(batchOptions, sdktrace.WithBatchTimeout(cfg.Interval))
+		interval := cfg.Interval
+		if interval == 0 {
+			interval = defaultTraceExportInterval
 		}
-		if cfg.Timeout > 0 {
-			batchOptions = append(batchOptions, sdktrace.WithExportTimeout(cfg.Timeout))
+		timeout := cfg.Timeout
+		if timeout == 0 {
+			timeout = defaultTraceExportTimeout
 		}
-		return sdktrace.WithBatcher(exporter, batchOptions...), nil
+		return sdktrace.WithBatcher(exporter,
+			sdktrace.WithBatchTimeout(interval),
+			sdktrace.WithExportTimeout(timeout),
+		), nil
 	default:
 		return nil, errors.TelemetryUnsupportedProcessor.Args(cfg.Type)
 	}

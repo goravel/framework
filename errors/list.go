@@ -288,7 +288,7 @@ var (
 	TelemetryGrpcServerStatsHandlerDisabled = New("Facade not initialized. gRPC server stats instrumentation is disabled.").SetModule(ModuleTelemetry)
 	TelemetryGrpcClientStatsHandlerDisabled = New("Facade not initialized. gRPC client stats instrumentation is disabled.").SetModule(ModuleTelemetry)
 	TelemetryUnsupportedProtocol            = New("unsupported telemetry exporter protocol: %s").SetModule(ModuleTelemetry)
-	TelemetryTLSConflictsWithInsecure       = New("telemetry exporter tls config conflicts with insecure").SetModule(ModuleTelemetry)
+	TelemetryTLSConflictsWithInsecure       = New("telemetry exporter tls config conflicts with an insecure connection (insecure flag or http:// endpoint)").SetModule(ModuleTelemetry)
 	TelemetryTLSClientCertIncomplete        = New("telemetry exporter tls client cert and key must both be set").SetModule(ModuleTelemetry)
 	TelemetryTLSInvalidCA                   = New("telemetry exporter tls ca file contains no valid certificates").SetModule(ModuleTelemetry)
 	TelemetryUnsupportedCompression         = New("unsupported telemetry exporter compression: %s").SetModule(ModuleTelemetry)
