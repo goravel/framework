@@ -5,7 +5,7 @@ import "time"
 // TranscriptionRequest defines a fluent speech-to-text request.
 type TranscriptionRequest interface {
 	Model(model string) TranscriptionRequest
-	Provider(provider string) TranscriptionRequest
+	Provider(provider string, failovers ...string) TranscriptionRequest
 	Language(language string) TranscriptionRequest
 	Diarize() TranscriptionRequest
 	Timeout(timeout time.Duration) TranscriptionRequest

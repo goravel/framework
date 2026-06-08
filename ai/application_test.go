@@ -159,6 +159,159 @@ func TestApplication_Agent_ResolverError(t *testing.T) {
 	assert.Equal(t, assert.AnError, err)
 }
 
+func TestApplication_Agent_Failover(t *testing.T) {
+	failoverErr := NewFailoverError("primary", contractsai.FailoverReasonRateLimited, assert.AnError)
+	primaryProvider := &applicationPromptProviderStub{name: "primary", err: failoverErr}
+	backupResponse := &stubResponse{text: "backup response"}
+	backupProvider := &applicationPromptProviderStub{name: "backup", response: backupResponse}
+	config := contractsai.Config{
+		Default: "primary",
+		Providers: map[string]contractsai.ProviderConfig{
+			"primary": {Via: primaryProvider},
+			"backup":  {Via: backupProvider},
+		},
+	}
+	mockAgent := mocksai.NewAgent(t)
+	mockAgent.EXPECT().Messages().Return(nil).Once()
+	mockAgent.EXPECT().Middleware().Return(nil).Once()
+	mockAgent.EXPECT().Tools().Return(nil).Once()
+
+	conversation, err := NewApplication(context.Background(), config).Agent(mockAgent, WithProvider("primary", "backup"))
+	require.NoError(t, err)
+
+	response, err := conversation.Prompt("hello")
+	require.NoError(t, err)
+	assert.Equal(t, backupResponse, response)
+	assert.Len(t, primaryProvider.prompts, 1)
+	assert.Len(t, backupProvider.prompts, 1)
+	assert.Nil(t, primaryProvider.previousState)
+	assert.Nil(t, backupProvider.previousState)
+}
+
+func TestApplication_Agent_FailoverStopsOnNonFailoverError(t *testing.T) {
+	primaryProvider := &applicationPromptProviderStub{name: "primary", err: assert.AnError}
+	backupProvider := &applicationPromptProviderStub{name: "backup", response: &stubResponse{text: "backup response"}}
+	config := contractsai.Config{
+		Default: "primary",
+		Providers: map[string]contractsai.ProviderConfig{
+			"primary": {Via: primaryProvider},
+			"backup":  {Via: backupProvider},
+		},
+	}
+	mockAgent := mocksai.NewAgent(t)
+	mockAgent.EXPECT().Messages().Return(nil).Once()
+	mockAgent.EXPECT().Middleware().Return(nil).Once()
+	mockAgent.EXPECT().Tools().Return(nil).Once()
+
+	conversation, err := NewApplication(context.Background(), config).Agent(mockAgent, WithProvider("primary", "backup"))
+	require.NoError(t, err)
+
+	response, err := conversation.Prompt("hello")
+	assert.Equal(t, assert.AnError, err)
+	assert.Nil(t, response)
+	assert.Len(t, primaryProvider.prompts, 1)
+	assert.Empty(t, backupProvider.prompts)
+}
+
+func TestApplication_Agent_FailoverReturnsLastError(t *testing.T) {
+	primaryErr := NewFailoverError("primary", contractsai.FailoverReasonRateLimited, assert.AnError)
+	backupErr := NewFailoverError("backup", contractsai.FailoverReasonProviderOverloaded, assert.AnError)
+	primaryProvider := &applicationPromptProviderStub{name: "primary", err: primaryErr}
+	backupProvider := &applicationPromptProviderStub{name: "backup", err: backupErr}
+	config := contractsai.Config{
+		Default: "primary",
+		Providers: map[string]contractsai.ProviderConfig{
+			"primary": {Via: primaryProvider},
+			"backup":  {Via: backupProvider},
+		},
+	}
+	mockAgent := mocksai.NewAgent(t)
+	mockAgent.EXPECT().Messages().Return(nil).Once()
+	mockAgent.EXPECT().Middleware().Return(nil).Once()
+	mockAgent.EXPECT().Tools().Return(nil).Once()
+
+	conversation, err := NewApplication(context.Background(), config).Agent(mockAgent, WithProvider("primary", "backup"))
+	require.NoError(t, err)
+
+	response, err := conversation.Prompt("hello")
+	assert.Equal(t, backupErr, err)
+	assert.Nil(t, response)
+}
+
+func TestApplication_Agent_StreamFailover(t *testing.T) {
+	failoverErr := NewFailoverError("primary", contractsai.FailoverReasonRateLimited, assert.AnError)
+	primaryProvider := &applicationPromptProviderStub{name: "primary", streamErr: failoverErr}
+	backupProvider := &applicationPromptProviderStub{name: "backup", streamResponse: &stubResponse{text: "backup response"}, streamEvents: []contractsai.StreamEvent{
+		{Type: contractsai.StreamEventTypeTextDelta, Delta: "backup"},
+		{Type: contractsai.StreamEventTypeDone},
+	}}
+	config := contractsai.Config{
+		Default: "primary",
+		Providers: map[string]contractsai.ProviderConfig{
+			"primary": {Via: primaryProvider},
+			"backup":  {Via: backupProvider},
+		},
+	}
+	mockAgent := mocksai.NewAgent(t)
+	mockAgent.EXPECT().Messages().Return(nil).Once()
+	mockAgent.EXPECT().Middleware().Return(nil).Once()
+	mockAgent.EXPECT().Tools().Return(nil).Once()
+
+	conversation, err := NewApplication(context.Background(), config).Agent(mockAgent, WithProvider("primary", "backup"))
+	require.NoError(t, err)
+	stream, err := conversation.Stream("hello")
+	require.NoError(t, err)
+
+	var events []contractsai.StreamEvent
+	err = stream.Each(func(event contractsai.StreamEvent) error {
+		events = append(events, event)
+		return nil
+	})
+	require.NoError(t, err)
+	assert.Equal(t, []contractsai.StreamEvent{
+		{Type: contractsai.StreamEventTypeTextDelta, Delta: "backup"},
+		{Type: contractsai.StreamEventTypeDone},
+	}, events)
+	assert.Len(t, primaryProvider.streamPrompts, 1)
+	assert.Len(t, backupProvider.streamPrompts, 1)
+}
+
+func TestApplication_Agent_StreamDoesNotFailoverAfterOutput(t *testing.T) {
+	failoverErr := NewFailoverError("primary", contractsai.FailoverReasonRateLimited, assert.AnError)
+	primaryProvider := &applicationPromptProviderStub{name: "primary", streamErr: failoverErr, streamEvents: []contractsai.StreamEvent{
+		{Type: contractsai.StreamEventTypeTextDelta, Delta: "partial"},
+	}}
+	backupProvider := &applicationPromptProviderStub{name: "backup", streamResponse: &stubResponse{text: "backup response"}, streamEvents: []contractsai.StreamEvent{
+		{Type: contractsai.StreamEventTypeTextDelta, Delta: "backup"},
+	}}
+	config := contractsai.Config{
+		Default: "primary",
+		Providers: map[string]contractsai.ProviderConfig{
+			"primary": {Via: primaryProvider},
+			"backup":  {Via: backupProvider},
+		},
+	}
+	mockAgent := mocksai.NewAgent(t)
+	mockAgent.EXPECT().Messages().Return(nil).Once()
+	mockAgent.EXPECT().Middleware().Return(nil).Once()
+	mockAgent.EXPECT().Tools().Return(nil).Once()
+
+	conversation, err := NewApplication(context.Background(), config).Agent(mockAgent, WithProvider("primary", "backup"))
+	require.NoError(t, err)
+	stream, err := conversation.Stream("hello")
+	require.NoError(t, err)
+
+	var events []contractsai.StreamEvent
+	err = stream.Each(func(event contractsai.StreamEvent) error {
+		events = append(events, event)
+		return nil
+	})
+	assert.Equal(t, failoverErr, err)
+	assert.Equal(t, []contractsai.StreamEvent{{Type: contractsai.StreamEventTypeTextDelta, Delta: "partial"}}, events)
+	assert.Len(t, primaryProvider.streamPrompts, 1)
+	assert.Empty(t, backupProvider.streamPrompts)
+}
+
 type testCtxKey string
 
 func TestApplication_WithContext(t *testing.T) {
@@ -667,6 +820,27 @@ func TestApplication_audio(t *testing.T) {
 	}
 }
 
+func TestApplication_audio_Failover(t *testing.T) {
+	failoverErr := NewFailoverError("primary", contractsai.FailoverReasonRateLimited, assert.AnError)
+	primaryProvider := &applicationAudioProviderStub{err: failoverErr}
+	backupResponse := &applicationAudioResponseStub{}
+	backupProvider := &applicationAudioProviderStub{response: backupResponse}
+	app := NewApplication(context.Background(), contractsai.Config{
+		Default: "primary",
+		Providers: map[string]contractsai.ProviderConfig{
+			"primary": {Via: primaryProvider},
+			"backup":  {Via: backupProvider},
+		},
+	})
+
+	response, err := app.audio(context.Background(), contractsai.AudioPrompt{Prompt: "welcome"}, WithProvider("primary", "backup"))
+
+	require.NoError(t, err)
+	assert.Equal(t, backupResponse, response)
+	assert.Equal(t, "welcome", primaryProvider.prompt.Prompt)
+	assert.Equal(t, "welcome", backupProvider.prompt.Prompt)
+}
+
 func TestApplication_transcription(t *testing.T) {
 	file := mocksai.NewStorableFile(t)
 	tests := []struct {
@@ -838,6 +1012,18 @@ type uploadTestProvider struct {
 	fileProvider contractsai.FileProvider
 }
 
+type applicationPromptProviderStub struct {
+	name           string
+	response       contractsai.AgentResponse
+	err            error
+	prompts        []contractsai.AgentPrompt
+	previousState  any
+	streamResponse contractsai.AgentResponse
+	streamErr      error
+	streamEvents   []contractsai.StreamEvent
+	streamPrompts  []contractsai.AgentPrompt
+}
+
 func (p uploadTestProvider) Prompt(context.Context, contractsai.AgentPrompt) (contractsai.AgentResponse, error) {
 	return nil, nil
 }
@@ -856,6 +1042,30 @@ func (p uploadTestProvider) GetFile(ctx context.Context, id string) (contractsai
 
 func (p uploadTestProvider) DeleteFile(ctx context.Context, id string) error {
 	return p.fileProvider.DeleteFile(ctx, id)
+}
+
+func (p *applicationPromptProviderStub) Prompt(_ context.Context, prompt contractsai.AgentPrompt) (contractsai.AgentResponse, error) {
+	p.prompts = append(p.prompts, prompt)
+	if prompt.ProviderState != nil {
+		p.previousState = prompt.ProviderState.Get("response_id")
+		prompt.ProviderState.Set("response_id", p.name)
+	}
+
+	return p.response, p.err
+}
+
+func (p *applicationPromptProviderStub) Stream(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.StreamableAgentResponse, error) {
+	p.streamPrompts = append(p.streamPrompts, prompt)
+
+	return NewStreamableResponse(ctx, func(_ context.Context, emit func(contractsai.StreamEvent) error) (contractsai.AgentResponse, error) {
+		for _, event := range p.streamEvents {
+			if err := emit(event); err != nil {
+				return nil, err
+			}
+		}
+
+		return p.streamResponse, p.streamErr
+	}), nil
 }
 
 type applicationImageProviderStub struct {

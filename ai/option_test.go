@@ -12,23 +12,33 @@ import (
 
 func TestWithProvider(t *testing.T) {
 	tests := []struct {
-		name     string
-		initial  *contractsai.Options
-		args     []string
-		expected *contractsai.Options
-		nilOpts  bool
+		name      string
+		initial   *contractsai.Options
+		args      []string
+		failovers []string
+		expected  *contractsai.Options
+		nilOpts   bool
 	}{
 		{
 			name:     "sets provider while preserving model",
 			initial:  &contractsai.Options{Model: "gpt-4"},
 			args:     []string{"openai"},
-			expected: &contractsai.Options{Provider: "openai", Model: "gpt-4"},
+			expected: &contractsai.Options{Provider: "openai", Providers: []string{"openai"}, Model: "gpt-4"},
 		},
 		{
 			name:     "overrides previous value",
 			initial:  &contractsai.Options{Provider: "initial-provider"},
 			args:     []string{"openai", "anthropic"},
-			expected: &contractsai.Options{Provider: "anthropic"},
+			expected: &contractsai.Options{Provider: "anthropic", Providers: []string{"anthropic"}},
+		},
+		{
+			name: "sets provider chain",
+			initial: &contractsai.Options{
+				Model: "gpt-4",
+			},
+			args:      []string{"openai"},
+			failovers: []string{"gemini", "anthropic"},
+			expected:  &contractsai.Options{Provider: "openai", Providers: []string{"openai", "gemini", "anthropic"}, Model: "gpt-4"},
 		},
 		{
 			name:    "panics on nil options",
@@ -42,13 +52,13 @@ func TestWithProvider(t *testing.T) {
 			if tt.nilOpts {
 				assert.Panics(t, func() {
 					for _, arg := range tt.args {
-						WithProvider(arg)(nil)
+						WithProvider(arg, tt.failovers...)(nil)
 					}
 				})
 				return
 			}
 			for _, arg := range tt.args {
-				WithProvider(arg)(tt.initial)
+				WithProvider(arg, tt.failovers...)(tt.initial)
 			}
 			assert.Equal(t, tt.expected, tt.initial)
 		})

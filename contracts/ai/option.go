@@ -2,6 +2,7 @@ package ai
 
 type Options struct {
 	Provider    string
+	Providers   []string
 	Model       string
 	Middlewares []Middleware
 }

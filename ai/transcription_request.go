@@ -8,14 +8,15 @@ import (
 )
 
 type transcriptionRequest struct {
-	ctx      context.Context
-	app      *Application
-	file     contractsai.StorableFile
-	provider string
-	model    string
-	language string
-	diarize  bool
-	timeout  time.Duration
+	ctx       context.Context
+	app       *Application
+	file      contractsai.StorableFile
+	provider  string
+	failovers []string
+	model     string
+	language  string
+	diarize   bool
+	timeout   time.Duration
 }
 
 func NewTranscriptionRequest(ctx context.Context, app *Application, file contractsai.StorableFile) contractsai.TranscriptionRequest {
@@ -31,8 +32,9 @@ func (r *transcriptionRequest) Model(model string) contractsai.TranscriptionRequ
 	return r
 }
 
-func (r *transcriptionRequest) Provider(provider string) contractsai.TranscriptionRequest {
+func (r *transcriptionRequest) Provider(provider string, failovers ...string) contractsai.TranscriptionRequest {
 	r.provider = provider
+	r.failovers = providerChain("", failovers...)
 	return r
 }
 
@@ -53,8 +55,8 @@ func (r *transcriptionRequest) Timeout(timeout time.Duration) contractsai.Transc
 
 func (r *transcriptionRequest) Generate() (contractsai.TranscriptionResponse, error) {
 	options := make([]contractsai.Option, 0, 2)
-	if r.provider != "" {
-		options = append(options, WithProvider(r.provider))
+	if r.provider != "" || len(r.failovers) > 0 {
+		options = append(options, WithProvider(r.provider, r.failovers...))
 	}
 	if r.model != "" {
 		options = append(options, WithModel(r.model))
