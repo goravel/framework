@@ -7,7 +7,7 @@ import (
 	"github.com/goravel/framework/errors"
 )
 
-type providerCandidate struct {
+type resolvedProvider struct {
 	name     string
 	provider contractsai.Provider
 }
@@ -19,7 +19,7 @@ type failoverError struct {
 }
 
 type failoverProvider struct {
-	candidates []providerCandidate
+	providers []resolvedProvider
 }
 
 type scopedProviderState struct {
@@ -33,12 +33,12 @@ func NewFailoverError(provider string, reason contractsai.FailoverReason, cause 
 	return &failoverError{provider: provider, reason: reason, cause: cause}
 }
 
-func newFailoverProvider(candidates []providerCandidate) contractsai.Provider {
-	if len(candidates) == 1 {
-		return candidates[0].provider
+func newFailoverProvider(providers []resolvedProvider) contractsai.Provider {
+	if len(providers) == 1 {
+		return providers[0].provider
 	}
 
-	return &failoverProvider{candidates: append([]providerCandidate(nil), candidates...)}
+	return &failoverProvider{providers: append([]resolvedProvider(nil), providers...)}
 }
 
 func (e *failoverError) Error() string {
@@ -72,8 +72,8 @@ func (e *failoverError) Unwrap() error {
 
 func (r *failoverProvider) Prompt(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.AgentResponse, error) {
 	var lastErr error
-	for _, candidate := range r.candidates {
-		response, err := candidate.provider.Prompt(ctx, r.promptFor(candidate, prompt))
+	for _, resolvedProvider := range r.providers {
+		response, err := resolvedProvider.provider.Prompt(ctx, r.promptFor(resolvedProvider, prompt))
 		if err == nil {
 			return response, nil
 		}
@@ -90,8 +90,8 @@ func (r *failoverProvider) Prompt(ctx context.Context, prompt contractsai.AgentP
 func (r *failoverProvider) Stream(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.StreamableAgentResponse, error) {
 	return NewStreamableResponse(ctx, func(streamCtx context.Context, emit func(contractsai.StreamEvent) error) (contractsai.AgentResponse, error) {
 		var lastErr error
-		for _, candidate := range r.candidates {
-			stream, err := candidate.provider.Stream(streamCtx, r.promptFor(candidate, prompt))
+		for _, resolvedProvider := range r.providers {
+			stream, err := resolvedProvider.provider.Stream(streamCtx, r.promptFor(resolvedProvider, prompt))
 			if err != nil {
 				if !isFailoverError(err) {
 					return nil, err
@@ -119,9 +119,9 @@ func (r *failoverProvider) Stream(ctx context.Context, prompt contractsai.AgentP
 	}), nil
 }
 
-func (r *failoverProvider) promptFor(candidate providerCandidate, prompt contractsai.AgentPrompt) contractsai.AgentPrompt {
+func (r *failoverProvider) promptFor(provider resolvedProvider, prompt contractsai.AgentPrompt) contractsai.AgentPrompt {
 	if prompt.ProviderState != nil {
-		prompt.ProviderState = scopedProviderState{provider: candidate.name, state: prompt.ProviderState}
+		prompt.ProviderState = scopedProviderState{provider: provider.name, state: prompt.ProviderState}
 	}
 
 	return prompt

@@ -1,10 +1,10 @@
 package ai
 
 type Options struct {
-	Provider    string
-	Providers   []string
-	Model       string
-	Middlewares []Middleware
+	Provider      string
+	ProviderChain []string
+	Model         string
+	Middlewares   []Middleware
 }
 
 type ConversationOptions struct {

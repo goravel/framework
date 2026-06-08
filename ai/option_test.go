@@ -23,13 +23,13 @@ func TestWithProvider(t *testing.T) {
 			name:     "sets provider while preserving model",
 			initial:  &contractsai.Options{Model: "gpt-4"},
 			args:     []string{"openai"},
-			expected: &contractsai.Options{Provider: "openai", Providers: []string{"openai"}, Model: "gpt-4"},
+			expected: &contractsai.Options{Provider: "openai", ProviderChain: []string{"openai"}, Model: "gpt-4"},
 		},
 		{
 			name:     "overrides previous value",
 			initial:  &contractsai.Options{Provider: "initial-provider"},
 			args:     []string{"openai", "anthropic"},
-			expected: &contractsai.Options{Provider: "anthropic", Providers: []string{"anthropic"}},
+			expected: &contractsai.Options{Provider: "anthropic", ProviderChain: []string{"anthropic"}},
 		},
 		{
 			name: "sets provider chain",
@@ -38,7 +38,7 @@ func TestWithProvider(t *testing.T) {
 			},
 			args:      []string{"openai"},
 			failovers: []string{"gemini", "anthropic"},
-			expected:  &contractsai.Options{Provider: "openai", Providers: []string{"openai", "gemini", "anthropic"}, Model: "gpt-4"},
+			expected:  &contractsai.Options{Provider: "openai", ProviderChain: []string{"openai", "gemini", "anthropic"}, Model: "gpt-4"},
 		},
 		{
 			name:    "panics on nil options",
