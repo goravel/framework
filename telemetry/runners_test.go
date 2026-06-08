@@ -24,7 +24,7 @@ func TestTelemetryRunner(t *testing.T) {
 
 	t.Run("should run when telemetry facade set and auto_run enabled", func(t *testing.T) {
 		config := mocksconfig.NewConfig(t)
-		config.EXPECT().GetBool("app.auto_run", true).Return(true).Once()
+		config.EXPECT().GetBool(configKeyAutoRun, true).Return(true).Once()
 
 		runner := NewTelemetryRunner(config, mockstelemetry.NewTelemetry(t))
 		assert.True(t, runner.ShouldRun())
@@ -37,7 +37,7 @@ func TestTelemetryRunner(t *testing.T) {
 
 	t.Run("should not run when auto_run disabled", func(t *testing.T) {
 		config := mocksconfig.NewConfig(t)
-		config.EXPECT().GetBool("app.auto_run", true).Return(false).Once()
+		config.EXPECT().GetBool(configKeyAutoRun, true).Return(false).Once()
 
 		runner := NewTelemetryRunner(config, mockstelemetry.NewTelemetry(t))
 		assert.False(t, runner.ShouldRun())
@@ -45,7 +45,7 @@ func TestTelemetryRunner(t *testing.T) {
 
 	t.Run("shutdown unblocks run", func(t *testing.T) {
 		config := mocksconfig.NewConfig(t)
-		config.EXPECT().GetDuration("telemetry.shutdown_timeout", defaultShutdownTimeout).Return(defaultShutdownTimeout).Once()
+		config.EXPECT().GetDuration(configKeyShutdownTimeout, defaultShutdownTimeout).Return(defaultShutdownTimeout).Once()
 
 		telemetry := mockstelemetry.NewTelemetry(t)
 		telemetry.EXPECT().Shutdown(mock.Anything).Return(nil).Once()
@@ -67,7 +67,7 @@ func TestTelemetryRunner(t *testing.T) {
 
 	t.Run("shutdown uses configured timeout", func(t *testing.T) {
 		config := mocksconfig.NewConfig(t)
-		config.EXPECT().GetDuration("telemetry.shutdown_timeout", defaultShutdownTimeout).Return(2 * time.Second).Once()
+		config.EXPECT().GetDuration(configKeyShutdownTimeout, defaultShutdownTimeout).Return(2 * time.Second).Once()
 
 		telemetry := mockstelemetry.NewTelemetry(t)
 		telemetry.EXPECT().Shutdown(mock.Anything).Return(assert.AnError).Once()
