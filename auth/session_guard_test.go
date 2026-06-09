@@ -15,6 +15,7 @@ import (
 	mockshttp "github.com/goravel/framework/mocks/http"
 	mockslog "github.com/goravel/framework/mocks/log"
 	mockssession "github.com/goravel/framework/mocks/session"
+	"github.com/goravel/framework/session"
 	"github.com/goravel/framework/support/carbon"
 )
 
@@ -23,7 +24,7 @@ type SessionGuardTestSuite struct {
 	sessionGuard     *SessionGuard
 	mockCache        *mockscache.Cache
 	mockConfig       *mocksconfig.Config
-	mockContext      http.Context
+	mockContext      *mockshttp.Context
 	mockDB           *mocksorm.Query
 	mockLog          *mockslog.Log
 	mockUserProvider *mocksauth.UserProvider
@@ -58,6 +59,7 @@ func (s *SessionGuardTestSuite) SetupTest() {
 
 	cacheFacade = s.mockCache
 	configFacade = s.mockConfig
+	session.ConfigFacade = s.mockConfig
 
 	sessionGuard, err := NewSessionGuard(s.mockContext, testUserGuard, s.mockUserProvider)
 	s.Require().Nil(err)
@@ -66,6 +68,27 @@ func (s *SessionGuardTestSuite) SetupTest() {
 	carbon.SetTestNow(now)
 	s.now = now
 	s.sessionGuard = sessionGuard.(*SessionGuard)
+}
+
+func (s *SessionGuardTestSuite) expectWriteCookie(id string) {
+	s.mockSession.EXPECT().GetName().Return("goravel_session").Once()
+	s.mockSession.EXPECT().GetID().Return(id).Once()
+	s.mockConfig.EXPECT().GetInt("session.lifetime", 120).Return(120).Once()
+	s.mockConfig.EXPECT().GetString("session.path").Return("/").Once()
+	s.mockConfig.EXPECT().GetString("session.domain").Return("").Once()
+	s.mockConfig.EXPECT().GetBool("session.secure").Return(false).Once()
+	s.mockConfig.EXPECT().GetBool("session.http_only").Return(true).Once()
+	s.mockConfig.EXPECT().GetString("session.same_site").Return("").Once()
+
+	mockResponse := mockshttp.NewContextResponse(s.T())
+	mockResponse.EXPECT().Cookie(http.Cookie{
+		Name:     "goravel_session",
+		Value:    id,
+		Expires:  s.now.Copy().AddMinutes(120).StdTime(),
+		Path:     "/",
+		HttpOnly: true,
+	}).Return(mockResponse).Once()
+	s.mockContext.EXPECT().Response().Return(mockResponse).Once()
 }
 
 func (s *SessionGuardTestSuite) TestNewSessionGuard() {
@@ -109,6 +132,7 @@ func (s *SessionGuardTestSuite) TestCheck_LoginUsingID_Logout() {
 
 	s.mockSession.EXPECT().Regenerate(true).Return(nil).Once()
 	s.mockSession.EXPECT().Put("auth_user_id", "1").Return(nil).Once()
+	s.expectWriteCookie("login-session-id")
 	token, err := s.sessionGuard.LoginUsingID(1)
 	s.Nil(err)
 	s.Empty(token)
@@ -117,7 +141,9 @@ func (s *SessionGuardTestSuite) TestCheck_LoginUsingID_Logout() {
 	s.True(s.sessionGuard.Check())
 	s.False(s.sessionGuard.Guest())
 
-	s.mockSession.EXPECT().Invalidate().Return(nil).Once()
+	s.mockSession.EXPECT().Forget("auth_user_id").Return(nil).Once()
+	s.mockSession.EXPECT().Regenerate(true).Return(nil).Once()
+	s.expectWriteCookie("logout-session-id")
 	s.NoError(s.sessionGuard.Logout())
 
 	s.mockSession.EXPECT().Get("auth_user_id", nil).Return(nil).Once()
@@ -136,6 +162,7 @@ func (s *SessionGuardTestSuite) Test_Login() {
 	s.mockUserProvider.EXPECT().GetID(&user).Return("2", nil).Once()
 	s.mockSession.EXPECT().Regenerate(true).Return(nil).Once()
 	s.mockSession.EXPECT().Put("auth_user_id", "2").Return(nil).Once()
+	s.expectWriteCookie("login-session-id")
 	token, err := s.sessionGuard.Login(&user)
 	s.Nil(err)
 	s.Empty(token)
@@ -144,7 +171,9 @@ func (s *SessionGuardTestSuite) Test_Login() {
 	s.True(s.sessionGuard.Check())
 	s.False(s.sessionGuard.Guest())
 
-	s.mockSession.EXPECT().Invalidate().Return(nil).Once()
+	s.mockSession.EXPECT().Forget("auth_user_id").Return(nil).Once()
+	s.mockSession.EXPECT().Regenerate(true).Return(nil).Once()
+	s.expectWriteCookie("logout-session-id")
 	s.NoError(s.sessionGuard.Logout())
 
 	s.mockSession.EXPECT().Get("auth_user_id", nil).Return(nil).Once()
@@ -169,7 +198,9 @@ func (s *SessionGuardTestSuite) Test_LoginFailed() {
 	s.False(s.sessionGuard.Check())
 	s.True(s.sessionGuard.Guest())
 
-	s.mockSession.EXPECT().Invalidate().Return(nil).Once()
+	s.mockSession.EXPECT().Forget("auth_user_id").Return(nil).Once()
+	s.mockSession.EXPECT().Regenerate(true).Return(nil).Once()
+	s.expectWriteCookie("logout-session-id")
 	s.NoError(s.sessionGuard.Logout())
 
 	s.mockSession.EXPECT().Get("auth_user_id", nil).Return(nil).Once()
@@ -228,8 +259,9 @@ func (s *SessionGuardTestSuite) Test_LoginUsingID_RegenerateError() {
 	s.ErrorIs(err, assert.AnError)
 }
 
-func (s *SessionGuardTestSuite) Test_Logout_InvalidateError() {
-	s.mockSession.EXPECT().Invalidate().Return(assert.AnError).Once()
+func (s *SessionGuardTestSuite) Test_Logout_RegenerateError() {
+	s.mockSession.EXPECT().Forget("auth_user_id").Return(nil).Once()
+	s.mockSession.EXPECT().Regenerate(true).Return(assert.AnError).Once()
 
 	s.ErrorIs(s.sessionGuard.Logout(), assert.AnError)
 }

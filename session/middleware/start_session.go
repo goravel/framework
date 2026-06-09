@@ -39,7 +39,7 @@ func StartSession() http.Middleware {
 		req.SetSession(s)
 
 		// Set session cookie in response
-		session.WriteCookie(ctx)
+		session.WriteCookie(ctx, s)
 
 		// Continue processing request
 		req.Next()
