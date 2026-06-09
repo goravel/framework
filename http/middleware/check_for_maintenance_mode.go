@@ -3,14 +3,14 @@ package middleware
 import (
 	"encoding/json"
 
-	httpcontract "github.com/goravel/framework/contracts/http"
+	contractshttp "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation/console"
 	"github.com/goravel/framework/http"
 )
 
-func CheckForMaintenanceMode() httpcontract.Middleware {
-	return func(ctx httpcontract.Context) {
+func CheckForMaintenanceMode() contractshttp.Middleware {
+	return func(ctx contractshttp.Context) {
 		maintenance := console.NewMaintenanceMode(http.App.MakeConfig(), http.App.MakeCache(), http.App.MakeStorage())
 		content, exists, err := maintenance.Get()
 		if err != nil {
@@ -49,7 +49,7 @@ func CheckForMaintenanceMode() httpcontract.Middleware {
 				return
 			}
 
-			if err = ctx.Response().Redirect(httpcontract.StatusTemporaryRedirect, maintenanceOptions.Redirect).Abort(); err != nil {
+			if err = ctx.Response().Redirect(contractshttp.StatusTemporaryRedirect, maintenanceOptions.Redirect).Abort(); err != nil {
 				return
 			}
 			return
@@ -69,8 +69,8 @@ func CheckForMaintenanceMode() httpcontract.Middleware {
 	}
 }
 
-func abortMaintenanceMode(ctx httpcontract.Context, err error) {
-	if err = ctx.Response().String(httpcontract.StatusServiceUnavailable, err.Error()).Abort(); err != nil {
+func abortMaintenanceMode(ctx contractshttp.Context, err error) {
+	if err = ctx.Response().String(contractshttp.StatusServiceUnavailable, err.Error()).Abort(); err != nil {
 		panic(err)
 	}
 }
