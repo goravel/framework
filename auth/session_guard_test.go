@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/errors"
 	mocksauth "github.com/goravel/framework/mocks/auth"
@@ -21,15 +22,16 @@ import (
 
 type SessionGuardTestSuite struct {
 	suite.Suite
-	sessionGuard     *SessionGuard
-	mockCache        *mockscache.Cache
-	mockConfig       *mocksconfig.Config
-	mockContext      *mockshttp.Context
-	mockDB           *mocksorm.Query
-	mockLog          *mockslog.Log
-	mockUserProvider *mocksauth.UserProvider
-	mockSession      *mockssession.Session
-	now              *carbon.Carbon
+	sessionGuard       *SessionGuard
+	mockCache          *mockscache.Cache
+	mockConfig         *mocksconfig.Config
+	mockContext        *mockshttp.Context
+	mockDB             *mocksorm.Query
+	mockLog            *mockslog.Log
+	mockUserProvider   *mocksauth.UserProvider
+	mockSession        *mockssession.Session
+	now                *carbon.Carbon
+	originConfigFacade config.Config
 }
 
 func TestSessionGuardTestSuite(t *testing.T) {
@@ -38,6 +40,10 @@ func TestSessionGuardTestSuite(t *testing.T) {
 
 func (s *SessionGuardTestSuite) TearDownSuite() {
 	carbon.ClearTestNow()
+}
+
+func (s *SessionGuardTestSuite) TearDownTest() {
+	session.ConfigFacade = s.originConfigFacade
 }
 
 func (s *SessionGuardTestSuite) SetupTest() {
@@ -60,11 +66,8 @@ func (s *SessionGuardTestSuite) SetupTest() {
 	cacheFacade = s.mockCache
 	configFacade = s.mockConfig
 
-	originConfigFacade := session.ConfigFacade
+	s.originConfigFacade = session.ConfigFacade
 	session.ConfigFacade = s.mockConfig
-	s.T().Cleanup(func() {
-		session.ConfigFacade = originConfigFacade
-	})
 
 	sessionGuard, err := NewSessionGuard(s.mockContext, testUserGuard, s.mockUserProvider)
 	s.Require().Nil(err)
