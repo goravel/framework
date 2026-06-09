@@ -1,8 +1,11 @@
 package ai
 
 type Options struct {
-	Provider    string
-	Model       string
+	// Providers is the ordered primary and failover provider list.
+	Providers []string
+	// Model overrides the selected provider's default model.
+	Model string
+	// Middlewares appends middleware for the current agent request.
 	Middlewares []Middleware
 }
 

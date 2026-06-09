@@ -12,6 +12,7 @@ type audioRequest struct {
 	app          *Application
 	prompt       string
 	provider     string
+	failovers    []string
 	model        string
 	voice        string
 	instructions string
@@ -32,8 +33,9 @@ func (r *audioRequest) Model(model string) contractsai.AudioRequest {
 	return r
 }
 
-func (r *audioRequest) Provider(provider string) contractsai.AudioRequest {
+func (r *audioRequest) Provider(provider string, failovers ...string) contractsai.AudioRequest {
 	r.provider = provider
+	r.failovers = providerChain("", failovers...)
 	return r
 }
 
@@ -82,8 +84,8 @@ func (r *audioRequest) StoreAs(path string, disk ...string) (string, error) {
 
 func (r *audioRequest) Generate() (contractsai.AudioResponse, error) {
 	options := make([]contractsai.Option, 0, 2)
-	if r.provider != "" {
-		options = append(options, WithProvider(r.provider))
+	if r.provider != "" || len(r.failovers) > 0 {
+		options = append(options, WithProvider(r.provider, r.failovers...))
 	}
 	if r.model != "" {
 		options = append(options, WithModel(r.model))

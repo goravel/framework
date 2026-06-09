@@ -12,6 +12,7 @@ type imageRequest struct {
 	app         *Application
 	prompt      string
 	provider    string
+	failovers   []string
 	model       string
 	size        contractsai.ImageSize
 	quality     contractsai.ImageQuality
@@ -32,8 +33,9 @@ func (r *imageRequest) Model(model string) contractsai.ImageRequest {
 	return r
 }
 
-func (r *imageRequest) Provider(provider string) contractsai.ImageRequest {
+func (r *imageRequest) Provider(provider string, failovers ...string) contractsai.ImageRequest {
 	r.provider = provider
+	r.failovers = providerChain("", failovers...)
 	return r
 }
 
@@ -87,8 +89,8 @@ func (r *imageRequest) StoreAs(path string, disk ...string) (string, error) {
 
 func (r *imageRequest) Generate() (contractsai.ImageResponse, error) {
 	options := make([]contractsai.Option, 0, 2)
-	if r.provider != "" {
-		options = append(options, WithProvider(r.provider))
+	if r.provider != "" || len(r.failovers) > 0 {
+		options = append(options, WithProvider(r.provider, r.failovers...))
 	}
 	if r.model != "" {
 		options = append(options, WithModel(r.model))

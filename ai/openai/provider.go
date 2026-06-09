@@ -41,6 +41,7 @@ const providerStateResponseID = "openai.response_id"
 type Provider struct {
 	client goopenai.Client
 	config contractsai.ProviderConfig
+	name   string
 }
 
 func NewOpenAI(config contractsconfig.Config, provider string) (*Provider, error) {
@@ -67,7 +68,7 @@ func NewOpenAI(config contractsconfig.Config, provider string) (*Provider, error
 		providerConfig.Models.Image.Default = DefaultImageModel
 	}
 
-	return &Provider{client: goopenai.NewClient(opts...), config: providerConfig}, nil
+	return &Provider{client: goopenai.NewClient(opts...), config: providerConfig, name: provider}, nil
 }
 
 func (r *Provider) Audio(ctx context.Context, prompt contractsai.AudioPrompt) (contractsai.AudioResponse, error) {
@@ -94,7 +95,7 @@ func (r *Provider) Audio(ctx context.Context, prompt contractsai.AudioPrompt) (c
 
 	response, err := r.client.Audio.Speech.New(ctx, params, requestOptions...)
 	if err != nil {
-		return nil, err
+		return nil, r.failoverError(err)
 	}
 
 	return r.parseAudioResponse(response, params.ResponseFormat)
@@ -126,7 +127,7 @@ func (r *Provider) Transcription(ctx context.Context, prompt contractsai.Transcr
 
 	response, err := r.client.Audio.Transcriptions.New(ctx, params, requestOptions...)
 	if err != nil {
-		return nil, err
+		return nil, r.failoverError(err)
 	}
 
 	return r.parseTranscriptionResponse(response, prompt.Diarize)
@@ -161,7 +162,7 @@ func (r *Provider) Image(ctx context.Context, prompt contractsai.ImagePrompt) (c
 
 		response, err := r.client.Images.Generate(ctx, params, requestOptions...)
 		if err != nil {
-			return nil, err
+			return nil, r.failoverError(err)
 		}
 
 		return r.parseImageResponse(response)
@@ -193,7 +194,7 @@ func (r *Provider) Image(ctx context.Context, prompt contractsai.ImagePrompt) (c
 
 	response, err := r.client.Images.Edit(ctx, params, requestOptions...)
 	if err != nil {
-		return nil, err
+		return nil, r.failoverError(err)
 	}
 
 	return r.parseImageResponse(response)
@@ -207,7 +208,7 @@ func (r *Provider) Prompt(ctx context.Context, prompt contractsai.AgentPrompt) (
 
 	completion, err := r.client.Responses.New(ctx, params)
 	if err != nil {
-		return nil, err
+		return nil, r.failoverError(err)
 	}
 
 	text, toolCalls := r.parseOutput(completion.Output)
@@ -265,7 +266,7 @@ func (r *Provider) Stream(ctx context.Context, prompt contractsai.AgentPrompt) (
 				}
 			}
 
-			return nil, err
+			return nil, r.failoverError(err)
 		}
 
 		if err := emit(contractsai.StreamEvent{
@@ -329,6 +330,32 @@ func (r *Provider) GetFile(ctx context.Context, id string) (contractsai.FileResp
 func (r *Provider) DeleteFile(ctx context.Context, id string) error {
 	_, err := r.client.Files.Delete(ctx, id)
 	return err
+}
+
+func (r *Provider) failoverError(err error) error {
+	var apiErr *goopenai.Error
+	if !errors.As(err, &apiErr) {
+		return err
+	}
+
+	switch {
+	case apiErr.StatusCode == http.StatusTooManyRequests:
+		return frameworkai.NewFailoverError(r.providerName(), contractsai.FailoverReasonRateLimited, err)
+	case apiErr.StatusCode == http.StatusPaymentRequired:
+		return frameworkai.NewFailoverError(r.providerName(), contractsai.FailoverReasonInsufficientCredits, err)
+	case apiErr.StatusCode >= http.StatusInternalServerError:
+		return frameworkai.NewFailoverError(r.providerName(), contractsai.FailoverReasonProviderOverloaded, err)
+	default:
+		return err
+	}
+}
+
+func (r *Provider) providerName() string {
+	if r.name != "" {
+		return r.name
+	}
+
+	return "openai"
 }
 
 func (r *Provider) uploadFilename(file contractsai.StorableFile) string {

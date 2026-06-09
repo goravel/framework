@@ -5,6 +5,21 @@ import (
 	"time"
 )
 
+type FailoverReason string
+
+const (
+	FailoverReasonRateLimited         FailoverReason = "rate_limited"
+	FailoverReasonProviderOverloaded  FailoverReason = "provider_overloaded"
+	FailoverReasonInsufficientCredits FailoverReason = "insufficient_credits"
+)
+
+type FailoverError interface {
+	error
+	Reason() FailoverReason
+	Provider() string
+	Unwrap() error
+}
+
 // ProviderState stores provider-scoped conversation state across prompt calls.
 type ProviderState interface {
 	Get(key string) any

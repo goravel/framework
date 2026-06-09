@@ -25,7 +25,7 @@ func NewApplication(ctx context.Context, config contractsai.Config) *Application
 }
 
 func (r *Application) Agent(agent contractsai.Agent, options ...contractsai.Option) (contractsai.Conversation, error) {
-	opts, _, provider, err := r.resolveProvider(options)
+	opts, resolvedProviders, err := r.resolveProviderChain(options)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (r *Application) Agent(agent contractsai.Agent, options ...contractsai.Opti
 	model := opts.Model
 	middlewares := append(slices.Clone(agent.Middleware()), opts.Middlewares...)
 
-	return NewConversation(r.ctx, agent, provider, model, middlewares), nil
+	return NewConversation(r.ctx, agent, newFailoverProvider(resolvedProviders), model, middlewares), nil
 }
 
 func (r *Application) Audio(prompt string) contractsai.AudioRequest {
@@ -99,7 +99,7 @@ func (r *Application) deleteFile(ctx context.Context, id string, options ...cont
 }
 
 func (r *Application) audio(ctx context.Context, prompt contractsai.AudioPrompt, options ...contractsai.Option) (contractsai.AudioResponse, error) {
-	opts, providerName, provider, err := r.resolveProvider(options)
+	opts, resolvedProviders, err := r.resolveProviderChain(options)
 	if err != nil {
 		return nil, err
 	}
@@ -107,16 +107,29 @@ func (r *Application) audio(ctx context.Context, prompt contractsai.AudioPrompt,
 		prompt.Model = opts.Model
 	}
 
-	audioProvider, ok := provider.(contractsai.AudioProvider)
-	if !ok {
-		return nil, errors.AIProviderDoesNotSupportAudio.Args(providerName)
+	var lastErr error
+	for _, resolvedProvider := range resolvedProviders {
+		audioProvider, ok := resolvedProvider.provider.(contractsai.AudioProvider)
+		if !ok {
+			return nil, errors.AIProviderDoesNotSupportAudio.Args(resolvedProvider.name)
+		}
+
+		response, err := audioProvider.Audio(ctx, prompt)
+		if err == nil {
+			return response, nil
+		}
+		if !isFailoverError(err) {
+			return nil, err
+		}
+
+		lastErr = err
 	}
 
-	return audioProvider.Audio(ctx, prompt)
+	return nil, lastErr
 }
 
 func (r *Application) image(ctx context.Context, prompt contractsai.ImagePrompt, options ...contractsai.Option) (contractsai.ImageResponse, error) {
-	opts, providerName, provider, err := r.resolveProvider(options)
+	opts, resolvedProviders, err := r.resolveProviderChain(options)
 	if err != nil {
 		return nil, err
 	}
@@ -124,16 +137,29 @@ func (r *Application) image(ctx context.Context, prompt contractsai.ImagePrompt,
 		prompt.Model = opts.Model
 	}
 
-	imageProvider, ok := provider.(contractsai.ImageProvider)
-	if !ok {
-		return nil, errors.AIProviderDoesNotSupportImages.Args(providerName)
+	var lastErr error
+	for _, resolvedProvider := range resolvedProviders {
+		imageProvider, ok := resolvedProvider.provider.(contractsai.ImageProvider)
+		if !ok {
+			return nil, errors.AIProviderDoesNotSupportImages.Args(resolvedProvider.name)
+		}
+
+		response, err := imageProvider.Image(ctx, prompt)
+		if err == nil {
+			return response, nil
+		}
+		if !isFailoverError(err) {
+			return nil, err
+		}
+
+		lastErr = err
 	}
 
-	return imageProvider.Image(ctx, prompt)
+	return nil, lastErr
 }
 
 func (r *Application) transcription(ctx context.Context, prompt contractsai.TranscriptionPrompt, options ...contractsai.Option) (contractsai.TranscriptionResponse, error) {
-	opts, providerName, provider, err := r.resolveProvider(options)
+	opts, resolvedProviders, err := r.resolveProviderChain(options)
 	if err != nil {
 		return nil, err
 	}
@@ -141,31 +167,60 @@ func (r *Application) transcription(ctx context.Context, prompt contractsai.Tran
 		prompt.Model = opts.Model
 	}
 
-	transcriptionProvider, ok := provider.(contractsai.TranscriptionProvider)
-	if !ok {
-		return nil, errors.AIProviderDoesNotSupportTranscription.Args(providerName)
+	var lastErr error
+	for _, resolvedProvider := range resolvedProviders {
+		transcriptionProvider, ok := resolvedProvider.provider.(contractsai.TranscriptionProvider)
+		if !ok {
+			return nil, errors.AIProviderDoesNotSupportTranscription.Args(resolvedProvider.name)
+		}
+
+		response, err := transcriptionProvider.Transcription(ctx, prompt)
+		if err == nil {
+			return response, nil
+		}
+		if !isFailoverError(err) {
+			return nil, err
+		}
+
+		lastErr = err
 	}
 
-	return transcriptionProvider.Transcription(ctx, prompt)
+	return nil, lastErr
 }
 
 func (r *Application) resolveProvider(options []contractsai.Option) (*contractsai.Options, string, contractsai.Provider, error) {
-	opts := &contractsai.Options{}
-	for _, option := range options {
-		option(opts)
-	}
-
-	providerName := opts.Provider
-	if providerName == "" {
-		providerName = r.config.Default
-	}
-
-	provider, err := r.resolver.New(providerName)
+	opts, resolvedProviders, err := r.resolveProviderChain(options)
 	if err != nil {
 		return nil, "", nil, err
 	}
 
-	return opts, providerName, provider, nil
+	return opts, resolvedProviders[0].name, resolvedProviders[0].provider, nil
+}
+
+func (r *Application) resolveProviderChain(options []contractsai.Option) (*contractsai.Options, []resolvedProvider, error) {
+	opts := &contractsai.Options{}
+	for _, option := range options {
+		if option != nil {
+			option(opts)
+		}
+	}
+
+	providerNames := opts.Providers
+	if len(providerNames) == 0 {
+		providerNames = []string{r.config.Default}
+	}
+
+	resolvedProviders := make([]resolvedProvider, 0, len(providerNames))
+	for _, providerName := range providerNames {
+		provider, err := r.resolver.New(providerName)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		resolvedProviders = append(resolvedProviders, resolvedProvider{name: providerName, provider: provider})
+	}
+
+	return opts, resolvedProviders, nil
 }
 
 func (r *Application) WithContext(ctx context.Context) contractsai.AI {

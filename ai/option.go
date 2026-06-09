@@ -6,9 +6,9 @@ import (
 	contractsai "github.com/goravel/framework/contracts/ai"
 )
 
-func WithProvider(provider string) contractsai.Option {
+func WithProvider(provider string, failovers ...string) contractsai.Option {
 	return func(options *contractsai.Options) {
-		options.Provider = provider
+		options.Providers = providerChain(provider, failovers...)
 	}
 }
 
@@ -64,6 +64,20 @@ func filterNilAttachments(attachments []contractsai.Attachment) []contractsai.At
 	}
 
 	return filtered
+}
+
+func providerChain(provider string, failovers ...string) []string {
+	providers := make([]string, 0, len(failovers)+1)
+	if provider != "" {
+		providers = append(providers, provider)
+	}
+	for _, failover := range failovers {
+		if failover != "" {
+			providers = append(providers, failover)
+		}
+	}
+
+	return providers
 }
 
 func isNilMiddleware(middleware contractsai.Middleware) bool {
