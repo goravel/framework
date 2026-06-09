@@ -8,7 +8,7 @@ import (
 
 func WithProvider(provider string, failovers ...string) contractsai.Option {
 	return func(options *contractsai.Options) {
-		options.ProviderChain = providerChain(provider, failovers...)
+		options.Providers = providerChain(provider, failovers...)
 	}
 }
 

@@ -205,7 +205,7 @@ func (r *Application) resolveProviderChain(options []contractsai.Option) (*contr
 		}
 	}
 
-	providerNames := opts.ProviderChain
+	providerNames := opts.Providers
 	if len(providerNames) == 0 {
 		providerNames = []string{r.config.Default}
 	}

@@ -20,25 +20,25 @@ func TestWithProvider(t *testing.T) {
 		nilOpts   bool
 	}{
 		{
-			name:     "sets provider chain while preserving model",
+			name:     "sets providers while preserving model",
 			initial:  &contractsai.Options{Model: "gpt-4"},
 			args:     []string{"openai"},
-			expected: &contractsai.Options{ProviderChain: []string{"openai"}, Model: "gpt-4"},
+			expected: &contractsai.Options{Providers: []string{"openai"}, Model: "gpt-4"},
 		},
 		{
-			name:     "overrides previous provider chain",
-			initial:  &contractsai.Options{ProviderChain: []string{"initial-provider"}},
+			name:     "overrides previous providers",
+			initial:  &contractsai.Options{Providers: []string{"initial-provider"}},
 			args:     []string{"openai", "anthropic"},
-			expected: &contractsai.Options{ProviderChain: []string{"anthropic"}},
+			expected: &contractsai.Options{Providers: []string{"anthropic"}},
 		},
 		{
-			name: "sets provider chain",
+			name: "sets providers",
 			initial: &contractsai.Options{
 				Model: "gpt-4",
 			},
 			args:      []string{"openai"},
 			failovers: []string{"gemini", "anthropic"},
-			expected:  &contractsai.Options{ProviderChain: []string{"openai", "gemini", "anthropic"}, Model: "gpt-4"},
+			expected:  &contractsai.Options{Providers: []string{"openai", "gemini", "anthropic"}, Model: "gpt-4"},
 		},
 		{
 			name:    "panics on nil options",
@@ -74,10 +74,10 @@ func TestWithModel(t *testing.T) {
 		nilOpts  bool
 	}{
 		{
-			name:     "sets model while preserving provider chain",
-			initial:  &contractsai.Options{ProviderChain: []string{"openai"}},
+			name:     "sets model while preserving providers",
+			initial:  &contractsai.Options{Providers: []string{"openai"}},
 			args:     []string{"gpt-4"},
-			expected: &contractsai.Options{ProviderChain: []string{"openai"}, Model: "gpt-4"},
+			expected: &contractsai.Options{Providers: []string{"openai"}, Model: "gpt-4"},
 		},
 		{
 			name:     "overrides previous value",
@@ -123,14 +123,14 @@ func TestWithMiddleware(t *testing.T) {
 	}{
 		{
 			name:    "appends middleware while preserving options",
-			initial: &contractsai.Options{ProviderChain: []string{"openai"}, Model: "gpt-4"},
+			initial: &contractsai.Options{Providers: []string{"openai"}, Model: "gpt-4"},
 			apply: func(options *contractsai.Options) {
 				WithMiddleware(middlewareA, middlewareB)(options)
 			},
 			expected: &contractsai.Options{
-				ProviderChain: []string{"openai"},
-				Model:         "gpt-4",
-				Middlewares:   []contractsai.Middleware{middlewareA, middlewareB},
+				Providers:   []string{"openai"},
+				Model:       "gpt-4",
+				Middlewares: []contractsai.Middleware{middlewareA, middlewareB},
 			},
 		},
 		{
