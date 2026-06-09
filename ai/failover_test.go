@@ -5,42 +5,50 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 
 	contractsai "github.com/goravel/framework/contracts/ai"
 )
 
-func TestFailoverError(t *testing.T) {
+type FailoverTestSuite struct {
+	suite.Suite
+}
+
+func TestFailoverTestSuite(t *testing.T) {
+	suite.Run(t, &FailoverTestSuite{})
+}
+
+func (s *FailoverTestSuite) TestFailoverError() {
 	cause := assert.AnError
 	err := NewFailoverError("openai", contractsai.FailoverReasonRateLimited, cause)
 
 	var failoverErr contractsai.FailoverError
-	require.ErrorAs(t, err, &failoverErr)
-	assert.Equal(t, contractsai.FailoverReasonRateLimited, failoverErr.Reason())
-	assert.Equal(t, "openai", failoverErr.Provider())
-	assert.ErrorIs(t, err, cause)
-	assert.Equal(t, "ai: provider openai was rate limited", err.Error())
+	s.Require().ErrorAs(err, &failoverErr)
+	s.Equal(contractsai.FailoverReasonRateLimited, failoverErr.Reason())
+	s.Equal("openai", failoverErr.Provider())
+	s.ErrorIs(err, cause)
+	s.Equal("ai: provider openai was rate limited", err.Error())
 }
 
-func TestNewFailoverProvider(t *testing.T) {
+func (s *FailoverTestSuite) TestNewFailoverProvider() {
 	primaryProvider := &failoverTestProvider{}
 	backupProvider := &failoverTestProvider{}
 
-	assert.Same(t, primaryProvider, newFailoverProvider([]resolvedProvider{{name: "primary", provider: primaryProvider}}))
+	s.Same(primaryProvider, newFailoverProvider([]resolvedProvider{{name: "primary", provider: primaryProvider}}))
 
 	providers := []resolvedProvider{
 		{name: "primary", provider: primaryProvider},
 		{name: "backup", provider: backupProvider},
 	}
 	provider, ok := newFailoverProvider(providers).(*failoverProvider)
-	require.True(t, ok)
+	s.Require().True(ok)
 
 	providers[0].provider = backupProvider
-	assert.Same(t, primaryProvider, provider.providers[0].provider)
-	assert.Same(t, backupProvider, provider.providers[1].provider)
+	s.Same(primaryProvider, provider.providers[0].provider)
+	s.Same(backupProvider, provider.providers[1].provider)
 }
 
-func TestFailoverProviderStreamSuppressesPendingFailoverError(t *testing.T) {
+func (s *FailoverTestSuite) TestStreamSuppressesPendingFailoverError() {
 	failoverErr := NewFailoverError("primary", contractsai.FailoverReasonRateLimited, assert.AnError)
 	primaryProvider := &failoverTestProvider{
 		streamEvents: []contractsai.StreamEvent{{Type: contractsai.StreamEventTypeError, Error: "rate limited"}},
@@ -56,7 +64,7 @@ func TestFailoverProviderStreamSuppressesPendingFailoverError(t *testing.T) {
 	}}
 
 	stream, err := provider.Stream(context.Background(), contractsai.AgentPrompt{})
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
 	var events []contractsai.StreamEvent
 	err = stream.Each(func(event contractsai.StreamEvent) error {
@@ -64,13 +72,13 @@ func TestFailoverProviderStreamSuppressesPendingFailoverError(t *testing.T) {
 		return nil
 	})
 
-	require.NoError(t, err)
-	assert.Equal(t, []contractsai.StreamEvent{{Type: contractsai.StreamEventTypeTextDelta, Delta: "backup"}}, events)
-	assert.Equal(t, 1, primaryProvider.streamCalls)
-	assert.Equal(t, 1, backupProvider.streamCalls)
+	s.Require().NoError(err)
+	s.Equal([]contractsai.StreamEvent{{Type: contractsai.StreamEventTypeTextDelta, Delta: "backup"}}, events)
+	s.Equal(1, primaryProvider.streamCalls)
+	s.Equal(1, backupProvider.streamCalls)
 }
 
-func TestFailoverProviderStreamEmitsPendingErrorBeforeNonFailoverError(t *testing.T) {
+func (s *FailoverTestSuite) TestStreamEmitsPendingErrorBeforeNonFailoverError() {
 	primaryProvider := &failoverTestProvider{
 		streamEvents: []contractsai.StreamEvent{{Type: contractsai.StreamEventTypeError, Error: "invalid request"}},
 		streamErr:    assert.AnError,
@@ -82,7 +90,7 @@ func TestFailoverProviderStreamEmitsPendingErrorBeforeNonFailoverError(t *testin
 	}}
 
 	stream, err := provider.Stream(context.Background(), contractsai.AgentPrompt{})
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
 	var events []contractsai.StreamEvent
 	err = stream.Each(func(event contractsai.StreamEvent) error {
@@ -90,25 +98,25 @@ func TestFailoverProviderStreamEmitsPendingErrorBeforeNonFailoverError(t *testin
 		return nil
 	})
 
-	assert.Equal(t, assert.AnError, err)
-	assert.Equal(t, []contractsai.StreamEvent{{Type: contractsai.StreamEventTypeError, Error: "invalid request"}}, events)
-	assert.Equal(t, 1, primaryProvider.streamCalls)
-	assert.Zero(t, backupProvider.streamCalls)
+	s.Equal(assert.AnError, err)
+	s.Equal([]contractsai.StreamEvent{{Type: contractsai.StreamEventTypeError, Error: "invalid request"}}, events)
+	s.Equal(1, primaryProvider.streamCalls)
+	s.Zero(backupProvider.streamCalls)
 }
 
-func TestScopedProviderState(t *testing.T) {
+func (s *FailoverTestSuite) TestScopedProviderState() {
 	state := newProviderState()
 	scoped := scopedProviderState{provider: "openai", state: state}
 
 	scoped.Set("response_id", "resp_123")
 
-	assert.Nil(t, state.Get("response_id"))
-	assert.Equal(t, "resp_123", state.Get("openai:response_id"))
-	assert.Equal(t, "resp_123", scoped.Get("response_id"))
+	s.Nil(state.Get("response_id"))
+	s.Equal("resp_123", state.Get("openai:response_id"))
+	s.Equal("resp_123", scoped.Get("response_id"))
 
 	scoped.Set("response_id", nil)
-	assert.Nil(t, scoped.Get("response_id"))
-	assert.Nil(t, state.Get("openai:response_id"))
+	s.Nil(scoped.Get("response_id"))
+	s.Nil(state.Get("openai:response_id"))
 }
 
 type failoverTestProvider struct {
