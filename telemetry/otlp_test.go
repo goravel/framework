@@ -23,10 +23,10 @@ import (
 type MockOption string
 
 var mockOTLPOptions = otlpOptions[MockOption]{
-	withEndpoint: func(s string) MockOption { return MockOption("endpoint=" + s) },
-	withURLPath:  func(s string) MockOption { return MockOption("url_path=" + s) },
-	withInsecure: func() MockOption { return MockOption("insecure=true") },
-	withTimeout:  func(d time.Duration) MockOption { return MockOption("timeout=" + d.String()) },
+	withEndpoint:    func(s string) MockOption { return MockOption("endpoint=" + s) },
+	withEndpointURL: func(s string) MockOption { return MockOption("endpoint_url=" + s) },
+	withInsecure:    func() MockOption { return MockOption("insecure=true") },
+	withTimeout:     func(d time.Duration) MockOption { return MockOption("timeout=" + d.String()) },
 	withHeaders: func(h map[string]string) MockOption {
 		if val, ok := h["Authorization"]; ok {
 			return MockOption("header_auth=" + val)
@@ -72,19 +72,17 @@ func TestBuildOTLPOptions(t *testing.T) {
 				Endpoint: "https://otel.com/otel",
 			},
 			expected: []MockOption{
-				"endpoint=otel.com",
-				"url_path=/otel",
+				"endpoint_url=https://otel.com/otel",
 				"timeout=10s",
 			},
 		},
 		{
-			name: "Endpoint With HTTP Scheme Without Path Keeps Default Signal Path",
+			name: "Endpoint With HTTP Scheme Delegates To SDK",
 			cfg: ExporterEntry{
 				Endpoint: "http://localhost:4318",
 			},
 			expected: []MockOption{
-				"endpoint=localhost:4318",
-				"insecure=true",
+				"endpoint_url=http://localhost:4318",
 				"timeout=10s",
 			},
 		},
@@ -94,7 +92,7 @@ func TestBuildOTLPOptions(t *testing.T) {
 				Endpoint: "https://otel.com",
 			},
 			expected: []MockOption{
-				"endpoint=otel.com",
+				"endpoint_url=https://otel.com",
 				"timeout=10s",
 			},
 		},
@@ -165,33 +163,24 @@ func TestBuildOTLPOptions(t *testing.T) {
 			expectError: errors.TelemetryUnsupportedCompression.Args("zstd"),
 		},
 		{
-			name: "TLS Conflicts With Insecure",
-			cfg: ExporterEntry{
-				Insecure: true,
-				TLS:      TLSConfig{CA: caFile},
-			},
-			expectError: errors.TelemetryTLSConflictsWithInsecure,
-		},
-		{
 			name: "HTTPS Scheme Takes Precedence Over Insecure",
 			cfg: ExporterEntry{
 				Endpoint: "https://otel.com",
 				Insecure: true,
 			},
 			expected: []MockOption{
-				"endpoint=otel.com",
+				"endpoint_url=https://otel.com",
 				"timeout=10s",
 			},
 		},
 		{
-			name: "Insecure With HTTP Scheme Applies Once",
+			name: "HTTP Scheme Delegates Insecure To SDK",
 			cfg: ExporterEntry{
 				Endpoint: "http://localhost:4318",
 				Insecure: true,
 			},
 			expected: []MockOption{
-				"endpoint=localhost:4318",
-				"insecure=true",
+				"endpoint_url=http://localhost:4318",
 				"timeout=10s",
 			},
 		},
@@ -241,18 +230,8 @@ func TestNewTLSConfig(t *testing.T) {
 			expectCerts: 1,
 		},
 		{
-			name:        "Conflicts with insecure",
-			entry:       ExporterEntry{Insecure: true, TLS: TLSConfig{CA: caFile}},
-			expectError: errors.TelemetryTLSConflictsWithInsecure,
-		},
-		{
-			name:        "Conflicts with http endpoint",
-			entry:       ExporterEntry{Endpoint: "http://localhost:4318", TLS: TLSConfig{CA: caFile}},
-			expectError: errors.TelemetryTLSConflictsWithInsecure,
-		},
-		{
-			name:     "Allows https endpoint",
-			entry:    ExporterEntry{Endpoint: "https://otel.com", TLS: TLSConfig{CA: caFile}},
+			name:     "Loads CA regardless of insecure or scheme (SDK resolves precedence)",
+			entry:    ExporterEntry{Insecure: true, TLS: TLSConfig{CA: caFile}},
 			expectCA: true,
 		},
 		{
@@ -334,12 +313,4 @@ func writeTestCerts(t *testing.T) (caFile, certFile, keyFile string) {
 func testCAFile(t *testing.T) string {
 	caFile, _, _ := writeTestCerts(t)
 	return caFile
-}
-
-func TestEndpointOptionsSkipsPathWithoutBuilder(t *testing.T) {
-	builders := mockOTLPOptions
-	builders.withURLPath = nil
-
-	opts := endpointOptions("https://otel.com/otel", builders)
-	assert.Equal(t, []MockOption{"endpoint=otel.com"}, opts)
 }

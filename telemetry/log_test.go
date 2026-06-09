@@ -196,21 +196,6 @@ func TestNewLoggerProvider(t *testing.T) {
 			expectError: errors.TelemetryUnsupportedCompression.Args("zstd"),
 		},
 		{
-			name: "Error: TLS Conflicts With Insecure",
-			config: Config{
-				Logs: LogsConfig{Exporter: "otlp"},
-				Exporters: map[string]ExporterEntry{
-					"otlp": {
-						Driver:   LogExporterDriverOTLP,
-						Endpoint: "localhost:4318",
-						Insecure: true,
-						TLS:      TLSConfig{CA: "/tmp/ca.pem"},
-					},
-				},
-			},
-			expectError: errors.TelemetryTLSConflictsWithInsecure,
-		},
-		{
 			name: "Error: Unsupported Processor",
 			config: Config{
 				Logs: LogsConfig{Exporter: "console", Processor: ProcessorConfig{Type: "alien"}},

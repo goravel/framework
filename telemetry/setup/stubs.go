@@ -219,7 +219,7 @@ func init() {
 			// Reference: https://opentelemetry.io/docs/specs/otel/protocol/
 			"otlptrace": map[string]any{
 				"driver":   "otlp",
-				"endpoint": config.Env("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "http://localhost:4318"),
+				"endpoint": config.Env("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "localhost:4318"),
 
 				// Protocol: "http/protobuf" or "grpc".
 				"protocol": config.Env("OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "http/protobuf"),
@@ -255,7 +255,7 @@ func init() {
 			// OTLP Metric Exporter
 			"otlpmetric": map[string]any{
 				"driver":   "otlp",
-				"endpoint": config.Env("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", "http://localhost:4318"),
+				"endpoint": config.Env("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", "localhost:4318"),
 
 				// Protocol: "http/protobuf" or "grpc".
 				"protocol": config.Env("OTEL_EXPORTER_OTLP_METRICS_PROTOCOL", "http/protobuf"),
@@ -297,7 +297,7 @@ func init() {
 			// OTLP Log Exporter
 			"otlplog": map[string]any{
 				"driver":   "otlp",
-				"endpoint": config.Env("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", "http://localhost:4318"),
+				"endpoint": config.Env("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", "localhost:4318"),
 
 				// Protocol: "http/protobuf" or "grpc".
 				"protocol": config.Env("OTEL_EXPORTER_OTLP_LOGS_PROTOCOL", "http/protobuf"),

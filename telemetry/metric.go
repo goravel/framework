@@ -129,6 +129,7 @@ func newOTLPMetricExporter(ctx context.Context, cfg ExporterEntry) (sdkmetric.Ex
 	case ProtocolGRPC:
 		opts, err := buildOTLPOptions(cfg, otlpOptions[otlpmetricgrpc.Option]{
 			withEndpoint:    otlpmetricgrpc.WithEndpoint,
+			withEndpointURL: otlpmetricgrpc.WithEndpointURL,
 			withInsecure:    otlpmetricgrpc.WithInsecure,
 			withTimeout:     otlpmetricgrpc.WithTimeout,
 			withHeaders:     otlpmetricgrpc.WithHeaders,
@@ -153,7 +154,7 @@ func newOTLPMetricExporter(ctx context.Context, cfg ExporterEntry) (sdkmetric.Ex
 	case ProtocolHTTPProtobuf, "":
 		opts, err := buildOTLPOptions(cfg, otlpOptions[otlpmetrichttp.Option]{
 			withEndpoint:    otlpmetrichttp.WithEndpoint,
-			withURLPath:     otlpmetrichttp.WithURLPath,
+			withEndpointURL: otlpmetrichttp.WithEndpointURL,
 			withInsecure:    otlpmetrichttp.WithInsecure,
 			withTimeout:     otlpmetrichttp.WithTimeout,
 			withHeaders:     otlpmetrichttp.WithHeaders,

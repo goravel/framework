@@ -4,7 +4,6 @@ import (
 	"cmp"
 	"crypto/tls"
 	"crypto/x509"
-	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -32,7 +31,7 @@ const CompressionGzip Compression = "gzip"
 
 type otlpOptions[T any] struct {
 	withEndpoint    func(string) T
-	withURLPath     func(string) T // nil when the protocol has no URL path (gRPC)
+	withEndpointURL func(string) T
 	withInsecure    func() T
 	withTimeout     func(time.Duration) T
 	withHeaders     func(map[string]string) T
@@ -44,13 +43,7 @@ type otlpOptions[T any] struct {
 func buildOTLPOptions[T any](cfg ExporterEntry, builders otlpOptions[T]) ([]T, error) {
 	var opts []T
 
-	if cfg.Endpoint != "" {
-		opts = append(opts, endpointOptions(cfg.Endpoint, builders)...)
-	}
-
-	if usesInsecureTransport(cfg) {
-		opts = append(opts, builders.withInsecure())
-	}
+	opts = append(opts, endpointOptions(cfg, builders)...)
 
 	opts = append(opts, builders.withTimeout(cmp.Or(cfg.Timeout, defaultOTLPTimeout)))
 
@@ -81,30 +74,21 @@ func buildOTLPOptions[T any](cfg ExporterEntry, builders otlpOptions[T]) ([]T, e
 	return opts, nil
 }
 
-// usesInsecureTransport reports whether the exporter connects over plaintext.
-// An explicit endpoint scheme wins over the insecure flag, per the OTLP spec:
-// https:// is always secure, http:// is always insecure, and a scheme-less
-// endpoint falls back to the flag.
-func usesInsecureTransport(cfg ExporterEntry) bool {
-	switch {
-	case strings.HasPrefix(cfg.Endpoint, "https://"):
-		return false
-	case strings.HasPrefix(cfg.Endpoint, "http://"):
-		return true
-	default:
-		return cfg.Insecure
-	}
-}
-
-func endpointOptions[T any](endpoint string, builders otlpOptions[T]) []T {
-	endpointURL, err := url.Parse(endpoint)
-	if err != nil || !strings.Contains(endpoint, "://") {
-		return []T{builders.withEndpoint(endpoint)}
+// endpointOptions delegates endpoint handling to the SDK. A scheme-bearing
+// endpoint goes through WithEndpointURL, which derives host, path, and the
+// insecure setting from the URL; a bare host uses WithEndpoint plus the
+// insecure flag.
+func endpointOptions[T any](cfg ExporterEntry, builders otlpOptions[T]) []T {
+	if strings.Contains(cfg.Endpoint, "://") {
+		return []T{builders.withEndpointURL(cfg.Endpoint)}
 	}
 
-	opts := []T{builders.withEndpoint(endpointURL.Host)}
-	if path := endpointURL.Path; path != "" && path != "/" && builders.withURLPath != nil {
-		opts = append(opts, builders.withURLPath(path))
+	var opts []T
+	if cfg.Endpoint != "" {
+		opts = append(opts, builders.withEndpoint(cfg.Endpoint))
+	}
+	if cfg.Insecure {
+		opts = append(opts, builders.withInsecure())
 	}
 
 	return opts
@@ -114,10 +98,6 @@ func newTLSConfig(cfg ExporterEntry) (*tls.Config, error) {
 	tlsCfg := cfg.TLS
 	if tlsCfg.CA == "" && tlsCfg.Cert == "" && tlsCfg.Key == "" {
 		return nil, nil
-	}
-
-	if usesInsecureTransport(cfg) {
-		return nil, errors.TelemetryTLSConflictsWithInsecure
 	}
 
 	if (tlsCfg.Cert == "") != (tlsCfg.Key == "") {
