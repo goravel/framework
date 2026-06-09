@@ -113,6 +113,10 @@ func (r *PackageUninstallCommand) uninstallPackage(ctx console.Context, pkg stri
 	if ctx.OptionBool("force") {
 		uninstallCmd = append(uninstallCmd, "--force")
 	}
+	if err := tidyGoMod(r.process); err != nil {
+		ctx.Error(err.Error())
+		return nil
+	}
 
 	if res := r.process.WithSpinner("Uninstalling "+pkg).Run(uninstallCmd[0], uninstallCmd[1:]...); res.Failed() {
 		ctx.Error(fmt.Sprintf("failed to uninstall package: %s", res.Error().Error()))
@@ -120,8 +124,8 @@ func (r *PackageUninstallCommand) uninstallPackage(ctx console.Context, pkg stri
 	}
 
 	// tidy go.mod file
-	if res := r.process.Run("go", "mod", "tidy"); res.Failed() {
-		ctx.Error(fmt.Sprintf("failed to tidy go.mod file: %s", res.Error().Error()))
+	if err := tidyGoMod(r.process); err != nil {
+		ctx.Error(err.Error())
 		return nil
 	}
 
@@ -172,8 +176,8 @@ func (r *PackageUninstallCommand) uninstallFacade(ctx console.Context, name stri
 
 	ctx.Success(fmt.Sprintf("Facade %s uninstalled successfully", facade))
 
-	if res := r.process.Run("go", "mod", "tidy"); res.Failed() {
-		ctx.Error(fmt.Sprintf("failed to tidy go.mod file: %s", res.Error().Error()))
+	if err := tidyGoMod(r.process); err != nil {
+		ctx.Error(err.Error())
 		return nil
 	}
 

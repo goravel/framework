@@ -188,6 +188,9 @@ func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) 
 	if res := r.process.Run("go", "get", pkg); res.Failed() {
 		return fmt.Errorf("failed to get package: %s", res.Error().Error())
 	}
+	if err := tidyGoMod(r.process); err != nil {
+		return err
+	}
 
 	// install package
 	if res := r.process.WithSpinner("Installing "+pkg).Run("go", "run", setup, "install", "--main-path="+env.MainPath(), "--paths="+r.paths); res.Failed() {
@@ -195,8 +198,8 @@ func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) 
 	}
 
 	// tidy go.mod file
-	if res := r.process.Run("go", "mod", "tidy"); res.Failed() {
-		return fmt.Errorf("failed to tidy go.mod file: %s", res.Error().Error())
+	if err := tidyGoMod(r.process); err != nil {
+		return err
 	}
 
 	ctx.Success(fmt.Sprintf("Package %s installed successfully", pkg))
@@ -246,7 +249,15 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 		}
 	}
 
-	if res := r.process.Run("go", "mod", "tidy"); res.Failed() {
+	if err := tidyGoMod(r.process); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func tidyGoMod(process process.Process) error {
+	if res := process.Run("go", "mod", "tidy"); res.Failed() {
 		return fmt.Errorf("failed to tidy go.mod file: %s", res.Error().Error())
 	}
 
