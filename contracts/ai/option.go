@@ -1,8 +1,6 @@
 package ai
 
 type Options struct {
-	// Provider is the primary provider selected for the request.
-	Provider string
 	// ProviderChain is the ordered primary and failover provider list.
 	ProviderChain []string
 	// Model overrides the selected provider's default model.
