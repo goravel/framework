@@ -2,10 +2,12 @@ package telemetry
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	otellog "go.opentelemetry.io/otel/log"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 
 	"github.com/goravel/framework/errors"
@@ -32,11 +34,8 @@ func TestNewLoggerProvider(t *testing.T) {
 			name: "Success: Console Driver",
 			config: Config{
 				Logs: LogsConfig{
-					Exporter: "console",
-					Processor: LogsProcessorConfig{
-						Interval: 5000 * time.Millisecond,
-						Timeout:  2000 * time.Millisecond,
-					},
+					Exporter:  "console",
+					Processor: ProcessorConfig{Type: ProcessorBatch},
 				},
 				Exporters: map[string]ExporterEntry{
 					"console": {Driver: LogExporterDriverConsole, PrettyPrint: true},
@@ -141,6 +140,86 @@ func TestNewLoggerProvider(t *testing.T) {
 			},
 			expectError: errors.TelemetryLogViaTypeMismatch.Args("string"),
 		},
+		{
+			name: "Error: Unsupported Protocol",
+			config: Config{
+				Logs: LogsConfig{Exporter: "otlp"},
+				Exporters: map[string]ExporterEntry{
+					"otlp": {
+						Driver:   LogExporterDriverOTLP,
+						Endpoint: "localhost:4318",
+						Protocol: "http/json",
+					},
+				},
+			},
+			expectError: errors.TelemetryUnsupportedProtocol.Args("http/json"),
+		},
+		{
+			name: "Success: OTLP Endpoint With URL Path",
+			config: Config{
+				Logs: LogsConfig{Exporter: "otlp"},
+				Exporters: map[string]ExporterEntry{
+					"otlp": {
+						Driver:   LogExporterDriverOTLP,
+						Endpoint: "https://collector.example.com/otel",
+					},
+				},
+			},
+		},
+		{
+			name: "Success: OTLP With Compression And Retry",
+			config: Config{
+				Logs: LogsConfig{Exporter: "otlp"},
+				Exporters: map[string]ExporterEntry{
+					"otlp": {
+						Driver:      LogExporterDriverOTLP,
+						Endpoint:    "localhost:4318",
+						Insecure:    true,
+						Compression: "gzip",
+						Retry:       RetryConfig{MaxElapsedTime: 10 * time.Second},
+					},
+				},
+			},
+		},
+		{
+			name: "Error: Unsupported Compression",
+			config: Config{
+				Logs: LogsConfig{Exporter: "otlp"},
+				Exporters: map[string]ExporterEntry{
+					"otlp": {
+						Driver:      LogExporterDriverOTLP,
+						Endpoint:    "localhost:4318",
+						Compression: "zstd",
+					},
+				},
+			},
+			expectError: errors.TelemetryUnsupportedCompression.Args("zstd"),
+		},
+		{
+			name: "Error: TLS Conflicts With Insecure",
+			config: Config{
+				Logs: LogsConfig{Exporter: "otlp"},
+				Exporters: map[string]ExporterEntry{
+					"otlp": {
+						Driver:   LogExporterDriverOTLP,
+						Endpoint: "localhost:4318",
+						Insecure: true,
+						TLS:      TLSConfig{CA: "/tmp/ca.pem"},
+					},
+				},
+			},
+			expectError: errors.TelemetryTLSConflictsWithInsecure,
+		},
+		{
+			name: "Error: Unsupported Processor",
+			config: Config{
+				Logs: LogsConfig{Exporter: "console", Processor: ProcessorConfig{Type: "alien"}},
+				Exporters: map[string]ExporterEntry{
+					"console": {Driver: LogExporterDriverConsole},
+				},
+			},
+			expectError: errors.TelemetryUnsupportedProcessor.Args("alien"),
+		},
 	}
 
 	for _, tt := range tests {
@@ -187,6 +266,27 @@ func TestNewOTLPLogExporter(t *testing.T) {
 				Protocol: ProtocolGRPC,
 				Endpoint: "localhost:4317",
 				Insecure: true,
+			},
+		},
+		{
+			name: "HTTP With Compression Retry And TLS",
+			cfg: ExporterEntry{
+				Driver:      LogExporterDriverOTLP,
+				Endpoint:    "https://otel.com",
+				Compression: "gzip",
+				TLS:         TLSConfig{CA: testCAFile(t)},
+				Retry:       RetryConfig{MaxElapsedTime: 5 * time.Second},
+			},
+		},
+		{
+			name: "GRPC With Compression Retry And TLS",
+			cfg: ExporterEntry{
+				Driver:      LogExporterDriverOTLP,
+				Endpoint:    "otel.com:4317",
+				Protocol:    ProtocolGRPC,
+				Compression: "gzip",
+				TLS:         TLSConfig{CA: testCAFile(t)},
+				Retry:       RetryConfig{MaxElapsedTime: 5 * time.Second},
 			},
 		},
 		{
@@ -252,4 +352,67 @@ func (m *MockLogExporter) Shutdown(ctx context.Context) error {
 
 func (m *MockLogExporter) ForceFlush(ctx context.Context) error {
 	return nil
+}
+
+type recordingLogExporter struct {
+	mu      sync.Mutex
+	records []sdklog.Record
+}
+
+func (r *recordingLogExporter) Export(ctx context.Context, records []sdklog.Record) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.records = append(r.records, records...)
+	return nil
+}
+
+func (r *recordingLogExporter) Shutdown(ctx context.Context) error   { return nil }
+func (r *recordingLogExporter) ForceFlush(ctx context.Context) error { return nil }
+
+func (r *recordingLogExporter) count() int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return len(r.records)
+}
+
+func TestNewLoggerProvider_ProcessorTypes(t *testing.T) {
+	ctx := context.Background()
+
+	newConfig := func(exporter sdklog.Exporter, processor ProcessorConfig) Config {
+		return Config{
+			Logs: LogsConfig{Exporter: "custom", Processor: processor},
+			Exporters: map[string]ExporterEntry{
+				"custom": {Driver: LogExporterDriverCustom, Via: exporter},
+			},
+		}
+	}
+
+	emit := func(provider otellog.LoggerProvider) {
+		var record otellog.Record
+		record.SetBody(otellog.StringValue("message"))
+		provider.Logger("test").Emit(ctx, record)
+	}
+
+	t.Run("simple exports on emit", func(t *testing.T) {
+		exporter := &recordingLogExporter{}
+		provider, shutdown, _, err := NewLoggerProvider(ctx, newConfig(exporter, ProcessorConfig{Type: ProcessorSimple}))
+		assert.NoError(t, err)
+
+		emit(provider)
+
+		assert.Equal(t, 1, exporter.count())
+		assert.NoError(t, shutdown(ctx))
+	})
+
+	t.Run("batch defers export until shutdown", func(t *testing.T) {
+		exporter := &recordingLogExporter{}
+		provider, shutdown, _, err := NewLoggerProvider(ctx, newConfig(exporter, ProcessorConfig{Type: ProcessorBatch, Interval: time.Hour}))
+		assert.NoError(t, err)
+
+		emit(provider)
+
+		assert.Equal(t, 0, exporter.count())
+		assert.NoError(t, shutdown(ctx))
+		assert.Equal(t, 1, exporter.count())
+	})
 }

@@ -2,8 +2,10 @@ package telemetry
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"os"
+	"time"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -12,6 +14,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	oteltrace "go.opentelemetry.io/otel/trace"
 	"go.opentelemetry.io/otel/trace/noop"
+	"google.golang.org/grpc/credentials"
 
 	"github.com/goravel/framework/errors"
 )
@@ -22,6 +25,11 @@ const (
 	TraceExporterDriverCustom  ExporterDriver = "custom"
 	TraceExporterDriverOTLP    ExporterDriver = "otlp"
 	TraceExporterDriverConsole ExporterDriver = "console"
+)
+
+const (
+	defaultTraceExportInterval = 5 * time.Second
+	defaultTraceExportTimeout  = 30 * time.Second
 )
 
 func NewTracerProvider(ctx context.Context, cfg Config, opts ...sdktrace.TracerProviderOption) (oteltrace.TracerProvider, ShutdownFunc, FlushFunc, error) {
@@ -44,8 +52,13 @@ func NewTracerProvider(ctx context.Context, cfg Config, opts ...sdktrace.TracerP
 		return nil, NoopShutdown(), NoopFlush(), err
 	}
 
+	processorOption, err := newTraceProcessorOption(exporter, cfg.Traces.Processor)
+	if err != nil {
+		return nil, NoopShutdown(), NoopFlush(), err
+	}
+
 	providerOptions := []sdktrace.TracerProviderOption{
-		sdktrace.WithBatcher(exporter),
+		processorOption,
 		sdktrace.WithSampler(newTraceSampler(cfg.Traces.Sampler)),
 	}
 	providerOptions = append(providerOptions, opts...)
@@ -54,6 +67,28 @@ func NewTracerProvider(ctx context.Context, cfg Config, opts ...sdktrace.TracerP
 	otel.SetTracerProvider(tp)
 
 	return tp, tp.Shutdown, tp.ForceFlush, nil
+}
+
+func newTraceProcessorOption(exporter sdktrace.SpanExporter, cfg ProcessorConfig) (sdktrace.TracerProviderOption, error) {
+	switch cfg.Type {
+	case ProcessorSimple:
+		return sdktrace.WithSyncer(exporter), nil
+	case ProcessorBatch, "":
+		interval := cfg.Interval
+		if interval == 0 {
+			interval = defaultTraceExportInterval
+		}
+		timeout := cfg.Timeout
+		if timeout == 0 {
+			timeout = defaultTraceExportTimeout
+		}
+		return sdktrace.WithBatcher(exporter,
+			sdktrace.WithBatchTimeout(interval),
+			sdktrace.WithExportTimeout(timeout),
+		), nil
+	default:
+		return nil, errors.TelemetryUnsupportedProcessor.Args(cfg.Type)
+	}
 }
 
 func newTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.SpanExporter, error) {
@@ -82,28 +117,55 @@ func newTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.SpanExpo
 }
 
 func newOTLPTraceExporter(ctx context.Context, cfg ExporterEntry) (sdktrace.SpanExporter, error) {
-	protocol := cfg.Protocol
-	if protocol == "" {
-		protocol = ProtocolHTTPProtobuf
-	}
-
-	switch protocol {
+	switch cfg.Protocol {
 	case ProtocolGRPC:
-		opts := buildOTLPOptions(cfg,
-			otlptracegrpc.WithEndpoint,
-			otlptracegrpc.WithInsecure,
-			otlptracegrpc.WithTimeout,
-			otlptracegrpc.WithHeaders,
-		)
+		opts, err := buildOTLPOptions(cfg, otlpOptions[otlptracegrpc.Option]{
+			withEndpoint:    otlptracegrpc.WithEndpoint,
+			withEndpointURL: otlptracegrpc.WithEndpointURL,
+			withInsecure:    otlptracegrpc.WithInsecure,
+			withTimeout:     otlptracegrpc.WithTimeout,
+			withHeaders:     otlptracegrpc.WithHeaders,
+			withCompression: func() otlptracegrpc.Option { return otlptracegrpc.WithCompressor(string(CompressionGzip)) },
+			withTLS: func(config *tls.Config) otlptracegrpc.Option {
+				return otlptracegrpc.WithTLSCredentials(credentials.NewTLS(config))
+			},
+			withRetry: func(retry RetryConfig) otlptracegrpc.Option {
+				return otlptracegrpc.WithRetry(otlptracegrpc.RetryConfig{
+					Enabled:         retry.IsEnabled(),
+					InitialInterval: retry.InitialInterval,
+					MaxInterval:     retry.MaxInterval,
+					MaxElapsedTime:  retry.MaxElapsedTime,
+				})
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
 		return otlptracegrpc.New(ctx, opts...)
-	default:
-		opts := buildOTLPOptions(cfg,
-			otlptracehttp.WithEndpoint,
-			otlptracehttp.WithInsecure,
-			otlptracehttp.WithTimeout,
-			otlptracehttp.WithHeaders,
-		)
+	case ProtocolHTTPProtobuf, "":
+		opts, err := buildOTLPOptions(cfg, otlpOptions[otlptracehttp.Option]{
+			withEndpoint:    otlptracehttp.WithEndpoint,
+			withEndpointURL: otlptracehttp.WithEndpointURL,
+			withInsecure:    otlptracehttp.WithInsecure,
+			withTimeout:     otlptracehttp.WithTimeout,
+			withHeaders:     otlptracehttp.WithHeaders,
+			withCompression: func() otlptracehttp.Option { return otlptracehttp.WithCompression(otlptracehttp.GzipCompression) },
+			withTLS:         otlptracehttp.WithTLSClientConfig,
+			withRetry: func(retry RetryConfig) otlptracehttp.Option {
+				return otlptracehttp.WithRetry(otlptracehttp.RetryConfig{
+					Enabled:         retry.IsEnabled(),
+					InitialInterval: retry.InitialInterval,
+					MaxInterval:     retry.MaxInterval,
+					MaxElapsedTime:  retry.MaxElapsedTime,
+				})
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
 		return otlptracehttp.New(ctx, opts...)
+	default:
+		return nil, errors.TelemetryUnsupportedProtocol.Args(string(cfg.Protocol))
 	}
 }
 
