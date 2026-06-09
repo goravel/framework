@@ -113,7 +113,7 @@ func (r *PackageUninstallCommand) uninstallPackage(ctx console.Context, pkg stri
 	if ctx.OptionBool("force") {
 		uninstallCmd = append(uninstallCmd, "--force")
 	}
-	if err := tidyGoMod(r.process); err != nil {
+	if err := downloadGoMod(r.process); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}

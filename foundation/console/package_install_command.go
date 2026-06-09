@@ -188,7 +188,7 @@ func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) 
 	if res := r.process.Run("go", "get", pkg); res.Failed() {
 		return fmt.Errorf("failed to get package: %s", res.Error().Error())
 	}
-	if err := tidyGoMod(r.process); err != nil {
+	if err := downloadGoMod(r.process); err != nil {
 		return err
 	}
 
@@ -259,6 +259,14 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 func tidyGoMod(process process.Process) error {
 	if res := process.Run("go", "mod", "tidy"); res.Failed() {
 		return fmt.Errorf("failed to tidy go.mod file: %s", res.Error().Error())
+	}
+
+	return nil
+}
+
+func downloadGoMod(process process.Process) error {
+	if res := process.Run("go", "mod", "download", "all"); res.Failed() {
+		return errors.PackageGoModDownloadFailed.Args(res.Error().Error())
 	}
 
 	return nil

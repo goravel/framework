@@ -81,7 +81,7 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 			setup: func() {
 				s.mockContext.EXPECT().Arguments().Return([]string{pkg}).Once()
 				s.mockContext.EXPECT().OptionBool("force").Return(false).Once()
-				s.mockProcess.EXPECT().Run("go", "mod", "tidy").Return(mockSuccessResult(s.T())).Once()
+				s.mockProcess.EXPECT().Run("go", "mod", "download", "all").Return(mockSuccessResult(s.T())).Once()
 				failedResult := mockFailedResult(s.T(), assert.AnError)
 				s.mockProcess.EXPECT().Run("go", "run", pkg+"/setup", "uninstall", "--main-path=github.com/goravel/framework", "--paths="+pathsJSON).Return(failedResult).Once()
 				s.mockProcess.EXPECT().WithSpinner("Uninstalling " + pkg).Return(s.mockProcess).Once()
@@ -94,7 +94,7 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 				s.T().Setenv("GO111MODULE", "off")
 				s.mockContext.EXPECT().Arguments().Return([]string{pkg}).Once()
 				s.mockContext.EXPECT().OptionBool("force").Return(true).Once()
-				s.mockProcess.EXPECT().Run("go", "mod", "tidy").Return(mockSuccessResult(s.T())).Once()
+				s.mockProcess.EXPECT().Run("go", "mod", "download", "all").Return(mockSuccessResult(s.T())).Once()
 				s.mockProcess.EXPECT().Run("go", "run", pkg+"/setup", "uninstall", "--main-path=github.com/goravel/framework", "--paths="+pathsJSON, "--force").Return(mockSuccessResult(s.T())).Once()
 				s.mockProcess.EXPECT().WithSpinner("Uninstalling " + pkg).Return(s.mockProcess).Once()
 				failedResult := mockFailedResult(s.T(), assert.AnError)
@@ -107,7 +107,7 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 			setup: func() {
 				s.mockContext.EXPECT().Arguments().Return([]string{pkg}).Once()
 				s.mockContext.EXPECT().OptionBool("force").Return(true).Once()
-				s.mockProcess.EXPECT().Run("go", "mod", "tidy").Return(mockSuccessResult(s.T())).Once()
+				s.mockProcess.EXPECT().Run("go", "mod", "download", "all").Return(mockSuccessResult(s.T())).Once()
 				s.mockProcess.EXPECT().Run("go", "run", pkg+"/setup", "uninstall", "--main-path=github.com/goravel/framework", "--paths="+pathsJSON, "--force").Return(mockSuccessResult(s.T())).Once()
 				s.mockProcess.EXPECT().WithSpinner("Uninstalling " + pkg).Return(s.mockProcess).Once()
 				s.mockProcess.EXPECT().Run("go", "mod", "tidy").Return(mockSuccessResult(s.T())).Once()
@@ -176,7 +176,7 @@ func (s *PackageUninstallCommandTestSuite) TestHandle() {
 				s.mockContext.EXPECT().Arguments().Return([]string{pkg, facade}).Once()
 
 				s.mockContext.EXPECT().OptionBool("force").Return(true).Once()
-				s.mockProcess.EXPECT().Run("go", "mod", "tidy").Return(mockSuccessResult(s.T())).Once()
+				s.mockProcess.EXPECT().Run("go", "mod", "download", "all").Return(mockSuccessResult(s.T())).Once()
 				s.mockProcess.EXPECT().Run("go", "run", pkg+"/setup", "uninstall", "--main-path=github.com/goravel/framework", "--paths="+pathsJSON, "--force").Return(mockSuccessResult(s.T())).Once()
 				s.mockProcess.EXPECT().WithSpinner("Uninstalling " + pkg).Return(s.mockProcess).Once()
 				s.mockProcess.EXPECT().Run("go", "mod", "tidy").Return(mockSuccessResult(s.T())).Once()
