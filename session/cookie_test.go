@@ -16,6 +16,10 @@ func TestWriteCookie(t *testing.T) {
 	defer carbon.ClearTestNow()
 
 	mockConfig := mocksconfig.NewConfig(t)
+	originConfigFacade := ConfigFacade
+	t.Cleanup(func() {
+		ConfigFacade = originConfigFacade
+	})
 	mockConfig.EXPECT().GetInt("session.lifetime", 120).Return(120).Once()
 	mockConfig.EXPECT().GetString("session.path").Return("/").Once()
 	mockConfig.EXPECT().GetString("session.domain").Return("example.com").Once()

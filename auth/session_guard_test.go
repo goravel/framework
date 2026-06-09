@@ -59,7 +59,12 @@ func (s *SessionGuardTestSuite) SetupTest() {
 
 	cacheFacade = s.mockCache
 	configFacade = s.mockConfig
+
+	originConfigFacade := session.ConfigFacade
 	session.ConfigFacade = s.mockConfig
+	s.T().Cleanup(func() {
+		session.ConfigFacade = originConfigFacade
+	})
 
 	sessionGuard, err := NewSessionGuard(s.mockContext, testUserGuard, s.mockUserProvider)
 	s.Require().Nil(err)
