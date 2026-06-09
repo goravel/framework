@@ -163,6 +163,14 @@ func TestBuildOTLPOptions(t *testing.T) {
 			expectError: errors.TelemetryUnsupportedCompression.Args("zstd"),
 		},
 		{
+			name: "TLS Conflicts With Insecure",
+			cfg: ExporterEntry{
+				Insecure: true,
+				TLS:      TLSConfig{CA: caFile},
+			},
+			expectError: errors.TelemetryTLSConflictsWithInsecure,
+		},
+		{
 			name: "HTTPS Scheme Takes Precedence Over Insecure",
 			cfg: ExporterEntry{
 				Endpoint: "https://otel.com",
@@ -230,9 +238,9 @@ func TestNewTLSConfig(t *testing.T) {
 			expectCerts: 1,
 		},
 		{
-			name:     "Loads CA regardless of insecure or scheme (SDK resolves precedence)",
-			entry:    ExporterEntry{Insecure: true, TLS: TLSConfig{CA: caFile}},
-			expectCA: true,
+			name:        "Conflicts with insecure",
+			entry:       ExporterEntry{Insecure: true, TLS: TLSConfig{CA: caFile}},
+			expectError: errors.TelemetryTLSConflictsWithInsecure,
 		},
 		{
 			name:        "Cert without key",

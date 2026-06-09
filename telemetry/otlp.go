@@ -100,6 +100,10 @@ func newTLSConfig(cfg ExporterEntry) (*tls.Config, error) {
 		return nil, nil
 	}
 
+	if cfg.Insecure {
+		return nil, errors.TelemetryTLSConflictsWithInsecure
+	}
+
 	if (tlsCfg.Cert == "") != (tlsCfg.Key == "") {
 		return nil, errors.TelemetryTLSClientCertIncomplete
 	}
