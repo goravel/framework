@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"sync"
+
 	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/log"
@@ -8,10 +10,11 @@ import (
 
 type Application struct {
 	cache.Driver
-	config config.Config
-	log    log.Log
-	driver *Driver
-	stores map[string]cache.Driver
+	config   config.Config
+	log      log.Log
+	driver   *Driver
+	storesMu sync.RWMutex
+	stores   map[string]cache.Driver
 }
 
 func NewApplication(config config.Config, log log.Log, store string) (*Application, error) {
@@ -33,6 +36,16 @@ func NewApplication(config config.Config, log log.Log, store string) (*Applicati
 }
 
 func (app *Application) Store(name string) cache.Driver {
+	app.storesMu.RLock()
+	if driver, exist := app.stores[name]; exist {
+		app.storesMu.RUnlock()
+		return driver
+	}
+	app.storesMu.RUnlock()
+
+	app.storesMu.Lock()
+	defer app.storesMu.Unlock()
+
 	if driver, exist := app.stores[name]; exist {
 		return driver
 	}

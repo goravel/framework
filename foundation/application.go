@@ -728,9 +728,12 @@ func (r *Application) defaultCommands() []contractsconsole.Command {
 	storage := r.MakeStorage()
 	view := r.MakeView()
 	hash := r.MakeHash()
+	cache := r.MakeCache()
+	config := r.MakeConfig()
 
 	if storage != nil && view != nil && hash != nil {
-		commands = append(commands, console.NewUpCommand(storage), console.NewDownCommand(view, hash, storage))
+		maintenance := console.NewMaintenanceMode(config, cache, storage)
+		commands = append(commands, console.NewUpCommand(maintenance), console.NewDownCommand(view, hash, maintenance))
 	}
 
 	return commands

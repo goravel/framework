@@ -6,6 +6,7 @@ var (
 	ConfigFacadeNotSet      = New("config facade is not initialized")
 	ConsoleFacadeNotSet     = New("console facade is not initialized, skipping artisan command execution")
 	DBFacadeNotSet          = New("db facade is not initialized")
+	HashFacadeNotSet        = New("hash facade is not initialized")
 	HttpFacadeNotSet        = New("http facade is not initialized")
 	JSONParserNotSet        = New("JSON parser is not initialized")
 	LogFacadeNotSet         = New("log facade is not initialized")
@@ -160,7 +161,11 @@ var (
 	MailTemplateEngineViaInvalid    = New("invalid via type for template engine '%s'").SetModule(ModuleMail)
 	MailTemplateEngineFactoryFailed = New("factory for template engine '%s' failed: %w").SetModule(ModuleMail)
 
-	MiddlewareRegisterFailed = New("failed to register middleware '%s': %v")
+	MiddlewareRegisterFailed      = New("failed to register middleware '%s': %v")
+	MaintenanceCacheDeleteFailed  = New("failed to delete maintenance mode from cache")
+	MaintenanceCachePutFailed     = New("failed to put application into maintenance mode using cache")
+	MaintenanceCacheStoreNotFound = New("maintenance cache store %s is not initialized")
+	MaintenanceDriverNotSupported = New("invalid maintenance driver: %s, only support file, cache")
 
 	MigrationCreateFailed    = New("create migration failed: %v")
 	MigrationFreshFailed     = New("migration fresh failed: %v")

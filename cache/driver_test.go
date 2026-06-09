@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -102,6 +103,46 @@ func (s *DriverTestSuite) TestStore() {
 	s.Equal("", custom.GetString("hello"))
 
 	s.Equal("goravel", memory.GetString("hello"))
+
+	s.mockConfig.AssertExpectations(s.T())
+}
+
+func (s *DriverTestSuite) TestStoreConcurrent() {
+	s.mockConfig.On("GetString", "cache.stores.memory.driver").Return("memory").Once()
+	s.mockConfig.On("GetString", "cache.prefix").Return("goravel_cache").Once()
+
+	memory, err := NewApplication(s.mockConfig, s.mockLog, "memory")
+	s.NotNil(memory)
+	s.Nil(err)
+
+	s.mockConfig.On("GetString", "cache.stores.custom.driver").Return("custom").Once()
+	s.mockConfig.On("Get", "cache.stores.custom.via").Return(&Store{}).Once()
+
+	const goroutines = 10
+	stores := make([]cache.Driver, goroutines)
+	start := make(chan struct{})
+	var waitGroup sync.WaitGroup
+	for i := 0; i < goroutines; i++ {
+		waitGroup.Add(1)
+		index := i
+		go func() {
+			defer waitGroup.Done()
+			<-start
+			stores[index] = memory.Store("custom")
+		}()
+	}
+	close(start)
+	waitGroup.Wait()
+
+	var first cache.Driver
+	for _, store := range stores {
+		s.NotNil(store)
+		if first == nil {
+			first = store
+			continue
+		}
+		s.Same(first, store)
+	}
 
 	s.mockConfig.AssertExpectations(s.T())
 }
