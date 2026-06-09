@@ -17,8 +17,6 @@ import (
 	telemetrylog "github.com/goravel/framework/telemetry/instrumentation/log"
 )
 
-var channelToHandlers sync.Map
-
 type Application struct {
 	log.Writer
 	ctx               context.Context
@@ -26,9 +24,18 @@ type Application struct {
 	config            config.Config
 	json              foundation.Json
 	telemetryResolver contractstelemetry.Resolver
+	handlerCache      *sync.Map
 }
 
 func NewApplication(ctx context.Context, channels []string, config config.Config, json foundation.Json, resolver contractstelemetry.Resolver) (*Application, error) {
+	return newApplication(ctx, channels, config, json, resolver, &sync.Map{})
+}
+
+// newApplication shares handlerCache between an Application and the instances
+// derived from it via WithContext, Channel, and Stack. Cached handlers hold
+// loggers from the telemetry providers that existed when they were built, so
+// the cache must not outlive the container that created the root Application.
+func newApplication(ctx context.Context, channels []string, config config.Config, json foundation.Json, resolver contractstelemetry.Resolver, handlerCache *sync.Map) (*Application, error) {
 	var handlers []slog.Handler
 
 	if len(channels) == 0 && config != nil {
@@ -38,7 +45,7 @@ func NewApplication(ctx context.Context, channels []string, config config.Config
 	}
 
 	for _, channel := range channels {
-		channelHandlers, err := getHandlers(config, json, resolver, channel)
+		channelHandlers, err := getHandlers(handlerCache, config, json, resolver, channel)
 		if err != nil {
 			return nil, err
 		}
@@ -54,6 +61,7 @@ func NewApplication(ctx context.Context, channels []string, config config.Config
 		config:            config,
 		json:              json,
 		telemetryResolver: resolver,
+		handlerCache:      handlerCache,
 		Writer:            NewWriter(ctx, slogLogger),
 	}, nil
 }
@@ -63,7 +71,7 @@ func (r *Application) WithContext(ctx context.Context) log.Log {
 		ctx = httpCtx.Context()
 	}
 
-	app, err := NewApplication(ctx, r.channels, r.config, r.json, r.telemetryResolver)
+	app, err := newApplication(ctx, r.channels, r.config, r.json, r.telemetryResolver, r.handlerCache)
 	if err != nil {
 		r.Error(err)
 
@@ -78,7 +86,7 @@ func (r *Application) Channel(channel string) log.Log {
 		return r
 	}
 
-	app, err := NewApplication(r.ctx, []string{channel}, r.config, r.json, r.telemetryResolver)
+	app, err := newApplication(r.ctx, []string{channel}, r.config, r.json, r.telemetryResolver, r.handlerCache)
 	if err != nil {
 		r.Error(err)
 
@@ -93,7 +101,7 @@ func (r *Application) Stack(channels []string) log.Log {
 		return r
 	}
 
-	app, err := NewApplication(r.ctx, channels, r.config, r.json, r.telemetryResolver)
+	app, err := newApplication(r.ctx, channels, r.config, r.json, r.telemetryResolver, r.handlerCache)
 	if err != nil {
 		r.Error(err)
 
@@ -104,9 +112,9 @@ func (r *Application) Stack(channels []string) log.Log {
 }
 
 // getHandlers returns slog log handlers for the specified channel.
-func getHandlers(config config.Config, json foundation.Json, telemetryResolver contractstelemetry.Resolver, channel string) ([]slog.Handler, error) {
+func getHandlers(handlerCache *sync.Map, config config.Config, json foundation.Json, telemetryResolver contractstelemetry.Resolver, channel string) ([]slog.Handler, error) {
 	var handlers []slog.Handler
-	handlersAny, ok := channelToHandlers.Load(channel)
+	handlersAny, ok := handlerCache.Load(channel)
 	if ok {
 		return handlersAny.([]slog.Handler), nil
 	}
@@ -126,7 +134,7 @@ func getHandlers(config config.Config, json foundation.Json, telemetryResolver c
 				return nil, errors.LogDriverCircularReference.Args("stack")
 			}
 
-			channelHandlers, err := getHandlers(config, json, telemetryResolver, stackChannel)
+			channelHandlers, err := getHandlers(handlerCache, config, json, telemetryResolver, stackChannel)
 			if err != nil {
 				return nil, err
 			}
@@ -186,7 +194,7 @@ func getHandlers(config config.Config, json foundation.Json, telemetryResolver c
 		return nil, errors.LogDriverNotSupported.Args(channel)
 	}
 
-	channelToHandlers.Store(channel, handlers)
+	handlerCache.Store(channel, handlers)
 
 	return handlers, nil
 }
