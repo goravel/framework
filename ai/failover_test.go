@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	contractsai "github.com/goravel/framework/contracts/ai"
+	"github.com/goravel/framework/errors"
 )
 
 type FailoverTestSuite struct {
@@ -20,14 +21,26 @@ func TestFailoverTestSuite(t *testing.T) {
 
 func (s *FailoverTestSuite) TestFailoverError() {
 	cause := assert.AnError
-	err := NewFailoverError("openai", contractsai.FailoverReasonRateLimited, cause)
+	err := NewFailoverError("openai", contractsai.FailoverReason("rate_limited"), cause)
 
 	var failoverErr contractsai.FailoverError
 	s.Require().ErrorAs(err, &failoverErr)
-	s.Equal(contractsai.FailoverReasonRateLimited, failoverErr.Reason())
+	s.Equal(contractsai.FailoverReason("rate_limited"), failoverErr.Reason())
 	s.Equal("openai", failoverErr.Provider())
 	s.ErrorIs(err, cause)
-	s.Equal("ai: provider openai was rate limited", err.Error())
+	s.Equal("ai: provider openai failed over because rate_limited", err.Error())
+}
+
+func (s *FailoverTestSuite) TestFailoverErrorCustomReason() {
+	cause := aiTestError("maximum context length exceeded")
+	err := NewFailoverError("openai", contractsai.FailoverReason("context_length_exceeded"), cause)
+
+	var failoverErr contractsai.FailoverError
+	s.Require().ErrorAs(err, &failoverErr)
+	s.Equal(contractsai.FailoverReason("context_length_exceeded"), failoverErr.Reason())
+	s.Equal("openai", failoverErr.Provider())
+	s.ErrorIs(err, cause)
+	s.Equal("ai: provider openai failed over because context_length_exceeded", err.Error())
 }
 
 func (s *FailoverTestSuite) TestNewFailoverProvider() {
@@ -49,7 +62,7 @@ func (s *FailoverTestSuite) TestNewFailoverProvider() {
 }
 
 func (s *FailoverTestSuite) TestStreamSuppressesPendingFailoverError() {
-	failoverErr := NewFailoverError("primary", contractsai.FailoverReasonRateLimited, assert.AnError)
+	failoverErr := NewFailoverError("primary", contractsai.FailoverReason("rate_limited"), assert.AnError)
 	primaryProvider := &failoverTestProvider{
 		streamEvents: []contractsai.StreamEvent{{Type: contractsai.StreamEventTypeError, Error: "rate limited"}},
 		streamErr:    failoverErr,
@@ -119,6 +132,43 @@ func (s *FailoverTestSuite) TestScopedProviderState() {
 	s.Nil(state.Get("openai:response_id"))
 }
 
+func (s *FailoverTestSuite) TestFailoverRulesMatchSubstringAndRegex() {
+	failoverRules, err := NewFailoverRules("openai", map[contractsai.FailoverReason][]string{
+		"context_length_exceeded": {"context length"},
+		"model_overloaded":        {"/(?i)model.*overloaded/"},
+	})
+	s.Require().NoError(err)
+
+	contextErr := aiTestError("maximum context length exceeded")
+	reason, ok := failoverRules.Match(contextErr)
+	s.True(ok)
+	s.Equal(contractsai.FailoverReason("context_length_exceeded"), reason)
+
+	err = failoverRules.Wrap("openai", contextErr)
+	var failoverErr contractsai.FailoverError
+	s.Require().ErrorAs(err, &failoverErr)
+	s.Equal(contractsai.FailoverReason("context_length_exceeded"), failoverErr.Reason())
+	s.ErrorIs(err, contextErr)
+
+	overloadedErr := aiTestError("the MODEL is overloaded")
+	reason, ok = failoverRules.Match(overloadedErr)
+	s.True(ok)
+	s.Equal(contractsai.FailoverReason("model_overloaded"), reason)
+
+	err = failoverRules.Wrap("openai", overloadedErr)
+	s.Require().ErrorAs(err, &failoverErr)
+	s.Equal(contractsai.FailoverReason("model_overloaded"), failoverErr.Reason())
+	s.ErrorIs(err, overloadedErr)
+}
+
+func (s *FailoverTestSuite) TestFailoverRulesReturnErrorForInvalidRegex() {
+	_, err := NewFailoverRules("openai", map[contractsai.FailoverReason][]string{
+		"bad_pattern": {"/[/"},
+	})
+
+	s.ErrorIs(err, errors.AIFailoverPatternInvalid)
+}
+
 type failoverTestProvider struct {
 	promptResp   contractsai.AgentResponse
 	promptErr    error
@@ -148,6 +198,12 @@ func (p *failoverTestProvider) Stream(ctx context.Context, _ contractsai.AgentPr
 
 type failoverTestResponse struct {
 	text string
+}
+
+type aiTestError string
+
+func (e aiTestError) Error() string {
+	return string(e)
 }
 
 func (r *failoverTestResponse) Text() string { return r.text }

@@ -2,6 +2,9 @@ package ai
 
 import (
 	"context"
+	"regexp"
+	"sort"
+	"strings"
 
 	contractsai "github.com/goravel/framework/contracts/ai"
 	"github.com/goravel/framework/errors"
@@ -18,6 +21,17 @@ type failoverError struct {
 	cause    error
 }
 
+// FailoverRules matches provider errors against configured failover patterns.
+type FailoverRules struct {
+	rules []failoverRule
+}
+
+type failoverRule struct {
+	reason  contractsai.FailoverReason
+	pattern string
+	regex   *regexp.Regexp
+}
+
 type failoverProvider struct {
 	providers []resolvedProvider
 }
@@ -29,6 +43,7 @@ type scopedProviderState struct {
 
 var _ contractsai.FailoverError = (*failoverError)(nil)
 
+// NewFailoverError returns an error that instructs the framework to try the next provider.
 func NewFailoverError(provider string, reason contractsai.FailoverReason, cause error) error {
 	return &failoverError{provider: provider, reason: reason, cause: cause}
 }
@@ -42,20 +57,15 @@ func newFailoverProvider(providers []resolvedProvider) contractsai.Provider {
 }
 
 func (e *failoverError) Error() string {
-	switch e.reason {
-	case contractsai.FailoverReasonRateLimited:
-		return errors.AIFailoverRateLimited.Args(e.provider).Error()
-	case contractsai.FailoverReasonProviderOverloaded:
-		return errors.AIFailoverProviderOverloaded.Args(e.provider).Error()
-	case contractsai.FailoverReasonInsufficientCredits:
-		return errors.AIFailoverInsufficientCredits.Args(e.provider).Error()
-	default:
-		if e.cause != nil {
-			return e.cause.Error()
-		}
-
-		return errors.AIProviderNotSupported.Args(e.provider).Error()
+	if e.reason != "" {
+		return errors.AIFailoverReason.Args(e.provider, e.reason).Error()
 	}
+
+	if e.cause != nil {
+		return e.cause.Error()
+	}
+
+	return errors.AIProviderNotSupported.Args(e.provider).Error()
 }
 
 func (e *failoverError) Reason() contractsai.FailoverReason {
@@ -190,6 +200,95 @@ func emitPendingStreamErrors(events []contractsai.StreamEvent, emit func(contrac
 	}
 
 	return nil
+}
+
+// NewFailoverRules compiles provider failover patterns.
+// Plain patterns use substring matching; slash-delimited patterns use Go regex syntax.
+func NewFailoverRules(provider string, patterns map[contractsai.FailoverReason][]string) (FailoverRules, error) {
+	if len(patterns) == 0 {
+		return FailoverRules{}, nil
+	}
+
+	reasons := make([]string, 0, len(patterns))
+	for reason := range patterns {
+		if reason != "" {
+			reasons = append(reasons, string(reason))
+		}
+	}
+	sort.Strings(reasons)
+
+	var rules []failoverRule
+	for _, reasonValue := range reasons {
+		reason := contractsai.FailoverReason(reasonValue)
+		for _, pattern := range patterns[reason] {
+			if pattern == "" {
+				continue
+			}
+
+			rule := failoverRule{reason: reason, pattern: pattern}
+			if regexPattern, ok := failoverRegexPattern(pattern); ok {
+				if regexPattern == "" {
+					continue
+				}
+
+				regex, err := regexp.Compile(regexPattern)
+				if err != nil {
+					return FailoverRules{}, errors.AIFailoverPatternInvalid.Args(provider, reason, pattern, err)
+				}
+
+				rule.regex = regex
+			}
+
+			rules = append(rules, rule)
+		}
+	}
+
+	return FailoverRules{rules: rules}, nil
+}
+
+func failoverRegexPattern(pattern string) (string, bool) {
+	if len(pattern) < 2 || !strings.HasPrefix(pattern, "/") || !strings.HasSuffix(pattern, "/") {
+		return "", false
+	}
+
+	return pattern[1 : len(pattern)-1], true
+}
+
+// Match returns the configured failover reason for err.
+func (r FailoverRules) Match(err error) (contractsai.FailoverReason, bool) {
+	if err == nil {
+		return "", false
+	}
+
+	message := err.Error()
+	for _, rule := range r.rules {
+		if rule.matches(message) {
+			return rule.reason, true
+		}
+	}
+
+	return "", false
+}
+
+// Wrap converts err to a failover error when it matches a configured rule.
+func (r FailoverRules) Wrap(provider string, err error) error {
+	if err == nil || isFailoverError(err) {
+		return err
+	}
+
+	if reason, ok := r.Match(err); ok {
+		return NewFailoverError(provider, reason, err)
+	}
+
+	return err
+}
+
+func (r failoverRule) matches(message string) bool {
+	if r.regex != nil {
+		return r.regex.MatchString(message)
+	}
+
+	return strings.Contains(message, r.pattern)
 }
 
 func isFailoverError(err error) bool {

@@ -160,7 +160,7 @@ func TestApplication_Agent_ResolverError(t *testing.T) {
 }
 
 func TestApplication_Agent_Failover(t *testing.T) {
-	failoverErr := NewFailoverError("primary", contractsai.FailoverReasonRateLimited, assert.AnError)
+	failoverErr := NewFailoverError("primary", contractsai.FailoverReason("rate_limited"), assert.AnError)
 	primaryProvider := &applicationPromptProviderStub{name: "primary", err: failoverErr}
 	backupResponse := &stubResponse{text: "backup response"}
 	backupProvider := &applicationPromptProviderStub{name: "backup", response: backupResponse}
@@ -214,8 +214,8 @@ func TestApplication_Agent_FailoverStopsOnNonFailoverError(t *testing.T) {
 }
 
 func TestApplication_Agent_FailoverReturnsLastError(t *testing.T) {
-	primaryErr := NewFailoverError("primary", contractsai.FailoverReasonRateLimited, assert.AnError)
-	backupErr := NewFailoverError("backup", contractsai.FailoverReasonProviderOverloaded, assert.AnError)
+	primaryErr := NewFailoverError("primary", contractsai.FailoverReason("rate_limited"), assert.AnError)
+	backupErr := NewFailoverError("backup", contractsai.FailoverReason("provider_overloaded"), assert.AnError)
 	primaryProvider := &applicationPromptProviderStub{name: "primary", err: primaryErr}
 	backupProvider := &applicationPromptProviderStub{name: "backup", err: backupErr}
 	config := contractsai.Config{
@@ -239,7 +239,7 @@ func TestApplication_Agent_FailoverReturnsLastError(t *testing.T) {
 }
 
 func TestApplication_Agent_StreamFailover(t *testing.T) {
-	failoverErr := NewFailoverError("primary", contractsai.FailoverReasonRateLimited, assert.AnError)
+	failoverErr := NewFailoverError("primary", contractsai.FailoverReason("rate_limited"), assert.AnError)
 	primaryProvider := &applicationPromptProviderStub{name: "primary", streamErr: failoverErr}
 	backupProvider := &applicationPromptProviderStub{name: "backup", streamResponse: &stubResponse{text: "backup response"}, streamEvents: []contractsai.StreamEvent{
 		{Type: contractsai.StreamEventTypeTextDelta, Delta: "backup"},
@@ -277,7 +277,7 @@ func TestApplication_Agent_StreamFailover(t *testing.T) {
 }
 
 func TestApplication_Agent_StreamDoesNotFailoverAfterOutput(t *testing.T) {
-	failoverErr := NewFailoverError("primary", contractsai.FailoverReasonRateLimited, assert.AnError)
+	failoverErr := NewFailoverError("primary", contractsai.FailoverReason("rate_limited"), assert.AnError)
 	primaryProvider := &applicationPromptProviderStub{name: "primary", streamErr: failoverErr, streamEvents: []contractsai.StreamEvent{
 		{Type: contractsai.StreamEventTypeTextDelta, Delta: "partial"},
 	}}
@@ -821,7 +821,7 @@ func TestApplication_audio(t *testing.T) {
 }
 
 func TestApplication_audio_Failover(t *testing.T) {
-	failoverErr := NewFailoverError("primary", contractsai.FailoverReasonRateLimited, assert.AnError)
+	failoverErr := NewFailoverError("primary", contractsai.FailoverReason("rate_limited"), assert.AnError)
 	primaryProvider := &applicationAudioProviderStub{err: failoverErr}
 	backupResponse := &applicationAudioResponseStub{}
 	backupProvider := &applicationAudioProviderStub{response: backupResponse}

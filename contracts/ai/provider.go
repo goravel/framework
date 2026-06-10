@@ -7,12 +7,6 @@ import (
 
 type FailoverReason string
 
-const (
-	FailoverReasonRateLimited         FailoverReason = "rate_limited"
-	FailoverReasonProviderOverloaded  FailoverReason = "provider_overloaded"
-	FailoverReasonInsufficientCredits FailoverReason = "insufficient_credits"
-)
-
 type FailoverError interface {
 	error
 	Reason() FailoverReason
