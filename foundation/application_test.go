@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/stats"
 
+	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/contracts/database/seeder"
@@ -22,7 +23,9 @@ import (
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/schedule"
 	"github.com/goravel/framework/contracts/validation"
+	foundationjson "github.com/goravel/framework/foundation/json"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
+	mocksroute "github.com/goravel/framework/mocks/route"
 	"github.com/goravel/framework/support"
 )
 
@@ -143,6 +146,34 @@ func (s *ApplicationTestSuite) TestConfigureCommands() {
 			tt.setup()
 		})
 	}
+}
+
+func (s *ApplicationTestSuite) TestDefaultCommandsRegistersMaintenanceCommandsWithRouteFacade() {
+	s.app.SetJson(foundationjson.New())
+	s.app.Instance(binding.Route, mocksroute.NewRoute(s.T()))
+
+	commands := s.app.defaultCommands()
+
+	s.Contains(commandSignatures(commands), "up")
+	s.Contains(commandSignatures(commands), "down")
+}
+
+func (s *ApplicationTestSuite) TestDefaultCommandsDoesNotRegisterMaintenanceCommandsWithoutRouteFacade() {
+	s.app.SetJson(foundationjson.New())
+
+	commands := s.app.defaultCommands()
+
+	s.NotContains(commandSignatures(commands), "up")
+	s.NotContains(commandSignatures(commands), "down")
+}
+
+func commandSignatures(commands []console.Command) []string {
+	signatures := make([]string, 0, len(commands))
+	for _, command := range commands {
+		signatures = append(signatures, command.Signature())
+	}
+
+	return signatures
 }
 
 func (s *ApplicationTestSuite) TestConfigureCustomConfig() {

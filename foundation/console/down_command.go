@@ -96,7 +96,14 @@ func (r *DownCommand) Handle(ctx console.Context) error {
 		options.Reason = ctx.Option("reason")
 	}
 
-	if secret := ctx.Option("secret"); secret != "" {
+	secret := ctx.Option("secret")
+	withSecret := ctx.OptionBool("with-secret")
+	if (secret != "" || withSecret) && r.hash == nil {
+		ctx.Error(errors.HashFacadeNotSet.Error())
+		return nil
+	}
+
+	if secret != "" {
 		hash, err := r.hash.Make(secret)
 		if err != nil {
 			ctx.Error(err.Error())
@@ -106,7 +113,7 @@ func (r *DownCommand) Handle(ctx console.Context) error {
 		}
 	}
 
-	if withSecret := ctx.OptionBool("with-secret"); withSecret {
+	if withSecret {
 		secret := str.Random(40)
 		hash, err := r.hash.Make(secret)
 
