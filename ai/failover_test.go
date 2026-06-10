@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	contractsai "github.com/goravel/framework/contracts/ai"
+	"github.com/goravel/framework/errors"
 )
 
 type FailoverTestSuite struct {
@@ -28,6 +29,18 @@ func (s *FailoverTestSuite) TestFailoverError() {
 	s.Equal("openai", failoverErr.Provider())
 	s.ErrorIs(err, cause)
 	s.Equal("ai: provider openai was rate limited", err.Error())
+}
+
+func (s *FailoverTestSuite) TestFailoverErrorCustomReason() {
+	cause := aiTestError("maximum context length exceeded")
+	err := NewFailoverError("openai", contractsai.FailoverReason("context_length_exceeded"), cause)
+
+	var failoverErr contractsai.FailoverError
+	s.Require().ErrorAs(err, &failoverErr)
+	s.Equal(contractsai.FailoverReason("context_length_exceeded"), failoverErr.Reason())
+	s.Equal("openai", failoverErr.Provider())
+	s.ErrorIs(err, cause)
+	s.Equal("ai: provider openai failed over because context_length_exceeded", err.Error())
 }
 
 func (s *FailoverTestSuite) TestNewFailoverProvider() {
@@ -60,6 +73,40 @@ func (s *FailoverTestSuite) TestStreamSuppressesPendingFailoverError() {
 	}
 	provider := &failoverProvider{providers: []resolvedProvider{
 		{name: "primary", provider: primaryProvider},
+		{name: "backup", provider: backupProvider},
+	}}
+
+	stream, err := provider.Stream(context.Background(), contractsai.AgentPrompt{})
+	s.Require().NoError(err)
+
+	var events []contractsai.StreamEvent
+	err = stream.Each(func(event contractsai.StreamEvent) error {
+		events = append(events, event)
+		return nil
+	})
+
+	s.Require().NoError(err)
+	s.Equal([]contractsai.StreamEvent{{Type: contractsai.StreamEventTypeTextDelta, Delta: "backup"}}, events)
+	s.Equal(1, primaryProvider.streamCalls)
+	s.Equal(1, backupProvider.streamCalls)
+}
+
+func (s *FailoverTestSuite) TestStreamSuppressesPendingConfiguredFailoverError() {
+	failoverRules, err := newFailoverRules("primary", map[contractsai.FailoverReason][]string{
+		"context_length_exceeded": {"context length"},
+	})
+	s.Require().NoError(err)
+
+	primaryProvider := &failoverTestProvider{
+		streamEvents: []contractsai.StreamEvent{{Type: contractsai.StreamEventTypeError, Error: "context length exceeded"}},
+		streamErr:    aiTestError("maximum context length exceeded"),
+	}
+	backupProvider := &failoverTestProvider{
+		streamEvents: []contractsai.StreamEvent{{Type: contractsai.StreamEventTypeTextDelta, Delta: "backup"}},
+		streamResp:   &failoverTestResponse{text: "backup"},
+	}
+	provider := &failoverProvider{providers: []resolvedProvider{
+		{name: "primary", provider: primaryProvider, failoverRules: failoverRules},
 		{name: "backup", provider: backupProvider},
 	}}
 
@@ -119,6 +166,36 @@ func (s *FailoverTestSuite) TestScopedProviderState() {
 	s.Nil(state.Get("openai:response_id"))
 }
 
+func (s *FailoverTestSuite) TestFailoverRulesMatchSubstringAndRegex() {
+	failoverRules, err := newFailoverRules("openai", map[contractsai.FailoverReason][]string{
+		"context_length_exceeded": {"context length"},
+		"model_overloaded":        {"/(?i)model.*overloaded/"},
+	})
+	s.Require().NoError(err)
+	provider := resolvedProvider{name: "openai", failoverRules: failoverRules}
+
+	contextErr := aiTestError("maximum context length exceeded")
+	err = provider.failoverError(contextErr)
+	var failoverErr contractsai.FailoverError
+	s.Require().ErrorAs(err, &failoverErr)
+	s.Equal(contractsai.FailoverReason("context_length_exceeded"), failoverErr.Reason())
+	s.ErrorIs(err, contextErr)
+
+	overloadedErr := aiTestError("the MODEL is overloaded")
+	err = provider.failoverError(overloadedErr)
+	s.Require().ErrorAs(err, &failoverErr)
+	s.Equal(contractsai.FailoverReason("model_overloaded"), failoverErr.Reason())
+	s.ErrorIs(err, overloadedErr)
+}
+
+func (s *FailoverTestSuite) TestFailoverRulesReturnErrorForInvalidRegex() {
+	_, err := newFailoverRules("openai", map[contractsai.FailoverReason][]string{
+		"bad_pattern": {"/[/"},
+	})
+
+	s.ErrorIs(err, errors.AIFailoverPatternInvalid)
+}
+
 type failoverTestProvider struct {
 	promptResp   contractsai.AgentResponse
 	promptErr    error
@@ -148,6 +225,12 @@ func (p *failoverTestProvider) Stream(ctx context.Context, _ contractsai.AgentPr
 
 type failoverTestResponse struct {
 	text string
+}
+
+type aiTestError string
+
+func (e aiTestError) Error() string {
+	return string(e)
 }
 
 func (r *failoverTestResponse) Text() string { return r.text }
