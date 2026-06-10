@@ -21,14 +21,14 @@ func TestFailoverTestSuite(t *testing.T) {
 
 func (s *FailoverTestSuite) TestFailoverError() {
 	cause := assert.AnError
-	err := NewFailoverError("openai", contractsai.FailoverReasonRateLimited, cause)
+	err := NewFailoverError("openai", contractsai.FailoverReason("rate_limited"), cause)
 
 	var failoverErr contractsai.FailoverError
 	s.Require().ErrorAs(err, &failoverErr)
-	s.Equal(contractsai.FailoverReasonRateLimited, failoverErr.Reason())
+	s.Equal(contractsai.FailoverReason("rate_limited"), failoverErr.Reason())
 	s.Equal("openai", failoverErr.Provider())
 	s.ErrorIs(err, cause)
-	s.Equal("ai: provider openai was rate limited", err.Error())
+	s.Equal("ai: provider openai failed over because rate_limited", err.Error())
 }
 
 func (s *FailoverTestSuite) TestFailoverErrorCustomReason() {
@@ -62,7 +62,7 @@ func (s *FailoverTestSuite) TestNewFailoverProvider() {
 }
 
 func (s *FailoverTestSuite) TestStreamSuppressesPendingFailoverError() {
-	failoverErr := NewFailoverError("primary", contractsai.FailoverReasonRateLimited, assert.AnError)
+	failoverErr := NewFailoverError("primary", contractsai.FailoverReason("rate_limited"), assert.AnError)
 	primaryProvider := &failoverTestProvider{
 		streamEvents: []contractsai.StreamEvent{{Type: contractsai.StreamEventTypeError, Error: "rate limited"}},
 		streamErr:    failoverErr,

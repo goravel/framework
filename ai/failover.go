@@ -57,24 +57,15 @@ func newFailoverProvider(providers []resolvedProvider) contractsai.Provider {
 }
 
 func (e *failoverError) Error() string {
-	switch e.reason {
-	case contractsai.FailoverReasonRateLimited:
-		return errors.AIFailoverRateLimited.Args(e.provider).Error()
-	case contractsai.FailoverReasonProviderOverloaded:
-		return errors.AIFailoverProviderOverloaded.Args(e.provider).Error()
-	case contractsai.FailoverReasonInsufficientCredits:
-		return errors.AIFailoverInsufficientCredits.Args(e.provider).Error()
-	default:
-		if e.reason != "" {
-			return errors.AIFailoverReason.Args(e.provider, e.reason).Error()
-		}
-
-		if e.cause != nil {
-			return e.cause.Error()
-		}
-
-		return errors.AIProviderNotSupported.Args(e.provider).Error()
+	if e.reason != "" {
+		return errors.AIFailoverReason.Args(e.provider, e.reason).Error()
 	}
+
+	if e.cause != nil {
+		return e.cause.Error()
+	}
+
+	return errors.AIProviderNotSupported.Args(e.provider).Error()
 }
 
 func (e *failoverError) Reason() contractsai.FailoverReason {
