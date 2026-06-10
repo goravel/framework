@@ -118,7 +118,6 @@ func (r *Application) audio(ctx context.Context, prompt contractsai.AudioPrompt,
 		if err == nil {
 			return response, nil
 		}
-		err = resolvedProvider.failoverError(err)
 		if !isFailoverError(err) {
 			return nil, err
 		}
@@ -149,7 +148,6 @@ func (r *Application) image(ctx context.Context, prompt contractsai.ImagePrompt,
 		if err == nil {
 			return response, nil
 		}
-		err = resolvedProvider.failoverError(err)
 		if !isFailoverError(err) {
 			return nil, err
 		}
@@ -180,7 +178,6 @@ func (r *Application) transcription(ctx context.Context, prompt contractsai.Tran
 		if err == nil {
 			return response, nil
 		}
-		err = resolvedProvider.failoverError(err)
 		if !isFailoverError(err) {
 			return nil, err
 		}
@@ -215,22 +212,12 @@ func (r *Application) resolveProviderChain(options []contractsai.Option) (*contr
 
 	resolvedProviders := make([]resolvedProvider, 0, len(providerNames))
 	for _, providerName := range providerNames {
-		providerConfig, ok := r.config.Providers[providerName]
-		if !ok {
-			return nil, nil, errors.AIProviderNotSupported.Args(providerName)
-		}
-
-		failoverRules, err := newFailoverRules(providerName, providerConfig.Failover)
-		if err != nil {
-			return nil, nil, err
-		}
-
 		provider, err := r.resolver.New(providerName)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		resolvedProviders = append(resolvedProviders, resolvedProvider{name: providerName, provider: provider, failoverRules: failoverRules})
+		resolvedProviders = append(resolvedProviders, resolvedProvider{name: providerName, provider: provider})
 	}
 
 	return opts, resolvedProviders, nil

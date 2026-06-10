@@ -11,15 +11,19 @@ import (
 )
 
 type resolvedProvider struct {
-	name          string
-	provider      contractsai.Provider
-	failoverRules []failoverRule
+	name     string
+	provider contractsai.Provider
 }
 
 type failoverError struct {
 	provider string
 	reason   contractsai.FailoverReason
 	cause    error
+}
+
+// FailoverRules matches provider errors against configured failover patterns.
+type FailoverRules struct {
+	rules []failoverRule
 }
 
 type failoverRule struct {
@@ -39,12 +43,13 @@ type scopedProviderState struct {
 
 var _ contractsai.FailoverError = (*failoverError)(nil)
 
+// NewFailoverError returns an error that instructs the framework to try the next provider.
 func NewFailoverError(provider string, reason contractsai.FailoverReason, cause error) error {
 	return &failoverError{provider: provider, reason: reason, cause: cause}
 }
 
 func newFailoverProvider(providers []resolvedProvider) contractsai.Provider {
-	if len(providers) == 1 && len(providers[0].failoverRules) == 0 {
+	if len(providers) == 1 {
 		return providers[0].provider
 	}
 
@@ -91,7 +96,6 @@ func (r *failoverProvider) Prompt(ctx context.Context, prompt contractsai.AgentP
 		if err == nil {
 			return response, nil
 		}
-		err = resolvedProvider.failoverError(err)
 		if !isFailoverError(err) {
 			return nil, err
 		}
@@ -108,7 +112,6 @@ func (r *failoverProvider) Stream(ctx context.Context, prompt contractsai.AgentP
 		for _, resolvedProvider := range r.providers {
 			stream, err := resolvedProvider.provider.Stream(streamCtx, r.promptFor(resolvedProvider, prompt))
 			if err != nil {
-				err = resolvedProvider.failoverError(err)
 				if !isFailoverError(err) {
 					return nil, err
 				}
@@ -120,7 +123,7 @@ func (r *failoverProvider) Stream(ctx context.Context, prompt contractsai.AgentP
 				return nil, errors.AIResponseIsNil
 			}
 
-			response, started, err := r.forwardStream(resolvedProvider, stream, emit)
+			response, started, err := r.forwardStream(stream, emit)
 			if err == nil {
 				return response, nil
 			}
@@ -143,7 +146,7 @@ func (r *failoverProvider) promptFor(provider resolvedProvider, prompt contracts
 	return prompt
 }
 
-func (r *failoverProvider) forwardStream(provider resolvedProvider, stream contractsai.StreamableAgentResponse, emit func(contractsai.StreamEvent) error) (contractsai.AgentResponse, bool, error) {
+func (r *failoverProvider) forwardStream(stream contractsai.StreamableAgentResponse, emit func(contractsai.StreamEvent) error) (contractsai.AgentResponse, bool, error) {
 	var response contractsai.AgentResponse
 	stream.Then(func(resp contractsai.AgentResponse) {
 		response = resp
@@ -166,9 +169,6 @@ func (r *failoverProvider) forwardStream(provider resolvedProvider, stream contr
 		return emit(event)
 	})
 	if err != nil {
-		if !started {
-			err = provider.failoverError(err)
-		}
 		if isFailoverError(err) && !started {
 			return nil, false, err
 		}
@@ -211,9 +211,11 @@ func emitPendingStreamErrors(events []contractsai.StreamEvent, emit func(contrac
 	return nil
 }
 
-func newFailoverRules(provider string, patterns map[contractsai.FailoverReason][]string) ([]failoverRule, error) {
+// NewFailoverRules compiles provider failover patterns.
+// Plain patterns use substring matching; slash-delimited patterns use Go regex syntax.
+func NewFailoverRules(provider string, patterns map[contractsai.FailoverReason][]string) (FailoverRules, error) {
 	if len(patterns) == 0 {
-		return nil, nil
+		return FailoverRules{}, nil
 	}
 
 	reasons := make([]string, 0, len(patterns))
@@ -240,7 +242,7 @@ func newFailoverRules(provider string, patterns map[contractsai.FailoverReason][
 
 				regex, err := regexp.Compile(regexPattern)
 				if err != nil {
-					return nil, errors.AIFailoverPatternInvalid.Args(provider, reason, pattern, err)
+					return FailoverRules{}, errors.AIFailoverPatternInvalid.Args(provider, reason, pattern, err)
 				}
 
 				rule.regex = regex
@@ -250,7 +252,7 @@ func newFailoverRules(provider string, patterns map[contractsai.FailoverReason][
 		}
 	}
 
-	return rules, nil
+	return FailoverRules{rules: rules}, nil
 }
 
 func failoverRegexPattern(pattern string) (string, bool) {
@@ -261,16 +263,30 @@ func failoverRegexPattern(pattern string) (string, bool) {
 	return pattern[1 : len(pattern)-1], true
 }
 
-func (p resolvedProvider) failoverError(err error) error {
+// Match returns the configured failover reason for err.
+func (r FailoverRules) Match(err error) (contractsai.FailoverReason, bool) {
+	if err == nil {
+		return "", false
+	}
+
+	message := err.Error()
+	for _, rule := range r.rules {
+		if rule.matches(message) {
+			return rule.reason, true
+		}
+	}
+
+	return "", false
+}
+
+// Wrap converts err to a failover error when it matches a configured rule.
+func (r FailoverRules) Wrap(provider string, err error) error {
 	if err == nil || isFailoverError(err) {
 		return err
 	}
 
-	message := err.Error()
-	for _, rule := range p.failoverRules {
-		if rule.matches(message) {
-			return NewFailoverError(p.name, rule.reason, err)
-		}
+	if reason, ok := r.Match(err); ok {
+		return NewFailoverError(provider, reason, err)
 	}
 
 	return err

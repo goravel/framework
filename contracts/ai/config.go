@@ -6,11 +6,10 @@ type Config struct {
 }
 
 type ProviderConfig struct {
-	Key      string                      `json:"key"`
-	Models   ModelsConfig                `json:"models"`
-	Url      string                      `json:"url"`
-	Via      any                         `json:"via"` // Provider or func() (Provider, error)
-	Failover map[FailoverReason][]string `json:"failover"`
+	Key    string       `json:"key"`
+	Models ModelsConfig `json:"models"`
+	Url    string       `json:"url"`
+	Via    any          `json:"via"` // Provider or func() (Provider, error)
 }
 
 type ModelsConfig struct {

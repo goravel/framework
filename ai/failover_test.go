@@ -91,40 +91,6 @@ func (s *FailoverTestSuite) TestStreamSuppressesPendingFailoverError() {
 	s.Equal(1, backupProvider.streamCalls)
 }
 
-func (s *FailoverTestSuite) TestStreamSuppressesPendingConfiguredFailoverError() {
-	failoverRules, err := newFailoverRules("primary", map[contractsai.FailoverReason][]string{
-		"context_length_exceeded": {"context length"},
-	})
-	s.Require().NoError(err)
-
-	primaryProvider := &failoverTestProvider{
-		streamEvents: []contractsai.StreamEvent{{Type: contractsai.StreamEventTypeError, Error: "context length exceeded"}},
-		streamErr:    aiTestError("maximum context length exceeded"),
-	}
-	backupProvider := &failoverTestProvider{
-		streamEvents: []contractsai.StreamEvent{{Type: contractsai.StreamEventTypeTextDelta, Delta: "backup"}},
-		streamResp:   &failoverTestResponse{text: "backup"},
-	}
-	provider := &failoverProvider{providers: []resolvedProvider{
-		{name: "primary", provider: primaryProvider, failoverRules: failoverRules},
-		{name: "backup", provider: backupProvider},
-	}}
-
-	stream, err := provider.Stream(context.Background(), contractsai.AgentPrompt{})
-	s.Require().NoError(err)
-
-	var events []contractsai.StreamEvent
-	err = stream.Each(func(event contractsai.StreamEvent) error {
-		events = append(events, event)
-		return nil
-	})
-
-	s.Require().NoError(err)
-	s.Equal([]contractsai.StreamEvent{{Type: contractsai.StreamEventTypeTextDelta, Delta: "backup"}}, events)
-	s.Equal(1, primaryProvider.streamCalls)
-	s.Equal(1, backupProvider.streamCalls)
-}
-
 func (s *FailoverTestSuite) TestStreamEmitsPendingErrorBeforeNonFailoverError() {
 	primaryProvider := &failoverTestProvider{
 		streamEvents: []contractsai.StreamEvent{{Type: contractsai.StreamEventTypeError, Error: "invalid request"}},
@@ -167,29 +133,36 @@ func (s *FailoverTestSuite) TestScopedProviderState() {
 }
 
 func (s *FailoverTestSuite) TestFailoverRulesMatchSubstringAndRegex() {
-	failoverRules, err := newFailoverRules("openai", map[contractsai.FailoverReason][]string{
+	failoverRules, err := NewFailoverRules("openai", map[contractsai.FailoverReason][]string{
 		"context_length_exceeded": {"context length"},
 		"model_overloaded":        {"/(?i)model.*overloaded/"},
 	})
 	s.Require().NoError(err)
-	provider := resolvedProvider{name: "openai", failoverRules: failoverRules}
 
 	contextErr := aiTestError("maximum context length exceeded")
-	err = provider.failoverError(contextErr)
+	reason, ok := failoverRules.Match(contextErr)
+	s.True(ok)
+	s.Equal(contractsai.FailoverReason("context_length_exceeded"), reason)
+
+	err = failoverRules.Wrap("openai", contextErr)
 	var failoverErr contractsai.FailoverError
 	s.Require().ErrorAs(err, &failoverErr)
 	s.Equal(contractsai.FailoverReason("context_length_exceeded"), failoverErr.Reason())
 	s.ErrorIs(err, contextErr)
 
 	overloadedErr := aiTestError("the MODEL is overloaded")
-	err = provider.failoverError(overloadedErr)
+	reason, ok = failoverRules.Match(overloadedErr)
+	s.True(ok)
+	s.Equal(contractsai.FailoverReason("model_overloaded"), reason)
+
+	err = failoverRules.Wrap("openai", overloadedErr)
 	s.Require().ErrorAs(err, &failoverErr)
 	s.Equal(contractsai.FailoverReason("model_overloaded"), failoverErr.Reason())
 	s.ErrorIs(err, overloadedErr)
 }
 
 func (s *FailoverTestSuite) TestFailoverRulesReturnErrorForInvalidRegex() {
-	_, err := newFailoverRules("openai", map[contractsai.FailoverReason][]string{
+	_, err := NewFailoverRules("openai", map[contractsai.FailoverReason][]string{
 		"bad_pattern": {"/[/"},
 	})
 
