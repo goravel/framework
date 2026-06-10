@@ -24,18 +24,18 @@ type Application struct {
 	config            config.Config
 	json              foundation.Json
 	telemetryResolver contractstelemetry.Resolver
-	handlerCache      *sync.Map
+	channelToHandlers *sync.Map
 }
 
 func NewApplication(ctx context.Context, channels []string, config config.Config, json foundation.Json, resolver contractstelemetry.Resolver) (*Application, error) {
 	return newApplication(ctx, channels, config, json, resolver, &sync.Map{})
 }
 
-// newApplication shares handlerCache between an Application and the instances
+// newApplication shares channelToHandlers between an Application and the instances
 // derived from it via WithContext, Channel, and Stack. Cached handlers hold
 // loggers from the telemetry providers that existed when they were built, so
 // the cache must not outlive the container that created the root Application.
-func newApplication(ctx context.Context, channels []string, config config.Config, json foundation.Json, resolver contractstelemetry.Resolver, handlerCache *sync.Map) (*Application, error) {
+func newApplication(ctx context.Context, channels []string, config config.Config, json foundation.Json, resolver contractstelemetry.Resolver, channelToHandlers *sync.Map) (*Application, error) {
 	var handlers []slog.Handler
 
 	if len(channels) == 0 && config != nil {
@@ -45,7 +45,7 @@ func newApplication(ctx context.Context, channels []string, config config.Config
 	}
 
 	for _, channel := range channels {
-		channelHandlers, err := getHandlers(handlerCache, config, json, resolver, channel)
+		channelHandlers, err := getHandlers(channelToHandlers, config, json, resolver, channel)
 		if err != nil {
 			return nil, err
 		}
@@ -61,7 +61,7 @@ func newApplication(ctx context.Context, channels []string, config config.Config
 		config:            config,
 		json:              json,
 		telemetryResolver: resolver,
-		handlerCache:      handlerCache,
+		channelToHandlers: channelToHandlers,
 		Writer:            NewWriter(ctx, slogLogger),
 	}, nil
 }
@@ -71,7 +71,7 @@ func (r *Application) WithContext(ctx context.Context) log.Log {
 		ctx = httpCtx.Context()
 	}
 
-	app, err := newApplication(ctx, r.channels, r.config, r.json, r.telemetryResolver, r.handlerCache)
+	app, err := newApplication(ctx, r.channels, r.config, r.json, r.telemetryResolver, r.channelToHandlers)
 	if err != nil {
 		r.Error(err)
 
@@ -86,7 +86,7 @@ func (r *Application) Channel(channel string) log.Log {
 		return r
 	}
 
-	app, err := newApplication(r.ctx, []string{channel}, r.config, r.json, r.telemetryResolver, r.handlerCache)
+	app, err := newApplication(r.ctx, []string{channel}, r.config, r.json, r.telemetryResolver, r.channelToHandlers)
 	if err != nil {
 		r.Error(err)
 
@@ -101,7 +101,7 @@ func (r *Application) Stack(channels []string) log.Log {
 		return r
 	}
 
-	app, err := newApplication(r.ctx, channels, r.config, r.json, r.telemetryResolver, r.handlerCache)
+	app, err := newApplication(r.ctx, channels, r.config, r.json, r.telemetryResolver, r.channelToHandlers)
 	if err != nil {
 		r.Error(err)
 
@@ -112,9 +112,9 @@ func (r *Application) Stack(channels []string) log.Log {
 }
 
 // getHandlers returns slog log handlers for the specified channel.
-func getHandlers(handlerCache *sync.Map, config config.Config, json foundation.Json, telemetryResolver contractstelemetry.Resolver, channel string) ([]slog.Handler, error) {
+func getHandlers(channelToHandlers *sync.Map, config config.Config, json foundation.Json, telemetryResolver contractstelemetry.Resolver, channel string) ([]slog.Handler, error) {
 	var handlers []slog.Handler
-	handlersAny, ok := handlerCache.Load(channel)
+	handlersAny, ok := channelToHandlers.Load(channel)
 	if ok {
 		return handlersAny.([]slog.Handler), nil
 	}
@@ -134,7 +134,7 @@ func getHandlers(handlerCache *sync.Map, config config.Config, json foundation.J
 				return nil, errors.LogDriverCircularReference.Args("stack")
 			}
 
-			channelHandlers, err := getHandlers(handlerCache, config, json, telemetryResolver, stackChannel)
+			channelHandlers, err := getHandlers(channelToHandlers, config, json, telemetryResolver, stackChannel)
 			if err != nil {
 				return nil, err
 			}
@@ -194,7 +194,7 @@ func getHandlers(handlerCache *sync.Map, config config.Config, json foundation.J
 		return nil, errors.LogDriverNotSupported.Args(channel)
 	}
 
-	handlerCache.Store(channel, handlers)
+	channelToHandlers.Store(channel, handlers)
 
 	return handlers, nil
 }

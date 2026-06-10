@@ -91,15 +91,15 @@ func TestApplication_HandlerCacheScope(t *testing.T) {
 
 	app, err := NewApplication(context.Background(), nil, mockConfig, json.New(), nil)
 	assert.Nil(t, err)
-	app.handlerCache.Store("otel", []slog.Handler{})
+	app.channelToHandlers.Store("otel", []slog.Handler{})
 
 	derived := app.WithContext(context.Background()).(*Application)
-	_, shared := derived.handlerCache.Load("otel")
+	_, shared := derived.channelToHandlers.Load("otel")
 	assert.True(t, shared)
 
 	fresh, err := NewApplication(context.Background(), nil, mockConfig, json.New(), nil)
 	assert.Nil(t, err)
-	_, leaked := fresh.handlerCache.Load("otel")
+	_, leaked := fresh.channelToHandlers.Load("otel")
 	assert.False(t, leaked)
 }
 
