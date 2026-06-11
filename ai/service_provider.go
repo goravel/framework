@@ -47,6 +47,8 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 	httpFacade = app.MakeHttp()
 
 	app.Commands([]contractsconsole.Command{
+    console.NewAiDocsInstallCommand(),
+		console.NewAiDocsUpdateCommand(),
 		&console.AgentMakeCommand{},
 	})
 }
