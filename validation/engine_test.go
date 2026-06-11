@@ -445,7 +445,7 @@ func TestEngine_FormatErrorMessage(t *testing.T) {
 			attributes: map[string]string{"name": "Full Name"},
 		})
 
-		msg := engine.formatErrorMessage("name", ParsedRule{Name: "my_rule"}, "string")
+		msg := engine.formatErrorMessage("name", ParsedRule{Name: "my_rule"}, "string", nil)
 		assert.Equal(t, "The Full Name is bad.", msg)
 	})
 
@@ -460,7 +460,7 @@ func TestEngine_FormatErrorMessage(t *testing.T) {
 			},
 		})
 
-		msg := engine.formatErrorMessage("f", ParsedRule{Name: "custom_exists"}, "string")
+		msg := engine.formatErrorMessage("f", ParsedRule{Name: "custom_exists"}, "string", nil)
 		assert.Equal(t, "custom_exists failed for f", msg)
 	})
 
@@ -475,7 +475,7 @@ func TestEngine_FormatErrorMessage(t *testing.T) {
 			},
 		})
 
-		msg := engine.formatErrorMessage("f", ParsedRule{Name: "custom_exists"}, "string")
+		msg := engine.formatErrorMessage("f", ParsedRule{Name: "custom_exists"}, "string", nil)
 		assert.Equal(t, "custom_exists failed", msg)
 	})
 
@@ -487,7 +487,7 @@ func TestEngine_FormatErrorMessage(t *testing.T) {
 			},
 		})
 
-		msg := engine.formatErrorMessage("name", ParsedRule{Name: "required"}, "string")
+		msg := engine.formatErrorMessage("name", ParsedRule{Name: "required"}, "string", nil)
 		assert.Equal(t, "Please enter your name.", msg)
 	})
 
@@ -498,7 +498,7 @@ func TestEngine_FormatErrorMessage(t *testing.T) {
 		msg := engine.formatErrorMessage("name", ParsedRule{
 			Name:       "min",
 			Parameters: []string{"3"},
-		}, "string")
+		}, "string", nil)
 		assert.Equal(t, "The name field must be at least 3 characters.", msg)
 	})
 
@@ -509,7 +509,7 @@ func TestEngine_FormatErrorMessage(t *testing.T) {
 		msg := engine.formatErrorMessage("age", ParsedRule{
 			Name:       "between",
 			Parameters: []string{"1", "100"},
-		}, "numeric")
+		}, "numeric", nil)
 		assert.Equal(t, "The age field must be between 1 and 100.", msg)
 	})
 
@@ -519,8 +519,51 @@ func TestEngine_FormatErrorMessage(t *testing.T) {
 			attributes: map[string]string{"first_name": "First Name"},
 		})
 
-		msg := engine.formatErrorMessage("first_name", ParsedRule{Name: "required"}, "string")
+		msg := engine.formatErrorMessage("first_name", ParsedRule{Name: "required"}, "string", nil)
 		assert.Equal(t, "The First Name field is required.", msg)
+	})
+
+	t.Run("custom rule with value placeholder", func(t *testing.T) {
+		bag, _ := NewDataBag(map[string]any{})
+		engine := NewEngine(context.Background(), bag, nil, engineOptions{
+			customRules: map[string]contractsvalidation.Rule{
+				"my_rule": newAlwaysFailRule("my_rule", "The :attribute value :value is invalid."),
+			},
+		})
+
+		msg := engine.formatErrorMessage("name", ParsedRule{Name: "my_rule"}, "string", "hello")
+		assert.Equal(t, "The name value hello is invalid.", msg)
+	})
+
+	t.Run("custom rule with option placeholders", func(t *testing.T) {
+		bag, _ := NewDataBag(map[string]any{})
+		engine := NewEngine(context.Background(), bag, nil, engineOptions{
+			customRules: map[string]contractsvalidation.Rule{
+				"my_rule": newAlwaysFailRule("my_rule", "The :attribute must be between :option0 and :option1."),
+			},
+		})
+
+		msg := engine.formatErrorMessage("age", ParsedRule{
+			Name:       "my_rule",
+			Parameters: []string{"18", "65"},
+		}, "string", 10)
+		assert.Equal(t, "The age must be between 18 and 65.", msg)
+	})
+
+	t.Run("custom rule with combined placeholders", func(t *testing.T) {
+		bag, _ := NewDataBag(map[string]any{})
+		engine := NewEngine(context.Background(), bag, nil, engineOptions{
+			customRules: map[string]contractsvalidation.Rule{
+				"my_rule": newAlwaysFailRule("my_rule", "The :attribute got :value, expected :option0."),
+			},
+			attributes: map[string]string{"score": "Score"},
+		})
+
+		msg := engine.formatErrorMessage("score", ParsedRule{
+			Name:       "my_rule",
+			Parameters: []string{"100"},
+		}, "string", 42)
+		assert.Equal(t, "The Score got 42, expected 100.", msg)
 	})
 }
 

@@ -129,6 +129,7 @@ func (r *Validation) Make(ctx context.Context, data any, rules map[string]any, o
 		customRules: customRulesMap,
 		messages:    customMessages,
 		attributes:  customAttributes,
+		translator:  langFacade(ctx),
 	})
 	errorBag := engine.Validate()
 	validatedData := engine.ValidatedData()
