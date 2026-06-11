@@ -12,7 +12,6 @@ import (
 
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	databasedb "github.com/goravel/framework/database/db"
-	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/convert"
@@ -68,13 +67,13 @@ func (s *QueryTestSuite) TestAssociation() {
 				setup: func() {
 					user := User{
 						Name: "association_find_name",
-						Address: &Address{
-							Name: "association_find_address",
-						},
 						age: 1,
 					}
 
-					s.Nil(query.Query().Select(orm.Associations).Create(&user))
+					s.Nil(query.Query().Create(&user))
+					addr := &Address{Name: "association_find_address"}
+					s.Nil(query.Query().Relation(&user, "Address").Save(addr))
+					user.Address = addr
 					s.True(user.ID > 0)
 					s.True(user.Address.ID > 0)
 
@@ -83,7 +82,7 @@ func (s *QueryTestSuite) TestAssociation() {
 					s.True(user1.ID > 0)
 
 					var userAddress Address
-					s.Nil(query.Query().Model(&user1).Association("Address").Find(&userAddress))
+					s.Nil(query.Query().Related(&user1, "Address").First(&userAddress))
 					s.True(userAddress.ID > 0)
 					s.Equal("association_find_address", userAddress.Name)
 				},
@@ -93,19 +92,22 @@ func (s *QueryTestSuite) TestAssociation() {
 				setup: func() {
 					user := User{
 						Name: "association_has_one_append_name",
-						Address: &Address{
-							Name: "association_has_one_append_address",
-						},
 					}
 
-					s.Nil(query.Query().Select(orm.Associations).Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
+					addr := &Address{Name: "association_has_one_append_address"}
+					s.Nil(query.Query().Relation(&user, "Address").Save(addr))
+					user.Address = addr
 					s.True(user.Address.ID > 0)
 
 					var user1 User
 					s.Nil(query.Query().Find(&user1, user.ID), driver)
 					s.True(user1.ID > 0, driver)
-					s.Nil(query.Query().Model(&user1).Association("Address").Append(&Address{Name: "association_has_one_append_address1"}), driver)
+					// Replace existing hasOne: delete old then save new.
+					_, err := query.Query().Related(&user1, "Address").Delete()
+					s.Nil(err, driver)
+					s.Nil(query.Query().Relation(&user1, "Address").Save(&Address{Name: "association_has_one_append_address1"}), driver)
 
 					s.Nil(query.Query().Load(&user1, "Address"), driver)
 					s.True(user1.Address.ID > 0, driver)
@@ -117,23 +119,27 @@ func (s *QueryTestSuite) TestAssociation() {
 				setup: func() {
 					user := User{
 						Name: "association_has_many_append_name",
-						Books: []*Book{
-							{Name: "association_has_many_append_address1"},
-							{Name: "association_has_many_append_address2"},
-						},
 					}
 
-					s.Nil(query.Query().Select(orm.Associations).Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
+					books := []*Book{
+						{Name: "association_has_many_append_address1"},
+						{Name: "association_has_many_append_address2"},
+					}
+					s.Nil(query.Query().Relation(&user, "Books").SaveMany(books))
+					user.Books = books
 					s.True(user.Books[0].ID > 0)
 					s.True(user.Books[1].ID > 0)
 
 					var user1 User
 					s.Nil(query.Query().Find(&user1, user.ID))
 					s.True(user1.ID > 0)
-					s.Nil(query.Query().Model(&user1).Association("Books").Append(&Book{Name: "association_has_many_append_address3"}))
+					s.Nil(query.Query().Relation(&user1, "Books").Save(&Book{Name: "association_has_many_append_address3"}))
 
-					s.Nil(query.Query().Load(&user1, "Books"))
+					s.Nil(query.Query().Load(&user1, "Books", func(q contractsorm.Query) contractsorm.Query {
+						return q.OrderBy("id")
+					}))
 					s.Equal(3, len(user1.Books))
 					s.Equal("association_has_many_append_address3", user1.Books[2].Name)
 				},
@@ -143,19 +149,22 @@ func (s *QueryTestSuite) TestAssociation() {
 				setup: func() {
 					user := User{
 						Name: "association_has_one_append_name",
-						Address: &Address{
-							Name: "association_has_one_append_address",
-						},
 					}
 
-					s.Nil(query.Query().Select(orm.Associations).Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
+					addr := &Address{Name: "association_has_one_append_address"}
+					s.Nil(query.Query().Relation(&user, "Address").Save(addr))
+					user.Address = addr
 					s.True(user.Address.ID > 0)
 
 					var user1 User
 					s.Nil(query.Query().Find(&user1, user.ID))
 					s.True(user1.ID > 0)
-					s.Nil(query.Query().Model(&user1).Association("Address").Replace(&Address{Name: "association_has_one_append_address1"}))
+					// New design: explicit two-step for HasOne replace.
+					_, err := query.Query().Related(&user1, "Address").Delete()
+					s.Nil(err)
+					s.Nil(query.Query().Relation(&user1, "Address").Save(&Address{Name: "association_has_one_append_address1"}))
 
 					s.Nil(query.Query().Load(&user1, "Address"))
 					s.True(user1.Address.ID > 0)
@@ -167,21 +176,26 @@ func (s *QueryTestSuite) TestAssociation() {
 				setup: func() {
 					user := User{
 						Name: "association_has_many_replace_name",
-						Books: []*Book{
-							{Name: "association_has_many_replace_address1"},
-							{Name: "association_has_many_replace_address2"},
-						},
 					}
 
-					s.Nil(query.Query().Select(orm.Associations).Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
+					books := []*Book{
+						{Name: "association_has_many_replace_address1"},
+						{Name: "association_has_many_replace_address2"},
+					}
+					s.Nil(query.Query().Relation(&user, "Books").SaveMany(books))
+					user.Books = books
 					s.True(user.Books[0].ID > 0)
 					s.True(user.Books[1].ID > 0)
 
 					var user1 User
 					s.Nil(query.Query().Find(&user1, user.ID))
 					s.True(user1.ID > 0)
-					s.Nil(query.Query().Model(&user1).Association("Books").Replace(&Book{Name: "association_has_many_replace_address3"}))
+					// New design: explicit two-step for HasMany replace (old .Replace would fail on NOT NULL FK)
+					_, err := query.Query().Related(&user1, "Books").Delete()
+					s.Nil(err)
+					s.Nil(query.Query().Relation(&user1, "Books").Save(&Book{Name: "association_has_many_replace_address3"}))
 
 					s.Nil(query.Query().Load(&user1, "Books"))
 					s.Equal(1, len(user1.Books))
@@ -193,32 +207,31 @@ func (s *QueryTestSuite) TestAssociation() {
 				setup: func() {
 					user := User{
 						Name: "association_delete_name",
-						Address: &Address{
-							Name: "association_delete_address",
-						},
 					}
 
-					s.Nil(query.Query().Select(orm.Associations).Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
+					addr := &Address{Name: "association_delete_address"}
+					s.Nil(query.Query().Relation(&user, "Address").Save(addr))
+					user.Address = addr
 					s.True(user.Address.ID > 0)
 
-					// No ID when Delete
+					// No ID when Delete — new design: true delete (not nullify FK)
 					var user1 User
 					s.Nil(query.Query().Find(&user1, user.ID))
 					s.True(user1.ID > 0)
-					s.Nil(query.Query().Model(&user1).Association("Address").Delete(&Address{Name: "association_delete_address"}))
+					_, err := query.Query().Related(&user1, "Address").Where("name", "association_delete_address").Delete()
+					s.Nil(err)
 
 					s.Nil(query.Query().Load(&user1, "Address"))
-					s.True(user1.Address.ID > 0)
-					s.Equal("association_delete_address", user1.Address.Name)
+					s.Nil(user1.Address)
 
 					// Has ID when Delete
 					var user2 User
 					s.Nil(query.Query().Find(&user2, user.ID))
 					s.True(user2.ID > 0)
-					var userAddress Address
-					userAddress.ID = user1.Address.ID
-					s.Nil(query.Query().Model(&user2).Association("Address").Delete(&userAddress))
+					_, err = query.Query().Related(&user2, "Address").Where("id", addr.ID).Delete()
+					s.Nil(err)
 
 					s.Nil(query.Query().Load(&user2, "Address"))
 					s.Nil(user2.Address)
@@ -229,20 +242,21 @@ func (s *QueryTestSuite) TestAssociation() {
 				setup: func() {
 					user := User{
 						Name: "association_clear_name",
-						Address: &Address{
-							Name: "association_clear_address",
-						},
 					}
 
-					s.Nil(query.Query().Select(orm.Associations).Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
+					addr := &Address{Name: "association_clear_address"}
+					s.Nil(query.Query().Relation(&user, "Address").Save(addr))
+					user.Address = addr
 					s.True(user.Address.ID > 0)
 
 					// No ID when Delete
 					var user1 User
 					s.Nil(query.Query().Find(&user1, user.ID))
 					s.True(user1.ID > 0)
-					s.Nil(query.Query().Model(&user1).Association("Address").Clear())
+					_, err := query.Query().Related(&user1, "Address").Delete()
+					s.Nil(err)
 
 					s.Nil(query.Query().Load(&user1, "Address"))
 					s.Nil(user1.Address)
@@ -253,21 +267,25 @@ func (s *QueryTestSuite) TestAssociation() {
 				setup: func() {
 					user := User{
 						Name: "association_count_name",
-						Books: []*Book{
-							{Name: "association_count_address1"},
-							{Name: "association_count_address2"},
-						},
 					}
 
-					s.Nil(query.Query().Select(orm.Associations).Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
+					books := []*Book{
+						{Name: "association_count_address1"},
+						{Name: "association_count_address2"},
+					}
+					s.Nil(query.Query().Relation(&user, "Books").SaveMany(books))
+					user.Books = books
 					s.True(user.Books[0].ID > 0)
 					s.True(user.Books[1].ID > 0)
 
 					var user1 User
 					s.Nil(query.Query().Find(&user1, user.ID))
 					s.True(user1.ID > 0)
-					s.Equal(int64(2), query.Query().Model(&user1).Association("Books").Count())
+					count, err := query.Query().Related(&user1, "Books").Count()
+					s.Nil(err)
+					s.Equal(int64(2), count)
 				},
 			},
 		}
@@ -285,13 +303,13 @@ func (s *QueryTestSuite) TestBelongsTo() {
 		s.Run(driver, func() {
 			user := &User{
 				Name: "belongs_to_name",
-				Address: &Address{
-					Name: "belongs_to_address",
-				},
 			}
 
-			s.Nil(query.Query().Select(orm.Associations).Create(&user))
+			s.Nil(query.Query().Create(user))
 			s.True(user.ID > 0)
+			addr := &Address{Name: "belongs_to_address"}
+			s.Nil(query.Query().Relation(user, "Address").Save(addr))
+			user.Address = addr
 			s.True(user.Address.ID > 0)
 
 			var userAddress Address
@@ -492,12 +510,15 @@ func (s *QueryTestSuite) TestCreate() {
 			{
 				name: "success when create with select Associations",
 				setup: func() {
-					user := User{Name: "create_user", Address: &Address{}, Books: []*Book{{}, {}}}
-					user.Address.Name = "create_address"
-					user.Books[0].Name = "create_book0"
-					user.Books[1].Name = "create_book1"
-					s.Nil(query.Query().Select(orm.Associations).Create(&user))
+					user := User{Name: "create_user"}
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
+					addr := &Address{Name: "create_address"}
+					s.Nil(query.Query().Relation(&user, "Address").Save(addr))
+					user.Address = addr
+					books := []*Book{{Name: "create_book0"}, {Name: "create_book1"}}
+					s.Nil(query.Query().Relation(&user, "Books").SaveMany(books))
+					user.Books = books
 					s.True(user.Address.ID > 0)
 					s.True(user.Books[0].ID > 0)
 					s.True(user.Books[1].ID > 0)
@@ -506,73 +527,30 @@ func (s *QueryTestSuite) TestCreate() {
 			{
 				name: "success when create with select fields",
 				setup: func() {
-					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{{}, {}}}
-					user.Address.Name = "create_address"
-					user.Books[0].Name = "create_book0"
-					user.Books[1].Name = "create_book1"
-					s.Nil(query.Query().Select("Name", "Avatar", "Address").Create(&user))
+					// Relations are no longer auto-created by Select; set them to nil
+					// to verify the field selection works on the parent only.
+					user := User{Name: "create_user", Avatar: "create_avatar"}
+					s.Nil(query.Query().Select("Name", "Avatar").Create(&user))
 					s.True(user.ID > 0)
-					s.True(user.Address.ID > 0)
-					s.True(user.Books[0].ID == 0)
-					s.True(user.Books[1].ID == 0)
+					s.Nil(user.Address)
+					s.Nil(user.Books)
 				},
 			},
 			{
 				name: "success when create with omit fields",
 				setup: func() {
-					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{{}, {}}}
-					user.Address.Name = "create_address"
-					user.Books[0].Name = "create_book0"
-					user.Books[1].Name = "create_book1"
-					s.Nil(query.Query().Omit("Address").Create(&user))
+					// Relations are no longer auto-created/omitted by Omit; set them to nil
+					// to verify the field selection works on the parent only.
+					user := User{Name: "create_user", Avatar: "create_avatar"}
+					s.Nil(query.Query().Omit("Avatar").Create(&user))
 					s.True(user.ID > 0)
-					s.True(user.Address.ID == 0)
-					s.True(user.Books[0].ID > 0)
-					s.True(user.Books[1].ID > 0)
-				},
-			},
-			{
-				name: "success create with omit Associations",
-				setup: func() {
-					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{{}, {}}}
-					user.Address.Name = "create_address"
-					user.Books[0].Name = "create_book0"
-					user.Books[1].Name = "create_book1"
-					s.Nil(query.Query().Omit(orm.Associations).Create(&user))
-					s.True(user.ID > 0)
-					s.True(user.Address.ID == 0)
-					s.True(user.Books[0].ID == 0)
-					s.True(user.Books[1].ID == 0)
-				},
-			},
-			{
-				name: "error when set select and omit at the same time",
-				setup: func() {
-					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{{}, {}}}
-					user.Address.Name = "create_address"
-					user.Books[0].Name = "create_book0"
-					user.Books[1].Name = "create_book1"
-					s.EqualError(query.Query().Omit(orm.Associations).Select("Name").Create(&user), errors.OrmQuerySelectAndOmitsConflict.Error())
-				},
-			},
-			{
-				name: "error when select that set fields and Associations at the same time",
-				setup: func() {
-					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{{}, {}}}
-					user.Address.Name = "create_address"
-					user.Books[0].Name = "create_book0"
-					user.Books[1].Name = "create_book1"
-					s.EqualError(query.Query().Select("Name", orm.Associations).Create(&user), errors.OrmQueryAssociationsConflict.Error())
-				},
-			},
-			{
-				name: "error when omit that set fields and Associations at the same time",
-				setup: func() {
-					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{{}, {}}}
-					user.Address.Name = "create_address"
-					user.Books[0].Name = "create_book0"
-					user.Books[1].Name = "create_book1"
-					s.EqualError(query.Query().Omit("Name", orm.Associations).Create(&user), errors.OrmQueryAssociationsConflict.Error())
+					s.Nil(user.Address)
+					s.Nil(user.Books)
+
+					// Avatar should not be persisted because it was omitted
+					var user1 User
+					s.Nil(query.Query().Find(&user1, user.ID))
+					s.Empty(user1.Avatar)
 				},
 			},
 		}
@@ -587,11 +565,15 @@ func (s *QueryTestSuite) TestCreate() {
 func (s *QueryTestSuite) TestCursor() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			user := User{Name: "cursor_user", Avatar: "cursor_avatar", Address: &Address{Name: "cursor_address"}, Books: []*Book{
-				{Name: "cursor_book"},
-			}}
-			s.Nil(query.Query().Select(orm.Associations).Create(&user))
+			user := User{Name: "cursor_user", Avatar: "cursor_avatar"}
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
+			addr := &Address{Name: "cursor_address"}
+			s.Nil(query.Query().Relation(&user, "Address").Save(addr))
+			user.Address = addr
+			books := []*Book{{Name: "cursor_book"}}
+			s.Nil(query.Query().Relation(&user, "Books").SaveMany(books))
+			user.Books = books
 
 			user1 := User{Name: "cursor_user", Avatar: "cursor_avatar1"}
 			s.Nil(query.Query().Create(&user1))
@@ -1114,31 +1096,19 @@ func (s *QueryTestSuite) TestEvent_Creating() {
 			{
 				name: "trigger when create with omit",
 				setup: func() {
-					user := User{Name: "event_creating_omit_create_name", Address: &Address{}, Books: []*Book{{}, {}}}
-					user.Address.Name = "event_creating_omit_create_address"
-					user.Books[0].Name = "event_creating_omit_create_book0"
-					user.Books[1].Name = "event_creating_omit_create_book1"
-					s.Nil(query.Query().Omit("Address").Create(&user))
+					user := User{Name: "event_creating_omit_create_name", Avatar: "ignored"}
+					s.Nil(query.Query().Omit("Avatar").Create(&user))
 					s.True(user.ID > 0)
 					s.Equal("event_creating_omit_create_avatar", user.Avatar)
-					s.True(user.Address.ID == 0)
-					s.True(user.Books[0].ID > 0)
-					s.True(user.Books[1].ID > 0)
 				},
 			},
 			{
 				name: "trigger when create with select",
 				setup: func() {
-					user := User{Name: "event_creating_select_create_name", Address: &Address{}, Books: []*Book{{}, {}}}
-					user.Address.Name = "event_creating_select_create_address"
-					user.Books[0].Name = "event_creating_select_create_book0"
-					user.Books[1].Name = "event_creating_select_create_book1"
-					s.Nil(query.Query().Select("Name", "Avatar", "Address").Create(&user))
+					user := User{Name: "event_creating_select_create_name"}
+					s.Nil(query.Query().Select("Name", "Avatar").Create(&user))
 					s.True(user.ID > 0)
 					s.Equal("event_creating_select_create_avatar", user.Avatar)
-					s.True(user.Address.ID > 0)
-					s.True(user.Books[0].ID == 0)
-					s.True(user.Books[1].ID == 0)
 				},
 			},
 			{
@@ -1243,16 +1213,10 @@ func (s *QueryTestSuite) TestEvent_Created() {
 			{
 				name: "trigger when create with omit",
 				setup: func() {
-					user := User{Name: "event_created_omit_create_name", Address: &Address{}, Books: []*Book{{}, {}}}
-					user.Address.Name = "event_created_omit_create_address"
-					user.Books[0].Name = "event_created_omit_create_book0"
-					user.Books[1].Name = "event_created_omit_create_book1"
-					s.Nil(query.Query().Omit("Address").Create(&user))
+					user := User{Name: "event_created_omit_create_name", Avatar: "ignored"}
+					s.Nil(query.Query().Omit("Avatar").Create(&user))
 					s.True(user.ID > 0)
 					s.Equal(fmt.Sprintf("event_created_omit_create_avatar_%d", user.ID), user.Avatar)
-					s.True(user.Address.ID == 0)
-					s.True(user.Books[0].ID > 0)
-					s.True(user.Books[1].ID > 0)
 
 					var user1 User
 					s.Nil(query.Query().Find(&user1, user.ID))
@@ -1263,16 +1227,10 @@ func (s *QueryTestSuite) TestEvent_Created() {
 			{
 				name: "trigger when create with select",
 				setup: func() {
-					user := User{Name: "event_created_select_create_name", Address: &Address{}, Books: []*Book{{}, {}}}
-					user.Address.Name = "event_created_select_create_address"
-					user.Books[0].Name = "event_created_select_create_book0"
-					user.Books[1].Name = "event_created_select_create_book1"
-					s.Nil(query.Query().Select("ID", "Name", "Avatar", "Address").Create(&user))
+					user := User{Name: "event_created_select_create_name"}
+					s.Nil(query.Query().Select("ID", "Name", "Avatar").Create(&user))
 					s.True(user.ID > 0)
 					s.Equal(fmt.Sprintf("event_created_select_create_avatar_%d", user.ID), user.Avatar)
-					s.True(user.Address.ID > 0)
-					s.True(user.Books[0].ID == 0)
-					s.True(user.Books[1].ID == 0)
 
 					var user1 User
 					s.Nil(query.Query().Find(&user1, user.ID))
@@ -1371,31 +1329,19 @@ func (s *QueryTestSuite) TestEvent_Saving() {
 			{
 				name: "trigger when create with omit",
 				setup: func() {
-					user := User{Name: "event_saving_omit_create_name", Address: &Address{}, Books: []*Book{{}, {}}}
-					user.Address.Name = "event_saving_omit_create_address"
-					user.Books[0].Name = "event_saving_omit_create_book0"
-					user.Books[1].Name = "event_saving_omit_create_book1"
-					s.Nil(query.Query().Omit("Address").Create(&user))
+					user := User{Name: "event_saving_omit_create_name", Avatar: "ignored"}
+					s.Nil(query.Query().Omit("Avatar").Create(&user))
 					s.True(user.ID > 0)
 					s.Equal("event_saving_omit_create_avatar", user.Avatar)
-					s.True(user.Address.ID == 0)
-					s.True(user.Books[0].ID > 0)
-					s.True(user.Books[1].ID > 0)
 				},
 			},
 			{
 				name: "trigger when create with select",
 				setup: func() {
-					user := User{Name: "event_saving_select_create_name", Address: &Address{}, Books: []*Book{{}, {}}}
-					user.Address.Name = "event_saving_select_create_address"
-					user.Books[0].Name = "event_saving_select_create_book0"
-					user.Books[1].Name = "event_saving_select_create_book1"
-					s.Nil(query.Query().Select("Name", "Avatar", "Address").Create(&user))
+					user := User{Name: "event_saving_select_create_name"}
+					s.Nil(query.Query().Select("Name", "Avatar").Create(&user))
 					s.True(user.ID > 0)
 					s.Equal("event_saving_select_create_avatar", user.Avatar)
-					s.True(user.Address.ID > 0)
-					s.True(user.Books[0].ID == 0)
-					s.True(user.Books[1].ID == 0)
 				},
 			},
 			{
@@ -1521,16 +1467,10 @@ func (s *QueryTestSuite) TestEvent_Saved() {
 			{
 				name: "trigger when create with omit",
 				setup: func() {
-					user := User{Name: "event_saved_omit_create_name", Address: &Address{}, Books: []*Book{{}, {}}}
-					user.Address.Name = "event_saved_omit_create_address"
-					user.Books[0].Name = "event_saved_omit_create_book0"
-					user.Books[1].Name = "event_saved_omit_create_book1"
-					s.Nil(query.Query().Omit("Address").Create(&user))
+					user := User{Name: "event_saved_omit_create_name", Avatar: "ignored"}
+					s.Nil(query.Query().Omit("Avatar").Create(&user))
 					s.True(user.ID > 0)
 					s.Equal("event_saved_omit_create_avatar", user.Avatar)
-					s.True(user.Address.ID == 0)
-					s.True(user.Books[0].ID > 0)
-					s.True(user.Books[1].ID > 0)
 
 					var user1 User
 					s.Nil(query.Query().Find(&user1, user.ID))
@@ -1540,16 +1480,10 @@ func (s *QueryTestSuite) TestEvent_Saved() {
 			{
 				name: "trigger when create with select",
 				setup: func() {
-					user := User{Name: "event_saved_select_create_name", Address: &Address{}, Books: []*Book{{}, {}}}
-					user.Address.Name = "event_saved_select_create_address"
-					user.Books[0].Name = "event_saved_select_create_book0"
-					user.Books[1].Name = "event_saved_select_create_book1"
-					s.Nil(query.Query().Select("Name", "Avatar", "Address").Create(&user))
+					user := User{Name: "event_saved_select_create_name"}
+					s.Nil(query.Query().Select("Name", "Avatar").Create(&user))
 					s.True(user.ID > 0)
 					s.Equal("event_saved_select_create_avatar", user.Avatar)
-					s.True(user.Address.ID > 0)
-					s.True(user.Books[0].ID == 0)
-					s.True(user.Books[1].ID == 0)
 
 					var user1 User
 					s.Nil(query.Query().Find(&user1, user.ID))
@@ -3119,13 +3053,13 @@ func (s *QueryTestSuite) TestHasOne() {
 		s.Run(driver, func() {
 			user := &User{
 				Name: "has_one_name",
-				Address: &Address{
-					Name: "has_one_address",
-				},
 			}
 
-			s.Nil(query.Query().Select(orm.Associations).Create(&user))
+			s.Nil(query.Query().Create(user))
 			s.True(user.ID > 0)
+			addr := &Address{Name: "has_one_address"}
+			s.Nil(query.Query().Relation(user, "Address").Save(addr))
+			user.Address = addr
 			s.True(user.Address.ID > 0)
 
 			var user1 User
@@ -3141,12 +3075,12 @@ func (s *QueryTestSuite) TestHasOneMorph() {
 		s.Run(driver, func() {
 			user := &User{
 				Name: "has_one_morph_name",
-				House: &House{
-					Name: "has_one_morph_house",
-				},
 			}
-			s.Nil(query.Query().Select(orm.Associations).Create(&user))
+			s.Nil(query.Query().Create(user))
 			s.True(user.ID > 0)
+			userHouse := &House{Name: "has_one_morph_house"}
+			s.Nil(query.Query().Relation(user, "House").Save(userHouse))
+			user.House = userHouse
 			s.True(user.House.ID > 0)
 
 			var user1 User
@@ -3168,14 +3102,16 @@ func (s *QueryTestSuite) TestHasMany() {
 		s.Run(driver, func() {
 			user := &User{
 				Name: "has_many_name",
-				Books: []*Book{
-					{Name: "has_many_book1"},
-					{Name: "has_many_book2"},
-				},
 			}
 
-			s.Nil(query.Query().Select(orm.Associations).Create(&user))
+			s.Nil(query.Query().Create(user))
 			s.True(user.ID > 0)
+			books := []*Book{
+				{Name: "has_many_book1"},
+				{Name: "has_many_book2"},
+			}
+			s.Nil(query.Query().Relation(user, "Books").SaveMany(books))
+			user.Books = books
 			s.True(user.Books[0].ID > 0)
 			s.True(user.Books[1].ID > 0)
 
@@ -3192,13 +3128,15 @@ func (s *QueryTestSuite) TestHasManyMorph() {
 		s.Run(driver, func() {
 			user := &User{
 				Name: "has_many_morph_name",
-				Phones: []*Phone{
-					{Name: "has_many_morph_phone1"},
-					{Name: "has_many_morph_phone2"},
-				},
 			}
-			s.Nil(query.Query().Select(orm.Associations).Create(&user))
+			s.Nil(query.Query().Create(user))
 			s.True(user.ID > 0)
+			userPhones := []*Phone{
+				{Name: "has_many_morph_phone1"},
+				{Name: "has_many_morph_phone2"},
+			}
+			s.Nil(query.Query().Relation(user, "Phones").SaveMany(userPhones))
+			user.Phones = userPhones
 			s.True(user.Phones[0].ID > 0)
 			s.True(user.Phones[1].ID > 0)
 
@@ -3222,14 +3160,16 @@ func (s *QueryTestSuite) TestManyToMany() {
 		s.Run(driver, func() {
 			user := &User{
 				Name: "many_to_many_name",
-				Roles: []*Role{
-					{Name: "many_to_many_role1"},
-					{Name: "many_to_many_role2"},
-				},
 			}
 
-			s.Nil(query.Query().Select(orm.Associations).Create(&user))
+			s.Nil(query.Query().Create(user))
 			s.True(user.ID > 0)
+			roles := []*Role{
+				{Name: "many_to_many_role1"},
+				{Name: "many_to_many_role2"},
+			}
+			s.Nil(query.Query().Relation(user, "Roles").SaveMany(roles))
+			user.Roles = roles
 			s.True(user.Roles[0].ID > 0)
 			s.True(user.Roles[1].ID > 0)
 
@@ -3261,11 +3201,13 @@ func (s *QueryTestSuite) TestManyToManyUpdateWithAssociations() {
 						roleA := &Role{Name: "m2m_update_role_a"}
 						roleB := &Role{Name: "m2m_update_role_b"}
 						user := &User{
-							Name:  "m2m_update_user",
-							Roles: []*Role{roleA, roleB},
+							Name: "m2m_update_user",
 						}
-						s.Nil(query.Query().Select(orm.Associations).Create(&user))
+						s.Nil(query.Query().Create(user))
 						s.True(user.ID > 0)
+						roles := []*Role{roleA, roleB}
+						s.Nil(query.Query().Relation(user, "Roles").SaveMany(roles))
+						user.Roles = roles
 						s.True(roleA.ID > 0)
 						s.True(roleB.ID > 0)
 
@@ -3276,9 +3218,8 @@ func (s *QueryTestSuite) TestManyToManyUpdateWithAssociations() {
 
 						// Step 3: update user with only role C (remove A and B from slice)
 						roleC := &Role{Name: "m2m_update_role_c"}
-						userLoaded.Roles = []*Role{roleC}
-						_, err := query.Query().Model(&userLoaded).Select(orm.Associations).Update(&userLoaded)
-						s.Nil(err)
+						s.Nil(query.Query().Relation(&userLoaded, "Roles").Save(roleC))
+						userLoaded.Roles = append(userLoaded.Roles, roleC)
 
 						// Step 4: reload and assert that A and B are still linked (not deleted), C is added
 						var userAfterUpdate User
@@ -3300,15 +3241,17 @@ func (s *QueryTestSuite) TestManyToManyUpdateWithAssociations() {
 					name: "Select(Associations).Update updates main fields and associations",
 					setup: func() {
 						user := &User{
-							Name:  "m2m_update_field_user",
-							Roles: []*Role{{Name: "m2m_update_field_role"}},
+							Name: "m2m_update_field_user",
 						}
-						s.Nil(query.Query().Select(orm.Associations).Create(&user))
+						s.Nil(query.Query().Create(user))
 						s.True(user.ID > 0)
+						role := &Role{Name: "m2m_update_field_role"}
+						s.Nil(query.Query().Relation(user, "Roles").Save(role))
+						user.Roles = []*Role{role}
 
 						// Select("name", Associations) updates only the name column AND associations.
 						user.Name = "m2m_update_field_user_updated"
-						_, err := query.Query().Model(user).Select("name", orm.Associations).Update(user)
+						_, err := query.Query().Model(user).Select("name").Update(user)
 						s.Nil(err)
 
 						var userLoaded User
@@ -3321,11 +3264,12 @@ func (s *QueryTestSuite) TestManyToManyUpdateWithAssociations() {
 					setup: func() {
 						roleA := &Role{Name: "m2m_no_select_role_a"}
 						user := &User{
-							Name:  "m2m_no_select_user",
-							Roles: []*Role{roleA},
+							Name: "m2m_no_select_user",
 						}
-						s.Nil(query.Query().Select(orm.Associations).Create(&user))
+						s.Nil(query.Query().Create(user))
 						s.True(user.ID > 0)
+						s.Nil(query.Query().Relation(user, "Roles").Save(roleA))
+						user.Roles = []*Role{roleA}
 						s.True(roleA.ID > 0)
 
 						// Update user with a different role slice but without Select(Associations)
@@ -3373,16 +3317,24 @@ func (s *QueryTestSuite) TestLimit() {
 
 func (s *QueryTestSuite) TestLoad() {
 	for _, query := range s.queries {
-		user := User{Name: "load_user", Address: &Address{}, Books: []*Book{{}, {}}, Roles: []*Role{{}, {}}}
-		user.Address.Name = "load_address"
-		user.Books[0].Name = "load_book0"
-		user.Books[0].Author = &Author{Name: "load_book0_author"}
-		user.Books[1].Name = "load_book1"
-		user.Roles[0].Name = "load_role0"
-		user.Roles[1].Name = "load_role1"
-
-		s.Nil(query.Query().Select(orm.Associations).Create(&user))
+		user := User{Name: "load_user"}
+		s.Nil(query.Query().Create(&user))
 		s.True(user.ID > 0)
+		addr := &Address{Name: "load_address"}
+		s.Nil(query.Query().Relation(&user, "Address").Save(addr))
+		user.Address = addr
+		book0 := &Book{Name: "load_book0"}
+		s.Nil(query.Query().Create(book0))
+		author := &Author{Name: "load_book0_author"}
+		s.Nil(query.Query().Relation(book0, "Author").Save(author))
+		book0.Author = author
+		book1 := &Book{Name: "load_book1"}
+		books := []*Book{book0, book1}
+		s.Nil(query.Query().Relation(&user, "Books").SaveMany(books))
+		user.Books = books
+		roles := []*Role{{Name: "load_role0"}, {Name: "load_role1"}}
+		s.Nil(query.Query().Relation(&user, "Roles").SaveMany(roles))
+		user.Roles = roles
 		s.True(user.Address.ID > 0)
 		s.True(user.Books[0].ID > 0)
 		s.True(user.Books[1].ID > 0)
@@ -3418,7 +3370,9 @@ func (s *QueryTestSuite) TestLoad() {
 					s.True(user1.ID > 0)
 					s.Nil(user1.Address)
 					s.Equal(0, len(user1.Books))
-					s.Nil(query.Query().Load(&user1, "Books", "name = ?", "load_book0"))
+					s.Nil(query.Query().Load(&user1, "Books", func(query contractsorm.Query) contractsorm.Query {
+						return query.Where("name = ?", "load_book0")
+					}))
 					s.True(user1.ID > 0)
 					s.Nil(user1.Address)
 					s.Equal(1, len(user1.Books))
@@ -3497,12 +3451,15 @@ func (s *QueryTestSuite) TestLoad() {
 func (s *QueryTestSuite) TestLoadMissing() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			user := User{Name: "load_missing_user", Address: &Address{}, Books: []*Book{{}, {}}}
-			user.Address.Name = "load_missing_address"
-			user.Books[0].Name = "load_missing_book0"
-			user.Books[1].Name = "load_missing_book1"
-			s.Nil(query.Query().Select(orm.Associations).Create(&user))
+			user := User{Name: "load_missing_user"}
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
+			addr := &Address{Name: "load_missing_address"}
+			s.Nil(query.Query().Relation(&user, "Address").Save(addr))
+			user.Address = addr
+			books := []*Book{{Name: "load_missing_book0"}, {Name: "load_missing_book1"}}
+			s.Nil(query.Query().Relation(&user, "Books").SaveMany(books))
+			user.Books = books
 			s.True(user.Address.ID > 0)
 			s.True(user.Books[0].ID > 0)
 			s.True(user.Books[1].ID > 0)
@@ -3531,7 +3488,9 @@ func (s *QueryTestSuite) TestLoadMissing() {
 					description: "don't load when not missing",
 					setup: func(description string) {
 						var user1 User
-						s.Nil(query.Query().With("Books", "name = ?", "load_missing_book0").Find(&user1, user.ID))
+						s.Nil(query.Query().With("Books", func(query contractsorm.Query) contractsorm.Query {
+							return query.Where("name = ?", "load_missing_book0")
+						}).Find(&user1, user.ID))
 						s.True(user1.ID > 0)
 						s.Nil(user1.Address)
 						s.True(len(user1.Books) == 1)
@@ -3629,13 +3588,18 @@ func (s *QueryTestSuite) TestSave() {
 			{
 				name: "success when create with Select",
 				setup: func() {
+					// Select no longer auto-creates relations; create the House
+					// explicitly via Relation().Save after the parent Save.
 					user := User{
 						Name:   "save_create_with_select_user",
 						Avatar: "save_create_with_select_avatar",
-						House:  &House{Name: "save_create_with_select_house"},
 					}
-					s.Nil(query.Query().Select("Name", "House").Save(&user))
+					s.Nil(query.Query().Select("Name").Save(&user))
 					s.True(user.ID > 0)
+
+					house := &House{Name: "save_create_with_select_house"}
+					s.Nil(query.Query().Relation(&user, "House").Save(house))
+					user.House = house
 					s.True(user.House.ID > 0)
 
 					var user1 User
@@ -3687,15 +3651,19 @@ func (s *QueryTestSuite) TestSave() {
 					user := User{
 						Name:   "save_update_with_select_user",
 						Avatar: "save_update_with_select_avatar",
-						House:  &House{Name: "save_update_with_select_house"},
 					}
 					s.Nil(query.Query().Select("Name", "Avatar").Create(&user))
 					s.True(user.ID > 0)
-					s.True(user.House.ID == 0)
+					s.Nil(user.House)
 
 					user.Name = "save_update_with_select_user1"
-					s.Nil(query.Query().Select("Name", "House").Save(&user))
+					s.Nil(query.Query().Select("Name").Save(&user))
 
+					// Relations are no longer auto-created via Select; create
+					// the House explicitly through the relation writer.
+					house := &House{Name: "save_update_with_select_house"}
+					s.Nil(query.Query().Relation(&user, "House").Save(house))
+					user.House = house
 					s.True(user.House.ID > 0)
 
 					var user1 User
@@ -3710,21 +3678,30 @@ func (s *QueryTestSuite) TestSave() {
 			{
 				name: "success when update with Omit",
 				setup: func() {
+					// Create the parent and seed Address via the relation writer
+					// (Select no longer auto-creates relations).
 					user := User{
-						Name:    "save_update_with_omit_user",
-						Avatar:  "save_update_with_omit_avatar",
-						Address: &Address{Name: "save_update_with_omit_address"},
-						House:   &House{Name: "save_update_with_omit_house"},
+						Name:   "save_update_with_omit_user",
+						Avatar: "save_update_with_omit_avatar",
 					}
-					s.Nil(query.Query().Select("Name", "Avatar", "Address").Create(&user))
+					s.Nil(query.Query().Select("Name", "Avatar").Create(&user))
 					s.True(user.ID > 0)
+
+					address := &Address{Name: "save_update_with_omit_address"}
+					s.Nil(query.Query().Relation(&user, "Address").Save(address))
+					user.Address = address
 					s.True(user.Address.ID > 0)
-					s.True(user.House.ID == 0)
+					s.Nil(user.House)
 
 					user.Name = "save_update_with_omit_user1"
 					user.Address.Name = "save_update_with_omit_address1"
-					s.Nil(query.Query().Omit("Address").Save(&user))
+					s.Nil(query.Query().Omit("Avatar").Save(&user))
 
+					// Omit no longer auto-saves other relations; create the
+					// House explicitly via the relation writer.
+					house := &House{Name: "save_update_with_omit_house"}
+					s.Nil(query.Query().Relation(&user, "House").Save(house))
+					user.House = house
 					s.True(user.House.ID > 0)
 
 					var user1 User
@@ -4598,14 +4575,15 @@ func (s *QueryTestSuite) TestWithoutGlobalScopes() {
 func (s *QueryTestSuite) TestWith() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			user := User{Name: "with_user", Address: &Address{
-				Name: "with_address",
-			}, Books: []*Book{{
-				Name: "with_book0",
-			}, {
-				Name: "with_book1",
-			}}}
-			s.Nil(query.Query().Select(orm.Associations).Create(&user))
+			user := User{Name: "with_user"}
+			s.Nil(query.Query().Create(&user))
+			s.True(user.ID > 0)
+			addr := &Address{Name: "with_address"}
+			s.Nil(query.Query().Relation(&user, "Address").Save(addr))
+			user.Address = addr
+			books := []*Book{{Name: "with_book0"}, {Name: "with_book1"}}
+			s.Nil(query.Query().Relation(&user, "Books").SaveMany(books))
+			user.Books = books
 			s.True(user.ID > 0)
 			s.True(user.Address.ID > 0)
 			s.True(user.Books[0].ID > 0)
@@ -4630,7 +4608,9 @@ func (s *QueryTestSuite) TestWith() {
 					description: "with simple conditions",
 					setup: func(description string) {
 						var user1 User
-						s.Nil(query.Query().With("Books", "name = ?", "with_book0").Find(&user1, user.ID))
+						s.Nil(query.Query().With("Books", func(query contractsorm.Query) contractsorm.Query {
+							return query.Where("name = ?", "with_book0")
+						}).Find(&user1, user.ID))
 						s.True(user1.ID > 0)
 						s.Nil(user1.Address)
 						s.Equal(1, len(user1.Books))
@@ -4661,15 +4641,22 @@ func (s *QueryTestSuite) TestWith() {
 func (s *QueryTestSuite) TestWithNesting() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			user := User{Name: "with_nesting_user", Books: []*Book{{
-				Name:   "with_nesting_book0",
-				Author: &Author{Name: "with_nesting_author0"},
-			}, {
-				Name:   "with_nesting_book1",
-				Author: &Author{Name: "with_nesting_author1"},
-			}}}
-			s.Nil(query.Query().Select(orm.Associations).Create(&user))
+			user := User{Name: "with_nesting_user"}
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
+			book0 := &Book{Name: "with_nesting_book0"}
+			s.Nil(query.Query().Create(book0))
+			author0 := &Author{Name: "with_nesting_author0"}
+			s.Nil(query.Query().Relation(book0, "Author").Save(author0))
+			book0.Author = author0
+			book1 := &Book{Name: "with_nesting_book1"}
+			s.Nil(query.Query().Create(book1))
+			author1 := &Author{Name: "with_nesting_author1"}
+			s.Nil(query.Query().Relation(book1, "Author").Save(author1))
+			book1.Author = author1
+			books := []*Book{book0, book1}
+			s.Nil(query.Query().Relation(&user, "Books").SaveMany(books))
+			user.Books = books
 			s.True(user.Books[0].ID > 0)
 			s.True(user.Books[0].Author.ID > 0)
 			s.True(user.Books[1].ID > 0)

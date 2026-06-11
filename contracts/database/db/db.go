@@ -215,6 +215,15 @@ type Result struct {
 	RowsAffected int64
 }
 
+// SyncResult reports the per-id outcome of a Sync / SyncWithoutDetaching / Toggle operation on
+// a many-to-many (or polymorphic many-to-many) pivot table. Each slice carries the related ids
+// in the order they were processed.
+type SyncResult struct {
+	Attached []any
+	Detached []any
+	Updated  []any
+}
+
 type Builder interface {
 	CommonBuilder
 	Beginx() (*sqlx.Tx, error)

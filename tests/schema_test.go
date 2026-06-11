@@ -1584,13 +1584,13 @@ func (s *SchemaSuite) TestEnum_Postgres() {
 		Str: "a",
 		Int: "4",
 	}
-	s.ErrorContains(testQuery.Query().Table(table).Create(&postgresEnum), `new row for relation "goravel_postgres_enum" violates check constraint "goravel_postgres_enum_int_check"`)
+	s.ErrorContains(testQuery.Query().Table(table).Create(postgresEnum), `new row for relation "goravel_postgres_enum" violates check constraint "goravel_postgres_enum_int_check"`)
 
 	postgresEnum = &PostgresEnum{
 		Str: "a",
 		Int: "1",
 	}
-	s.NoError(testQuery.Query().Table(table).Create(&postgresEnum))
+	s.NoError(testQuery.Query().Table(table).Create(postgresEnum))
 	s.True(postgresEnum.ID > 0)
 }
 
@@ -1619,13 +1619,13 @@ func (s *SchemaSuite) TestEnum_Sqlite() {
 		Str: "a",
 		Int: "4",
 	}
-	s.ErrorContains(testQuery.Query().Table(table).Create(&sqliteEnum), `constraint failed: CHECK constraint failed: int`)
+	s.ErrorContains(testQuery.Query().Table(table).Create(sqliteEnum), `constraint failed: CHECK constraint failed: int`)
 
 	sqliteEnum = &SqliteEnum{
 		Str: "a",
 		Int: "1",
 	}
-	s.NoError(testQuery.Query().Table(table).Create(&sqliteEnum))
+	s.NoError(testQuery.Query().Table(table).Create(sqliteEnum))
 	s.True(sqliteEnum.ID > 0)
 }
 
@@ -1654,13 +1654,13 @@ func (s *SchemaSuite) TestEnum_Mysql() {
 		Str: "a",
 		Int: 4,
 	}
-	s.ErrorContains(testQuery.Query().Table(table).Create(&mysqlEnum), "Data truncated for column 'int' at row 1")
+	s.ErrorContains(testQuery.Query().Table(table).Create(mysqlEnum), "Data truncated for column 'int' at row 1")
 
 	mysqlEnum = &MysqlEnum{
 		Str: "a",
 		Int: 1,
 	}
-	s.NoError(testQuery.Query().Table(table).Create(&mysqlEnum))
+	s.NoError(testQuery.Query().Table(table).Create(mysqlEnum))
 	s.True(mysqlEnum.ID > 0)
 }
 
@@ -1689,13 +1689,13 @@ func (s *SchemaSuite) TestEnum_Sqlserver() {
 		Str: "a",
 		Int: "4",
 	}
-	s.ErrorContains(testQuery.Query().Table(table).Create(&sqlserverEnum), `The INSERT statement conflicted with the CHECK constraint`)
+	s.ErrorContains(testQuery.Query().Table(table).Create(sqlserverEnum), `The INSERT statement conflicted with the CHECK constraint`)
 
 	sqlserverEnum = &SqlserverEnum{
 		Str: "a",
 		Int: "1",
 	}
-	s.NoError(testQuery.Query().Table(table).Create(&sqlserverEnum))
+	s.NoError(testQuery.Query().Table(table).Create(sqlserverEnum))
 	s.True(sqlserverEnum.ID > 0)
 }
 

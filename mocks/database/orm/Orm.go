@@ -426,6 +426,104 @@ func (_c *Orm_Query_Call) RunAndReturn(run func() orm.Query) *Orm_Query_Call {
 	return _c
 }
 
+// Related provides a mock function with given fields: parent, relation
+func (_m *Orm) Related(parent interface{}, relation string) orm.Query {
+	ret := _m.Called(parent, relation)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Related")
+	}
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(interface{}, string) orm.Query); ok {
+		r0 = rf(parent, relation)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
+// Orm_Related_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Related'
+type Orm_Related_Call struct {
+	*mock.Call
+}
+
+// Related is a helper method to define mock.On call
+//   - parent interface{}
+//   - relation string
+func (_e *Orm_Expecter) Related(parent interface{}, relation interface{}) *Orm_Related_Call {
+	return &Orm_Related_Call{Call: _e.mock.On("Related", parent, relation)}
+}
+
+func (_c *Orm_Related_Call) Run(run func(parent interface{}, relation string)) *Orm_Related_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(interface{}), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *Orm_Related_Call) Return(_a0 orm.Query) *Orm_Related_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Orm_Related_Call) RunAndReturn(run func(interface{}, string) orm.Query) *Orm_Related_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Relation provides a mock function with given fields: parent, name
+func (_m *Orm) Relation(parent interface{}, name string) orm.RelationWriter {
+	ret := _m.Called(parent, name)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Relation")
+	}
+
+	var r0 orm.RelationWriter
+	if rf, ok := ret.Get(0).(func(interface{}, string) orm.RelationWriter); ok {
+		r0 = rf(parent, name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.RelationWriter)
+		}
+	}
+
+	return r0
+}
+
+// Orm_Relation_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Relation'
+type Orm_Relation_Call struct {
+	*mock.Call
+}
+
+// Relation is a helper method to define mock.On call
+//   - parent interface{}
+//   - name string
+func (_e *Orm_Expecter) Relation(parent interface{}, name interface{}) *Orm_Relation_Call {
+	return &Orm_Relation_Call{Call: _e.mock.On("Relation", parent, name)}
+}
+
+func (_c *Orm_Relation_Call) Run(run func(parent interface{}, name string)) *Orm_Relation_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(interface{}), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *Orm_Relation_Call) Return(_a0 orm.RelationWriter) *Orm_Relation_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Orm_Relation_Call) RunAndReturn(run func(interface{}, string) orm.RelationWriter) *Orm_Relation_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // SetQuery provides a mock function with given fields: query
 func (_m *Orm) SetQuery(query orm.Query) {
 	_m.Called(query)
