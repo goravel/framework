@@ -54,6 +54,7 @@ func (s *MaintenanceTestSuite) expectFileMaintenanceDriver() {
 	s.mockApp.EXPECT().MakeConfig().Return(s.mockConfig).Once()
 	s.mockApp.EXPECT().MakeCache().Return(s.mockCache).Once()
 	s.mockApp.EXPECT().MakeStorage().Return(s.mockStorage).Once()
+	s.mockApp.EXPECT().MakeHash().Return(s.mockHash).Once()
 	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_DRIVER", "file").Return("file").Once()
 }
 
@@ -61,8 +62,35 @@ func (s *MaintenanceTestSuite) expectCacheMaintenanceDriver() {
 	s.mockApp.EXPECT().MakeConfig().Return(s.mockConfig).Once()
 	s.mockApp.EXPECT().MakeCache().Return(s.mockCache).Once()
 	s.mockApp.EXPECT().MakeStorage().Return(s.mockStorage).Once()
+	s.mockApp.EXPECT().MakeHash().Return(s.mockHash).Once()
 	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_DRIVER", "file").Return("cache").Once()
 	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_STORE").Return("").Once()
+}
+
+func (s *MaintenanceTestSuite) expectMissingMaintenanceDependency(configMissing, cacheMissing, storageMissing, hashMissing bool) {
+	if configMissing {
+		s.mockApp.EXPECT().MakeConfig().Return(nil).Once()
+	} else {
+		s.mockApp.EXPECT().MakeConfig().Return(s.mockConfig).Once()
+	}
+
+	if cacheMissing {
+		s.mockApp.EXPECT().MakeCache().Return(nil).Once()
+	} else {
+		s.mockApp.EXPECT().MakeCache().Return(s.mockCache).Once()
+	}
+
+	if storageMissing {
+		s.mockApp.EXPECT().MakeStorage().Return(nil).Once()
+	} else {
+		s.mockApp.EXPECT().MakeStorage().Return(s.mockStorage).Once()
+	}
+
+	if hashMissing {
+		s.mockApp.EXPECT().MakeHash().Return(nil).Once()
+	} else {
+		s.mockApp.EXPECT().MakeHash().Return(s.mockHash).Once()
+	}
 }
 
 func (s *MaintenanceTestSuite) TestMaintenaneMode_NotUnderMaintenance() {
@@ -70,6 +98,42 @@ func (s *MaintenanceTestSuite) TestMaintenaneMode_NotUnderMaintenance() {
 	s.mockCtx.EXPECT().Request().Return(s.mockRequest).Once()
 	s.mockRequest.EXPECT().Next().Once()
 	s.mockStorage.EXPECT().Exists("framework/maintenance.json").Return(false).Once()
+
+	middleware := CheckForMaintenanceMode()
+	middleware(s.mockCtx)
+}
+
+func (s *MaintenanceTestSuite) TestMaintenaneMode_MissingConfigPassesThrough() {
+	s.expectMissingMaintenanceDependency(true, false, false, false)
+	s.mockCtx.EXPECT().Request().Return(s.mockRequest).Once()
+	s.mockRequest.EXPECT().Next().Once()
+
+	middleware := CheckForMaintenanceMode()
+	middleware(s.mockCtx)
+}
+
+func (s *MaintenanceTestSuite) TestMaintenaneMode_MissingCachePassesThrough() {
+	s.expectMissingMaintenanceDependency(false, true, false, false)
+	s.mockCtx.EXPECT().Request().Return(s.mockRequest).Once()
+	s.mockRequest.EXPECT().Next().Once()
+
+	middleware := CheckForMaintenanceMode()
+	middleware(s.mockCtx)
+}
+
+func (s *MaintenanceTestSuite) TestMaintenaneMode_MissingStoragePassesThrough() {
+	s.expectMissingMaintenanceDependency(false, false, true, false)
+	s.mockCtx.EXPECT().Request().Return(s.mockRequest).Once()
+	s.mockRequest.EXPECT().Next().Once()
+
+	middleware := CheckForMaintenanceMode()
+	middleware(s.mockCtx)
+}
+
+func (s *MaintenanceTestSuite) TestMaintenaneMode_MissingHashPassesThrough() {
+	s.expectMissingMaintenanceDependency(false, false, false, true)
+	s.mockCtx.EXPECT().Request().Return(s.mockRequest).Once()
+	s.mockRequest.EXPECT().Next().Once()
 
 	middleware := CheckForMaintenanceMode()
 	middleware(s.mockCtx)
@@ -110,7 +174,6 @@ func (s *MaintenanceTestSuite) TestMaintenaneMode_StorageFileInvalidJSON() {
 
 func (s *MaintenanceTestSuite) TestMaintenaneMode_SecretDoesNotMatch() {
 	s.expectFileMaintenanceDriver()
-	s.mockApp.EXPECT().MakeHash().Return(s.mockHash).Once()
 	s.mockHash.EXPECT().Check("invalid-secret", "hashed-secret").Return(false).Once()
 	s.mockCtx.EXPECT().Request().Return(s.mockRequest).Once()
 	s.mockCtx.EXPECT().Response().Return(s.mockResponse).Once()
@@ -126,7 +189,6 @@ func (s *MaintenanceTestSuite) TestMaintenaneMode_SecretDoesNotMatch() {
 
 func (s *MaintenanceTestSuite) TestMaintenaneMode_SecretMatches() {
 	s.expectFileMaintenanceDriver()
-	s.mockApp.EXPECT().MakeHash().Return(s.mockHash).Once()
 	s.mockHash.EXPECT().Check("valid-secret", "hashed-secret").Return(true).Once()
 	s.mockCtx.EXPECT().Request().Return(s.mockRequest).Twice()
 	s.mockRequest.EXPECT().Next().Once()
@@ -191,6 +253,7 @@ func (s *MaintenanceTestSuite) TestMaintenaneMode_NamedCacheStore() {
 	s.mockApp.EXPECT().MakeConfig().Return(s.mockConfig).Once()
 	s.mockApp.EXPECT().MakeCache().Return(s.mockCache).Once()
 	s.mockApp.EXPECT().MakeStorage().Return(s.mockStorage).Once()
+	s.mockApp.EXPECT().MakeHash().Return(s.mockHash).Once()
 	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_DRIVER", "file").Return("cache").Once()
 	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_STORE").Return("redis").Once()
 	s.mockCache.EXPECT().Store("redis").Return(mockCacheDriver).Once()

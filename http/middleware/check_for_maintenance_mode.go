@@ -4,14 +4,22 @@ import (
 	"encoding/json"
 
 	contractshttp "github.com/goravel/framework/contracts/http"
-	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation/console"
 	"github.com/goravel/framework/http"
 )
 
 func CheckForMaintenanceMode() contractshttp.Middleware {
 	return func(ctx contractshttp.Context) {
-		maintenance := console.NewMaintenanceMode(http.App.MakeConfig(), http.App.MakeCache(), http.App.MakeStorage())
+		config := http.App.MakeConfig()
+		cache := http.App.MakeCache()
+		storage := http.App.MakeStorage()
+		hash := http.App.MakeHash()
+		if config == nil || cache == nil || storage == nil || hash == nil {
+			ctx.Request().Next()
+			return
+		}
+
+		maintenance := console.NewMaintenanceMode(config, cache, storage)
 		content, exists, err := maintenance.Get()
 		if err != nil {
 			abortMaintenanceMode(ctx, err)
@@ -32,11 +40,6 @@ func CheckForMaintenanceMode() contractshttp.Middleware {
 
 		secret := ctx.Request().Query("secret", "")
 		if secret != "" && maintenanceOptions.Secret != "" {
-			hash := http.App.MakeHash()
-			if hash == nil {
-				panic(errors.HashFacadeNotSet)
-			}
-
 			if hash.Check(secret, maintenanceOptions.Secret) {
 				ctx.Request().Next()
 				return

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/console/command"
+	frameworkerrors "github.com/goravel/framework/errors"
 	mockscache "github.com/goravel/framework/mocks/cache"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
@@ -151,6 +152,23 @@ func (s *DownCommandTestSuite) TestHandleSecret() {
 
 	assert.Nil(s.T(), err)
 }
+
+func (s *DownCommandTestSuite) TestHandleSecretWithNilHash() {
+	mockCtx := mocksconsole.NewContext(s.T())
+	mockCtx.EXPECT().OptionInt("status").Return(503).Once()
+	mockCtx.EXPECT().Option("render").Return("").Once()
+	mockCtx.EXPECT().Option("redirect").Return("").Once()
+	mockCtx.EXPECT().Option("reason").Return("Under maintenance").Once()
+	mockCtx.EXPECT().Option("secret").Return("secretpassword").Once()
+	mockCtx.EXPECT().OptionBool("with-secret").Return(false).Once()
+	mockCtx.EXPECT().Error(frameworkerrors.HashFacadeNotSet.Error()).Once()
+
+	cmd := NewDownCommand(s.mockView, nil, s.maintenance())
+	err := cmd.Handle(mockCtx)
+
+	assert.Nil(s.T(), err)
+}
+
 func (s *DownCommandTestSuite) TestHandleWithSecret() {
 	s.mockHash.EXPECT().Make(mock.Anything).Return("randomhashedsecretpassword", nil)
 
@@ -169,6 +187,22 @@ func (s *DownCommandTestSuite) TestHandleWithSecret() {
 	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"reason\":\"Under maintenance\",\"secret\":\"randomhashedsecretpassword\",\"status\":503}").Return(nil).Once()
 
 	cmd := NewDownCommand(s.mockView, s.mockHash, s.maintenance())
+	err := cmd.Handle(mockCtx)
+
+	assert.Nil(s.T(), err)
+}
+
+func (s *DownCommandTestSuite) TestHandleWithSecretWithNilHash() {
+	mockCtx := mocksconsole.NewContext(s.T())
+	mockCtx.EXPECT().OptionInt("status").Return(503).Once()
+	mockCtx.EXPECT().Option("render").Return("").Once()
+	mockCtx.EXPECT().Option("redirect").Return("").Once()
+	mockCtx.EXPECT().Option("reason").Return("Under maintenance").Once()
+	mockCtx.EXPECT().Option("secret").Return("").Once()
+	mockCtx.EXPECT().OptionBool("with-secret").Return(true).Once()
+	mockCtx.EXPECT().Error(frameworkerrors.HashFacadeNotSet.Error()).Once()
+
+	cmd := NewDownCommand(s.mockView, nil, s.maintenance())
 	err := cmd.Handle(mockCtx)
 
 	assert.Nil(s.T(), err)

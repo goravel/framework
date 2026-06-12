@@ -725,13 +725,12 @@ func (r *Application) defaultCommands() []contractsconsole.Command {
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
 	}
 
-	storage := r.MakeStorage()
-	view := r.MakeView()
-	hash := r.MakeHash()
-	cache := r.MakeCache()
-	config := r.MakeConfig()
-
-	if storage != nil && view != nil && hash != nil {
+	if r.MakeRoute() != nil {
+		storage := r.MakeStorage()
+		view := r.MakeView()
+		hash := r.MakeHash()
+		cache := r.MakeCache()
+		config := r.MakeConfig()
 		maintenance := console.NewMaintenanceMode(config, cache, storage)
 		commands = append(commands, console.NewUpCommand(maintenance), console.NewDownCommand(view, hash, maintenance))
 	}
