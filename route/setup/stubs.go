@@ -4,6 +4,20 @@ import "strings"
 
 type Stubs struct{}
 
+func (s Stubs) MaintenanceConfig() string {
+	return `map[string]any{
+    // Maintenance Mode Driver
+    //
+    // These configuration options determine the driver used to determine and
+    // manage Goravel's "maintenance mode" status. The "cache" driver will
+    // allow maintenance mode to be controlled across multiple machines.
+    //
+    // Supported drivers: "file", "cache"
+    "driver": config.Env("APP_MAINTENANCE_DRIVER", "file"),
+    "store": config.Env("APP_MAINTENANCE_STORE", "database"),
+}`
+}
+
 func (s Stubs) Controller() string {
 	return `package controllers
 
