@@ -6,7 +6,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
+	contractsdatabase "github.com/goravel/framework/contracts/database"
+	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
+	mocksconfig "github.com/goravel/framework/mocks/config"
+	mocksdriver "github.com/goravel/framework/mocks/database/driver"
+	mocksorm "github.com/goravel/framework/mocks/database/orm"
 )
 
 type User struct {
@@ -214,6 +219,67 @@ func (r *SchemaTestSuite) TestExtendModels() {
 			test.assert(schema)
 		})
 	}
+}
+
+func (r *SchemaTestSuite) TestConnectionUsesConnectionDriver() {
+	mockConfig := mocksconfig.NewConfig(r.T())
+	mockOrm := mocksorm.NewOrm(r.T())
+	mockConnectionOrm := mocksorm.NewOrm(r.T())
+	mockDriver := mocksdriver.NewDriver(r.T())
+	mockGrammar := mocksdriver.NewGrammar(r.T())
+	mockProcessor := mocksdriver.NewProcessor(r.T())
+
+	mockConfig.EXPECT().Get("database.connections.analytics.via").Return(func() (contractsdriver.Driver, error) {
+		return mockDriver, nil
+	}).Once()
+	mockOrm.EXPECT().Connection("analytics").Return(mockConnectionOrm).Once()
+	mockDriver.EXPECT().Pool().Return(contractsdatabase.Pool{Writers: []contractsdatabase.Config{{Prefix: "tenant_", Schema: "reporting"}}}).Once()
+	mockDriver.EXPECT().Grammar().Return(mockGrammar).Once()
+	mockDriver.EXPECT().Processor().Return(mockProcessor).Once()
+
+	schema := &Schema{
+		config: mockConfig,
+		orm:    mockOrm,
+	}
+
+	got, ok := schema.Connection("analytics").(*Schema)
+	r.Require().True(ok)
+	r.Same(mockConnectionOrm, got.orm)
+	r.Same(mockDriver, got.driver)
+	r.Same(mockGrammar, got.grammar)
+	r.Same(mockProcessor, got.processor)
+	r.Equal("tenant_", got.prefix)
+	r.Equal("reporting", got.schema)
+}
+
+func (r *SchemaTestSuite) TestSetConnectionUsesConnectionDriver() {
+	mockConfig := mocksconfig.NewConfig(r.T())
+	mockOrm := mocksorm.NewOrm(r.T())
+	mockConnectionOrm := mocksorm.NewOrm(r.T())
+	mockDriver := mocksdriver.NewDriver(r.T())
+	mockGrammar := mocksdriver.NewGrammar(r.T())
+	mockProcessor := mocksdriver.NewProcessor(r.T())
+
+	mockConfig.EXPECT().Get("database.connections.analytics.via").Return(func() (contractsdriver.Driver, error) {
+		return mockDriver, nil
+	}).Once()
+	mockOrm.EXPECT().Connection("analytics").Return(mockConnectionOrm).Once()
+	mockDriver.EXPECT().Pool().Return(contractsdatabase.Pool{Writers: []contractsdatabase.Config{{Prefix: "tenant_", Schema: "reporting"}}}).Once()
+	mockDriver.EXPECT().Grammar().Return(mockGrammar).Once()
+	mockDriver.EXPECT().Processor().Return(mockProcessor).Once()
+
+	schema := &Schema{
+		config: mockConfig,
+		orm:    mockOrm,
+	}
+
+	schema.SetConnection("analytics")
+	r.Same(mockConnectionOrm, schema.orm)
+	r.Same(mockDriver, schema.driver)
+	r.Same(mockGrammar, schema.grammar)
+	r.Same(mockProcessor, schema.processor)
+	r.Equal("tenant_", schema.prefix)
+	r.Equal("reporting", schema.schema)
 }
 
 func getSchema() *Schema {
