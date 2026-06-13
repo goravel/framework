@@ -5,6 +5,7 @@ import (
 
 	contractsmodify "github.com/goravel/framework/contracts/packages/modify"
 	"github.com/goravel/framework/packages"
+	"github.com/goravel/framework/packages/match"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/path"
@@ -17,6 +18,7 @@ func main() {
 	routesImport := setup.Paths().Routes().Import()
 	webFunc := setup.Paths().Routes().Package() + ".Web()"
 	webRoutePath := path.Route("web.go")
+	appConfigPath := path.Config("app.go")
 	jwtConfigPath := path.Config("jwt.go")
 	corsConfigPath := path.Config("cors.go")
 	welcomeTmplPath := path.Resource("views", "welcome.tmpl")
@@ -41,11 +43,15 @@ JWT_SECRET=
 		// Add the route service provider to the providers array in bootstrap/providers.go
 		modify.RegisterProvider(moduleImport, routeServiceProvider),
 
-		// Create resources/views/welcome.tmpl, app/http/controllers/user_controller.go, public/.gitignore, routes/web.go, config/jwt.go, config/cors.go
+		// Create resources/views/welcome.tmpl, app/http/controllers/user_controller.go, public/.gitignore, routes/web.go, config/jwt.go, config/cors.go, and update config/app.go
 		modify.File(welcomeTmplPath).Overwrite(stubs.WelcomeTmpl()),
 		modify.File(controllerPath).Overwrite(stubs.Controller()),
 		modify.File(publicGitignorePath).Overwrite(""),
 		modify.File(webRoutePath).Overwrite(stubs.Routes(setup.Paths().Routes().Package(), setup.Paths().App().Import(), setup.Paths().Facades().Import(), facadesPackage)),
+		modify.GoFile(appConfigPath).
+			Find(match.Config("app")).
+			Modify(modify.AddConfig("maintenance", stubs.MaintenanceConfig())).
+			Format(),
 		modify.File(jwtConfigPath).Overwrite(stubs.JwtConfig(configPackage, facadesImport, facadesPackage)),
 		modify.File(corsConfigPath).Overwrite(stubs.CorsConfig(configPackage, facadesImport, facadesPackage)),
 
@@ -81,6 +87,10 @@ JWT_SECRET=
 		}),
 		modify.File(jwtConfigPath).Remove(),
 		modify.File(corsConfigPath).Remove(),
+		modify.GoFile(appConfigPath).
+			Find(match.Config("app")).
+			Modify(modify.RemoveConfig("maintenance")).
+			Format(),
 
 		// Remove the route service provider from the providers array in bootstrap/providers.go
 		modify.UnregisterProvider(moduleImport, routeServiceProvider),

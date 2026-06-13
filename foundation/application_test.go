@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/stats"
 
+	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/contracts/database/seeder"
@@ -22,7 +23,9 @@ import (
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/schedule"
 	"github.com/goravel/framework/contracts/validation"
+	foundationjson "github.com/goravel/framework/foundation/json"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
+	mocksroute "github.com/goravel/framework/mocks/route"
 	"github.com/goravel/framework/support"
 )
 
@@ -143,6 +146,34 @@ func (s *ApplicationTestSuite) TestConfigureCommands() {
 			tt.setup()
 		})
 	}
+}
+
+func (s *ApplicationTestSuite) TestDefaultCommandsRegistersMaintenanceCommandsWithRouteFacade() {
+	s.app.SetJson(foundationjson.New())
+	s.app.Instance(binding.Route, mocksroute.NewRoute(s.T()))
+
+	commands := s.app.defaultCommands()
+
+	s.Contains(commandSignatures(commands), "up")
+	s.Contains(commandSignatures(commands), "down")
+}
+
+func (s *ApplicationTestSuite) TestDefaultCommandsDoesNotRegisterMaintenanceCommandsWithoutRouteFacade() {
+	s.app.SetJson(foundationjson.New())
+
+	commands := s.app.defaultCommands()
+
+	s.NotContains(commandSignatures(commands), "up")
+	s.NotContains(commandSignatures(commands), "down")
+}
+
+func commandSignatures(commands []console.Command) []string {
+	signatures := make([]string, 0, len(commands))
+	for _, command := range commands {
+		signatures = append(signatures, command.Signature())
+	}
+
+	return signatures
 }
 
 func (s *ApplicationTestSuite) TestConfigureCustomConfig() {
@@ -940,6 +971,33 @@ func (s *ApplicationTestSuite) TestStart() {
 	}
 }
 
+func (s *ApplicationTestSuite) TestStart_ShutdownPriorityOrdering() {
+	shutdowns := make(chan string, 3)
+
+	s.app.runnersToRun = []*RunnerWithInfo{
+		{signature: "late", runner: &orderedRunner{signature: "late", priority: 100, shutdowns: shutdowns}},
+		{signature: "workload-a", runner: &orderedRunner{signature: "workload-a", shutdowns: shutdowns}},
+		{signature: "workload-b", runner: &orderedRunner{signature: "workload-b", shutdowns: shutdowns}},
+	}
+
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		s.app.cancel()
+	}()
+
+	s.app.Start()
+
+	close(shutdowns)
+	var order []string
+	for signature := range shutdowns {
+		order = append(order, signature)
+	}
+
+	s.Len(order, 3)
+	s.Equal("late", order[2])
+	s.ElementsMatch([]string{"workload-a", "workload-b"}, order[:2])
+}
+
 func (s *ApplicationTestSuite) TestStoragePath() {
 	s.Contains(s.app.StoragePath("goravel.go"), filepath.Join("framework", "storage", "goravel.go"))
 }
@@ -1252,3 +1310,15 @@ func TestSetEnv_DebugBinaryWithTestArgs(t *testing.T) {
 	assert.Equal(t, support.RuntimeTest, support.RuntimeMode)
 	assert.True(t, support.DontVerifyAppKey)
 }
+
+type orderedRunner struct {
+	signature string
+	priority  int
+	shutdowns chan<- string
+}
+
+func (r *orderedRunner) Signature() string     { return r.signature }
+func (r *orderedRunner) ShouldRun() bool       { return true }
+func (r *orderedRunner) Run() error            { return nil }
+func (r *orderedRunner) Shutdown() error       { r.shutdowns <- r.signature; return nil }
+func (r *orderedRunner) ShutdownPriority() int { return r.priority }

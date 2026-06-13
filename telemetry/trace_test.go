@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -133,13 +134,93 @@ func TestNewTracerProvider(t *testing.T) {
 			},
 			expectError: errors.TelemetryTraceViaTypeMismatch.Args("string"),
 		},
+		{
+			name: "Error: Unsupported Protocol",
+			config: Config{
+				Traces: TracesConfig{Exporter: "otlp"},
+				Exporters: map[string]ExporterEntry{
+					"otlp": {
+						Driver:   TraceExporterDriverOTLP,
+						Endpoint: "localhost:4318",
+						Protocol: "http/json",
+					},
+				},
+			},
+			expectError: errors.TelemetryUnsupportedProtocol.Args("http/json"),
+		},
+		{
+			name: "Success: OTLP Endpoint With URL Path",
+			config: Config{
+				Traces: TracesConfig{Exporter: "otlp"},
+				Exporters: map[string]ExporterEntry{
+					"otlp": {
+						Driver:   TraceExporterDriverOTLP,
+						Endpoint: "https://collector.example.com/otel",
+					},
+				},
+			},
+		},
+		{
+			name: "Success: OTLP With Compression And Retry",
+			config: Config{
+				Traces: TracesConfig{Exporter: "otlp"},
+				Exporters: map[string]ExporterEntry{
+					"otlp": {
+						Driver:      TraceExporterDriverOTLP,
+						Endpoint:    "localhost:4318",
+						Insecure:    true,
+						Compression: "gzip",
+						Retry:       RetryConfig{MaxElapsedTime: 10 * time.Second},
+					},
+				},
+			},
+		},
+		{
+			name: "Error: Unsupported Compression",
+			config: Config{
+				Traces: TracesConfig{Exporter: "otlp"},
+				Exporters: map[string]ExporterEntry{
+					"otlp": {
+						Driver:      TraceExporterDriverOTLP,
+						Endpoint:    "localhost:4318",
+						Compression: "zstd",
+					},
+				},
+			},
+			expectError: errors.TelemetryUnsupportedCompression.Args("zstd"),
+		},
+		{
+			name: "Error: TLS Conflicts With Insecure",
+			config: Config{
+				Traces: TracesConfig{Exporter: "otlp"},
+				Exporters: map[string]ExporterEntry{
+					"otlp": {
+						Driver:   TraceExporterDriverOTLP,
+						Endpoint: "localhost:4318",
+						Insecure: true,
+						TLS:      TLSConfig{CA: "/tmp/ca.pem"},
+					},
+				},
+			},
+			expectError: errors.TelemetryTLSConflictsWithInsecure,
+		},
+		{
+			name: "Error: Unsupported Processor",
+			config: Config{
+				Traces: TracesConfig{Exporter: "console", Processor: ProcessorConfig{Type: "alien"}},
+				Exporters: map[string]ExporterEntry{
+					"console": {Driver: TraceExporterDriverConsole},
+				},
+			},
+			expectError: errors.TelemetryUnsupportedProcessor.Args("alien"),
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			provider, shutdown, err := NewTracerProvider(ctx, tt.config)
+			provider, shutdown, flush, err := NewTracerProvider(ctx, tt.config)
 
 			if tt.expectError != nil {
 				assert.Equal(t, tt.expectError, err)
@@ -152,6 +233,7 @@ func TestNewTracerProvider(t *testing.T) {
 				assert.NoError(t, err)
 				assert.NotNil(t, provider)
 				assert.NotNil(t, shutdown)
+				assert.NotNil(t, flush)
 				assert.NoError(t, shutdown(ctx))
 			}
 		})
@@ -200,6 +282,25 @@ func TestNewOTLPTraceExporter(t *testing.T) {
 			},
 		},
 		{
+			name: "HTTP With Compression Retry And TLS",
+			cfg: ExporterEntry{
+				Endpoint:    "https://otel.com",
+				Compression: "gzip",
+				TLS:         TLSConfig{CA: testCAFile(t)},
+				Retry:       RetryConfig{MaxElapsedTime: 5 * time.Second},
+			},
+		},
+		{
+			name: "GRPC With Compression Retry And TLS",
+			cfg: ExporterEntry{
+				Endpoint:    "otel.com:4317",
+				Protocol:    ProtocolGRPC,
+				Compression: "gzip",
+				TLS:         TLSConfig{CA: testCAFile(t)},
+				Retry:       RetryConfig{MaxElapsedTime: 5 * time.Second},
+			},
+		},
+		{
 			name: "Complex Configuration",
 			cfg: ExporterEntry{
 				Endpoint: "https://otel.com",
@@ -230,4 +331,62 @@ func (m *MockSpanExporter) ExportSpans(ctx context.Context, ss []sdktrace.ReadOn
 
 func (m *MockSpanExporter) Shutdown(ctx context.Context) error {
 	return nil
+}
+
+type recordingSpanExporter struct {
+	mu    sync.Mutex
+	spans []sdktrace.ReadOnlySpan
+}
+
+func (r *recordingSpanExporter) ExportSpans(ctx context.Context, spans []sdktrace.ReadOnlySpan) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.spans = append(r.spans, spans...)
+	return nil
+}
+
+func (r *recordingSpanExporter) Shutdown(ctx context.Context) error { return nil }
+
+func (r *recordingSpanExporter) count() int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return len(r.spans)
+}
+
+func TestNewTracerProvider_ProcessorTypes(t *testing.T) {
+	ctx := context.Background()
+
+	newConfig := func(exporter sdktrace.SpanExporter, processor ProcessorConfig) Config {
+		return Config{
+			Traces: TracesConfig{Exporter: "custom", Processor: processor},
+			Exporters: map[string]ExporterEntry{
+				"custom": {Driver: TraceExporterDriverCustom, Via: exporter},
+			},
+		}
+	}
+
+	t.Run("simple exports on span end", func(t *testing.T) {
+		exporter := &recordingSpanExporter{}
+		provider, shutdown, _, err := NewTracerProvider(ctx, newConfig(exporter, ProcessorConfig{Type: ProcessorSimple}))
+		assert.NoError(t, err)
+
+		_, span := provider.Tracer("test").Start(ctx, "operation")
+		span.End()
+
+		assert.Equal(t, 1, exporter.count())
+		assert.NoError(t, shutdown(ctx))
+	})
+
+	t.Run("batch defers export until shutdown", func(t *testing.T) {
+		exporter := &recordingSpanExporter{}
+		provider, shutdown, _, err := NewTracerProvider(ctx, newConfig(exporter, ProcessorConfig{Type: ProcessorBatch, Interval: time.Hour}))
+		assert.NoError(t, err)
+
+		_, span := provider.Tracer("test").Start(ctx, "operation")
+		span.End()
+
+		assert.Equal(t, 0, exporter.count())
+		assert.NoError(t, shutdown(ctx))
+		assert.Equal(t, 1, exporter.count())
+	})
 }

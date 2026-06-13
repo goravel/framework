@@ -2,6 +2,8 @@ package log
 
 import (
 	"context"
+	"log/slog"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,14 +16,6 @@ import (
 	"github.com/goravel/framework/support/file"
 	telemetrylog "github.com/goravel/framework/telemetry/instrumentation/log"
 )
-
-// clearChannelCache clears all entries from the channel cache
-func clearChannelCache() {
-	channelToHandlers.Range(func(key, value any) bool {
-		channelToHandlers.Delete(key)
-		return true
-	})
-}
 
 func TestNewApplication(t *testing.T) {
 	j := json.New()
@@ -44,9 +38,6 @@ func TestNewApplication(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, app)
 
-	// Clear cache before testing unsupported driver
-	clearChannelCache()
-
 	mockConfig = mocksconfig.NewConfig(t)
 	mockConfig.EXPECT().GetString("logging.default").Return("test").Once()
 	mockConfig.EXPECT().GetString("logging.channels.test.driver").Return("test").Once()
@@ -61,9 +52,6 @@ func TestNewApplication(t *testing.T) {
 }
 
 func TestApplication_Channel(t *testing.T) {
-	// Clear cache before test
-	clearChannelCache()
-
 	mockConfig := mocksconfig.NewConfig(t)
 	mockConfig.EXPECT().GetString("logging.default").Return("test").Once()
 	mockConfig.EXPECT().GetString("logging.channels.test.driver").Return("single").Once()
@@ -97,10 +85,25 @@ func TestApplication_Channel(t *testing.T) {
 	_ = file.Remove("dummy")
 }
 
-func TestApplication_Stack(t *testing.T) {
-	// Clear cache before test
-	clearChannelCache()
+func TestApplication_HandlerCacheScope(t *testing.T) {
+	mockConfig := mocksconfig.NewConfig(t)
+	mockConfig.EXPECT().GetString("logging.default").Return("").Times(3)
 
+	app, err := NewApplication(context.Background(), nil, mockConfig, json.New(), nil)
+	assert.Nil(t, err)
+	app.channelToHandlers.Store("otel", []slog.Handler{})
+
+	derived := app.WithContext(context.Background()).(*Application)
+	_, shared := derived.channelToHandlers.Load("otel")
+	assert.True(t, shared)
+
+	fresh, err := NewApplication(context.Background(), nil, mockConfig, json.New(), nil)
+	assert.Nil(t, err)
+	_, leaked := fresh.channelToHandlers.Load("otel")
+	assert.False(t, leaked)
+}
+
+func TestApplication_Stack(t *testing.T) {
 	mockConfig := mocksconfig.NewConfig(t)
 	mockConfig.EXPECT().GetString("logging.default").Return("test").Once()
 	mockConfig.EXPECT().GetString("logging.channels.test.driver").Return("single").Once()
@@ -144,13 +147,12 @@ func TestGetHandlers(t *testing.T) {
 		mockConfig.EXPECT().GetString("logging.channels.test-single.formatter", "text").Return("text").Once()
 		mockConfig.EXPECT().GetBool("logging.channels.test-single.print").Return(false).Once()
 
-		handlers, err := getHandlers(mockConfig, j, nil, "test-single")
+		handlers, err := getHandlers(&sync.Map{}, mockConfig, j, nil, "test-single")
 		assert.NoError(t, err)
 		assert.Len(t, handlers, 1)
 
 		// Cleanup
 		_ = file.Remove("test-single.log")
-		clearChannelCache()
 	})
 
 	t.Run("single driver with print enabled", func(t *testing.T) {
@@ -161,13 +163,12 @@ func TestGetHandlers(t *testing.T) {
 		mockConfig.EXPECT().GetString("logging.channels.test-single-print.formatter", "text").Return("text").Times(2)
 		mockConfig.EXPECT().GetBool("logging.channels.test-single-print.print").Return(true).Once()
 
-		handlers, err := getHandlers(mockConfig, j, nil, "test-single-print")
+		handlers, err := getHandlers(&sync.Map{}, mockConfig, j, nil, "test-single-print")
 		assert.NoError(t, err)
 		assert.Len(t, handlers, 2) // file handler + console handler
 
 		// Cleanup
 		_ = file.Remove("test-single-print.log")
-		clearChannelCache()
 	})
 
 	t.Run("daily driver", func(t *testing.T) {
@@ -179,12 +180,10 @@ func TestGetHandlers(t *testing.T) {
 		mockConfig.EXPECT().GetBool("logging.channels.test-daily.print").Return(false).Once()
 		mockConfig.EXPECT().GetInt("logging.channels.test-daily.days").Return(7).Once()
 
-		handlers, err := getHandlers(mockConfig, j, nil, "test-daily")
+		handlers, err := getHandlers(&sync.Map{}, mockConfig, j, nil, "test-daily")
 		assert.NoError(t, err)
 		assert.Len(t, handlers, 1)
 
-		// Cleanup
-		clearChannelCache()
 	})
 
 	t.Run("daily driver with print enabled", func(t *testing.T) {
@@ -196,12 +195,10 @@ func TestGetHandlers(t *testing.T) {
 		mockConfig.EXPECT().GetBool("logging.channels.test-daily-print.print").Return(true).Once()
 		mockConfig.EXPECT().GetInt("logging.channels.test-daily-print.days").Return(3).Once()
 
-		handlers, err := getHandlers(mockConfig, j, nil, "test-daily-print")
+		handlers, err := getHandlers(&sync.Map{}, mockConfig, j, nil, "test-daily-print")
 		assert.NoError(t, err)
 		assert.Len(t, handlers, 2)
 
-		// Cleanup
-		clearChannelCache()
 	})
 
 	t.Run("OTeL driver", func(t *testing.T) {
@@ -217,11 +214,10 @@ func TestGetHandlers(t *testing.T) {
 			return mockTelemetry
 		}
 
-		handlers, err := getHandlers(mockConfig, j, resolver, "test-otel")
+		handlers, err := getHandlers(&sync.Map{}, mockConfig, j, resolver, "test-otel")
 		assert.NoError(t, err)
 		assert.Len(t, handlers, 1)
 
-		clearChannelCache()
 	})
 
 	t.Run("OTeL driver with print enabled", func(t *testing.T) {
@@ -240,11 +236,10 @@ func TestGetHandlers(t *testing.T) {
 			return mockTelemetry
 		}
 
-		handlers, err := getHandlers(mockConfig, j, resolver, "test-otel-print")
+		handlers, err := getHandlers(&sync.Map{}, mockConfig, j, resolver, "test-otel-print")
 		assert.NoError(t, err)
 		assert.Len(t, handlers, 2)
 
-		clearChannelCache()
 	})
 
 	t.Run("stack driver", func(t *testing.T) {
@@ -266,14 +261,13 @@ func TestGetHandlers(t *testing.T) {
 		mockConfig.EXPECT().GetString("logging.channels.stack-single2.formatter", "text").Return("text").Once()
 		mockConfig.EXPECT().GetBool("logging.channels.stack-single2.print").Return(false).Once()
 
-		handlers, err := getHandlers(mockConfig, j, nil, "test-stack")
+		handlers, err := getHandlers(&sync.Map{}, mockConfig, j, nil, "test-stack")
 		assert.NoError(t, err)
 		assert.Len(t, handlers, 2) // One from each channel
 
 		// Cleanup
 		_ = file.Remove("test-stack-single1.log")
 		_ = file.Remove("test-stack-single2.log")
-		clearChannelCache()
 	})
 
 	t.Run("stack driver with circular reference", func(t *testing.T) {
@@ -281,13 +275,11 @@ func TestGetHandlers(t *testing.T) {
 		mockConfig.EXPECT().GetString("logging.channels.test-circular.driver").Return("stack").Once()
 		mockConfig.EXPECT().Get("logging.channels.test-circular.channels").Return([]string{"test-circular"}).Once()
 
-		handlers, err := getHandlers(mockConfig, j, nil, "test-circular")
+		handlers, err := getHandlers(&sync.Map{}, mockConfig, j, nil, "test-circular")
 		assert.Error(t, err)
 		assert.EqualError(t, err, errors.LogDriverCircularReference.Args("stack").Error())
 		assert.Nil(t, handlers)
 
-		// Cleanup
-		clearChannelCache()
 	})
 
 	t.Run("stack driver with invalid channels config", func(t *testing.T) {
@@ -295,13 +287,11 @@ func TestGetHandlers(t *testing.T) {
 		mockConfig.EXPECT().GetString("logging.channels.test-badstack.driver").Return("stack").Once()
 		mockConfig.EXPECT().Get("logging.channels.test-badstack.channels").Return("not-a-slice").Once()
 
-		handlers, err := getHandlers(mockConfig, j, nil, "test-badstack")
+		handlers, err := getHandlers(&sync.Map{}, mockConfig, j, nil, "test-badstack")
 		assert.Error(t, err)
 		assert.EqualError(t, err, errors.LogChannelNotFound.Args("test-badstack").Error())
 		assert.Nil(t, handlers)
 
-		// Cleanup
-		clearChannelCache()
 	})
 
 	t.Run("custom driver", func(t *testing.T) {
@@ -311,12 +301,10 @@ func TestGetHandlers(t *testing.T) {
 		customLogger := &CustomLogger{}
 		mockConfig.EXPECT().Get("logging.channels.test-custom.via").Return(customLogger).Once()
 
-		handlers, err := getHandlers(mockConfig, j, nil, "test-custom")
+		handlers, err := getHandlers(&sync.Map{}, mockConfig, j, nil, "test-custom")
 		assert.NoError(t, err)
 		assert.Len(t, handlers, 1)
 
-		// Cleanup
-		clearChannelCache()
 	})
 
 	t.Run("custom driver without logger", func(t *testing.T) {
@@ -324,26 +312,22 @@ func TestGetHandlers(t *testing.T) {
 		mockConfig.EXPECT().GetString("logging.channels.test-badcustom.driver").Return("custom").Once()
 		mockConfig.EXPECT().Get("logging.channels.test-badcustom.via").Return(nil).Once()
 
-		handlers, err := getHandlers(mockConfig, j, nil, "test-badcustom")
+		handlers, err := getHandlers(&sync.Map{}, mockConfig, j, nil, "test-badcustom")
 		assert.Error(t, err)
 		assert.EqualError(t, err, errors.LogChannelUnimplemented.Args("test-badcustom").Error())
 		assert.Nil(t, handlers)
 
-		// Cleanup
-		clearChannelCache()
 	})
 
 	t.Run("unsupported driver", func(t *testing.T) {
 		mockConfig := mocksconfig.NewConfig(t)
 		mockConfig.EXPECT().GetString("logging.channels.test-unknown.driver").Return("unknown").Once()
 
-		handlers, err := getHandlers(mockConfig, j, nil, "test-unknown")
+		handlers, err := getHandlers(&sync.Map{}, mockConfig, j, nil, "test-unknown")
 		assert.Error(t, err)
 		assert.EqualError(t, err, errors.LogDriverNotSupported.Args("test-unknown").Error())
 		assert.Nil(t, handlers)
 
-		// Cleanup
-		clearChannelCache()
 	})
 
 	t.Run("cached handlers", func(t *testing.T) {
@@ -354,19 +338,20 @@ func TestGetHandlers(t *testing.T) {
 		mockConfig.EXPECT().GetString("logging.channels.test-cached.formatter", "text").Return("text").Once()
 		mockConfig.EXPECT().GetBool("logging.channels.test-cached.print").Return(false).Once()
 
+		cache := &sync.Map{}
+
 		// First call should use mock config
-		handlers1, err := getHandlers(mockConfig, j, nil, "test-cached")
+		handlers1, err := getHandlers(cache, mockConfig, j, nil, "test-cached")
 		assert.NoError(t, err)
 		assert.Len(t, handlers1, 1)
 
 		// Second call should use cached handlers (no mock expectations needed)
-		handlers2, err := getHandlers(mockConfig, j, nil, "test-cached")
+		handlers2, err := getHandlers(cache, mockConfig, j, nil, "test-cached")
 		assert.NoError(t, err)
 		assert.Len(t, handlers2, 1)
 		assert.Equal(t, handlers1, handlers2)
 
 		// Cleanup
 		_ = file.Remove("test-cached.log")
-		clearChannelCache()
 	})
 }

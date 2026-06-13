@@ -50,7 +50,3 @@ golangci-lint run                      # lint
 - Never edit `mocks/` directly; run `go tool mockery` to regenerate.
 - Follow standard Go formatting/naming; add comments where logic isn't self-evident. Go version is in go.mod.
 - Never create errors inline in logic (`fmt.Errorf`, `errors.New`, etc.). Declare all errors as named variables in `errors/list.go` using the framework's `New(...)` constructor. This centralises error messages to support future i18n.
-
-## Tests
-
-When writing/running tests, use the rules in `.agents/prompts/tests.md` for guidance.

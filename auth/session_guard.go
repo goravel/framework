@@ -9,6 +9,7 @@ import (
 	"github.com/goravel/framework/contracts/http"
 	contractsession "github.com/goravel/framework/contracts/session"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/session"
 )
 
 type SessionGuard struct {
@@ -77,14 +78,24 @@ func (r *SessionGuard) LoginUsingID(id any) (token string, err error) {
 		return "", errors.AuthInvalidKey
 	}
 
+	if err := r.session.Regenerate(true); err != nil {
+		return "", err
+	}
+
 	r.session.Put(sessionName, key)
+	session.WriteCookie(r.ctx, r.session)
 
 	return "", nil
 }
 
 func (r *SessionGuard) Logout() error {
-	sessionName := r.getSessionName()
-	r.session.Forget(sessionName)
+	r.session.Forget(r.getSessionName())
+
+	if err := r.session.Regenerate(true); err != nil {
+		return err
+	}
+
+	session.WriteCookie(r.ctx, r.session)
 
 	return nil
 }

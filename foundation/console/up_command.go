@@ -3,15 +3,14 @@ package console
 import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/contracts/filesystem"
 )
 
 type UpCommand struct {
-	storage filesystem.Storage
+	maintenance *MaintenanceMode
 }
 
-func NewUpCommand(storage filesystem.Storage) *UpCommand {
-	return &UpCommand{storage}
+func NewUpCommand(maintenance *MaintenanceMode) *UpCommand {
+	return &UpCommand{maintenance}
 }
 
 // Signature The name and signature of the console command.
@@ -31,18 +30,16 @@ func (r *UpCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *UpCommand) Handle(ctx console.Context) error {
-	path := "framework/maintenance.json"
-	if ok := r.storage.Exists(path); ok {
-		if err := r.storage.Delete(path); err != nil {
-			return err
-		}
-
-		ctx.Success("The application is up and live now")
-
+	deleted, err := r.maintenance.Delete()
+	if err != nil {
+		return err
+	}
+	if !deleted {
+		ctx.Error("The application is not in maintenance mode")
 		return nil
 	}
 
-	ctx.Error("The application is not in maintenance mode")
+	ctx.Success("The application is up and live now")
 
 	return nil
 }

@@ -5,6 +5,15 @@ import (
 	"time"
 )
 
+type FailoverReason string
+
+type FailoverError interface {
+	error
+	Reason() FailoverReason
+	Provider() string
+	Unwrap() error
+}
+
 // ProviderState stores provider-scoped conversation state across prompt calls.
 type ProviderState interface {
 	Get(key string) any

@@ -282,17 +282,24 @@ func (_c *ImageRequest_Portrait_Call) RunAndReturn(run func() ai.ImageRequest) *
 	return _c
 }
 
-// Provider provides a mock function with given fields: provider
-func (_m *ImageRequest) Provider(provider string) ai.ImageRequest {
-	ret := _m.Called(provider)
+// Provider provides a mock function with given fields: provider, failovers
+func (_m *ImageRequest) Provider(provider string, failovers ...string) ai.ImageRequest {
+	_va := make([]interface{}, len(failovers))
+	for _i := range failovers {
+		_va[_i] = failovers[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, provider)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Provider")
 	}
 
 	var r0 ai.ImageRequest
-	if rf, ok := ret.Get(0).(func(string) ai.ImageRequest); ok {
-		r0 = rf(provider)
+	if rf, ok := ret.Get(0).(func(string, ...string) ai.ImageRequest); ok {
+		r0 = rf(provider, failovers...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(ai.ImageRequest)
@@ -309,13 +316,21 @@ type ImageRequest_Provider_Call struct {
 
 // Provider is a helper method to define mock.On call
 //   - provider string
-func (_e *ImageRequest_Expecter) Provider(provider interface{}) *ImageRequest_Provider_Call {
-	return &ImageRequest_Provider_Call{Call: _e.mock.On("Provider", provider)}
+//   - failovers ...string
+func (_e *ImageRequest_Expecter) Provider(provider interface{}, failovers ...interface{}) *ImageRequest_Provider_Call {
+	return &ImageRequest_Provider_Call{Call: _e.mock.On("Provider",
+		append([]interface{}{provider}, failovers...)...)}
 }
 
-func (_c *ImageRequest_Provider_Call) Run(run func(provider string)) *ImageRequest_Provider_Call {
+func (_c *ImageRequest_Provider_Call) Run(run func(provider string, failovers ...string)) *ImageRequest_Provider_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		variadicArgs := make([]string, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
 	})
 	return _c
 }
@@ -325,7 +340,7 @@ func (_c *ImageRequest_Provider_Call) Return(_a0 ai.ImageRequest) *ImageRequest_
 	return _c
 }
 
-func (_c *ImageRequest_Provider_Call) RunAndReturn(run func(string) ai.ImageRequest) *ImageRequest_Provider_Call {
+func (_c *ImageRequest_Provider_Call) RunAndReturn(run func(string, ...string) ai.ImageRequest) *ImageRequest_Provider_Call {
 	_c.Call.Return(run)
 	return _c
 }

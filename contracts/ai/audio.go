@@ -4,7 +4,7 @@ import "time"
 
 type AudioRequest interface {
 	Model(model string) AudioRequest
-	Provider(provider string) AudioRequest
+	Provider(provider string, failovers ...string) AudioRequest
 	Voice(voice string) AudioRequest
 	Male() AudioRequest
 	Female() AudioRequest

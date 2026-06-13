@@ -225,6 +225,9 @@ func (r *Application) Start() {
 		errs   []error
 	)
 
+	// Restart replaces r.cancel; an erroring runner must cancel the context it was started with.
+	cancel := r.cancel
+
 	run := func(runner *RunnerWithInfo) {
 		r.runnerWg.Add(1)
 
@@ -240,30 +243,9 @@ func (r *Application) Start() {
 					log.Errorf("failed to run %s: %v\n", runner.signature, err)
 				}
 
-				r.cancel()
+				cancel()
 			}
 			// Run may be a blocking call, so don't write anything after it.
-		}()
-
-		go func() {
-			defer runner.doneOnce.Do(func() {
-				r.runnerWg.Done()
-			})
-
-			<-r.ctx.Done()
-
-			// Only call Shutdown if the runner is still running (Run didn't error)
-			if !runner.running.Load() {
-				return
-			}
-
-			if err := runner.runner.Shutdown(); err != nil {
-				if log := r.MakeLog(); log != nil {
-					log.Errorf("failed to shutdown %s: %v\n", runner.signature, err)
-				}
-			}
-
-			runner.running.Store(false)
 		}()
 	}
 
@@ -271,11 +253,71 @@ func (r *Application) Start() {
 		run(runner)
 	}
 
+	if len(r.runnersToRun) > 0 {
+		go r.shutdownRunners()
+	}
+
 	r.runnerWg.Wait()
+
+	// Run may error after its shutdown completed, so reading errs still needs the lock.
+	errsMu.Lock()
+	defer errsMu.Unlock()
 
 	if len(errs) > 0 {
 		panic(errors.Join(errs...))
 	}
+}
+
+func (r *Application) shutdownRunners() {
+	<-r.ctx.Done()
+
+	for _, group := range r.runnersByShutdownPriority() {
+		var wg sync.WaitGroup
+
+		for _, runner := range group {
+			wg.Add(1)
+
+			go func(runner *RunnerWithInfo) {
+				defer wg.Done()
+				defer runner.doneOnce.Do(func() {
+					r.runnerWg.Done()
+				})
+
+				// Only call Shutdown if the runner is still running (Run didn't error)
+				if !runner.running.Load() {
+					return
+				}
+
+				if err := runner.runner.Shutdown(); err != nil {
+					if log := r.MakeLog(); log != nil {
+						log.Errorf("failed to shutdown %s: %v\n", runner.signature, err)
+					}
+				}
+
+				runner.running.Store(false)
+			}(runner)
+		}
+
+		wg.Wait()
+	}
+}
+
+func (r *Application) runnersByShutdownPriority() [][]*RunnerWithInfo {
+	groups := map[int][]*RunnerWithInfo{}
+	for _, runner := range r.runnersToRun {
+		priority := 0
+		if p, ok := runner.runner.(foundation.RunnerWithShutdownPriority); ok {
+			priority = p.ShutdownPriority()
+		}
+		groups[priority] = append(groups[priority], runner)
+	}
+
+	ordered := make([][]*RunnerWithInfo, 0, len(groups))
+	for _, priority := range slices.Sorted(maps.Keys(groups)) {
+		ordered = append(ordered, groups[priority])
+	}
+
+	return ordered
 }
 
 func (r *Application) SetBuilder(builder foundation.ApplicationBuilder) foundation.Application {
@@ -683,12 +725,14 @@ func (r *Application) defaultCommands() []contractsconsole.Command {
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
 	}
 
-	storage := r.MakeStorage()
-	view := r.MakeView()
-	hash := r.MakeHash()
-
-	if storage != nil && view != nil && hash != nil {
-		commands = append(commands, console.NewUpCommand(storage), console.NewDownCommand(view, hash, storage))
+	if r.MakeRoute() != nil {
+		storage := r.MakeStorage()
+		view := r.MakeView()
+		hash := r.MakeHash()
+		cache := r.MakeCache()
+		config := r.MakeConfig()
+		maintenance := console.NewMaintenanceMode(config, cache, storage)
+		commands = append(commands, console.NewUpCommand(maintenance), console.NewDownCommand(view, hash, maintenance))
 	}
 
 	return commands

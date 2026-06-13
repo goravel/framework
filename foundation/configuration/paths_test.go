@@ -39,6 +39,12 @@ func (s *PathsTestSuite) TestApp() {
 	s.Equal(s.paths, result)
 }
 
+func (s *PathsTestSuite) TestAgents() {
+	result := s.paths.Agents("custom/agents")
+	s.Equal("custom/agents", support.Config.Paths.Agents)
+	s.Equal(s.paths, result)
+}
+
 func (s *PathsTestSuite) TestBootstrap() {
 	result := s.paths.Bootstrap("custom/bootstrap")
 	s.Equal("custom/bootstrap", support.Config.Paths.Bootstrap)
@@ -204,6 +210,12 @@ func (s *PathsTestSuite) TestStorage() {
 func (s *PathsTestSuite) TestTests() {
 	result := s.paths.Tests("custom/tests")
 	s.Equal("custom/tests", support.Config.Paths.Tests)
+	s.Equal(s.paths, result)
+}
+
+func (s *PathsTestSuite) TestTools() {
+	result := s.paths.Tools("custom/tools")
+	s.Equal("custom/tools", support.Config.Paths.Tools)
 	s.Equal(s.paths, result)
 }
 

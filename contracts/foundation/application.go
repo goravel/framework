@@ -41,6 +41,15 @@ type Runner interface {
 	Shutdown() error
 }
 
+type RunnerWithShutdownPriority interface {
+	Runner
+
+	// ShutdownPriority determines the shutdown order; groups are shut down in
+	// ascending order, runners within a group concurrently. Runners without
+	// this interface default to 0.
+	ShutdownPriority() int
+}
+
 type AboutItem struct {
 	Key   string
 	Value string

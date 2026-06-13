@@ -137,13 +137,27 @@ func TestNewMeterProvider(t *testing.T) {
 			},
 			expectError: errors.TelemetryMetricViaTypeMismatch.Args("string"),
 		},
+		{
+			name: "Error: Unsupported Protocol",
+			config: Config{
+				Metrics: MetricsConfig{Exporter: "otlp"},
+				Exporters: map[string]ExporterEntry{
+					"otlp": {
+						Driver:   MetricsExporterDriverOTLP,
+						Endpoint: "localhost:4318",
+						Protocol: "http/json",
+					},
+				},
+			},
+			expectError: errors.TelemetryUnsupportedProtocol.Args("http/json"),
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			provider, shutdown, err := NewMeterProvider(ctx, tt.config)
+			provider, shutdown, flush, err := NewMeterProvider(ctx, tt.config)
 
 			if tt.expectError != nil {
 				assert.Equal(t, tt.expectError, err, tt.description)
@@ -155,6 +169,7 @@ func TestNewMeterProvider(t *testing.T) {
 				assert.NoError(t, err, tt.description)
 				assert.NotNil(t, provider)
 				assert.NotNil(t, shutdown)
+				assert.NotNil(t, flush)
 				_ = shutdown(ctx)
 			}
 		})
@@ -194,34 +209,67 @@ func TestNewMetricReader_Config(t *testing.T) {
 }
 
 func TestGetTemporalitySelector(t *testing.T) {
+	allKinds := []sdkmetric.InstrumentKind{
+		sdkmetric.InstrumentKindCounter,
+		sdkmetric.InstrumentKindHistogram,
+		sdkmetric.InstrumentKindObservableCounter,
+		sdkmetric.InstrumentKindUpDownCounter,
+		sdkmetric.InstrumentKindObservableUpDownCounter,
+		sdkmetric.InstrumentKindObservableGauge,
+	}
+
+	cumulativeAll := map[sdkmetric.InstrumentKind]metricdata.Temporality{}
+	for _, kind := range allKinds {
+		cumulativeAll[kind] = metricdata.CumulativeTemporality
+	}
+
 	tests := []struct {
 		name        string
 		temporality MetricTemporality
-		expected    metricdata.Temporality
+		expected    map[sdkmetric.InstrumentKind]metricdata.Temporality
 	}{
 		{
 			name:        "Default (Cumulative)",
 			temporality: "",
-			expected:    metricdata.CumulativeTemporality,
+			expected:    cumulativeAll,
 		},
 		{
 			name:        "Explicit Cumulative",
 			temporality: TemporalityCumulative,
-			expected:    metricdata.CumulativeTemporality,
+			expected:    cumulativeAll,
 		},
 		{
-			name:        "Explicit Delta",
+			name:        "Delta keeps levels cumulative",
 			temporality: TemporalityDelta,
-			expected:    metricdata.DeltaTemporality,
+			expected: map[sdkmetric.InstrumentKind]metricdata.Temporality{
+				sdkmetric.InstrumentKindCounter:                 metricdata.DeltaTemporality,
+				sdkmetric.InstrumentKindHistogram:               metricdata.DeltaTemporality,
+				sdkmetric.InstrumentKindObservableCounter:       metricdata.DeltaTemporality,
+				sdkmetric.InstrumentKindUpDownCounter:           metricdata.CumulativeTemporality,
+				sdkmetric.InstrumentKindObservableUpDownCounter: metricdata.CumulativeTemporality,
+				sdkmetric.InstrumentKindObservableGauge:         metricdata.CumulativeTemporality,
+			},
+		},
+		{
+			name:        "LowMemory",
+			temporality: TemporalityLowMemory,
+			expected: map[sdkmetric.InstrumentKind]metricdata.Temporality{
+				sdkmetric.InstrumentKindCounter:                 metricdata.DeltaTemporality,
+				sdkmetric.InstrumentKindHistogram:               metricdata.DeltaTemporality,
+				sdkmetric.InstrumentKindObservableCounter:       metricdata.CumulativeTemporality,
+				sdkmetric.InstrumentKindUpDownCounter:           metricdata.CumulativeTemporality,
+				sdkmetric.InstrumentKindObservableUpDownCounter: metricdata.CumulativeTemporality,
+				sdkmetric.InstrumentKindObservableGauge:         metricdata.CumulativeTemporality,
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			selector := getTemporalitySelector(tt.temporality)
-			// Check Counter kind (usually what we care about for Delta vs Cumulative)
-			result := selector(sdkmetric.InstrumentKindCounter)
-			assert.Equal(t, tt.expected, result)
+			for kind, expected := range tt.expected {
+				assert.Equal(t, expected, selector(kind), "kind %v", kind)
+			}
 		})
 	}
 }
@@ -265,6 +313,25 @@ func TestNewOTLPMetricExporter(t *testing.T) {
 				Endpoint: "localhost:4317",
 				Protocol: ProtocolGRPC,
 				Insecure: true,
+			},
+		},
+		{
+			name: "HTTP With Compression Retry And TLS",
+			cfg: ExporterEntry{
+				Endpoint:    "https://otel.com",
+				Compression: "gzip",
+				TLS:         TLSConfig{CA: testCAFile(t)},
+				Retry:       RetryConfig{MaxElapsedTime: 5 * time.Second},
+			},
+		},
+		{
+			name: "GRPC With Compression Retry And TLS",
+			cfg: ExporterEntry{
+				Endpoint:    "otel.com:4317",
+				Protocol:    ProtocolGRPC,
+				Compression: "gzip",
+				TLS:         TLSConfig{CA: testCAFile(t)},
+				Retry:       RetryConfig{MaxElapsedTime: 5 * time.Second},
 			},
 		},
 		{

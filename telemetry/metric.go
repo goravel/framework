@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"os"
 	"time"
@@ -13,7 +14,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/noop"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
-	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"google.golang.org/grpc/credentials"
 
 	"github.com/goravel/framework/errors"
 )
@@ -29,6 +30,7 @@ type MetricTemporality string
 const (
 	TemporalityCumulative MetricTemporality = "cumulative"
 	TemporalityDelta      MetricTemporality = "delta"
+	TemporalityLowMemory  MetricTemporality = "lowmemory"
 )
 
 const (
@@ -41,22 +43,22 @@ const (
 	defaultMetricExportTimeout = 30 * time.Second
 )
 
-func NewMeterProvider(ctx context.Context, cfg Config, opts ...sdkmetric.Option) (metric.MeterProvider, ShutdownFunc, error) {
+func NewMeterProvider(ctx context.Context, cfg Config, opts ...sdkmetric.Option) (metric.MeterProvider, ShutdownFunc, FlushFunc, error) {
 	exporterName := cfg.Metrics.Exporter
 	if exporterName == "" {
 		mp := noop.NewMeterProvider()
 		otel.SetMeterProvider(mp)
-		return mp, NoopShutdown(), nil
+		return mp, NoopShutdown(), NoopFlush(), nil
 	}
 
 	exporterCfg, ok := cfg.GetExporter(exporterName)
 	if !ok {
-		return nil, NoopShutdown(), errors.TelemetryExporterNotFound
+		return nil, NoopShutdown(), NoopFlush(), errors.TelemetryExporterNotFound
 	}
 
 	reader, err := newMetricReader(ctx, exporterCfg, cfg.Metrics.Reader)
 	if err != nil {
-		return nil, NoopShutdown(), err
+		return nil, NoopShutdown(), NoopFlush(), err
 	}
 
 	providerOptions := []sdkmetric.Option{
@@ -67,7 +69,7 @@ func NewMeterProvider(ctx context.Context, cfg Config, opts ...sdkmetric.Option)
 	mp := sdkmetric.NewMeterProvider(providerOptions...)
 	otel.SetMeterProvider(mp)
 
-	return mp, mp.Shutdown, nil
+	return mp, mp.Shutdown, mp.ForceFlush, nil
 }
 
 func newMetricReader(ctx context.Context, cfg ExporterEntry, readerCfg MetricsReaderConfig) (sdkmetric.Reader, error) {
@@ -121,33 +123,59 @@ func newMetricReader(ctx context.Context, cfg ExporterEntry, readerCfg MetricsRe
 }
 
 func newOTLPMetricExporter(ctx context.Context, cfg ExporterEntry) (sdkmetric.Exporter, error) {
-	protocol := cfg.Protocol
-	if protocol == "" {
-		protocol = ProtocolHTTPProtobuf
-	}
-
 	temporalitySelector := getTemporalitySelector(cfg.MetricTemporality)
 
-	switch protocol {
+	switch cfg.Protocol {
 	case ProtocolGRPC:
-		opts := buildOTLPOptions(cfg,
-			otlpmetricgrpc.WithEndpoint,
-			otlpmetricgrpc.WithInsecure,
-			otlpmetricgrpc.WithTimeout,
-			otlpmetricgrpc.WithHeaders,
-		)
+		opts, err := buildOTLPOptions(cfg, otlpOptions[otlpmetricgrpc.Option]{
+			withEndpoint:    otlpmetricgrpc.WithEndpoint,
+			withEndpointURL: otlpmetricgrpc.WithEndpointURL,
+			withInsecure:    otlpmetricgrpc.WithInsecure,
+			withTimeout:     otlpmetricgrpc.WithTimeout,
+			withHeaders:     otlpmetricgrpc.WithHeaders,
+			withCompression: func() otlpmetricgrpc.Option { return otlpmetricgrpc.WithCompressor(string(CompressionGzip)) },
+			withTLS: func(config *tls.Config) otlpmetricgrpc.Option {
+				return otlpmetricgrpc.WithTLSCredentials(credentials.NewTLS(config))
+			},
+			withRetry: func(retry RetryConfig) otlpmetricgrpc.Option {
+				return otlpmetricgrpc.WithRetry(otlpmetricgrpc.RetryConfig{
+					Enabled:         retry.IsEnabled(),
+					InitialInterval: retry.InitialInterval,
+					MaxInterval:     retry.MaxInterval,
+					MaxElapsedTime:  retry.MaxElapsedTime,
+				})
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
 		opts = append(opts, otlpmetricgrpc.WithTemporalitySelector(temporalitySelector))
 		return otlpmetricgrpc.New(ctx, opts...)
-
-	default:
-		opts := buildOTLPOptions(cfg,
-			otlpmetrichttp.WithEndpoint,
-			otlpmetrichttp.WithInsecure,
-			otlpmetrichttp.WithTimeout,
-			otlpmetrichttp.WithHeaders,
-		)
+	case ProtocolHTTPProtobuf, "":
+		opts, err := buildOTLPOptions(cfg, otlpOptions[otlpmetrichttp.Option]{
+			withEndpoint:    otlpmetrichttp.WithEndpoint,
+			withEndpointURL: otlpmetrichttp.WithEndpointURL,
+			withInsecure:    otlpmetrichttp.WithInsecure,
+			withTimeout:     otlpmetrichttp.WithTimeout,
+			withHeaders:     otlpmetrichttp.WithHeaders,
+			withCompression: func() otlpmetrichttp.Option { return otlpmetrichttp.WithCompression(otlpmetrichttp.GzipCompression) },
+			withTLS:         otlpmetrichttp.WithTLSClientConfig,
+			withRetry: func(retry RetryConfig) otlpmetrichttp.Option {
+				return otlpmetrichttp.WithRetry(otlpmetrichttp.RetryConfig{
+					Enabled:         retry.IsEnabled(),
+					InitialInterval: retry.InitialInterval,
+					MaxInterval:     retry.MaxInterval,
+					MaxElapsedTime:  retry.MaxElapsedTime,
+				})
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
 		opts = append(opts, otlpmetrichttp.WithTemporalitySelector(temporalitySelector))
 		return otlpmetrichttp.New(ctx, opts...)
+	default:
+		return nil, errors.TelemetryUnsupportedProtocol.Args(string(cfg.Protocol))
 	}
 }
 
@@ -164,10 +192,12 @@ func newConsoleMetricExporter(cfg ExporterEntry) (sdkmetric.Exporter, error) {
 }
 
 func getTemporalitySelector(t MetricTemporality) sdkmetric.TemporalitySelector {
-	return func(kind sdkmetric.InstrumentKind) metricdata.Temporality {
-		if t == TemporalityDelta {
-			return metricdata.DeltaTemporality
-		}
-		return metricdata.CumulativeTemporality
+	switch t {
+	case TemporalityDelta:
+		return sdkmetric.DeltaTemporalitySelector
+	case TemporalityLowMemory:
+		return sdkmetric.LowMemoryTemporalitySelector
+	default:
+		return sdkmetric.DefaultTemporalitySelector
 	}
 }

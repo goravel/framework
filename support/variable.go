@@ -3,6 +3,8 @@ package support
 type Paths struct {
 	// The base directory path, default is "app".
 	App string
+	// The agents directory path, default is "app/ai/agents".
+	Agents string
 	// The bootstrap directory path, default is "bootstrap".
 	Bootstrap string
 	// The commands directory path, default is "app/console/commands".
@@ -59,6 +61,8 @@ type Paths struct {
 	Storage string
 	// The tests directory path, default is "tests".
 	Tests string
+	// The tools directory path, default is "app/ai/tools".
+	Tools string
 	// The view directory path, default is "resources/views".
 	Views string
 }
@@ -83,6 +87,7 @@ var (
 	Config = Configuration{
 		Paths: Paths{
 			App:         "app",
+			Agents:      "app/ai/agents",
 			Bootstrap:   "bootstrap",
 			Commands:    "app/console/commands",
 			Config:      "config",
@@ -111,6 +116,7 @@ var (
 			Seeders:     "database/seeders",
 			Storage:     "storage",
 			Tests:       "tests",
+			Tools:       "app/ai/tools",
 			Views:       "resources/views",
 		},
 	}

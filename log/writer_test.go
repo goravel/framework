@@ -38,8 +38,6 @@ func TestWriter(t *testing.T) {
 	)
 
 	beforeEach := func() {
-		// Clear handler cache to ensure each test starts fresh
-		clearChannelCache()
 		mockConfig = initMockConfig(t)
 	}
 
@@ -368,8 +366,6 @@ func TestWriter(t *testing.T) {
 }
 
 func TestWriter_WithContext(t *testing.T) {
-	// Clear handler cache
-	clearChannelCache()
 
 	// First NewApplication call reads config and creates handlers which are then cached.
 	// WithContext creates a new Application, but reuses the cached handlers,
@@ -415,8 +411,6 @@ func TestWriter_WithContext(t *testing.T) {
 }
 
 func TestWriter_LevelNotMatch(t *testing.T) {
-	// Clear handler cache
-	clearChannelCache()
 
 	mockConfig := mocksconfig.NewConfig(t)
 	mockConfig.EXPECT().GetString("logging.default").Return("stack").Once()
@@ -445,8 +439,6 @@ func TestWriter_LevelNotMatch(t *testing.T) {
 }
 
 func TestWriter_DailyLogWithDifferentDays(t *testing.T) {
-	// Clear handler cache
-	clearChannelCache()
 
 	mockConfig := initMockConfig(t)
 	// app.env is called twice per log write (once for each handler: single + daily)
@@ -481,8 +473,6 @@ func TestWriter_DailyLogWithDifferentDays(t *testing.T) {
 }
 
 func TestWriterWithCustomLogger(t *testing.T) {
-	// Clear handler cache
-	clearChannelCache()
 
 	mockConfig := mocksconfig.NewConfig(t)
 	mockConfig.EXPECT().GetString("logging.default").Return("customLogger").Once()
@@ -512,8 +502,6 @@ func TestWriterWithCustomLogger(t *testing.T) {
 }
 
 func TestWriter_Fatal(t *testing.T) {
-	// Clear handler cache
-	clearChannelCache()
 
 	mockConfig := initMockConfig(t)
 	log, err := NewApplication(context.Background(), nil, mockConfig, json.New(), nil)
@@ -537,8 +525,6 @@ func TestWriter_Fatal(t *testing.T) {
 }
 
 func TestWriter_Fatalf(t *testing.T) {
-	// Clear handler cache
-	clearChannelCache()
 
 	mockConfig := initMockConfig(t)
 	log, err := NewApplication(context.Background(), nil, mockConfig, json.New(), nil)
@@ -562,8 +548,6 @@ func TestWriter_Fatalf(t *testing.T) {
 }
 
 func TestWriter_ConcurrentAccess(t *testing.T) {
-	// Clear handler cache
-	clearChannelCache()
 
 	// This test verifies that concurrent access to the same log.Writer
 	// does not cause data races or entry contamination.
@@ -667,8 +651,6 @@ func TestWriter_ConcurrentAccess(t *testing.T) {
 }
 
 func TestWriter_NoEntryContamination(t *testing.T) {
-	// Clear handler cache
-	clearChannelCache()
 
 	// This test verifies that calling fluent methods on the base writer
 	// returns a new writer and does not affect the original.
@@ -691,8 +673,6 @@ func TestWriter_NoEntryContamination(t *testing.T) {
 }
 
 func TestWriter_FluentChainIsolation(t *testing.T) {
-	// Clear handler cache
-	clearChannelCache()
 
 	// This test verifies that multiple fluent chains are isolated from each other.
 	mockConfig := initMockConfig(t)

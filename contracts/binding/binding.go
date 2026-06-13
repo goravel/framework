@@ -282,10 +282,13 @@ var (
 			Description: "Routing system, which supports multiple web frameworks.",
 			PkgPath:     "github.com/goravel/framework/route",
 			Dependencies: []string{
+				Cache,
 				Config,
+				Hash,
 				Http,
 				RateLimiter,
 				Session,
+				Storage,
 				Validation,
 				View,
 			},

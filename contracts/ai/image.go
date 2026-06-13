@@ -20,7 +20,7 @@ const (
 
 type ImageRequest interface {
 	Model(model string) ImageRequest
-	Provider(provider string) ImageRequest
+	Provider(provider string, failovers ...string) ImageRequest
 	Square() ImageRequest
 	Portrait() ImageRequest
 	Landscape() ImageRequest
