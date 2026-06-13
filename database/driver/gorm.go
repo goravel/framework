@@ -75,7 +75,7 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 	// Telemetry is a cross-cutting concern: a registration failure warns but
 	// must not abort building the database, matching the ping handling above.
 	if plugin := instrumentationdatabase.NewGormPlugin(pool, connection); plugin != nil {
-		if err := instance.Use(plugin); err != nil {
+		if err = instance.Use(plugin); err != nil {
 			color.Warningln(err.Error())
 		}
 	}

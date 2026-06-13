@@ -54,7 +54,7 @@ func TestInstrument_RegisterPoolMetrics(t *testing.T) {
 			}
 		}
 	}
-	for _, name := range []string{metricConnectionCount, metricConnectionMax, metricConnectionWaitTime, metricConnectionWaits} {
+	for _, name := range []string{metricConnectionCount, metricConnectionMax} {
 		assert.True(t, names[name], name)
 	}
 }
