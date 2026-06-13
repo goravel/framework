@@ -2680,6 +2680,32 @@ func (s *SchemaSuite) createTableAndAssertColumnsForColumnMethods(schema contrac
 	s.Contains(columnListing, "updated_at")
 }
 
+func TestSchemaConnectionUsesConnectionDriver(t *testing.T) {
+	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
+	sqliteTestQuery := NewTestQueryBuilder().Sqlite("", false)
+	sqliteTestQuery.CreateTable(TestTableProducts)
+
+	docker, err := sqliteTestQuery.Driver().Docker()
+	assert.NoError(t, err)
+	defer func() {
+		assert.NoError(t, docker.Shutdown())
+	}()
+
+	sqliteConfig := sqliteTestQuery.Driver().Pool().Writers[0]
+	sqliteConnection := sqliteConfig.Connection
+	mockDatabaseConfig(postgresTestQuery.MockConfig(), sqliteConfig)
+
+	schema := newSchema(postgresTestQuery, map[string]*TestQuery{
+		postgresTestQuery.Driver().Pool().Writers[0].Connection: postgresTestQuery,
+		sqliteConnection: sqliteTestQuery,
+	})
+
+	assert.True(t, schema.Connection(sqliteConnection).HasTable("products"))
+
+	schema.SetConnection(sqliteConnection)
+	assert.True(t, schema.HasTable("products"))
+}
+
 func TestPostgresSchema(t *testing.T) {
 	table := "table"
 	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
