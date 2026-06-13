@@ -14,7 +14,12 @@ func (s Stubs) MaintenanceConfig() string {
     //
     // Supported drivers: "file", "cache"
     "driver": config.Env("APP_MAINTENANCE_DRIVER", "file"),
-    "store": config.Env("APP_MAINTENANCE_STORE", "database"),
+
+    // Maintenance Mode Store
+    //
+    // This option controls the cache store used by the "cache" maintenance
+    // driver. Leave it empty to use the default cache store.
+    "store": config.Env("APP_MAINTENANCE_STORE", ""),
 }`
 }
 
