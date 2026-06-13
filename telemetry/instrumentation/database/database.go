@@ -7,21 +7,22 @@ import (
 	"errors"
 	"io"
 	"strings"
-	"sync"
 	"time"
 
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
 	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
-	oteltrace "go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace"
 	"gorm.io/gorm"
 
+	contractsdatabase "github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/telemetry"
 )
 
 const (
 	instrumentationName = "github.com/goravel/framework/telemetry/instrumentation/database"
+
+	configKey = "telemetry.instrumentation.database.enabled"
 
 	metricOperationDuration = "db.client.operation.duration"
 	unitSeconds             = "s"
@@ -29,29 +30,91 @@ const (
 
 var durationBuckets = []float64{0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10}
 
-var (
-	durationOnce sync.Once
+type instrument struct {
+	tracer       trace.Tracer
 	durationHist metric.Float64Histogram
-)
-
-func operationDuration() metric.Float64Histogram {
-	durationOnce.Do(func() {
-		if telemetry.Facade == nil {
-			return
-		}
-
-		meter := telemetry.Facade.Meter(instrumentationName)
-		durationHist, _ = meter.Float64Histogram(metricOperationDuration,
-			metric.WithUnit(unitSeconds),
-			metric.WithDescription("Duration of database client operations"),
-			metric.WithExplicitBucketBoundaries(durationBuckets...),
-		)
-	})
-
-	return durationHist
+	baseAttrs    []telemetry.KeyValue
 }
 
-func dbSystem(driverName string) attribute.KeyValue {
+func newInstrument(pool contractsdatabase.Pool, connection string) *instrument {
+	if telemetry.Facade == nil || telemetry.ConfigFacade == nil || !telemetry.ConfigFacade.GetBool(configKey, true) {
+		return nil
+	}
+
+	meter := telemetry.Facade.Meter(instrumentationName)
+	durationHist, _ := meter.Float64Histogram(metricOperationDuration,
+		metric.WithUnit(unitSeconds),
+		metric.WithDescription("Duration of database client operations"),
+		metric.WithExplicitBucketBoundaries(durationBuckets...),
+	)
+
+	return &instrument{
+		tracer:       telemetry.Facade.Tracer(instrumentationName),
+		durationHist: durationHist,
+		baseAttrs:    baseAttributes(pool, connection),
+	}
+}
+
+func baseAttributes(pool contractsdatabase.Pool, connection string) []telemetry.KeyValue {
+	if len(pool.Writers) == 0 {
+		return nil
+	}
+
+	writer := pool.Writers[0]
+	attrs := []telemetry.KeyValue{dbSystem(writer.Driver)}
+	if writer.Database != "" {
+		attrs = append(attrs, semconv.DBNamespace(writer.Database))
+	}
+	if writer.Host != "" {
+		attrs = append(attrs, semconv.ServerAddress(writer.Host))
+	}
+	if writer.Port > 0 {
+		attrs = append(attrs, semconv.ServerPort(writer.Port))
+	}
+	if connection != "" {
+		attrs = append(attrs, semconv.DBClientConnectionPoolName(connection))
+	}
+
+	return attrs
+}
+
+func (r *instrument) startSpan(ctx context.Context, name string) (context.Context, trace.Span) {
+	return r.tracer.Start(ctx, name, telemetry.WithSpanKind(telemetry.SpanKindClient))
+}
+
+func (r *instrument) endSpan(ctx context.Context, span trace.Span, start time.Time, query, table string, rows int64, err error) {
+	operation := operationName(query)
+
+	attrs := append([]telemetry.KeyValue{}, r.baseAttrs...)
+	attrs = append(attrs, semconv.DBOperationName(operation), semconv.DBQueryText(query))
+	if table != "" {
+		summary := operation + " " + table
+		attrs = append(attrs, semconv.DBCollectionName(table), semconv.DBQuerySummary(summary))
+		span.SetName(summary)
+	}
+	if rows >= 0 {
+		attrs = append(attrs, semconv.DBResponseReturnedRows(int(rows)))
+	}
+
+	metricAttrs := append([]telemetry.KeyValue{}, r.baseAttrs...)
+	metricAttrs = append(metricAttrs, semconv.DBOperationName(operation))
+	if table != "" {
+		metricAttrs = append(metricAttrs, semconv.DBCollectionName(table))
+	}
+
+	if isRecordableError(err) {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		metricAttrs = append(metricAttrs, semconv.ErrorType(err))
+	}
+
+	span.SetAttributes(attrs...)
+	span.End()
+
+	r.durationHist.Record(ctx, time.Since(start).Seconds(), metric.WithAttributes(metricAttrs...))
+}
+
+func dbSystem(driverName string) telemetry.KeyValue {
 	switch driverName {
 	case "postgres", "postgresql":
 		return semconv.DBSystemNamePostgreSQL
@@ -87,50 +150,4 @@ func isRecordableError(err error) bool {
 	}
 
 	return true
-}
-
-func startSpan(ctx context.Context, name string) (context.Context, oteltrace.Span, bool) {
-	if telemetry.Facade == nil {
-		return ctx, nil, false
-	}
-
-	spanCtx, span := telemetry.Facade.Tracer(instrumentationName).Start(ctx, name, oteltrace.WithSpanKind(oteltrace.SpanKindClient))
-
-	return spanCtx, span, true
-}
-
-func endSpan(ctx context.Context, span oteltrace.Span, start time.Time, system attribute.KeyValue, query, table string, rows int64, err error) {
-	operation := operationName(query)
-
-	attrs := []attribute.KeyValue{
-		system,
-		semconv.DBOperationName(operation),
-		semconv.DBQueryText(query),
-	}
-	if table != "" {
-		summary := operation + " " + table
-		attrs = append(attrs, semconv.DBCollectionName(table), semconv.DBQuerySummary(summary))
-		span.SetName(summary)
-	}
-	if rows >= 0 {
-		attrs = append(attrs, semconv.DBResponseReturnedRows(int(rows)))
-	}
-
-	metricAttrs := []attribute.KeyValue{system, semconv.DBOperationName(operation)}
-	if table != "" {
-		metricAttrs = append(metricAttrs, semconv.DBCollectionName(table))
-	}
-
-	if isRecordableError(err) {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-		metricAttrs = append(metricAttrs, semconv.ErrorType(err))
-	}
-
-	span.SetAttributes(attrs...)
-	span.End()
-
-	if hist := operationDuration(); hist != nil {
-		hist.Record(ctx, time.Since(start).Seconds(), metric.WithAttributes(metricAttrs...))
-	}
 }

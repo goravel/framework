@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,42 +20,40 @@ type testUser struct {
 func setupTracedGorm(t *testing.T) (*gorm.DB, *recordingSpanExporter) {
 	t.Helper()
 
-	exporter := setupRecordingTelemetry(t)
+	exporter := setupTelemetry(t, true)
+
+	plugin := NewGormPlugin(testPool(), "postgres")
+	assert.NotNil(t, plugin)
 
 	db, err := gorm.Open(gormtests.DummyDialector{}, &gorm.Config{SkipDefaultTransaction: true, DryRun: true})
 	assert.NoError(t, err)
-	assert.NoError(t, db.Use(NewGormPlugin()))
+	assert.NoError(t, db.Use(plugin))
 
 	return db, exporter
 }
 
-func assertAttr(t *testing.T, span sdktrace.ReadOnlySpan, key string) {
+func assertAttr(t *testing.T, span sdktrace.ReadOnlySpan, key, expected string) {
 	t.Helper()
 
-	for _, attr := range span.Attributes() {
-		if string(attr.Key) == key {
-			return
-		}
-	}
-
-	t.Fatalf("expected span to have attribute %q", key)
+	value, ok := attrValue(span, key)
+	assert.True(t, ok, key)
+	assert.Equal(t, expected, value, key)
 }
 
-func assertNoBoundValues(t *testing.T, span sdktrace.ReadOnlySpan) {
-	t.Helper()
+func TestNewGormPlugin(t *testing.T) {
+	t.Run("nil when facade is not set", func(t *testing.T) {
+		original := telemetry.Facade
+		telemetry.Facade = nil
+		t.Cleanup(func() { telemetry.Facade = original })
 
-	for _, attr := range span.Attributes() {
-		if string(attr.Key) != "db.query.text" {
-			continue
-		}
+		assert.Nil(t, NewGormPlugin(testPool(), "postgres"))
+	})
 
-		query := attr.Value.AsString()
-		assert.Contains(t, query, "?", "query text should keep placeholders")
-		assert.NotContains(t, query, "Goravel", "query text must not contain interpolated values")
-		return
-	}
+	t.Run("nil when disabled", func(t *testing.T) {
+		setupTelemetry(t, false)
 
-	t.Fatal("expected span to have db.query.text attribute")
+		assert.Nil(t, NewGormPlugin(testPool(), "postgres"))
+	})
 }
 
 func TestGormPlugin_QuerySpan(t *testing.T) {
@@ -68,8 +65,14 @@ func TestGormPlugin_QuerySpan(t *testing.T) {
 	assert.Len(t, exporter.spans, 1)
 	span := exporter.spans[0]
 	assert.Equal(t, "SELECT test_users", span.Name())
-	assertAttr(t, span, "db.query.text")
-	assertNoBoundValues(t, span)
+	assertAttr(t, span, "db.collection.name", "test_users")
+	assertAttr(t, span, "db.namespace", "app")
+	assertAttr(t, span, "db.client.connection.pool.name", "postgres")
+
+	query, ok := attrValue(span, "db.query.text")
+	assert.True(t, ok)
+	assert.Contains(t, query, "?", "query text should keep placeholders")
+	assert.NotContains(t, query, "Goravel", "query text must not contain bound values")
 }
 
 func TestGormPlugin_CreateSpan(t *testing.T) {
@@ -78,10 +81,7 @@ func TestGormPlugin_CreateSpan(t *testing.T) {
 	db.WithContext(context.Background()).Create(&testUser{Name: "Goravel"})
 
 	assert.Len(t, exporter.spans, 1)
-	span := exporter.spans[0]
-	assert.Equal(t, "INSERT test_users", span.Name())
-	assert.True(t, strings.HasPrefix(span.Name(), "INSERT "))
-	assertAttr(t, span, "db.query.text")
+	assert.Equal(t, "INSERT test_users", exporter.spans[0].Name())
 }
 
 func TestGormPlugin_SequentialQueriesAreSiblings(t *testing.T) {
@@ -96,15 +96,14 @@ func TestGormPlugin_SequentialQueriesAreSiblings(t *testing.T) {
 	assert.False(t, exporter.spans[1].Parent().IsValid(), "second span must not be a child of the first")
 }
 
-func TestGormPlugin_NoFacadeNoSpans(t *testing.T) {
-	original := telemetry.Facade
-	telemetry.Facade = nil
-	t.Cleanup(func() { telemetry.Facade = original })
+func TestGormPlugin_NestsUnderParentSpan(t *testing.T) {
+	db, exporter := setupTracedGorm(t)
 
-	db, err := gorm.Open(gormtests.DummyDialector{}, &gorm.Config{SkipDefaultTransaction: true, DryRun: true})
-	assert.NoError(t, err)
-	assert.NoError(t, db.Use(NewGormPlugin()))
-
+	ctx, parent := telemetry.Facade.Tracer(instrumentationName).Start(context.Background(), "parent")
 	var users []testUser
-	assert.NotPanics(t, func() { db.WithContext(context.Background()).Find(&users) })
+	db.WithContext(ctx).Find(&users)
+	parent.End()
+
+	assert.Len(t, exporter.spans, 2)
+	assert.Equal(t, parent.SpanContext().SpanID(), exporter.spans[0].Parent().SpanID())
 }

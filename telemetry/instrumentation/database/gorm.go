@@ -2,14 +2,12 @@ package database
 
 import (
 	"context"
-	"database/sql"
-	"sync"
 	"time"
 
-	oteltrace "go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace"
 	"gorm.io/gorm"
 
-	"github.com/goravel/framework/support/color"
+	contractsdatabase "github.com/goravel/framework/contracts/database"
 )
 
 type contextWrapper struct {
@@ -18,19 +16,21 @@ type contextWrapper struct {
 	start  time.Time
 }
 
+type gormCallback interface {
+	Register(name string, fn func(*gorm.DB)) error
+}
+
 type GormPlugin struct {
-	sqlDB      *sql.DB
-	driverName string
-	poolName   string
-	poolOnce   sync.Once
+	instrument *instrument
 }
 
-func NewGormPlugin() *GormPlugin {
-	return &GormPlugin{}
-}
+func NewGormPlugin(pool contractsdatabase.Pool, connection string) *GormPlugin {
+	inst := newInstrument(pool, connection)
+	if inst == nil {
+		return nil
+	}
 
-func NewGormPluginWithPool(sqlDB *sql.DB, driverName, poolName string) *GormPlugin {
-	return &GormPlugin{sqlDB: sqlDB, driverName: driverName, poolName: poolName}
+	return &GormPlugin{instrument: inst}
 }
 
 func (r *GormPlugin) Name() string {
@@ -38,59 +38,36 @@ func (r *GormPlugin) Name() string {
 }
 
 func (r *GormPlugin) Initialize(db *gorm.DB) error {
-	if err := db.Callback().Create().Before("gorm:create").Register("goravel:telemetry:before_create", r.before("gorm.Create")); err != nil {
-		return err
-	}
-	if err := db.Callback().Create().After("gorm:create").Register("goravel:telemetry:after_create", r.after); err != nil {
-		return err
-	}
-	if err := db.Callback().Query().Before("gorm:query").Register("goravel:telemetry:before_query", r.before("gorm.Query")); err != nil {
-		return err
-	}
-	if err := db.Callback().Query().After("gorm:query").Register("goravel:telemetry:after_query", r.after); err != nil {
-		return err
-	}
-	if err := db.Callback().Update().Before("gorm:update").Register("goravel:telemetry:before_update", r.before("gorm.Update")); err != nil {
-		return err
-	}
-	if err := db.Callback().Update().After("gorm:update").Register("goravel:telemetry:after_update", r.after); err != nil {
-		return err
-	}
-	if err := db.Callback().Delete().Before("gorm:delete").Register("goravel:telemetry:before_delete", r.before("gorm.Delete")); err != nil {
-		return err
-	}
-	if err := db.Callback().Delete().After("gorm:delete").Register("goravel:telemetry:after_delete", r.after); err != nil {
-		return err
-	}
-	if err := db.Callback().Row().Before("gorm:row").Register("goravel:telemetry:before_row", r.before("gorm.Row")); err != nil {
-		return err
-	}
-	if err := db.Callback().Row().After("gorm:row").Register("goravel:telemetry:after_row", r.after); err != nil {
-		return err
-	}
-	if err := db.Callback().Raw().Before("gorm:raw").Register("goravel:telemetry:before_raw", r.before("gorm.Raw")); err != nil {
-		return err
+	registrations := []struct {
+		key      string
+		spanName string
+		before   gormCallback
+		after    gormCallback
+	}{
+		{"create", "gorm.Create", db.Callback().Create().Before("gorm:create"), db.Callback().Create().After("gorm:create")},
+		{"query", "gorm.Query", db.Callback().Query().Before("gorm:query"), db.Callback().Query().After("gorm:query")},
+		{"update", "gorm.Update", db.Callback().Update().Before("gorm:update"), db.Callback().Update().After("gorm:update")},
+		{"delete", "gorm.Delete", db.Callback().Delete().Before("gorm:delete"), db.Callback().Delete().After("gorm:delete")},
+		{"row", "gorm.Row", db.Callback().Row().Before("gorm:row"), db.Callback().Row().After("gorm:row")},
+		{"raw", "gorm.Raw", db.Callback().Raw().Before("gorm:raw"), db.Callback().Raw().After("gorm:raw")},
 	}
 
-	return db.Callback().Raw().After("gorm:raw").Register("goravel:telemetry:after_raw", r.after)
+	for _, registration := range registrations {
+		if err := registration.before.Register("goravel:telemetry:before_"+registration.key, r.before(registration.spanName)); err != nil {
+			return err
+		}
+		if err := registration.after.Register("goravel:telemetry:after_"+registration.key, r.after); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (r *GormPlugin) before(spanName string) func(*gorm.DB) {
 	return func(tx *gorm.DB) {
 		parent := tx.Statement.Context
-		spanCtx, _, ok := startSpan(parent, spanName)
-		if !ok {
-			return
-		}
-
-		if r.sqlDB != nil {
-			r.poolOnce.Do(func() {
-				if err := RegisterPoolMetrics(r.sqlDB, r.driverName, r.poolName); err != nil {
-					color.Warningln("failed to register database pool metrics:", err)
-				}
-			})
-		}
-
+		spanCtx, _ := r.instrument.startSpan(parent, spanName)
 		tx.Statement.Context = contextWrapper{Context: spanCtx, parent: parent, start: time.Now()}
 	}
 }
@@ -102,7 +79,6 @@ func (r *GormPlugin) after(tx *gorm.DB) {
 	}
 	tx.Statement.Context = wrapper.parent
 
-	span := oteltrace.SpanFromContext(wrapper.Context)
-
-	endSpan(wrapper.Context, span, wrapper.start, dbSystem(tx.Dialector.Name()), tx.Statement.SQL.String(), tx.Statement.Table, tx.Statement.RowsAffected, tx.Error)
+	span := trace.SpanFromContext(wrapper.Context)
+	r.instrument.endSpan(wrapper.Context, span, wrapper.start, tx.Statement.SQL.String(), tx.Statement.Table, tx.Statement.RowsAffected, tx.Error)
 }

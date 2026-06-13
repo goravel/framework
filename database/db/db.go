@@ -17,7 +17,6 @@ import (
 	databasedriver "github.com/goravel/framework/database/driver"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
-	instrumentationdatabase "github.com/goravel/framework/telemetry/instrumentation/database"
 )
 
 type DB struct {
@@ -32,7 +31,7 @@ type DB struct {
 
 func NewDB(ctx context.Context, config config.Config, driver contractsdriver.Driver, logger contractslogger.Logger, gormDB *gorm.DB) (*DB, error) {
 	return &DB{
-		Tx:      NewTx(ctx, driver, logger, gormDB, nil, &[]TxLog{}, config.GetBool("telemetry.instrumentation.database.enabled")),
+		Tx:      NewTx(ctx, driver, logger, gormDB, nil, &[]TxLog{}),
 		ctx:     ctx,
 		config:  config,
 		driver:  driver,
@@ -65,14 +64,12 @@ func BuildDB(ctx context.Context, config config.Config, log log.Log, connection 
 
 func (r *DB) BeginTransaction() (contractsdb.Tx, error) {
 	driverName := r.driver.Pool().Writers[0].Driver
-	enabled := r.config.GetBool("telemetry.instrumentation.database.enabled")
-
 	txBuilder, err := NewTxBuilder(r.gorm.Clauses(dbresolver.Write), driverName)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewTx(r.ctx, r.driver, r.logger, nil, wrapTxBuilder(enabled, txBuilder, driverName), &[]TxLog{}, enabled), nil
+	return NewTx(r.ctx, r.driver, r.logger, nil, txBuilder, &[]TxLog{}), nil
 }
 
 func (r *DB) Connection(name string) contractsdb.DB {
@@ -129,14 +126,13 @@ func (r *DB) WithContext(ctx context.Context) contractsdb.DB {
 }
 
 type Tx struct {
-	ctx              context.Context
-	grammar          contractsdriver.Grammar
-	logger           contractslogger.Logger
-	txBuilder        contractsdb.TxBuilder
-	gormDB           *gorm.DB
-	txLogs           *[]TxLog
-	driverName       string
-	telemetryEnabled bool
+	ctx        context.Context
+	grammar    contractsdriver.Grammar
+	logger     contractslogger.Logger
+	txBuilder  contractsdb.TxBuilder
+	gormDB     *gorm.DB
+	txLogs     *[]TxLog
+	driverName string
 }
 
 func NewTx(
@@ -146,20 +142,18 @@ func NewTx(
 	gormDB *gorm.DB,
 	txBuilder contractsdb.TxBuilder,
 	txLogs *[]TxLog,
-	telemetryEnabled bool,
 ) *Tx {
 	pool := driver.Pool()
 	driverName := pool.Writers[0].Driver
 
 	return &Tx{
-		ctx:              ctx,
-		driverName:       driverName,
-		gormDB:           gormDB,
-		grammar:          driver.Grammar(),
-		logger:           logger,
-		txBuilder:        txBuilder,
-		txLogs:           txLogs,
-		telemetryEnabled: telemetryEnabled,
+		ctx:        ctx,
+		driverName: driverName,
+		gormDB:     gormDB,
+		grammar:    driver.Grammar(),
+		logger:     logger,
+		txBuilder:  txBuilder,
+		txLogs:     txLogs,
 	}
 }
 
@@ -308,7 +302,7 @@ func (r *Tx) readBuilder() (contractsdb.Builder, error) {
 		return nil, err
 	}
 
-	return wrapBuilder(r.telemetryEnabled, builder, r.driverName), nil
+	return builder, nil
 }
 
 func (r *Tx) writeBuilder() (contractsdb.Builder, error) {
@@ -317,21 +311,5 @@ func (r *Tx) writeBuilder() (contractsdb.Builder, error) {
 		return nil, err
 	}
 
-	return wrapBuilder(r.telemetryEnabled, builder, r.driverName), nil
-}
-
-func wrapBuilder(enabled bool, builder contractsdb.Builder, driverName string) contractsdb.Builder {
-	if !enabled {
-		return builder
-	}
-
-	return instrumentationdatabase.WrapBuilderFull(builder, driverName)
-}
-
-func wrapTxBuilder(enabled bool, builder contractsdb.TxBuilder, driverName string) contractsdb.TxBuilder {
-	if !enabled {
-		return builder
-	}
-
-	return instrumentationdatabase.WrapTxBuilder(builder, driverName)
+	return builder, nil
 }
