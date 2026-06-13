@@ -30,7 +30,7 @@ func TestInstrument_RegisterPoolMetrics(t *testing.T) {
 	}
 
 	db := sql.OpenDB(stubConnector{})
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	assert.NoError(t, inst.registerPoolMetrics(db))
 

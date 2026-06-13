@@ -61,7 +61,7 @@ func TestBuildGorm_TelemetryPlugin(t *testing.T) {
 				}
 			})
 
-			_, registered := instance.Config.Plugins[instrumentationdatabase.PluginName]
+			_, registered := instance.Plugins[instrumentationdatabase.PluginName]
 			assert.Equal(t, tt.registered, registered)
 		})
 	}

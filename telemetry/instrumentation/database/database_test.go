@@ -68,7 +68,7 @@ func testPool() contractsdatabase.Pool {
 func attrValue(span sdktrace.ReadOnlySpan, key string) (string, bool) {
 	for _, attr := range span.Attributes() {
 		if string(attr.Key) == key {
-			return attr.Value.Emit(), true
+			return attr.Value.String(), true
 		}
 	}
 	return "", false
