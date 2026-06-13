@@ -9,12 +9,19 @@ import (
 
 	"github.com/goravel/framework/contracts/console/command"
 	mocksconsole "github.com/goravel/framework/mocks/console"
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/file"
 )
 
 func TestToolMakeCommand(t *testing.T) {
 	toolMakeCommand := &ToolMakeCommand{}
 	mockContext := mocksconsole.NewContext(t)
+	originalPaths := support.Config.Paths
+	defer func() {
+		support.Config.Paths = originalPaths
+		_ = file.Remove("app")
+		_ = file.Remove("custom")
+	}()
 
 	assert.Equal(t, "make:tool", toolMakeCommand.Signature())
 	assert.Equal(t, "Create a new agent tool", toolMakeCommand.Description())
@@ -40,7 +47,7 @@ func TestToolMakeCommand(t *testing.T) {
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Tool created successfully").Once()
 	assert.NoError(t, toolMakeCommand.Handle(mockContext))
-	assert.True(t, file.Exists("app/tools/weather_tool.go"))
+	assert.True(t, file.Exists("app/ai/tools/weather_tool.go"))
 
 	mockContext.EXPECT().Argument(0).Return("WeatherTool").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
@@ -51,15 +58,21 @@ func TestToolMakeCommand(t *testing.T) {
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Tool created successfully").Once()
 	assert.NoError(t, toolMakeCommand.Handle(mockContext))
-	assert.True(t, file.Exists("app/tools/user/weather_tool.go"))
-	assert.True(t, file.Contain("app/tools/user/weather_tool.go", "package user"))
-	assert.True(t, file.Contain("app/tools/user/weather_tool.go", "type WeatherTool struct"))
-	assert.True(t, file.Contain("app/tools/user/weather_tool.go", "func (r *WeatherTool) Name() string"))
-	assert.True(t, file.Contain("app/tools/user/weather_tool.go", "return \"weather_tool\""))
-	assert.True(t, file.Contain("app/tools/user/weather_tool.go", "func (r *WeatherTool) Description() string"))
-	assert.True(t, file.Contain("app/tools/user/weather_tool.go", "func (r *WeatherTool) Parameters() map[string]any"))
-	assert.True(t, file.Contain("app/tools/user/weather_tool.go", "return nil"))
-	assert.True(t, file.Contain("app/tools/user/weather_tool.go", "func (r *WeatherTool) Execute(ctx context.Context, args map[string]any) (string, error)"))
-	assert.False(t, file.Contain("app/tools/user/weather_tool.go", "var _ ai.Tool = (*WeatherTool)(nil)"))
-	assert.NoError(t, file.Remove("app"))
+	assert.True(t, file.Exists("app/ai/tools/user/weather_tool.go"))
+	assert.True(t, file.Contain("app/ai/tools/user/weather_tool.go", "package user"))
+	assert.True(t, file.Contain("app/ai/tools/user/weather_tool.go", "type WeatherTool struct"))
+	assert.True(t, file.Contain("app/ai/tools/user/weather_tool.go", "func (r *WeatherTool) Name() string"))
+	assert.True(t, file.Contain("app/ai/tools/user/weather_tool.go", "return \"weather_tool\""))
+	assert.True(t, file.Contain("app/ai/tools/user/weather_tool.go", "func (r *WeatherTool) Description() string"))
+	assert.True(t, file.Contain("app/ai/tools/user/weather_tool.go", "func (r *WeatherTool) Parameters() map[string]any"))
+	assert.True(t, file.Contain("app/ai/tools/user/weather_tool.go", "return nil"))
+	assert.True(t, file.Contain("app/ai/tools/user/weather_tool.go", "func (r *WeatherTool) Execute(ctx context.Context, args map[string]any) (string, error)"))
+	assert.False(t, file.Contain("app/ai/tools/user/weather_tool.go", "var _ ai.Tool = (*WeatherTool)(nil)"))
+
+	support.Config.Paths.Tools = "custom/tools"
+	mockContext.EXPECT().Argument(0).Return("CurrencyTool").Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Once()
+	mockContext.EXPECT().Success("Tool created successfully").Once()
+	assert.NoError(t, toolMakeCommand.Handle(mockContext))
+	assert.True(t, file.Exists("custom/tools/currency_tool.go"))
 }

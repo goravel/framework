@@ -1,7 +1,6 @@
 package console
 
 import (
-	"path/filepath"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
@@ -41,7 +40,7 @@ func (r *ToolMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *ToolMakeCommand) Handle(ctx console.Context) error {
-	make, err := supportconsole.NewMake(ctx, "tool", ctx.Argument(0), filepath.Join(support.Config.Paths.App, "tools"))
+	make, err := supportconsole.NewMake(ctx, "tool", ctx.Argument(0), support.Config.Paths.Tools)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil

@@ -20,6 +20,54 @@ func (_m *Paths) EXPECT() *Paths_Expecter {
 	return &Paths_Expecter{mock: &_m.Mock}
 }
 
+// Agents provides a mock function with given fields: path
+func (_m *Paths) Agents(path string) configuration.Paths {
+	ret := _m.Called(path)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Agents")
+	}
+
+	var r0 configuration.Paths
+	if rf, ok := ret.Get(0).(func(string) configuration.Paths); ok {
+		r0 = rf(path)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(configuration.Paths)
+		}
+	}
+
+	return r0
+}
+
+// Paths_Agents_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Agents'
+type Paths_Agents_Call struct {
+	*mock.Call
+}
+
+// Agents is a helper method to define mock.On call
+//   - path string
+func (_e *Paths_Expecter) Agents(path interface{}) *Paths_Agents_Call {
+	return &Paths_Agents_Call{Call: _e.mock.On("Agents", path)}
+}
+
+func (_c *Paths_Agents_Call) Run(run func(path string)) *Paths_Agents_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Paths_Agents_Call) Return(_a0 configuration.Paths) *Paths_Agents_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Paths_Agents_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Agents_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // App provides a mock function with given fields: path
 func (_m *Paths) App(path string) configuration.Paths {
 	ret := _m.Called(path)
@@ -1408,6 +1456,54 @@ func (_c *Paths_Tests_Call) Return(_a0 configuration.Paths) *Paths_Tests_Call {
 }
 
 func (_c *Paths_Tests_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Tests_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Tools provides a mock function with given fields: path
+func (_m *Paths) Tools(path string) configuration.Paths {
+	ret := _m.Called(path)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Tools")
+	}
+
+	var r0 configuration.Paths
+	if rf, ok := ret.Get(0).(func(string) configuration.Paths); ok {
+		r0 = rf(path)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(configuration.Paths)
+		}
+	}
+
+	return r0
+}
+
+// Paths_Tools_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Tools'
+type Paths_Tools_Call struct {
+	*mock.Call
+}
+
+// Tools is a helper method to define mock.On call
+//   - path string
+func (_e *Paths_Expecter) Tools(path interface{}) *Paths_Tools_Call {
+	return &Paths_Tools_Call{Call: _e.mock.On("Tools", path)}
+}
+
+func (_c *Paths_Tools_Call) Run(run func(path string)) *Paths_Tools_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Paths_Tools_Call) Return(_a0 configuration.Paths) *Paths_Tools_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Paths_Tools_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Tools_Call {
 	_c.Call.Return(run)
 	return _c
 }

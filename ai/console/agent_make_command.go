@@ -1,7 +1,6 @@
 package console
 
 import (
-	"path/filepath"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
@@ -40,7 +39,7 @@ func (r *AgentMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *AgentMakeCommand) Handle(ctx console.Context) error {
-	make, err := supportconsole.NewMake(ctx, "agent", ctx.Argument(0), filepath.Join(support.Config.Paths.App, "agents"))
+	make, err := supportconsole.NewMake(ctx, "agent", ctx.Argument(0), support.Config.Paths.Agents)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
