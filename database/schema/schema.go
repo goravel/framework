@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"fmt"
 	"reflect"
 	"slices"
 	"strings"
@@ -72,7 +73,7 @@ func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, driver d
 }
 
 func (r *Schema) Connection(name string) contractsschema.Schema {
-	schema, err := NewSchema(r.config, r.log, r.orm.Connection(name), r.driver, r.migrations)
+	schema, err := r.newConnection(name)
 	if err != nil {
 		r.log.Panic(errors.SchemaConnectionNotFound.Args(name).SetModule(errors.ModuleSchedule).Error())
 		return nil
@@ -449,7 +450,57 @@ func (r *Schema) Rename(from, to string) error {
 }
 
 func (r *Schema) SetConnection(name string) {
-	r.orm = r.orm.Connection(name)
+	schema, err := r.newConnection(name)
+	if err != nil {
+		r.log.Panic(errors.SchemaConnectionNotFound.Args(name).SetModule(errors.ModuleSchedule).Error())
+		return
+	}
+
+	r.driver = schema.driver
+	r.grammar = schema.grammar
+	r.orm = schema.orm
+	r.prefix = schema.prefix
+	r.processor = schema.processor
+	r.schema = schema.schema
+}
+
+func (r *Schema) newConnection(name string) (*Schema, error) {
+	connection := r.connectionName(name)
+	connectionDriver, err := r.driverForConnection(connection)
+	if err != nil {
+		return nil, err
+	}
+
+	schema, err := NewSchema(r.config, r.log, r.orm.Connection(connection), connectionDriver, r.migrations)
+	if err != nil {
+		return nil, err
+	}
+
+	schema.goTypes = slices.Clone(r.goTypes)
+	schema.models = slices.Clone(r.models)
+	schema.modelsByFullName = make(map[string]any, len(r.modelsByFullName))
+	for name, model := range r.modelsByFullName {
+		schema.modelsByFullName[name] = model
+	}
+
+	return schema, nil
+}
+
+func (r *Schema) connectionName(name string) string {
+	if name != "" {
+		return name
+	}
+
+	return r.config.GetString("database.default")
+}
+
+func (r *Schema) driverForConnection(name string) (driver.Driver, error) {
+	driverCallback, exist := r.config.Get(fmt.Sprintf("database.connections.%s.via", name)).(func() (driver.Driver, error))
+	if !exist {
+		return nil, errors.DatabaseConfigNotFound
+	}
+
+	return driverCallback()
 }
 
 func (r *Schema) Sql(sql string) error {

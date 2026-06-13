@@ -37,14 +37,11 @@ func TestWipeCommand(t *testing.T) {
 				mockSchema.EXPECT().Connection("postgres").Return(mockSchema).Once()
 				mockSchema.EXPECT().DropAllViews().Return(nil).Once()
 				mockContext.EXPECT().Success("Dropped all views successfully").Once()
-				mockSchema.EXPECT().Connection("postgres").Return(mockSchema).Once()
 				mockSchema.EXPECT().DropAllTables().Return(nil).Once()
 				mockContext.EXPECT().Success("Dropped all tables successfully").Once()
 				mockContext.EXPECT().OptionBool("drop-types").Return(true).Once()
-				mockSchema.EXPECT().Connection("postgres").Return(mockSchema).Once()
 				mockSchema.EXPECT().DropAllTypes().Return(nil).Once()
 				mockContext.EXPECT().Success("Dropped all types successfully").Once()
-				mockSchema.EXPECT().Connection("postgres").Return(mockSchema).Once()
 				mockSchema.EXPECT().Prune().Return(nil).Once()
 			},
 		},
@@ -58,7 +55,6 @@ func TestWipeCommand(t *testing.T) {
 				mockSchema.EXPECT().DropAllTables().Return(nil).Once()
 				mockContext.EXPECT().Success("Dropped all tables successfully").Once()
 				mockContext.EXPECT().OptionBool("drop-types").Return(false).Once()
-				mockSchema.EXPECT().Connection("postgres").Return(mockSchema).Once()
 				mockSchema.EXPECT().Prune().Return(nil).Once()
 			},
 		},
@@ -72,14 +68,11 @@ func TestWipeCommand(t *testing.T) {
 				mockSchema.EXPECT().Connection("postgres").Return(mockSchema).Once()
 				mockSchema.EXPECT().DropAllViews().Return(nil).Once()
 				mockContext.EXPECT().Success("Dropped all views successfully").Once()
-				mockSchema.EXPECT().Connection("postgres").Return(mockSchema).Once()
 				mockSchema.EXPECT().DropAllTables().Return(nil).Once()
 				mockContext.EXPECT().Success("Dropped all tables successfully").Once()
 				mockContext.EXPECT().OptionBool("drop-types").Return(true).Once()
-				mockSchema.EXPECT().Connection("postgres").Return(mockSchema).Once()
 				mockSchema.EXPECT().DropAllTypes().Return(nil).Once()
 				mockContext.EXPECT().Success("Dropped all types successfully").Once()
-				mockSchema.EXPECT().Connection("postgres").Return(mockSchema).Once()
 				mockSchema.EXPECT().Prune().Return(nil).Once()
 			},
 		},
@@ -94,14 +87,11 @@ func TestWipeCommand(t *testing.T) {
 				mockSchema.EXPECT().Connection("postgres").Return(mockSchema).Once()
 				mockSchema.EXPECT().DropAllViews().Return(nil).Once()
 				mockContext.EXPECT().Success("Dropped all views successfully").Once()
-				mockSchema.EXPECT().Connection("postgres").Return(mockSchema).Once()
 				mockSchema.EXPECT().DropAllTables().Return(nil).Once()
 				mockContext.EXPECT().Success("Dropped all tables successfully").Once()
 				mockContext.EXPECT().OptionBool("drop-types").Return(true).Once()
-				mockSchema.EXPECT().Connection("postgres").Return(mockSchema).Once()
 				mockSchema.EXPECT().DropAllTypes().Return(nil).Once()
 				mockContext.EXPECT().Success("Dropped all types successfully").Once()
-				mockSchema.EXPECT().Connection("postgres").Return(mockSchema).Once()
 				mockSchema.EXPECT().Prune().Return(nil).Once()
 			},
 		},
@@ -155,7 +145,6 @@ func TestWipeCommand(t *testing.T) {
 				mockSchema.EXPECT().DropAllTables().Return(nil).Once()
 				mockContext.EXPECT().Success("Dropped all tables successfully").Once()
 				mockContext.EXPECT().OptionBool("drop-types").Return(true).Once()
-				mockSchema.EXPECT().Connection("postgres").Return(mockSchema).Once()
 				mockSchema.EXPECT().DropAllTypes().Return(assert.AnError).Once()
 				mockContext.EXPECT().Error(errors.ConsoleDropAllTypesFailed.Args(assert.AnError).Error()).Once()
 			},
@@ -169,14 +158,11 @@ func TestWipeCommand(t *testing.T) {
 				mockSchema.EXPECT().Connection("postgres").Return(mockSchema).Once()
 				mockSchema.EXPECT().DropAllViews().Return(nil).Once()
 				mockContext.EXPECT().Success("Dropped all views successfully").Once()
-				mockSchema.EXPECT().Connection("postgres").Return(mockSchema).Once()
 				mockSchema.EXPECT().DropAllTables().Return(nil).Once()
 				mockContext.EXPECT().Success("Dropped all tables successfully").Once()
 				mockContext.EXPECT().OptionBool("drop-types").Return(true).Once()
-				mockSchema.EXPECT().Connection("postgres").Return(mockSchema).Once()
 				mockSchema.EXPECT().DropAllTypes().Return(nil).Once()
 				mockContext.EXPECT().Success("Dropped all types successfully").Once()
-				mockSchema.EXPECT().Connection("postgres").Return(mockSchema).Once()
 				mockSchema.EXPECT().Prune().Return(assert.AnError).Once()
 				mockContext.EXPECT().Error(errors.ConsolePruneFailed.Args(assert.AnError).Error()).Once()
 			},
