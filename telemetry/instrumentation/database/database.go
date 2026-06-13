@@ -140,12 +140,14 @@ func operationName(query string) string {
 	return strings.ToUpper(fields[0])
 }
 
+var ignoredErrors = []error{gorm.ErrRecordNotFound, sql.ErrNoRows, driver.ErrSkip, io.EOF}
+
 func isRecordableError(err error) bool {
 	if err == nil {
 		return false
 	}
 
-	for _, ignored := range []error{gorm.ErrRecordNotFound, sql.ErrNoRows, driver.ErrSkip, io.EOF} {
+	for _, ignored := range ignoredErrors {
 		if errors.Is(err, ignored) {
 			return false
 		}
