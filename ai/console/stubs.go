@@ -32,11 +32,7 @@ func (r *DummyAgent) Tools() []ai.Tool {
 func (r Stubs) Tool() string {
 	return `package DummyPackage
 
-import (
-	"context"
-
-	"github.com/goravel/framework/contracts/ai"
-)
+import "context"
 
 type DummyTool struct {
 }
@@ -50,13 +46,11 @@ func (r *DummyTool) Description() string {
 }
 
 func (r *DummyTool) Parameters() map[string]any {
-	return map[string]any{}
+	return nil
 }
 
 func (r *DummyTool) Execute(ctx context.Context, args map[string]any) (string, error) {
 	return "", nil
 }
-
-var _ ai.Tool = (*DummyTool)(nil)
 `
 }

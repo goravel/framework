@@ -58,7 +58,8 @@ func TestToolMakeCommand(t *testing.T) {
 	assert.True(t, file.Contain("app/tools/user/weather_tool.go", "return \"weather_tool\""))
 	assert.True(t, file.Contain("app/tools/user/weather_tool.go", "func (r *WeatherTool) Description() string"))
 	assert.True(t, file.Contain("app/tools/user/weather_tool.go", "func (r *WeatherTool) Parameters() map[string]any"))
+	assert.True(t, file.Contain("app/tools/user/weather_tool.go", "return nil"))
 	assert.True(t, file.Contain("app/tools/user/weather_tool.go", "func (r *WeatherTool) Execute(ctx context.Context, args map[string]any) (string, error)"))
-	assert.True(t, file.Contain("app/tools/user/weather_tool.go", "var _ ai.Tool = (*WeatherTool)(nil)"))
+	assert.False(t, file.Contain("app/tools/user/weather_tool.go", "var _ ai.Tool = (*WeatherTool)(nil)"))
 	assert.NoError(t, file.Remove("app"))
 }
