@@ -45,7 +45,7 @@ func (v *Validator) Bind(ptr any) error {
 	// so that user doesn't need to define rules for all fields.
 	data := v.instance.SafeData()
 	prtType := reflect.TypeOf(ptr)
-	if prtType.Kind() == reflect.Ptr {
+	if prtType.Kind() == reflect.Pointer {
 		prtType = prtType.Elem()
 	}
 

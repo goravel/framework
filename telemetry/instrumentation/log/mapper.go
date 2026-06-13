@@ -141,7 +141,7 @@ func toReflectedValue(v any) otellog.Value {
 	case reflect.Struct:
 		return otellog.StringValue(fmt.Sprintf("%+v", v))
 
-	case reflect.Ptr, reflect.Interface:
+	case reflect.Pointer, reflect.Interface:
 		if val.IsNil() {
 			return otellog.Value{}
 		}
