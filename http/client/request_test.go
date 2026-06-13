@@ -340,8 +340,6 @@ func (s *RequestTestSuite) TestPrefixAndPathVariables() {
 func (s *RequestTestSuite) TestConcurrentRequests() {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		// Small delay to ensure context timeout triggers if set
-		time.Sleep(5 * time.Millisecond)
 		_, _ = w.Write(fmt.Appendf(nil, `{"message":"success-%s"}`, r.URL.Path))
 	}))
 	defer server.Close()
@@ -350,8 +348,8 @@ func (s *RequestTestSuite) TestConcurrentRequests() {
 	reqWithParams := s.request.Clone()
 	req := s.request.Clone()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Millisecond)
-	defer cancel()
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
 
 	var wg sync.WaitGroup
 	wg.Add(1)
