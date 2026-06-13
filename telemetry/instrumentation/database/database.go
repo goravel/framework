@@ -111,9 +111,12 @@ func (r *instrument) endSpan(ctx context.Context, span trace.Span, start time.Ti
 	}
 
 	span.SetAttributes(attrs...)
-	span.End()
 
+	// Record the metric while the span is still active so the SDK can attach an
+	// exemplar correlating it to this span, then end the span.
 	r.durationHist.Record(ctx, time.Since(start).Seconds(), metric.WithAttributes(metricAttrs...))
+
+	span.End()
 }
 
 func dbSystem(driverName string) telemetry.KeyValue {
