@@ -11,6 +11,5 @@ jobs:
     uses: goravel/.github/.github/workflows/lint.yml@master
     secrets: inherit
   govulncheck:
-    if: github.event_name != 'pull_request' || github.base_ref != 'v1.17.x'
     uses: goravel/.github/.github/workflows/govulncheck.yml@master
     secrets: inherit
