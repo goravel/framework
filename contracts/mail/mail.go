@@ -37,10 +37,11 @@ type Mailable interface {
 }
 
 type Content struct {
-	Html string
-	Text string
-	View string
-	With map[string]any
+	Html     string
+	Text     string
+	HtmlView string
+	TextView string
+	With     map[string]any
 }
 
 type Queue struct {

@@ -72,7 +72,7 @@ func (s *ApplicationTestSuite) TestSendMailViaTemplate() {
 		Attach([]string{"../logo.png"}).
 		Subject("Goravel Test template").
 		Content(mail.Content{
-			View: "test.tmpl",
+			HtmlView: "test.tmpl",
 			With: map[string]any{
 				"name": "Goravel",
 			},
@@ -287,7 +287,13 @@ func TestApplicationBuilderMethodsCloneAndMutate(t *testing.T) {
 		Attach([]string{"/tmp/a.txt"}).
 		From(Address("from@example.com", "From Name")).
 		Headers(map[string]string{"X-Test": "yes"}).
-		Content(mail.Content{Html: "<h1>Hello</h1>", View: "mail.tmpl", Text: "mail.txt", With: contentWith}).(*Application)
+		Content(mail.Content{
+			Html:     "<h1>Hello</h1>",
+			Text:     "Hello",
+			HtmlView: "mail.tmpl",
+			TextView: "mail.txt",
+			With:     contentWith,
+		}).(*Application)
 
 	// Builder methods should keep returning the same cloned instance for fluent chaining.
 	assert.Same(t, instance, chained)
@@ -299,8 +305,9 @@ func TestApplicationBuilderMethodsCloneAndMutate(t *testing.T) {
 	assert.Equal(t, "From Name", instance.params.FromName)
 	assert.Equal(t, map[string]string{"X-Test": "yes"}, instance.params.Headers)
 	assert.Equal(t, "<h1>Hello</h1>", instance.params.HTML)
-	assert.Equal(t, "mail.tmpl", instance.view)
-	assert.Equal(t, "mail.txt", instance.text)
+	assert.Equal(t, "Hello", instance.params.Text)
+	assert.Equal(t, "mail.tmpl", instance.htmlView)
+	assert.Equal(t, "mail.txt", instance.textView)
 	assert.Equal(t, contentWith, instance.with)
 }
 
@@ -310,10 +317,11 @@ func TestApplicationSetUsingMailable(t *testing.T) {
 	mailable := &stubMailable{
 		attachments: []string{"/tmp/logo.png"},
 		content: &mail.Content{
-			Html: "new-html",
-			View: "email.tmpl",
-			Text: "email.txt",
-			With: map[string]any{"name": "goravel"},
+			Html:     "new-html",
+			Text:     "new-text",
+			HtmlView: "email.tmpl",
+			TextView: "email.txt",
+			With:     map[string]any{"name": "goravel"},
 		},
 		envelope: &mail.Envelope{
 			From:    mail.Address{Address: "from@example.com", Name: "Mailer"},
@@ -336,8 +344,9 @@ func TestApplicationSetUsingMailable(t *testing.T) {
 	assert.Equal(t, []string{"cc@example.com"}, app.params.CC)
 	assert.Equal(t, []string{"bcc@example.com"}, app.params.BCC)
 	assert.Equal(t, "new-subject", app.params.Subject)
-	assert.Equal(t, "email.tmpl", app.view)
-	assert.Equal(t, "email.txt", app.text)
+	assert.Equal(t, "new-text", app.params.Text)
+	assert.Equal(t, "email.tmpl", app.htmlView)
+	assert.Equal(t, "email.txt", app.textView)
 	assert.Equal(t, map[string]any{"name": "goravel"}, app.with)
 }
 
@@ -347,7 +356,7 @@ func TestApplicationRenderViewTemplate(t *testing.T) {
 		template.EXPECT().Render("mail.tmpl", map[string]any{"id": 1}).Return("<h1>Hello</h1>", nil).Once()
 		template.EXPECT().Render("mail.txt", map[string]any{"id": 1}).Return("Hello", nil).Once()
 
-		app := &Application{template: template, view: "mail.tmpl", text: "mail.txt", with: map[string]any{"id": 1}}
+		app := &Application{template: template, htmlView: "mail.tmpl", textView: "mail.txt", with: map[string]any{"id": 1}}
 
 		err := app.renderViewTemplate()
 		assert.NoError(t, err)
@@ -359,7 +368,7 @@ func TestApplicationRenderViewTemplate(t *testing.T) {
 		template := mocksmail.NewTemplate(t)
 		template.EXPECT().Render("mail.tmpl", mock.MatchedBy(matchWithID)).Return("", errors.New("render failed")).Once()
 
-		app := &Application{template: template, view: "mail.tmpl", with: map[string]any{"id": 1}}
+		app := &Application{template: template, htmlView: "mail.tmpl", with: map[string]any{"id": 1}}
 		err := app.renderViewTemplate()
 		assert.ErrorContains(t, err, "render failed")
 	})
@@ -368,9 +377,18 @@ func TestApplicationRenderViewTemplate(t *testing.T) {
 		template := mocksmail.NewTemplate(t)
 		template.EXPECT().Render("mail.txt", mock.MatchedBy(matchWithID)).Return("", errors.New("text render failed")).Once()
 
-		app := &Application{template: template, text: "mail.txt", with: map[string]any{"id": 1}}
+		app := &Application{template: template, textView: "mail.txt", with: map[string]any{"id": 1}}
 		err := app.renderViewTemplate()
 		assert.ErrorContains(t, err, "text render failed")
+	})
+
+	t.Run("raw text is not rendered as template", func(t *testing.T) {
+		template := mocksmail.NewTemplate(t)
+		app := &Application{template: template, params: Params{Text: "Hello"}}
+
+		err := app.renderViewTemplate()
+		assert.NoError(t, err)
+		assert.Equal(t, "Hello", app.params.Text)
 	})
 }
 
@@ -427,7 +445,7 @@ func TestApplicationQueueRenderError(t *testing.T) {
 	template := mocksmail.NewTemplate(t)
 	template.EXPECT().Render("mail.tmpl", mock.MatchedBy(matchWithID)).Return("", errors.New("render failed")).Once()
 
-	app := &Application{template: template, view: "mail.tmpl", with: map[string]any{"id": 1}}
+	app := &Application{template: template, htmlView: "mail.tmpl", with: map[string]any{"id": 1}}
 
 	err := app.Queue()
 	assert.ErrorContains(t, err, "render failed")
@@ -438,7 +456,7 @@ func TestApplicationSendRenderError(t *testing.T) {
 	template.EXPECT().Render("mail.tmpl", mock.MatchedBy(matchWithID)).Return("", errors.New("render failed")).Once()
 
 	app := &Application{template: template}
-	err := app.Send(&stubMailable{content: &mail.Content{View: "mail.tmpl", With: map[string]any{"id": 1}}})
+	err := app.Send(&stubMailable{content: &mail.Content{HtmlView: "mail.tmpl", With: map[string]any{"id": 1}}})
 
 	assert.ErrorContains(t, err, "render failed")
 }
