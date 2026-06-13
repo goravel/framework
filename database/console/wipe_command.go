@@ -68,9 +68,10 @@ func (r *WipeCommand) Handle(ctx console.Context) error {
 	}
 
 	database := ctx.Option("database")
+	schema := r.schema.Connection(database)
 
 	if ctx.OptionBool("drop-views") {
-		if err := r.dropAllViews(database); err != nil {
+		if err := schema.DropAllViews(); err != nil {
 			ctx.Error(errors.ConsoleDropAllViewsFailed.Args(err).Error())
 			return nil
 		}
@@ -78,7 +79,7 @@ func (r *WipeCommand) Handle(ctx console.Context) error {
 		ctx.Success("Dropped all views successfully")
 	}
 
-	if err := r.dropAllTables(database); err != nil {
+	if err := schema.DropAllTables(); err != nil {
 		ctx.Error(errors.ConsoleDropAllTablesFailed.Args(err).Error())
 		return nil
 	}
@@ -86,7 +87,7 @@ func (r *WipeCommand) Handle(ctx console.Context) error {
 	ctx.Success("Dropped all tables successfully")
 
 	if ctx.OptionBool("drop-types") {
-		if err := r.dropAllTypes(database); err != nil {
+		if err := schema.DropAllTypes(); err != nil {
 			ctx.Error(errors.ConsoleDropAllTypesFailed.Args(err).Error())
 			return nil
 		}
@@ -94,22 +95,10 @@ func (r *WipeCommand) Handle(ctx console.Context) error {
 		ctx.Success("Dropped all types successfully")
 	}
 
-	if err := r.schema.Connection(database).Prune(); err != nil {
+	if err := schema.Prune(); err != nil {
 		ctx.Error(errors.ConsolePruneFailed.Args(err).Error())
 		return nil
 	}
 
 	return nil
-}
-
-func (r *WipeCommand) dropAllTables(database string) error {
-	return r.schema.Connection(database).DropAllTables()
-}
-
-func (r *WipeCommand) dropAllViews(database string) error {
-	return r.schema.Connection(database).DropAllViews()
-}
-
-func (r *WipeCommand) dropAllTypes(database string) error {
-	return r.schema.Connection(database).DropAllTypes()
 }
