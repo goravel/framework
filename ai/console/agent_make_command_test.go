@@ -9,12 +9,19 @@ import (
 
 	"github.com/goravel/framework/contracts/console/command"
 	mocksconsole "github.com/goravel/framework/mocks/console"
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/file"
 )
 
 func TestAgentMakeCommand(t *testing.T) {
 	agentMakeCommand := &AgentMakeCommand{}
 	mockContext := mocksconsole.NewContext(t)
+	originalPaths := support.Config.Paths
+	defer func() {
+		support.Config.Paths = originalPaths
+		_ = file.Remove("app")
+		_ = file.Remove("custom")
+	}()
 
 	assert.Equal(t, "make:agent", agentMakeCommand.Signature())
 	assert.Equal(t, "Create a new agent", agentMakeCommand.Description())
@@ -40,7 +47,7 @@ func TestAgentMakeCommand(t *testing.T) {
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Agent created successfully").Once()
 	assert.NoError(t, agentMakeCommand.Handle(mockContext))
-	assert.True(t, file.Exists("app/agents/user_agent.go"))
+	assert.True(t, file.Exists("app/ai/agents/user_agent.go"))
 
 	mockContext.EXPECT().Argument(0).Return("UserAgent").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
@@ -51,11 +58,17 @@ func TestAgentMakeCommand(t *testing.T) {
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Agent created successfully").Once()
 	assert.NoError(t, agentMakeCommand.Handle(mockContext))
-	assert.True(t, file.Exists("app/agents/user/support_agent.go"))
-	assert.True(t, file.Contain("app/agents/user/support_agent.go", "package user"))
-	assert.True(t, file.Contain("app/agents/user/support_agent.go", "type SupportAgent struct"))
-	assert.True(t, file.Contain("app/agents/user/support_agent.go", "func (r *SupportAgent) Instructions() string"))
-	assert.True(t, file.Contain("app/agents/user/support_agent.go", "func (r *SupportAgent) Messages() []ai.Message"))
-	assert.True(t, file.Contain("app/agents/user/support_agent.go", "func (r *SupportAgent) Middleware() []ai.Middleware"))
-	assert.NoError(t, file.Remove("app"))
+	assert.True(t, file.Exists("app/ai/agents/user/support_agent.go"))
+	assert.True(t, file.Contain("app/ai/agents/user/support_agent.go", "package user"))
+	assert.True(t, file.Contain("app/ai/agents/user/support_agent.go", "type SupportAgent struct"))
+	assert.True(t, file.Contain("app/ai/agents/user/support_agent.go", "func (r *SupportAgent) Instructions() string"))
+	assert.True(t, file.Contain("app/ai/agents/user/support_agent.go", "func (r *SupportAgent) Messages() []ai.Message"))
+	assert.True(t, file.Contain("app/ai/agents/user/support_agent.go", "func (r *SupportAgent) Middleware() []ai.Middleware"))
+
+	support.Config.Paths.Agents = "custom/agents"
+	mockContext.EXPECT().Argument(0).Return("BillingAgent").Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Once()
+	mockContext.EXPECT().Success("Agent created successfully").Once()
+	assert.NoError(t, agentMakeCommand.Handle(mockContext))
+	assert.True(t, file.Exists("custom/agents/billing_agent.go"))
 }

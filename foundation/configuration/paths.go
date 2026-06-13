@@ -18,6 +18,12 @@ func (r *Paths) App(path string) configuration.Paths {
 	return r
 }
 
+func (r *Paths) Agents(path string) configuration.Paths {
+	support.Config.Paths.Agents = path
+
+	return r
+}
+
 func (r *Paths) Bootstrap(path string) configuration.Paths {
 	support.Config.Paths.Bootstrap = path
 
@@ -182,6 +188,12 @@ func (r *Paths) Storage(path string) configuration.Paths {
 
 func (r *Paths) Tests(path string) configuration.Paths {
 	support.Config.Paths.Tests = path
+
+	return r
+}
+
+func (r *Paths) Tools(path string) configuration.Paths {
+	support.Config.Paths.Tools = path
 
 	return r
 }

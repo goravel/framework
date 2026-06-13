@@ -3,6 +3,8 @@ package configuration
 type Paths interface {
 	// App sets the path for the application directory, default is "app".
 	App(path string) Paths
+	// Agents sets the path for the agents directory, default is "app/ai/agents".
+	Agents(path string) Paths
 	// Bootstrap sets the path for the bootstrap directory, default is "bootstrap".
 	Bootstrap(path string) Paths
 	// Commands sets the path for the commands directory, default is "app/console/commands".
@@ -59,6 +61,8 @@ type Paths interface {
 	Storage(path string) Paths
 	// Tests sets the path for the tests directory, default is "tests".
 	Tests(path string) Paths
+	// Tools sets the path for the tools directory, default is "app/ai/tools".
+	Tools(path string) Paths
 	// Views sets the path for the views directory, default is "resources/views".
 	Views(path string) Paths
 }
