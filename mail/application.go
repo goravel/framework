@@ -32,9 +32,9 @@ type Application struct {
 	params   Params
 	clone    int
 
-	view string
-	text string
-	with map[string]any
+	htmlView string
+	textView string
+	with     map[string]any
 }
 
 func NewApplication(config config.Config, queue contractsqueue.Queue) (*Application, error) {
@@ -74,8 +74,9 @@ func (r *Application) Cc(cc []string) mail.Mail {
 func (r *Application) Content(content mail.Content) mail.Mail {
 	instance := r.instance()
 	instance.params.HTML = content.Html
-	instance.view = content.View
-	instance.text = content.Text
+	instance.params.Text = content.Text
+	instance.htmlView = content.HtmlView
+	instance.textView = content.TextView
 	instance.with = content.With
 
 	return instance
@@ -206,8 +207,11 @@ func (r *Application) setUsingMailable(mailable mail.Mailable) {
 		if content.Html != "" {
 			r.params.HTML = content.Html
 		}
-		r.view = content.View
-		r.text = content.Text
+		if content.Text != "" {
+			r.params.Text = content.Text
+		}
+		r.htmlView = content.HtmlView
+		r.textView = content.TextView
 		r.with = content.With
 	}
 
@@ -240,16 +244,16 @@ func (r *Application) setUsingMailable(mailable mail.Mailable) {
 }
 
 func (r *Application) renderViewTemplate() error {
-	if r.view != "" && r.template != nil {
-		html, err := r.template.Render(r.view, r.with)
+	if r.htmlView != "" && r.template != nil {
+		html, err := r.template.Render(r.htmlView, r.with)
 		if err != nil {
 			return err
 		}
 		r.params.HTML = html
 	}
 
-	if r.text != "" && r.template != nil {
-		text, err := r.template.Render(r.text, r.with)
+	if r.textView != "" && r.template != nil {
+		text, err := r.template.Render(r.textView, r.with)
 		if err != nil {
 			return err
 		}
