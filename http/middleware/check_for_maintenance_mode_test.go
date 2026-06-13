@@ -55,7 +55,7 @@ func (s *MaintenanceTestSuite) expectFileMaintenanceDriver() {
 	s.mockApp.EXPECT().MakeCache().Return(s.mockCache).Once()
 	s.mockApp.EXPECT().MakeStorage().Return(s.mockStorage).Once()
 	s.mockApp.EXPECT().MakeHash().Return(s.mockHash).Once()
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_DRIVER", "file").Return("file").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.driver", "file").Return("file").Once()
 }
 
 func (s *MaintenanceTestSuite) expectCacheMaintenanceDriver() {
@@ -63,8 +63,8 @@ func (s *MaintenanceTestSuite) expectCacheMaintenanceDriver() {
 	s.mockApp.EXPECT().MakeCache().Return(s.mockCache).Once()
 	s.mockApp.EXPECT().MakeStorage().Return(s.mockStorage).Once()
 	s.mockApp.EXPECT().MakeHash().Return(s.mockHash).Once()
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_DRIVER", "file").Return("cache").Once()
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_STORE").Return("").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.driver", "file").Return("cache").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.store").Return("").Once()
 }
 
 func (s *MaintenanceTestSuite) expectMissingMaintenanceDependency(configMissing, cacheMissing, storageMissing, hashMissing bool) {
@@ -254,8 +254,8 @@ func (s *MaintenanceTestSuite) TestMaintenaneMode_NamedCacheStore() {
 	s.mockApp.EXPECT().MakeCache().Return(s.mockCache).Once()
 	s.mockApp.EXPECT().MakeStorage().Return(s.mockStorage).Once()
 	s.mockApp.EXPECT().MakeHash().Return(s.mockHash).Once()
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_DRIVER", "file").Return("cache").Once()
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_STORE").Return("redis").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.driver", "file").Return("cache").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.store").Return("redis").Once()
 	s.mockCache.EXPECT().Store("redis").Return(mockCacheDriver).Once()
 	mockCacheDriver.EXPECT().Has("framework:maintenance").Return(true).Once()
 	mockCacheDriver.EXPECT().GetString("framework:maintenance").Return(`{"reason":"Under Maintenance", "status": 503}`).Once()

@@ -135,7 +135,7 @@ func (r *MaintenanceMode) driver() string {
 		return maintenanceDriverFile
 	}
 
-	driver := strings.ToLower(r.config.GetString("APP_MAINTENANCE_DRIVER", maintenanceDriverFile))
+	driver := strings.ToLower(r.config.GetString("app.maintenance.driver", maintenanceDriverFile))
 	if driver == "" {
 		return maintenanceDriverFile
 	}
@@ -148,5 +148,5 @@ func (r *MaintenanceMode) store() string {
 		return ""
 	}
 
-	return r.config.GetString("APP_MAINTENANCE_STORE")
+	return r.config.GetString("app.maintenance.store")
 }

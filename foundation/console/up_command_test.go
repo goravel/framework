@@ -51,7 +51,7 @@ func (s *UpCommandTestSuite) TestExtend() {
 }
 
 func (s *UpCommandTestSuite) TestHandle() {
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_DRIVER", "file").Return("file").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.driver", "file").Return("file").Once()
 	s.mockStorage.EXPECT().Exists("framework/maintenance.json").Return(true).Once()
 	s.mockStorage.EXPECT().Delete("framework/maintenance.json").Return(nil).Once()
 
@@ -64,7 +64,7 @@ func (s *UpCommandTestSuite) TestHandle() {
 }
 
 func (s *UpCommandTestSuite) TestHandleWhenNotDown() {
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_DRIVER", "file").Return("file").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.driver", "file").Return("file").Once()
 	s.mockStorage.EXPECT().Exists("framework/maintenance.json").Return(false).Once()
 	mockContext := mocksconsole.NewContext(s.T())
 	mockContext.EXPECT().Error("The application is not in maintenance mode").Once()
@@ -75,8 +75,8 @@ func (s *UpCommandTestSuite) TestHandleWhenNotDown() {
 }
 
 func (s *UpCommandTestSuite) TestHandleWithCacheDriver() {
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_DRIVER", "file").Return("cache").Once()
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_STORE").Return("").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.driver", "file").Return("cache").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.store").Return("").Once()
 	s.mockCache.EXPECT().Has("framework:maintenance").Return(true).Once()
 	s.mockCache.EXPECT().Forget("framework:maintenance").Return(true).Once()
 
@@ -90,8 +90,8 @@ func (s *UpCommandTestSuite) TestHandleWithCacheDriver() {
 
 func (s *UpCommandTestSuite) TestHandleWithNamedCacheStore() {
 	mockCacheDriver := mockscache.NewDriver(s.T())
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_DRIVER", "file").Return("cache").Once()
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_STORE").Return("redis").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.driver", "file").Return("cache").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.store").Return("redis").Once()
 	s.mockCache.EXPECT().Store("redis").Return(mockCacheDriver).Once()
 	mockCacheDriver.EXPECT().Has("framework:maintenance").Return(true).Once()
 	mockCacheDriver.EXPECT().Forget("framework:maintenance").Return(true).Once()

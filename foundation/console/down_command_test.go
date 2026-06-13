@@ -72,7 +72,7 @@ func (s *DownCommandTestSuite) TestHandle() {
 	mockCtx.EXPECT().OptionBool("with-secret").Return(false)
 	mockCtx.EXPECT().Option("reason").Return(flag.Value)
 	mockCtx.EXPECT().Success("The application is in maintenance mode now").Once()
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_DRIVER", "file").Return("file").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.driver", "file").Return("file").Once()
 	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"reason\":\"The application is under maintenance\",\"status\":503}").Return(nil)
 
 	err := cmd.Handle(mockCtx)
@@ -89,7 +89,7 @@ func (s *DownCommandTestSuite) TestHandleWithReason() {
 	mockCtx.EXPECT().Option("secret").Return("").Once()
 	mockCtx.EXPECT().OptionBool("with-secret").Return(false).Once()
 	mockCtx.EXPECT().Success("The application is in maintenance mode now").Once()
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_DRIVER", "file").Return("file").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.driver", "file").Return("file").Once()
 	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"reason\":\"Under maintenance\",\"status\":505}").Return(nil).Once()
 
 	cmd := NewDownCommand(s.mockView, s.mockHash, s.maintenance())
@@ -106,7 +106,7 @@ func (s *DownCommandTestSuite) TestHandleWithRedirect() {
 	mockCtx.EXPECT().Option("secret").Return("").Once()
 	mockCtx.EXPECT().OptionBool("with-secret").Return(false).Once()
 	mockCtx.EXPECT().Success("The application is in maintenance mode now").Once()
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_DRIVER", "file").Return("file").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.driver", "file").Return("file").Once()
 	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"redirect\":\"/maintenance\",\"status\":503}").Return(nil).Once()
 
 	cmd := NewDownCommand(s.mockView, s.mockHash, s.maintenance())
@@ -125,7 +125,7 @@ func (s *DownCommandTestSuite) TestHandleWithRender() {
 	mockCtx.EXPECT().Option("secret").Return("").Once()
 	mockCtx.EXPECT().OptionBool("with-secret").Return(false).Once()
 	mockCtx.EXPECT().Success("The application is in maintenance mode now").Once()
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_DRIVER", "file").Return("file").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.driver", "file").Return("file").Once()
 	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"render\":\"errors/503.tmpl\",\"status\":503}").Return(nil).Once()
 
 	cmd := NewDownCommand(s.mockView, s.mockHash, s.maintenance())
@@ -144,7 +144,7 @@ func (s *DownCommandTestSuite) TestHandleSecret() {
 	mockCtx.EXPECT().Option("secret").Return("secretpassword").Once()
 	mockCtx.EXPECT().OptionBool("with-secret").Return(false).Once()
 	mockCtx.EXPECT().Success("The application is in maintenance mode now").Once()
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_DRIVER", "file").Return("file").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.driver", "file").Return("file").Once()
 	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"reason\":\"Under maintenance\",\"secret\":\"hashedsecretpassword\",\"status\":503}").Return(nil).Once()
 
 	cmd := NewDownCommand(s.mockView, s.mockHash, s.maintenance())
@@ -183,7 +183,7 @@ func (s *DownCommandTestSuite) TestHandleWithSecret() {
 		return strings.HasPrefix(arg, "Using secret:")
 	})).Once()
 	mockCtx.EXPECT().Success("The application is in maintenance mode now").Once()
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_DRIVER", "file").Return("file").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.driver", "file").Return("file").Once()
 	s.mockStorage.EXPECT().Put("framework/maintenance.json", "{\"reason\":\"Under maintenance\",\"secret\":\"randomhashedsecretpassword\",\"status\":503}").Return(nil).Once()
 
 	cmd := NewDownCommand(s.mockView, s.mockHash, s.maintenance())
@@ -217,8 +217,8 @@ func (s *DownCommandTestSuite) TestHandleWithCacheDriver() {
 	mockCtx.EXPECT().Option("secret").Return("").Once()
 	mockCtx.EXPECT().OptionBool("with-secret").Return(false).Once()
 	mockCtx.EXPECT().Success("The application is in maintenance mode now").Once()
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_DRIVER", "file").Return("cache").Once()
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_STORE").Return("").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.driver", "file").Return("cache").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.store").Return("").Once()
 	s.mockCache.EXPECT().Forever("framework:maintenance", "{\"reason\":\"Under maintenance\",\"status\":503}").Return(true).Once()
 
 	cmd := NewDownCommand(s.mockView, s.mockHash, s.maintenance())
@@ -237,8 +237,8 @@ func (s *DownCommandTestSuite) TestHandleWithNamedCacheStore() {
 	mockCtx.EXPECT().Option("secret").Return("").Once()
 	mockCtx.EXPECT().OptionBool("with-secret").Return(false).Once()
 	mockCtx.EXPECT().Success("The application is in maintenance mode now").Once()
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_DRIVER", "file").Return("cache").Once()
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_STORE").Return("redis").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.driver", "file").Return("cache").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.store").Return("redis").Once()
 	s.mockCache.EXPECT().Store("redis").Return(mockCacheDriver).Once()
 	mockCacheDriver.EXPECT().Forever("framework:maintenance", "{\"reason\":\"Under maintenance\",\"status\":503}").Return(true).Once()
 

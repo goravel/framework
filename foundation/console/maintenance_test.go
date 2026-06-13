@@ -33,7 +33,7 @@ func (s *MaintenanceModeTestSuite) maintenance() *MaintenanceMode {
 }
 
 func (s *MaintenanceModeTestSuite) TestGetWithFileDriver() {
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_DRIVER", "file").Return("file").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.driver", "file").Return("file").Once()
 	s.mockStorage.EXPECT().Exists("framework/maintenance.json").Return(true).Once()
 	s.mockStorage.EXPECT().GetBytes("framework/maintenance.json").Return([]byte(`{"status":503}`), nil).Once()
 
@@ -45,8 +45,8 @@ func (s *MaintenanceModeTestSuite) TestGetWithFileDriver() {
 }
 
 func (s *MaintenanceModeTestSuite) TestPutWithCacheDriver() {
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_DRIVER", "file").Return("cache").Once()
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_STORE").Return("").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.driver", "file").Return("cache").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.store").Return("").Once()
 	s.mockCache.EXPECT().Forever("framework:maintenance", `{"status":503}`).Return(true).Once()
 
 	err := s.maintenance().Put(`{"status":503}`)
@@ -56,8 +56,8 @@ func (s *MaintenanceModeTestSuite) TestPutWithCacheDriver() {
 
 func (s *MaintenanceModeTestSuite) TestDeleteWithNamedCacheStore() {
 	mockCacheDriver := mockscache.NewDriver(s.T())
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_DRIVER", "file").Return("cache").Once()
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_STORE").Return("redis").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.driver", "file").Return("cache").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.store").Return("redis").Once()
 	s.mockCache.EXPECT().Store("redis").Return(mockCacheDriver).Once()
 	mockCacheDriver.EXPECT().Has("framework:maintenance").Return(true).Once()
 	mockCacheDriver.EXPECT().Forget("framework:maintenance").Return(true).Once()
@@ -69,7 +69,7 @@ func (s *MaintenanceModeTestSuite) TestDeleteWithNamedCacheStore() {
 }
 
 func (s *MaintenanceModeTestSuite) TestGetWithUnsupportedDriver() {
-	s.mockConfig.EXPECT().GetString("APP_MAINTENANCE_DRIVER", "file").Return("redis").Once()
+	s.mockConfig.EXPECT().GetString("app.maintenance.driver", "file").Return("redis").Once()
 
 	content, exists, err := s.maintenance().Get()
 
