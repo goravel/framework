@@ -128,9 +128,19 @@ func (s *ServiceProviderTestSuite) TestBoot() {
 	mockApp.EXPECT().MakeHttp().Return(httpFactory).Once()
 
 	mockApp.EXPECT().Commands(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
-		return len(commands) == 1 &&
-			commands[0] != nil &&
-			commands[0].Signature() == "make:agent"
+		if len(commands) != 2 {
+			return false
+		}
+
+		signatures := make(map[string]bool, len(commands))
+		for _, command := range commands {
+			if command == nil {
+				return false
+			}
+			signatures[command.Signature()] = true
+		}
+
+		return signatures["make:agent"] && signatures["make:tool"]
 	})).Once()
 
 	provider.Boot(mockApp)

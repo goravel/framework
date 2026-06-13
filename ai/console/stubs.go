@@ -28,3 +28,35 @@ func (r *DummyAgent) Tools() []ai.Tool {
 }
 `
 }
+
+func (r Stubs) Tool() string {
+	return `package DummyPackage
+
+import (
+	"context"
+
+	"github.com/goravel/framework/contracts/ai"
+)
+
+type DummyTool struct {
+}
+
+func (r *DummyTool) Name() string {
+	return "DummyName"
+}
+
+func (r *DummyTool) Description() string {
+	return "A description of the tool."
+}
+
+func (r *DummyTool) Parameters() map[string]any {
+	return map[string]any{}
+}
+
+func (r *DummyTool) Execute(ctx context.Context, args map[string]any) (string, error) {
+	return "", nil
+}
+
+var _ ai.Tool = (*DummyTool)(nil)
+`
+}
