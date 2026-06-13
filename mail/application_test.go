@@ -61,6 +61,21 @@ func (s *ApplicationTestSuite) TestSendMail() {
 		Send())
 }
 
+func (s *ApplicationTestSuite) TestSendMailWithText() {
+	s.mockConfig = mockConfig(465)
+
+	app, err := NewApplication(s.mockConfig, nil)
+	s.Nil(err)
+	s.Nil(app.To([]string{testTo}).
+		Cc([]string{testCc}).
+		Bcc([]string{testBcc}).
+		Attach([]string{"../logo.png"}).
+		Subject("Goravel Test Text 465").
+		Content(mail.Content{Text: "Hello Goravel"}).
+		Headers(map[string]string{"Test-Mailer-Port": "465"}).
+		Send())
+}
+
 func (s *ApplicationTestSuite) TestSendMailViaTemplate() {
 	s.mockConfig = mockConfig(465)
 
