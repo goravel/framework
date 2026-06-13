@@ -48,5 +48,6 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 
 	app.Commands([]contractsconsole.Command{
 		&console.AgentMakeCommand{},
+		&console.ToolMakeCommand{},
 	})
 }
