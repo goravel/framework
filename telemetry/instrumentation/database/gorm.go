@@ -10,13 +10,19 @@ import (
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 )
 
+// PluginName is the gorm plugin name this instrumentation registers under.
+const PluginName = "goravel:telemetry"
+
+// contextWrapper carries the span context through gorm's Statement.Context for
+// the duration of one operation while retaining the original parent, so after()
+// can restore it and keep sequential queries as siblings rather than nesting.
 type contextWrapper struct {
 	context.Context
 	parent context.Context
 	start  time.Time
 }
 
-type gormCallback interface {
+type callbackRegistrar interface {
 	Register(name string, fn func(*gorm.DB)) error
 }
 
@@ -34,15 +40,19 @@ func NewGormPlugin(pool contractsdatabase.Pool, connection string) *GormPlugin {
 }
 
 func (r *GormPlugin) Name() string {
-	return "goravel:telemetry"
+	return PluginName
 }
 
 func (r *GormPlugin) Initialize(db *gorm.DB) error {
+	// Each row holds three intentionally distinct strings: key is the
+	// registration suffix, spanName is the fallback span name (endSpan renames
+	// it to "<op> <table>" once known), and "gorm:<op>" is gorm's built-in hook
+	// the before/after callbacks anchor to.
 	registrations := []struct {
 		key      string
 		spanName string
-		before   gormCallback
-		after    gormCallback
+		before   callbackRegistrar
+		after    callbackRegistrar
 	}{
 		{"create", "gorm.Create", db.Callback().Create().Before("gorm:create"), db.Callback().Create().After("gorm:create")},
 		{"query", "gorm.Query", db.Callback().Query().Before("gorm:query"), db.Callback().Query().After("gorm:query")},
@@ -53,15 +63,22 @@ func (r *GormPlugin) Initialize(db *gorm.DB) error {
 	}
 
 	for _, registration := range registrations {
-		if err := registration.before.Register("goravel:telemetry:before_"+registration.key, r.before(registration.spanName)); err != nil {
+		if err := registration.before.Register(PluginName+":before_"+registration.key, r.before(registration.spanName)); err != nil {
 			return err
 		}
-		if err := registration.after.Register("goravel:telemetry:after_"+registration.key, r.after); err != nil {
+		if err := registration.after.Register(PluginName+":after_"+registration.key, r.after); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	// Pool metrics are best-effort: a dialector without a *sql.DB ConnPool has
+	// no stats to observe, so skip them while keeping the tracing callbacks.
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil
+	}
+
+	return r.instrument.registerPoolMetrics(sqlDB)
 }
 
 func (r *GormPlugin) before(spanName string) func(*gorm.DB) {

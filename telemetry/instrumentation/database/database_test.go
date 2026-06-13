@@ -48,7 +48,7 @@ func setupTelemetry(t *testing.T, enabled bool) *recordingSpanExporter {
 	mockTelemetry.EXPECT().Meter(instrumentationName).Return(metricnoop.NewMeterProvider().Meter(instrumentationName)).Maybe()
 
 	mockConfig := mocksconfig.NewConfig(t)
-	mockConfig.EXPECT().GetBool(configKey, true).Return(enabled).Maybe()
+	mockConfig.EXPECT().GetBool(enabledConfigKey, true).Return(enabled).Maybe()
 
 	originalFacade, originalConfig := telemetry.Facade, telemetry.ConfigFacade
 	telemetry.Facade, telemetry.ConfigFacade = mockTelemetry, mockConfig

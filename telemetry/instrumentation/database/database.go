@@ -22,7 +22,7 @@ import (
 const (
 	instrumentationName = "github.com/goravel/framework/telemetry/instrumentation/database"
 
-	configKey = "telemetry.instrumentation.database.enabled"
+	enabledConfigKey = "telemetry.instrumentation.database.enabled"
 
 	metricOperationDuration = "db.client.operation.duration"
 	unitSeconds             = "s"
@@ -32,12 +32,13 @@ var durationBuckets = []float64{0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10}
 
 type instrument struct {
 	tracer       trace.Tracer
+	meter        metric.Meter
 	durationHist metric.Float64Histogram
 	baseAttrs    []telemetry.KeyValue
 }
 
 func newInstrument(pool contractsdatabase.Pool, connection string) *instrument {
-	if telemetry.Facade == nil || telemetry.ConfigFacade == nil || !telemetry.ConfigFacade.GetBool(configKey, true) {
+	if telemetry.Facade == nil || telemetry.ConfigFacade == nil || !telemetry.ConfigFacade.GetBool(enabledConfigKey, true) {
 		return nil
 	}
 
@@ -50,6 +51,7 @@ func newInstrument(pool contractsdatabase.Pool, connection string) *instrument {
 
 	return &instrument{
 		tracer:       telemetry.Facade.Tracer(instrumentationName),
+		meter:        meter,
 		durationHist: durationHist,
 		baseAttrs:    baseAttributes(pool, connection),
 	}
