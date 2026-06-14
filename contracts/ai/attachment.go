@@ -13,6 +13,10 @@ type AttachmentOptions struct {
 	MimeType string
 	// Only used by FromStorage.
 	Disk string
+	// Title provides a display name for attachments created from
+	// sources without a natural filename (e.g. fromString, fromByte).
+	// Providers such as Anthropic require a non-empty document title.
+	Title string
 }
 
 type AttachmentOption func(options *AttachmentOptions)

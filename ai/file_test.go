@@ -437,6 +437,31 @@ func TestDocumentFromIDReturnsErrorWhenFacadeNotSet(t *testing.T) {
 	assert.Equal(t, errors.AIFacadeNotSet, attachment.Delete(context.Background()))
 }
 
+func TestDocumentFromPathOverridesTitle(t *testing.T) {
+	tempFile, err := os.CreateTemp(t.TempDir(), "report-*.txt")
+	require.NoError(t, err)
+	_, err = tempFile.WriteString("report")
+	require.NoError(t, err)
+	require.NoError(t, tempFile.Close())
+
+	attachment := DocumentFromPath(tempFile.Name(), WithTitle("custom-title"))
+	content, err := attachment.Content(context.Background())
+	require.NoError(t, err)
+	assert.Equal(t, []byte("report"), content)
+	assert.Equal(t, filepathBase(tempFile.Name()), attachment.FileName())
+}
+
+func TestDocumentFromStringWithTitle(t *testing.T) {
+	attachment := DocumentFromString("report", WithTitle("report-2025-06-14.txt"), WithMimeType("text/plain"))
+
+	assert.Equal(t, "report-2025-06-14.txt", attachment.FileName())
+	assert.Equal(t, "text/plain", attachment.MimeType())
+	content, err := attachment.Content(context.Background())
+	require.NoError(t, err)
+	assert.Equal(t, []byte("report"), content)
+	assert.Equal(t, "report-2025-06-14.txt", attachment.FileName())
+}
+
 func filepathBase(path string) string {
 	index := bytes.LastIndexByte([]byte(path), os.PathSeparator)
 	if index == -1 {

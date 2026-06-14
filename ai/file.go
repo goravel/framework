@@ -54,6 +54,12 @@ func WithDisk(disk string) contractsai.AttachmentOption {
 	}
 }
 
+func WithTitle(title string) contractsai.AttachmentOption {
+	return func(options *contractsai.AttachmentOptions) {
+		options.Title = title
+	}
+}
+
 func DocumentFromByte(content []byte, options ...contractsai.AttachmentOption) contractsai.Attachment {
 	return fromBytes(contractsai.AttachmentKindFile, content, resolveAttachmentOptions(options))
 }
@@ -136,6 +142,7 @@ func resolveAttachmentOptions(options []contractsai.AttachmentOption) contractsa
 func newAttachment(kind contractsai.AttachmentKind, resolver resolver, metadata contractsai.AttachmentOptions) contractsai.Attachment {
 	return &resolved{
 		kind:     kind,
+		filename: metadata.Title,
 		mimeType: metadata.MimeType,
 		resolver: resolver,
 	}
@@ -412,7 +419,7 @@ func (r *resolved) Content(ctx context.Context) ([]byte, error) {
 		}
 
 		r.content = content
-		if r.filename == "" {
+		if filename != "" {
 			r.filename = filename
 		}
 		if r.mimeType == "" {
