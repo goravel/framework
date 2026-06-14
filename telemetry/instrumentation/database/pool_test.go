@@ -15,7 +15,11 @@ import (
 type stubConnector struct{}
 
 func (stubConnector) Connect(context.Context) (driver.Conn, error) { return nil, driver.ErrBadConn }
-func (stubConnector) Driver() driver.Driver                        { return nil }
+func (stubConnector) Driver() driver.Driver                        { return stubDriver{} }
+
+type stubDriver struct{}
+
+func (stubDriver) Open(string) (driver.Conn, error) { return nil, driver.ErrBadConn }
 
 func TestInstrument_RegisterPoolMetrics(t *testing.T) {
 	reader := sdkmetric.NewManualReader()
