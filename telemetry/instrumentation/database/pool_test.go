@@ -23,8 +23,8 @@ func TestInstrument_RegisterPoolMetrics(t *testing.T) {
 	t.Cleanup(func() { _ = provider.Shutdown(context.Background()) })
 
 	// Pool metrics need only the meter and base attributes, so build a partial
-	// instrument rather than going through newInstrument and its facade gating.
-	inst := &instrument{
+	// instrument rather than going through NewInstrument and its facade gating.
+	inst := &Instrument{
 		meter:     provider.Meter(instrumentationName),
 		baseAttrs: baseAttributes(testPool(), "postgres"),
 	}

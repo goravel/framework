@@ -80,19 +80,19 @@ func TestNewInstrument(t *testing.T) {
 		telemetry.Facade = nil
 		t.Cleanup(func() { telemetry.Facade = original })
 
-		assert.Nil(t, newInstrument(testPool(), "postgres"))
+		assert.Nil(t, NewInstrument(testPool(), "postgres"))
 	})
 
 	t.Run("nil when disabled", func(t *testing.T) {
 		setupTelemetry(t, false)
 
-		assert.Nil(t, newInstrument(testPool(), "postgres"))
+		assert.Nil(t, NewInstrument(testPool(), "postgres"))
 	})
 
 	t.Run("captures base attributes when enabled", func(t *testing.T) {
 		setupTelemetry(t, true)
 
-		inst := newInstrument(testPool(), "postgres")
+		inst := NewInstrument(testPool(), "postgres")
 
 		assert.NotNil(t, inst)
 		assert.Equal(t, []telemetry.KeyValue{
@@ -107,7 +107,7 @@ func TestNewInstrument(t *testing.T) {
 	t.Run("skips empty connection details", func(t *testing.T) {
 		setupTelemetry(t, true)
 
-		inst := newInstrument(contractsdatabase.Pool{Writers: []contractsdatabase.Config{{Driver: "sqlite"}}}, "")
+		inst := NewInstrument(contractsdatabase.Pool{Writers: []contractsdatabase.Config{{Driver: "sqlite"}}}, "")
 
 		assert.Equal(t, []telemetry.KeyValue{semconv.DBSystemNameSQLite}, inst.baseAttrs)
 	})
@@ -116,7 +116,7 @@ func TestNewInstrument(t *testing.T) {
 func TestInstrument_EndSpan(t *testing.T) {
 	t.Run("records query attributes and renames span", func(t *testing.T) {
 		exporter := setupTelemetry(t, true)
-		inst := newInstrument(testPool(), "postgres")
+		inst := NewInstrument(testPool(), "postgres")
 
 		ctx, span := inst.startSpan(context.Background(), "gorm.Query")
 		inst.endSpan(ctx, span, time.Now(), "SELECT * FROM users WHERE id = ?", "users", 3, nil)
@@ -145,7 +145,7 @@ func TestInstrument_EndSpan(t *testing.T) {
 
 	t.Run("records error status", func(t *testing.T) {
 		exporter := setupTelemetry(t, true)
-		inst := newInstrument(testPool(), "postgres")
+		inst := NewInstrument(testPool(), "postgres")
 
 		ctx, span := inst.startSpan(context.Background(), "gorm.Query")
 		inst.endSpan(ctx, span, time.Now(), "SELECT * FROM users", "users", -1, assert.AnError)
@@ -155,7 +155,7 @@ func TestInstrument_EndSpan(t *testing.T) {
 
 	t.Run("ignores record not found", func(t *testing.T) {
 		exporter := setupTelemetry(t, true)
-		inst := newInstrument(testPool(), "postgres")
+		inst := NewInstrument(testPool(), "postgres")
 
 		ctx, span := inst.startSpan(context.Background(), "gorm.Query")
 		inst.endSpan(ctx, span, time.Now(), "SELECT * FROM users", "users", -1, gorm.ErrRecordNotFound)

@@ -30,14 +30,18 @@ const (
 
 var durationBuckets = []float64{0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10}
 
-type instrument struct {
+// Instrument builds the spans and metrics shared by the gorm plugin and the
+// query-builder decorator.
+type Instrument struct {
 	tracer       trace.Tracer
 	meter        metric.Meter
 	durationHist metric.Float64Histogram
 	baseAttrs    []telemetry.KeyValue
 }
 
-func newInstrument(pool contractsdatabase.Pool, connection string) *instrument {
+// NewInstrument returns the shared instrumentation core, or nil when telemetry
+// is off or database instrumentation is disabled.
+func NewInstrument(pool contractsdatabase.Pool, connection string) *Instrument {
 	if telemetry.Facade == nil || telemetry.ConfigFacade == nil || !telemetry.ConfigFacade.GetBool(enabledConfigKey, true) {
 		return nil
 	}
@@ -49,7 +53,7 @@ func newInstrument(pool contractsdatabase.Pool, connection string) *instrument {
 		metric.WithExplicitBucketBoundaries(durationBuckets...),
 	)
 
-	return &instrument{
+	return &Instrument{
 		tracer:       telemetry.Facade.Tracer(instrumentationName),
 		meter:        meter,
 		durationHist: durationHist,
@@ -80,11 +84,11 @@ func baseAttributes(pool contractsdatabase.Pool, connection string) []telemetry.
 	return attrs
 }
 
-func (r *instrument) startSpan(ctx context.Context, name string) (context.Context, trace.Span) {
+func (r *Instrument) startSpan(ctx context.Context, name string) (context.Context, trace.Span) {
 	return r.tracer.Start(ctx, name, telemetry.WithSpanKind(telemetry.SpanKindClient))
 }
 
-func (r *instrument) endSpan(ctx context.Context, span trace.Span, start time.Time, query, table string, rows int64, err error) {
+func (r *Instrument) endSpan(ctx context.Context, span trace.Span, start time.Time, query, table string, rows int64, err error) {
 	operation := operationName(query)
 
 	attrs := append([]telemetry.KeyValue{}, r.baseAttrs...)

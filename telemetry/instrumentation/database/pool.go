@@ -21,7 +21,7 @@ const (
 // current value, which sql.DBStats provides directly. The wait metrics are
 // omitted because semconv defines wait_time as a histogram of individual waits,
 // while DBStats exposes only cumulative totals.
-func (r *instrument) registerPoolMetrics(db *sql.DB) error {
+func (r *Instrument) registerPoolMetrics(db *sql.DB) error {
 	count, err := r.meter.Int64ObservableUpDownCounter(metricConnectionCount, metric.WithUnit(unitConnections), metric.WithDescription("Open connections by state"))
 	if err != nil {
 		return err

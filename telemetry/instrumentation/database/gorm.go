@@ -27,11 +27,11 @@ type callbackRegistrar interface {
 }
 
 type GormPlugin struct {
-	instrument *instrument
+	instrument *Instrument
 }
 
 func NewGormPlugin(pool contractsdatabase.Pool, connection string) *GormPlugin {
-	inst := newInstrument(pool, connection)
+	inst := NewInstrument(pool, connection)
 	if inst == nil {
 		return nil
 	}
