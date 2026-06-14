@@ -14,6 +14,7 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/color"
+	instrumentationdatabase "github.com/goravel/framework/telemetry/instrumentation/database"
 )
 
 var (
@@ -68,6 +69,14 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 			pingWarning.Do(func() {
 				color.Warningln(err.Error())
 			})
+		}
+	}
+
+	// Telemetry is a cross-cutting concern: a registration failure warns but
+	// must not abort building the database, matching the ping handling above.
+	if plugin := instrumentationdatabase.NewGormPlugin(pool, connection); plugin != nil {
+		if err = instance.Use(plugin); err != nil {
+			color.Warningln(err.Error())
 		}
 	}
 
