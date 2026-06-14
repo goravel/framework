@@ -17,6 +17,7 @@ import (
 	databasedriver "github.com/goravel/framework/database/driver"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
+	instrumentationdatabase "github.com/goravel/framework/telemetry/instrumentation/database"
 )
 
 type DB struct {
@@ -128,6 +129,7 @@ func (r *DB) WithContext(ctx context.Context) contractsdb.DB {
 type Tx struct {
 	ctx        context.Context
 	grammar    contractsdriver.Grammar
+	instrument *instrumentationdatabase.Instrument
 	logger     contractslogger.Logger
 	txBuilder  contractsdb.TxBuilder
 	gormDB     *gorm.DB
@@ -145,12 +147,18 @@ func NewTx(
 ) *Tx {
 	pool := driver.Pool()
 	driverName := pool.Writers[0].Driver
+	instrument := instrumentationdatabase.NewInstrument(pool, pool.Writers[0].Connection)
+
+	if txBuilder != nil {
+		txBuilder = instrumentationdatabase.WrapTxBuilder(txBuilder, instrument)
+	}
 
 	return &Tx{
 		ctx:        ctx,
 		driverName: driverName,
 		gormDB:     gormDB,
 		grammar:    driver.Grammar(),
+		instrument: instrument,
 		logger:     logger,
 		txBuilder:  txBuilder,
 		txLogs:     txLogs,
@@ -302,7 +310,7 @@ func (r *Tx) readBuilder() (contractsdb.Builder, error) {
 		return nil, err
 	}
 
-	return builder, nil
+	return instrumentationdatabase.WrapBuilder(builder, r.instrument), nil
 }
 
 func (r *Tx) writeBuilder() (contractsdb.Builder, error) {
@@ -311,5 +319,5 @@ func (r *Tx) writeBuilder() (contractsdb.Builder, error) {
 		return nil, err
 	}
 
-	return builder, nil
+	return instrumentationdatabase.WrapBuilder(builder, r.instrument), nil
 }
