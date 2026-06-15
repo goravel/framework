@@ -127,31 +127,15 @@ func (r *Application) Run(args []string, exitIfArtisan bool) error {
 		if ctx == nil {
 			ctx = context.Background()
 		}
-
-		errCh := make(chan error, 1)
-		go func() {
-			errCh <- command.Run(ctx, cliArgs)
-		}()
-
-		select {
-		case err := <-errCh:
-			if err != nil && !errors.Is(err, context.Canceled) {
-				if exitIfArtisan {
-					panic(err.Error())
+		if err := command.Run(ctx, cliArgs); err != nil {
+			if exitIfArtisan {
+				if errors.Is(err, context.Canceled) {
+					os.Exit(0)
 				}
-				return err
+				panic(err.Error())
 			}
-		case <-ctx.Done():
-			select {
-			case err := <-errCh:
-				if err != nil && !errors.Is(err, context.Canceled) {
-					if exitIfArtisan {
-						panic(err.Error())
-					}
-					return err
-				}
-			case <-time.After(30 * time.Second):
-			}
+
+			return err
 		}
 
 		if exitIfArtisan {
@@ -217,7 +201,12 @@ func commandsToCliCommands(commands []console.Command) ([]*cli.Command, error) {
 				case err := <-errCh:
 					return err
 				case <-ctx.Done():
-					return ctx.Err()
+					select {
+					case err := <-errCh:
+						return err
+					case <-time.After(30 * time.Second):
+						return ctx.Err()
+					}
 				}
 			},
 			Category:     item.Extend().Category,
