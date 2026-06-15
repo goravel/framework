@@ -135,7 +135,7 @@ func (r *Application) Run(args []string, exitIfArtisan bool) error {
 
 		select {
 		case err := <-errCh:
-			if err != nil {
+			if err != nil && !errors.Is(err, context.Canceled) {
 				if exitIfArtisan {
 					panic(err.Error())
 				}
@@ -144,7 +144,7 @@ func (r *Application) Run(args []string, exitIfArtisan bool) error {
 		case <-ctx.Done():
 			select {
 			case err := <-errCh:
-				if err != nil {
+				if err != nil && !errors.Is(err, context.Canceled) {
 					if exitIfArtisan {
 						panic(err.Error())
 					}
@@ -208,7 +208,17 @@ func commandsToCliCommands(commands []console.Command) ([]*cli.Command, error) {
 					return cli.ShowCommandHelp(ctx, cmd, cmd.Name)
 				}
 
-				return item.Handle(cliCtx)
+				errCh := make(chan error, 1)
+				go func() {
+					errCh <- item.Handle(cliCtx)
+				}()
+
+				select {
+				case err := <-errCh:
+					return err
+				case <-ctx.Done():
+					return ctx.Err()
+				}
 			},
 			Category:     item.Extend().Category,
 			ArgsUsage:    item.Extend().ArgsUsage,
