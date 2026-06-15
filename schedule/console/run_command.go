@@ -38,5 +38,5 @@ func (r *Run) Handle(ctx console.Context) error {
 	go r.schedule.Run()
 	<-ctx.Context().Done()
 
-	return r.schedule.Shutdown(ctx.Context())
+	return r.schedule.Shutdown()
 }

@@ -23,7 +23,7 @@ func TestRunCommand(t *testing.T) {
 	mockSchedule.EXPECT().Run().Run(func() {
 		close(runCh)
 	})
-	mockSchedule.EXPECT().Shutdown(ctx).Return(nil)
+	mockSchedule.EXPECT().Shutdown().Return(nil)
 
 	assert.Equal(t, "schedule:run", runCommand.Signature())
 	assert.Equal(t, "Run the scheduled commands", runCommand.Description())

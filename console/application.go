@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/urfave/cli/v3"
 
@@ -126,12 +127,31 @@ func (r *Application) Run(args []string, exitIfArtisan bool) error {
 		if ctx == nil {
 			ctx = context.Background()
 		}
-		if err := command.Run(ctx, cliArgs); err != nil {
-			if exitIfArtisan {
-				panic(err.Error())
-			}
 
-			return err
+		errCh := make(chan error, 1)
+		go func() {
+			errCh <- command.Run(ctx, cliArgs)
+		}()
+
+		select {
+		case err := <-errCh:
+			if err != nil {
+				if exitIfArtisan {
+					panic(err.Error())
+				}
+				return err
+			}
+		case <-ctx.Done():
+			select {
+			case err := <-errCh:
+				if err != nil {
+					if exitIfArtisan {
+						panic(err.Error())
+					}
+					return err
+				}
+			case <-time.After(30 * time.Second):
+			}
 		}
 
 		if exitIfArtisan {
