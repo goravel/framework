@@ -8,7 +8,6 @@ import (
 	"slices"
 	"strings"
 	"syscall"
-	"time"
 
 	"github.com/urfave/cli/v3"
 
@@ -201,12 +200,7 @@ func commandsToCliCommands(commands []console.Command) ([]*cli.Command, error) {
 				case err := <-errCh:
 					return err
 				case <-ctx.Done():
-					select {
-					case err := <-errCh:
-						return err
-					case <-time.After(30 * time.Second):
-						return ctx.Err()
-					}
+					return ctx.Err()
 				}
 			},
 			Category:     item.Extend().Category,
