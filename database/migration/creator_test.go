@@ -146,6 +146,50 @@ func (r *M202410131203CreateUsersTable) Down() error {
 `,
 		},
 		{
+			name: "Create stub with full facades import path",
+			stub: Stubs{}.Create(),
+			data: StubData{
+				Package:        "migrations",
+				StructName:     "M202410131203CreateUsersTable",
+				Signature:      "202410131203_create_users_table",
+				Table:          "users",
+				FacadesPackage: "facades",
+				FacadesImport:  "gitlab.com/ijobs.uz/medclinic.uz/api/app/facades",
+			},
+			expected: `package migrations
+
+import (
+	"github.com/goravel/framework/contracts/database/schema"
+
+	"gitlab.com/ijobs.uz/medclinic.uz/api/app/facades"
+)
+
+type M202410131203CreateUsersTable struct{}
+
+// Signature The unique signature for the migration.
+func (r *M202410131203CreateUsersTable) Signature() string {
+	return "202410131203_create_users_table"
+}
+
+// Up Run the migrations.
+func (r *M202410131203CreateUsersTable) Up() error {
+	if !facades.Schema().HasTable("users") {
+		return facades.Schema().Create("users", func(table schema.Blueprint) {
+			table.ID()
+			table.TimestampsTz()
+		})
+	}
+
+	return nil
+}
+
+// Down Reverse the migrations.
+func (r *M202410131203CreateUsersTable) Down() error {
+	return facades.Schema().DropIfExists("users")
+}
+`,
+		},
+		{
 			name: "Update stub",
 			stub: Stubs{}.Update(),
 			data: data,
