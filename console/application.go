@@ -4,8 +4,10 @@ import (
 	"context"
 	"io"
 	"os"
+	"os/signal"
 	"slices"
 	"strings"
+	"syscall"
 
 	"github.com/urfave/cli/v3"
 
@@ -34,11 +36,14 @@ type Application struct {
 	useArtisan bool
 	version    string
 	writer     io.Writer
+	ctx        context.Context
+	cancel     context.CancelFunc
 }
 
 // NewApplication Create a new Artisan application.
 // Will add artisan flag to the command if useArtisan is true.
 func NewApplication(name, usage, usageText, version string, useArtisan bool) *Application {
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	return &Application{
 		name:       name,
 		usage:      usage,
@@ -46,6 +51,8 @@ func NewApplication(name, usage, usageText, version string, useArtisan bool) *Ap
 		useArtisan: useArtisan,
 		version:    version,
 		writer:     os.Stdout,
+		ctx:        ctx,
+		cancel:     cancel,
 	}
 }
 
@@ -115,7 +122,11 @@ func (r *Application) Run(args []string, exitIfArtisan bool) error {
 		}
 
 		cliArgs := append([]string{args[0]}, args[artisanIndex+1:]...)
-		if err := command.Run(context.Background(), cliArgs); err != nil {
+		ctx := r.ctx
+		if ctx == nil {
+			ctx = context.Background()
+		}
+		if err := command.Run(ctx, cliArgs); err != nil {
 			if exitIfArtisan {
 				panic(err.Error())
 			}
@@ -172,7 +183,7 @@ func commandsToCliCommands(commands []console.Command) ([]*cli.Command, error) {
 			Name:  item.Signature(),
 			Usage: item.Description(),
 			Action: func(ctx context.Context, cmd *cli.Command) error {
-				cliCtx := NewCliContext(cmd, arguments)
+				cliCtx := NewCliContext(cmd, arguments, ctx)
 				if cliCtx.OptionBool("help") {
 					return cli.ShowCommandHelp(ctx, cmd, cmd.Name)
 				}

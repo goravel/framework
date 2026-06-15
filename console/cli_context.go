@@ -1,6 +1,7 @@
 package console
 
 import (
+	"context"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -22,10 +23,15 @@ import (
 type CliContext struct {
 	arguments []command.Argument
 	instance  *cli.Command
+	ctx       context.Context
 }
 
-func NewCliContext(instance *cli.Command, arguments []command.Argument) *CliContext {
-	return &CliContext{arguments, instance}
+func NewCliContext(instance *cli.Command, arguments []command.Argument, ctx context.Context) *CliContext {
+	return &CliContext{arguments, instance, ctx}
+}
+
+func (r *CliContext) Context() context.Context {
+	return r.ctx
 }
 
 func (r *CliContext) Ask(question string, option ...console.AskOption) (string, error) {

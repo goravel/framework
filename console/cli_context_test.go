@@ -56,7 +56,7 @@ func TestArgumentString(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					assert.Equal(t, tc.expectedValue, cliCtx.ArgumentString("string"))
 					return nil
 				},
@@ -109,7 +109,7 @@ func TestArgumentStringSlice(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					assert.Equal(t, tc.expectedValue, cliCtx.ArgumentStringSlice("string"))
 					return nil
 				},
@@ -162,7 +162,7 @@ func TestArgumentInt(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					assert.Equal(t, tc.expectedValue, cliCtx.ArgumentInt("int"))
 					return nil
 				},
@@ -215,7 +215,7 @@ func TestArgumentIntSlice(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					assert.Equal(t, tc.expectedValue, cliCtx.ArgumentIntSlice("int"))
 					return nil
 				},
@@ -268,7 +268,7 @@ func TestArgumentFloat64(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					assert.Equal(t, tc.expectedValue, cliCtx.ArgumentFloat64("float"))
 					return nil
 				},
@@ -321,7 +321,7 @@ func TestArgumentFloat64Slice(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					assert.Equal(t, tc.expectedValue, cliCtx.ArgumentFloat64Slice("float"))
 					return nil
 				},
@@ -374,7 +374,7 @@ func TestArgumentUint(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					assert.Equal(t, tc.expectedValue, cliCtx.ArgumentUint("uint"))
 					return nil
 				},
@@ -427,7 +427,7 @@ func TestArgumentUintSlice(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					assert.Equal(t, tc.expectedValue, cliCtx.ArgumentUintSlice("uint"))
 					return nil
 				},
@@ -480,7 +480,7 @@ func TestArgumentInt8(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					assert.Equal(t, tc.expectedValue, cliCtx.ArgumentInt8("int8"))
 					return nil
 				},
@@ -533,7 +533,7 @@ func TestArgumentInt8Slice(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					assert.Equal(t, tc.expectedValue, cliCtx.ArgumentInt8Slice("int8"))
 					return nil
 				},
@@ -586,7 +586,7 @@ func TestArgumentInt16(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					assert.Equal(t, tc.expectedValue, cliCtx.ArgumentInt16("int16"))
 					return nil
 				},
@@ -639,7 +639,7 @@ func TestArgumentInt16Slice(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					assert.Equal(t, tc.expectedValue, cliCtx.ArgumentInt16Slice("int16"))
 					return nil
 				},
@@ -692,7 +692,7 @@ func TestArgumentInt32(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					assert.Equal(t, tc.expectedValue, cliCtx.ArgumentInt32("int32"))
 					return nil
 				},
@@ -745,7 +745,7 @@ func TestArgumentInt32Slice(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					assert.Equal(t, tc.expectedValue, cliCtx.ArgumentInt32Slice("int32"))
 					return nil
 				},
@@ -798,7 +798,7 @@ func TestArgumentInt64(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					assert.Equal(t, tc.expectedValue, cliCtx.ArgumentInt64("int64"))
 					return nil
 				},
@@ -851,7 +851,7 @@ func TestArgumentInt64Slice(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					assert.Equal(t, tc.expectedValue, cliCtx.ArgumentInt64Slice("int64"))
 					return nil
 				},
@@ -904,7 +904,7 @@ func TestArgumentFloat32(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					assert.Equal(t, tc.expectedValue, cliCtx.ArgumentFloat32("float32"))
 					return nil
 				},
@@ -957,7 +957,7 @@ func TestArgumentFloat32Slice(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					assert.Equal(t, tc.expectedValue, cliCtx.ArgumentFloat32Slice("float32"))
 					return nil
 				},
@@ -1010,7 +1010,7 @@ func TestArgumentUint8(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					assert.Equal(t, tc.expectedValue, cliCtx.ArgumentUint8("uint8"))
 					return nil
 				},
@@ -1063,7 +1063,7 @@ func TestArgumentUint8Slice(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					assert.Equal(t, tc.expectedValue, cliCtx.ArgumentUint8Slice("uint8"))
 					return nil
 				},
@@ -1116,7 +1116,7 @@ func TestArgumentUint16(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					assert.Equal(t, tc.expectedValue, cliCtx.ArgumentUint16("uint16"))
 					return nil
 				},
@@ -1169,7 +1169,7 @@ func TestArgumentUint16Slice(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					assert.Equal(t, tc.expectedValue, cliCtx.ArgumentUint16Slice("uint16"))
 					return nil
 				},
@@ -1222,7 +1222,7 @@ func TestArgumentUint32(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					assert.Equal(t, tc.expectedValue, cliCtx.ArgumentUint32("uint32"))
 					return nil
 				},
@@ -1275,7 +1275,7 @@ func TestArgumentUint32Slice(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					assert.Equal(t, tc.expectedValue, cliCtx.ArgumentUint32Slice("uint32"))
 					return nil
 				},
@@ -1328,7 +1328,7 @@ func TestArgumentUint64(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					assert.Equal(t, tc.expectedValue, cliCtx.ArgumentUint64("uint64"))
 					return nil
 				},
@@ -1381,7 +1381,7 @@ func TestArgumentUint64Slice(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					assert.Equal(t, tc.expectedValue, cliCtx.ArgumentUint64Slice("uint64"))
 					return nil
 				},
@@ -1436,7 +1436,7 @@ func TestArgumentTimestamp(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					result := cliCtx.ArgumentTimestamp("timestamp")
 					assert.Equal(t, tc.expectedValue.Unix(), result.Unix())
 					return nil
@@ -1487,7 +1487,7 @@ func TestArgumentTimestampSlice(t *testing.T) {
 				Name:      "test",
 				Arguments: cliArguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, tc.arguments)
+					cliCtx := NewCliContext(cmd, tc.arguments, ctx)
 					result := cliCtx.ArgumentTimestampSlice("timestamp")
 					if tc.expectedValue != nil {
 						require.Equal(t, len(tc.expectedValue), len(result))
@@ -1916,7 +1916,7 @@ func TestCliContextArguments(t *testing.T) {
 				Name:      "test",
 				Arguments: tc.arguments,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					cliCtx := NewCliContext(cmd, nil)
+					cliCtx := NewCliContext(cmd, nil, ctx)
 					tc.testFunc(t, cliCtx)
 					return nil
 				},
