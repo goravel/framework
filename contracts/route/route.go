@@ -82,4 +82,8 @@ type Router interface {
 
 type Action interface {
 	Name(name string) Action
+	// WithoutMiddleware excludes the specified middleware from the route.
+	// This only works for middleware applied at the route or group level,
+	// not global middleware.
+	WithoutMiddleware(middleware ...contractshttp.Middleware) Action
 }
