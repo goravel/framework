@@ -705,6 +705,67 @@ func (_c *Router_StaticFile_Call) RunAndReturn(run func(string, string) route.Ac
 	return _c
 }
 
+// WithoutMiddleware provides a mock function with given fields: middlewares
+func (_m *Router) WithoutMiddleware(middlewares ...http.Middleware) route.Router {
+	_va := make([]interface{}, len(middlewares))
+	for _i := range middlewares {
+		_va[_i] = middlewares[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithoutMiddleware")
+	}
+
+	var r0 route.Router
+	if rf, ok := ret.Get(0).(func(...http.Middleware) route.Router); ok {
+		r0 = rf(middlewares...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(route.Router)
+		}
+	}
+
+	return r0
+}
+
+// Router_WithoutMiddleware_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithoutMiddleware'
+type Router_WithoutMiddleware_Call struct {
+	*mock.Call
+}
+
+// WithoutMiddleware is a helper method to define mock.On call
+//   - middlewares ...http.Middleware
+func (_e *Router_Expecter) WithoutMiddleware(middlewares ...interface{}) *Router_WithoutMiddleware_Call {
+	return &Router_WithoutMiddleware_Call{Call: _e.mock.On("WithoutMiddleware",
+		append([]interface{}{}, middlewares...)...)}
+}
+
+func (_c *Router_WithoutMiddleware_Call) Run(run func(middlewares ...http.Middleware)) *Router_WithoutMiddleware_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]http.Middleware, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(http.Middleware)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Router_WithoutMiddleware_Call) Return(_a0 route.Router) *Router_WithoutMiddleware_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Router_WithoutMiddleware_Call) RunAndReturn(run func(...http.Middleware) route.Router) *Router_WithoutMiddleware_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewRouter creates a new instance of Router. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewRouter(t interface {
