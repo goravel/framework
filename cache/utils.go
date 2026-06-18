@@ -5,5 +5,10 @@ import (
 )
 
 func prefix(config config.Config) string {
-	return config.GetString("cache.prefix") + ":"
+	p := config.GetString("cache.prefix")
+	if p == "" {
+		return ""
+	}
+
+	return p + ":"
 }
