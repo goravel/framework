@@ -1,6 +1,7 @@
 package console
 
 import (
+	"context"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -22,10 +23,27 @@ import (
 type CliContext struct {
 	arguments []command.Argument
 	instance  *cli.Command
+	ctx       context.Context
 }
 
-func NewCliContext(instance *cli.Command, arguments []command.Argument) *CliContext {
-	return &CliContext{arguments, instance}
+func NewCliContext(ctx context.Context, instance *cli.Command, arguments []command.Argument) *CliContext {
+	return &CliContext{arguments, instance, ctx}
+}
+
+func (r *CliContext) Deadline() (deadline time.Time, ok bool) {
+	return r.ctx.Deadline()
+}
+
+func (r *CliContext) Done() <-chan struct{} {
+	return r.ctx.Done()
+}
+
+func (r *CliContext) Err() error {
+	return r.ctx.Err()
+}
+
+func (r *CliContext) Value(key any) any {
+	return r.ctx.Value(key)
 }
 
 func (r *CliContext) Ask(question string, option ...console.AskOption) (string, error) {

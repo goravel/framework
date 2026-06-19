@@ -4,8 +4,11 @@ import (
 	"context"
 	"io"
 	"os"
+	"os/signal"
 	"slices"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/urfave/cli/v3"
 
@@ -34,11 +37,13 @@ type Application struct {
 	useArtisan bool
 	version    string
 	writer     io.Writer
+	ctx        context.Context
 }
 
 // NewApplication Create a new Artisan application.
 // Will add artisan flag to the command if useArtisan is true.
 func NewApplication(name, usage, usageText, version string, useArtisan bool) *Application {
+	ctx, _ := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	return &Application{
 		name:       name,
 		usage:      usage,
@@ -46,6 +51,7 @@ func NewApplication(name, usage, usageText, version string, useArtisan bool) *Ap
 		useArtisan: useArtisan,
 		version:    version,
 		writer:     os.Stdout,
+		ctx:        ctx,
 	}
 }
 
@@ -115,9 +121,13 @@ func (r *Application) Run(args []string, exitIfArtisan bool) error {
 		}
 
 		cliArgs := append([]string{args[0]}, args[artisanIndex+1:]...)
-		if err := command.Run(context.Background(), cliArgs); err != nil {
+		if err := command.Run(r.ctx, cliArgs); err != nil {
 			if exitIfArtisan {
-				panic(err.Error())
+				if !errors.Is(err, context.Canceled) {
+					color.Errorln(err.Error())
+					os.Exit(1)
+				}
+				os.Exit(0)
 			}
 
 			return err
@@ -159,6 +169,12 @@ func (r *Application) command() (*cli.Command, error) {
 	return command, nil
 }
 
+func shutdownCommand(shutdownable console.Shutdownable, cmd *cli.Command, arguments []command.Argument) error {
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer shutdownCancel()
+	return shutdownable.Shutdown(NewCliContext(shutdownCtx, cmd, arguments))
+}
+
 func commandsToCliCommands(commands []console.Command) ([]*cli.Command, error) {
 	cliCommands := make([]*cli.Command, len(commands))
 
@@ -172,12 +188,41 @@ func commandsToCliCommands(commands []console.Command) ([]*cli.Command, error) {
 			Name:  item.Signature(),
 			Usage: item.Description(),
 			Action: func(ctx context.Context, cmd *cli.Command) error {
-				cliCtx := NewCliContext(cmd, arguments)
+				cliCtx := NewCliContext(ctx, cmd, arguments)
 				if cliCtx.OptionBool("help") {
 					return cli.ShowCommandHelp(ctx, cmd, cmd.Name)
 				}
 
-				return item.Handle(cliCtx)
+				errCh := make(chan error, 1)
+				go func() {
+					defer func() {
+						if r := recover(); r != nil {
+							errCh <- errors.ConsoleCommandPanicInHandle.Args(r)
+						}
+					}()
+					errCh <- item.Handle(cliCtx)
+				}()
+
+				shutdownable, ok := item.(console.Shutdownable)
+
+				if ok {
+					select {
+					case handleErr := <-errCh:
+						if err := shutdownCommand(shutdownable, cmd, arguments); err != nil {
+							color.Errorln("shutdown error:", err.Error())
+						}
+						return handleErr
+					case <-ctx.Done():
+						return shutdownCommand(shutdownable, cmd, arguments)
+					}
+				}
+
+				select {
+				case err := <-errCh:
+					return err
+				case <-ctx.Done():
+					return ctx.Err()
+				}
 			},
 			Category:     item.Extend().Category,
 			ArgsUsage:    item.Extend().ArgsUsage,

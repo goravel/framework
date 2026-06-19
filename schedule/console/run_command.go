@@ -34,8 +34,11 @@ func (r *Run) Extend() command.Extend {
 }
 
 // Handle Execute the console command.
-func (r *Run) Handle(_ console.Context) error {
+func (r *Run) Handle(ctx console.Context) error {
 	r.schedule.Run()
-
 	return nil
+}
+
+func (r *Run) Shutdown(ctx console.Context) error {
+	return r.schedule.Shutdown(ctx)
 }

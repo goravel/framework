@@ -22,7 +22,16 @@ type Command interface {
 	Handle(ctx Context) error
 }
 
+// Shutdownable is an optional interface that commands can implement to receive
+// a cleanup callback when the process receives SIGINT or SIGTERM.
+// The framework calls ShutDown with a fresh Context after the signal fires,
+// then waits for Handle to return.
+type Shutdownable interface {
+	Shutdown(ctx Context) error
+}
+
 type Context interface {
+	context.Context
 	// Ask prompts the user for input.
 	Ask(question string, option ...AskOption) (string, error)
 	// CreateProgressBar creates a new progress bar instance.
