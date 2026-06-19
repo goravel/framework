@@ -23,10 +23,10 @@ func TestRunCommand(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	runCh := make(chan struct{})
-	mockContext.EXPECT().Context().Return(ctx)
+	mockContext.EXPECT().Done().Return(ctx.Done()).Once()
 	mockSchedule.EXPECT().Run().Run(func() {
 		close(runCh)
-	})
+	}).Once()
 
 	assert.Equal(t, "schedule:run", runCommand.Signature())
 	assert.Equal(t, "Run the scheduled commands", runCommand.Description())
@@ -48,8 +48,7 @@ func TestRunCommand_ShutDown(t *testing.T) {
 	runCommand := NewRun(mockSchedule)
 
 	mockContext := consolemocks.NewContext(t)
-	mockContext.EXPECT().Context().Return(context.Background())
-	mockSchedule.EXPECT().Shutdown(context.Background()).Return(nil)
+	mockSchedule.EXPECT().Shutdown(mockContext).Return(nil).Once()
 
 	assert.NoError(t, runCommand.ShutDown(mockContext))
 }

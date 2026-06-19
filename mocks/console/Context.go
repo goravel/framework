@@ -3,12 +3,9 @@
 package console
 
 import (
-	context "context"
-
 	console "github.com/goravel/framework/contracts/console"
-	cli "github.com/urfave/cli/v3"
-
 	mock "github.com/stretchr/testify/mock"
+	cli "github.com/urfave/cli/v3"
 
 	time "time"
 )
@@ -1738,53 +1735,6 @@ func (_c *Context_Confirm_Call) RunAndReturn(run func(string, ...console.Confirm
 	return _c
 }
 
-// Context provides a mock function with no fields
-func (_m *Context) Context() context.Context {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for Context")
-	}
-
-	var r0 context.Context
-	if rf, ok := ret.Get(0).(func() context.Context); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(context.Context)
-		}
-	}
-
-	return r0
-}
-
-// Context_Context_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Context'
-type Context_Context_Call struct {
-	*mock.Call
-}
-
-// Context is a helper method to define mock.On call
-func (_e *Context_Expecter) Context() *Context_Context_Call {
-	return &Context_Context_Call{Call: _e.mock.On("Context")}
-}
-
-func (_c *Context_Context_Call) Run(run func()) *Context_Context_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Context_Context_Call) Return(_a0 context.Context) *Context_Context_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Context_Context_Call) RunAndReturn(run func() context.Context) *Context_Context_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // CreateProgressBar provides a mock function with given fields: total
 func (_m *Context) CreateProgressBar(total int) console.Progress {
 	ret := _m.Called(total)
@@ -1833,6 +1783,61 @@ func (_c *Context_CreateProgressBar_Call) RunAndReturn(run func(int) console.Pro
 	return _c
 }
 
+// Deadline provides a mock function with no fields
+func (_m *Context) Deadline() (time.Time, bool) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Deadline")
+	}
+
+	var r0 time.Time
+	var r1 bool
+	if rf, ok := ret.Get(0).(func() (time.Time, bool)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() time.Time); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(time.Time)
+	}
+
+	if rf, ok := ret.Get(1).(func() bool); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Get(1).(bool)
+	}
+
+	return r0, r1
+}
+
+// Context_Deadline_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Deadline'
+type Context_Deadline_Call struct {
+	*mock.Call
+}
+
+// Deadline is a helper method to define mock.On call
+func (_e *Context_Expecter) Deadline() *Context_Deadline_Call {
+	return &Context_Deadline_Call{Call: _e.mock.On("Deadline")}
+}
+
+func (_c *Context_Deadline_Call) Run(run func()) *Context_Deadline_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Context_Deadline_Call) Return(deadline time.Time, ok bool) *Context_Deadline_Call {
+	_c.Call.Return(deadline, ok)
+	return _c
+}
+
+func (_c *Context_Deadline_Call) RunAndReturn(run func() (time.Time, bool)) *Context_Deadline_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Divider provides a mock function with given fields: filler
 func (_m *Context) Divider(filler ...string) {
 	_va := make([]interface{}, len(filler))
@@ -1876,6 +1881,98 @@ func (_c *Context_Divider_Call) Return() *Context_Divider_Call {
 
 func (_c *Context_Divider_Call) RunAndReturn(run func(...string)) *Context_Divider_Call {
 	_c.Run(run)
+	return _c
+}
+
+// Done provides a mock function with no fields
+func (_m *Context) Done() <-chan struct{} {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Done")
+	}
+
+	var r0 <-chan struct{}
+	if rf, ok := ret.Get(0).(func() <-chan struct{}); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(<-chan struct{})
+		}
+	}
+
+	return r0
+}
+
+// Context_Done_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Done'
+type Context_Done_Call struct {
+	*mock.Call
+}
+
+// Done is a helper method to define mock.On call
+func (_e *Context_Expecter) Done() *Context_Done_Call {
+	return &Context_Done_Call{Call: _e.mock.On("Done")}
+}
+
+func (_c *Context_Done_Call) Run(run func()) *Context_Done_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Context_Done_Call) Return(_a0 <-chan struct{}) *Context_Done_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Context_Done_Call) RunAndReturn(run func() <-chan struct{}) *Context_Done_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Err provides a mock function with no fields
+func (_m *Context) Err() error {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Err")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Context_Err_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Err'
+type Context_Err_Call struct {
+	*mock.Call
+}
+
+// Err is a helper method to define mock.On call
+func (_e *Context_Expecter) Err() *Context_Err_Call {
+	return &Context_Err_Call{Call: _e.mock.On("Err")}
+}
+
+func (_c *Context_Err_Call) Run(run func()) *Context_Err_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Context_Err_Call) Return(_a0 error) *Context_Err_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Context_Err_Call) RunAndReturn(run func() error) *Context_Err_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
@@ -2945,6 +3042,54 @@ func (_c *Context_TwoColumnDetail_Call) Return() *Context_TwoColumnDetail_Call {
 
 func (_c *Context_TwoColumnDetail_Call) RunAndReturn(run func(string, string, ...rune)) *Context_TwoColumnDetail_Call {
 	_c.Run(run)
+	return _c
+}
+
+// Value provides a mock function with given fields: key
+func (_m *Context) Value(key interface{}) interface{} {
+	ret := _m.Called(key)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Value")
+	}
+
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func(interface{}) interface{}); ok {
+		r0 = rf(key)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(interface{})
+		}
+	}
+
+	return r0
+}
+
+// Context_Value_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Value'
+type Context_Value_Call struct {
+	*mock.Call
+}
+
+// Value is a helper method to define mock.On call
+//   - key interface{}
+func (_e *Context_Expecter) Value(key interface{}) *Context_Value_Call {
+	return &Context_Value_Call{Call: _e.mock.On("Value", key)}
+}
+
+func (_c *Context_Value_Call) Run(run func(key interface{})) *Context_Value_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(interface{}))
+	})
+	return _c
+}
+
+func (_c *Context_Value_Call) Return(_a0 interface{}) *Context_Value_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Context_Value_Call) RunAndReturn(run func(interface{}) interface{}) *Context_Value_Call {
+	_c.Call.Return(run)
 	return _c
 }
 

@@ -2,7 +2,6 @@ package console
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"os/signal"
@@ -175,6 +174,14 @@ func (r *Application) command() (*cli.Command, error) {
 	return command, nil
 }
 
+func shutdownCommand(shutdownable console.Shutdownable, cmd *cli.Command, arguments []command.Argument) {
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer shutdownCancel()
+	if err := shutdownable.ShutDown(NewCliContext(shutdownCtx, cmd, arguments)); err != nil {
+		color.Errorln("ShutDown error:", err.Error())
+	}
+}
+
 func commandsToCliCommands(commands []console.Command) ([]*cli.Command, error) {
 	cliCommands := make([]*cli.Command, len(commands))
 
@@ -188,7 +195,7 @@ func commandsToCliCommands(commands []console.Command) ([]*cli.Command, error) {
 			Name:  item.Signature(),
 			Usage: item.Description(),
 			Action: func(ctx context.Context, cmd *cli.Command) error {
-				cliCtx := NewCliContext(cmd, arguments, ctx)
+				cliCtx := NewCliContext(ctx, cmd, arguments)
 				if cliCtx.OptionBool("help") {
 					return cli.ShowCommandHelp(ctx, cmd, cmd.Name)
 				}
@@ -197,7 +204,7 @@ func commandsToCliCommands(commands []console.Command) ([]*cli.Command, error) {
 				go func() {
 					defer func() {
 						if r := recover(); r != nil {
-							errCh <- fmt.Errorf("panic in Handle: %v", r)
+							errCh <- errors.ConsoleCommandPanicInHandle.Args(r)
 						}
 					}()
 					errCh <- item.Handle(cliCtx)
@@ -208,19 +215,14 @@ func commandsToCliCommands(commands []console.Command) ([]*cli.Command, error) {
 				if ok {
 					select {
 					case handleErr := <-errCh:
-						shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
-						defer shutdownCancel()
-						_ = shutdownable.ShutDown(NewCliContext(cmd, arguments, shutdownCtx))
+						shutdownCommand(shutdownable, cmd, arguments)
 						return handleErr
 					case <-ctx.Done():
-						shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
-						defer shutdownCancel()
-						_ = shutdownable.ShutDown(NewCliContext(cmd, arguments, shutdownCtx))
-
+						shutdownCommand(shutdownable, cmd, arguments)
 						select {
 						case handleErr := <-errCh:
 							return handleErr
-						case <-time.After(5 * time.Second):
+						case <-time.After(30 * time.Second):
 							return ctx.Err()
 						}
 					}

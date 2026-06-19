@@ -31,8 +31,7 @@ type Shutdownable interface {
 }
 
 type Context interface {
-	// Context returns the context for the console command, which is cancelled on SIGINT/SIGTERM.
-	Context() context.Context
+	context.Context
 	// Ask prompts the user for input.
 	Ask(question string, option ...AskOption) (string, error)
 	// CreateProgressBar creates a new progress bar instance.
