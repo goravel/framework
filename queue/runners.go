@@ -25,7 +25,7 @@ func NewQueueRunner(config config.Config, queue contractsqueue.Queue) *QueueRunn
 }
 
 func (r *QueueRunner) Signature() string {
-	return "queue"
+	return "goravel:queue"
 }
 
 func (r *QueueRunner) ShouldRun() bool {

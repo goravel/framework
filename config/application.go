@@ -129,6 +129,19 @@ func (app *Application) GetDuration(path string, defaultValue ...time.Duration) 
 	return app.vip.GetDuration(path)
 }
 
+// GetStringSlice get []string type config from application.
+func (app *Application) GetStringSlice(path string, defaultValue ...[]string) []string {
+	if !app.vip.IsSet(path) {
+		for _, value := range defaultValue {
+			if value != nil {
+				return value
+			}
+		}
+		return nil
+	}
+	return app.vip.GetStringSlice(path)
+}
+
 // UnmarshalKey unmarshal a specific key from config into a struct.
 func (app *Application) UnmarshalKey(key string, rawVal any) error {
 	return app.vip.UnmarshalKey(key, rawVal, func(c *mapstructure.DecoderConfig) {

@@ -18,7 +18,7 @@ func NewScheduleRunner(config config.Config, schedule schedule.Schedule) *Schedu
 }
 
 func (r *ScheduleRunner) Signature() string {
-	return "schedule"
+	return "goravel:schedule"
 }
 
 func (r *ScheduleRunner) ShouldRun() bool {

@@ -1,4 +1,4 @@
-package route
+package http
 
 import (
 	"testing"
@@ -10,34 +10,34 @@ import (
 	routemock "github.com/goravel/framework/mocks/route"
 )
 
-type RouteRunnerTestSuite struct {
+type HTTPRunnerTestSuite struct {
 	suite.Suite
 	mockConfig *configmock.Config
 	mockRoute  *routemock.Route
-	runner     *RouteRunner
+	runner     *HTTPRunner
 }
 
-func TestRouteRunnerTestSuite(t *testing.T) {
-	suite.Run(t, &RouteRunnerTestSuite{})
+func TestHTTPRunnerTestSuite(t *testing.T) {
+	suite.Run(t, &HTTPRunnerTestSuite{})
 }
 
-func (s *RouteRunnerTestSuite) SetupTest() {
+func (s *HTTPRunnerTestSuite) SetupTest() {
 	s.mockConfig = configmock.NewConfig(s.T())
 	s.mockRoute = routemock.NewRoute(s.T())
-	s.runner = NewRouteRunner(s.mockConfig, s.mockRoute)
+	s.runner = NewHTTPRunner(s.mockConfig, s.mockRoute)
 }
 
-func (s *RouteRunnerTestSuite) TestNewRouteRunner() {
+func (s *HTTPRunnerTestSuite) TestNewHTTPRunner() {
 	s.NotNil(s.runner)
 	s.Equal(s.mockConfig, s.runner.config)
 	s.Equal(s.mockRoute, s.runner.route)
 }
 
-func (s *RouteRunnerTestSuite) TestSignature() {
-	s.Equal("route", s.runner.Signature())
+func (s *HTTPRunnerTestSuite) TestSignature() {
+	s.Equal("goravel:http", s.runner.Signature())
 }
 
-func (s *RouteRunnerTestSuite) TestShouldRun_WhenRouteNotNilAndDefaultConfigSet() {
+func (s *HTTPRunnerTestSuite) TestShouldRun_WhenRouteNotNilAndDefaultConfigSet() {
 	s.mockConfig.EXPECT().GetString("http.default").Return("gin").Once()
 	s.mockConfig.EXPECT().GetBool("app.auto_run", true).Return(true).Once()
 
@@ -46,16 +46,16 @@ func (s *RouteRunnerTestSuite) TestShouldRun_WhenRouteNotNilAndDefaultConfigSet(
 	s.True(result)
 }
 
-func (s *RouteRunnerTestSuite) TestShouldRun_WhenRouteIsNil() {
+func (s *HTTPRunnerTestSuite) TestShouldRun_WhenRouteIsNil() {
 	// Pass nil directly as route.Route interface to avoid typed nil issue
-	runner := NewRouteRunner(s.mockConfig, nil)
+	runner := NewHTTPRunner(s.mockConfig, nil)
 
 	result := runner.ShouldRun()
 
 	s.False(result)
 }
 
-func (s *RouteRunnerTestSuite) TestShouldRun_WhenDefaultConfigEmpty() {
+func (s *HTTPRunnerTestSuite) TestShouldRun_WhenDefaultConfigEmpty() {
 	s.mockConfig.EXPECT().GetString("http.default").Return("").Once()
 
 	result := s.runner.ShouldRun()
@@ -63,7 +63,7 @@ func (s *RouteRunnerTestSuite) TestShouldRun_WhenDefaultConfigEmpty() {
 	s.False(result)
 }
 
-func (s *RouteRunnerTestSuite) TestRun_SuccessfullyRunHTTPServerOnly() {
+func (s *HTTPRunnerTestSuite) TestRun_SuccessfullyRunHTTPServerOnly() {
 	s.mockConfig.EXPECT().GetString("http.tls.host").Return("").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.port").Return("").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.ssl.cert").Return("").Once()
@@ -77,7 +77,7 @@ func (s *RouteRunnerTestSuite) TestRun_SuccessfullyRunHTTPServerOnly() {
 	s.NoError(err)
 }
 
-func (s *RouteRunnerTestSuite) TestRun_SuccessfullyRunHTTPServerOnly_PortsAreTheSame() {
+func (s *HTTPRunnerTestSuite) TestRun_SuccessfullyRunHTTPServerOnly_PortsAreTheSame() {
 	s.mockConfig.EXPECT().GetString("http.tls.host").Return("").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.port").Return("3000").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.ssl.cert").Return("").Once()
@@ -91,7 +91,7 @@ func (s *RouteRunnerTestSuite) TestRun_SuccessfullyRunHTTPServerOnly_PortsAreThe
 	s.NoError(err)
 }
 
-func (s *RouteRunnerTestSuite) TestRun_SuccessfullyRunBothHTTPAndHTTPSServers() {
+func (s *HTTPRunnerTestSuite) TestRun_SuccessfullyRunBothHTTPAndHTTPSServers() {
 	s.mockConfig.EXPECT().GetString("http.tls.host").Return("127.0.0.1").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.port").Return("3001").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.ssl.cert").Return("/path/to/cert").Once()
@@ -106,7 +106,7 @@ func (s *RouteRunnerTestSuite) TestRun_SuccessfullyRunBothHTTPAndHTTPSServers() 
 	s.NoError(err)
 }
 
-func (s *RouteRunnerTestSuite) TestRun_ErrorWhenHTTPServerFailsToStart() {
+func (s *HTTPRunnerTestSuite) TestRun_ErrorWhenHTTPServerFailsToStart() {
 	s.mockConfig.EXPECT().GetString("http.tls.host").Return("").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.port").Return("").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.ssl.cert").Return("").Once()
@@ -121,7 +121,7 @@ func (s *RouteRunnerTestSuite) TestRun_ErrorWhenHTTPServerFailsToStart() {
 	s.Equal(assert.AnError, err)
 }
 
-func (s *RouteRunnerTestSuite) TestRun_ErrorWhenHTTPSServerFailsToStart() {
+func (s *HTTPRunnerTestSuite) TestRun_ErrorWhenHTTPSServerFailsToStart() {
 	s.mockConfig.EXPECT().GetString("http.tls.host").Return("127.0.0.1").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.port").Return("3001").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.ssl.cert").Return("/path/to/cert").Once()
@@ -134,7 +134,7 @@ func (s *RouteRunnerTestSuite) TestRun_ErrorWhenHTTPSServerFailsToStart() {
 	s.Equal(assert.AnError, err)
 }
 
-func (s *RouteRunnerTestSuite) TestRun_SkipHTTPServerWhenHostIsEmpty() {
+func (s *HTTPRunnerTestSuite) TestRun_SkipHTTPServerWhenHostIsEmpty() {
 	s.mockConfig.EXPECT().GetString("http.tls.host").Return("").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.port").Return("").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.ssl.cert").Return("").Once()
@@ -147,7 +147,7 @@ func (s *RouteRunnerTestSuite) TestRun_SkipHTTPServerWhenHostIsEmpty() {
 	s.NoError(err)
 }
 
-func (s *RouteRunnerTestSuite) TestRun_SkipHTTPServerWhenPortIsEmpty() {
+func (s *HTTPRunnerTestSuite) TestRun_SkipHTTPServerWhenPortIsEmpty() {
 	s.mockConfig.EXPECT().GetString("http.tls.host").Return("").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.port").Return("").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.ssl.cert").Return("").Once()
@@ -160,7 +160,7 @@ func (s *RouteRunnerTestSuite) TestRun_SkipHTTPServerWhenPortIsEmpty() {
 	s.NoError(err)
 }
 
-func (s *RouteRunnerTestSuite) TestRun_SkipHTTPSServerWhenTLSHostIsEmpty() {
+func (s *HTTPRunnerTestSuite) TestRun_SkipHTTPSServerWhenTLSHostIsEmpty() {
 	s.mockConfig.EXPECT().GetString("http.tls.host").Return("").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.port").Return("3001").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.ssl.cert").Return("/path/to/cert").Once()
@@ -174,7 +174,7 @@ func (s *RouteRunnerTestSuite) TestRun_SkipHTTPSServerWhenTLSHostIsEmpty() {
 	s.NoError(err)
 }
 
-func (s *RouteRunnerTestSuite) TestRun_SkipHTTPSServerWhenTLSPortIsEmpty() {
+func (s *HTTPRunnerTestSuite) TestRun_SkipHTTPSServerWhenTLSPortIsEmpty() {
 	s.mockConfig.EXPECT().GetString("http.tls.host").Return("127.0.0.1").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.port").Return("").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.ssl.cert").Return("/path/to/cert").Once()
@@ -188,7 +188,7 @@ func (s *RouteRunnerTestSuite) TestRun_SkipHTTPSServerWhenTLSPortIsEmpty() {
 	s.NoError(err)
 }
 
-func (s *RouteRunnerTestSuite) TestRun_SkipHTTPServerWhenTLSPortEqualsHTTPPort() {
+func (s *HTTPRunnerTestSuite) TestRun_SkipHTTPServerWhenTLSPortEqualsHTTPPort() {
 	s.mockConfig.EXPECT().GetString("http.tls.host").Return("127.0.0.1").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.port").Return("3000").Once()
 	s.mockConfig.EXPECT().GetString("http.tls.ssl.cert").Return("/path/to/cert").Once()
@@ -202,7 +202,7 @@ func (s *RouteRunnerTestSuite) TestRun_SkipHTTPServerWhenTLSPortEqualsHTTPPort()
 	s.NoError(err)
 }
 
-func (s *RouteRunnerTestSuite) TestShutdown_Successfully() {
+func (s *HTTPRunnerTestSuite) TestShutdown_Successfully() {
 	s.mockRoute.EXPECT().Shutdown().Return(nil).Once()
 
 	err := s.runner.Shutdown()
@@ -210,7 +210,7 @@ func (s *RouteRunnerTestSuite) TestShutdown_Successfully() {
 	s.NoError(err)
 }
 
-func (s *RouteRunnerTestSuite) TestShutdown_ErrorDuringShutdown() {
+func (s *HTTPRunnerTestSuite) TestShutdown_ErrorDuringShutdown() {
 	s.mockRoute.EXPECT().Shutdown().Return(assert.AnError).Once()
 
 	err := s.runner.Shutdown()
@@ -219,7 +219,7 @@ func (s *RouteRunnerTestSuite) TestShutdown_ErrorDuringShutdown() {
 	s.Equal(assert.AnError, err)
 }
 
-func (s *RouteRunnerTestSuite) TestIntegration_FullLifecycle() {
+func (s *HTTPRunnerTestSuite) TestIntegration_FullLifecycle() {
 	// Test ShouldRun
 	s.mockConfig.EXPECT().GetString("http.default").Return("gin").Once()
 	s.mockConfig.EXPECT().GetBool("app.auto_run", true).Return(true).Once()

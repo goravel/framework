@@ -1,31 +1,31 @@
-package route
+package http
 
 import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/route"
 )
 
-type RouteRunner struct {
+type HTTPRunner struct {
 	config config.Config
 	route  route.Route
 }
 
-func NewRouteRunner(config config.Config, route route.Route) *RouteRunner {
-	return &RouteRunner{
+func NewHTTPRunner(config config.Config, route route.Route) *HTTPRunner {
+	return &HTTPRunner{
 		config: config,
 		route:  route,
 	}
 }
 
-func (r *RouteRunner) Signature() string {
-	return "route"
+func (r *HTTPRunner) Signature() string {
+	return "goravel:http"
 }
 
-func (r *RouteRunner) ShouldRun() bool {
+func (r *HTTPRunner) ShouldRun() bool {
 	return r.route != nil && r.config.GetString("http.default") != "" && r.config.GetBool("app.auto_run", true)
 }
 
-func (r *RouteRunner) Run() error {
+func (r *HTTPRunner) Run() error {
 	tlsHost := r.config.GetString("http.tls.host")
 	tlsPort := r.config.GetString("http.tls.port")
 	certFile := r.config.GetString("http.tls.ssl.cert")
@@ -50,6 +50,6 @@ func (r *RouteRunner) Run() error {
 	return nil
 }
 
-func (r *RouteRunner) Shutdown() error {
+func (r *HTTPRunner) Shutdown() error {
 	return r.route.Shutdown()
 }

@@ -63,5 +63,5 @@ func (r *TelemetryRunner) ShutdownPriority() int {
 }
 
 func (r *TelemetryRunner) Signature() string {
-	return "telemetry"
+	return "goravel:telemetry"
 }

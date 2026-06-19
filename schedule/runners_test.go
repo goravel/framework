@@ -13,7 +13,7 @@ import (
 func TestScheduleRunner(t *testing.T) {
 	t.Run("signature", func(t *testing.T) {
 		runner := &ScheduleRunner{}
-		assert.Equal(t, "schedule", runner.Signature())
+		assert.Equal(t, "goravel:schedule", runner.Signature())
 	})
 
 	t.Run("should run when schedule has events and auto_run enabled", func(t *testing.T) {

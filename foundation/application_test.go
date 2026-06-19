@@ -24,6 +24,7 @@ import (
 	"github.com/goravel/framework/contracts/schedule"
 	"github.com/goravel/framework/contracts/validation"
 	foundationjson "github.com/goravel/framework/foundation/json"
+	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mocksroute "github.com/goravel/framework/mocks/route"
 	"github.com/goravel/framework/support"
@@ -570,6 +571,89 @@ func (s *ApplicationTestSuite) TestConfigureRunners() {
 
 				s.app.configureRunners()
 				s.Equal(0, len(s.app.runnersToRun))
+			},
+		},
+		{
+			name: "skip runner listed in app.disabled_runners (builder)",
+			setup: func() {
+				runner := mocksfoundation.NewRunner(s.T())
+				runner.EXPECT().Signature().Return("test-runner").Once()
+				runner.EXPECT().ShouldRun().Return(true).Once()
+
+				mockConfig := mocksconfig.NewConfig(s.T())
+				mockConfig.EXPECT().GetStringSlice("app.disabled_runners", []string{}).Return([]string{"test-runner"}).Once()
+				s.app.Container.Instance(binding.Config, mockConfig)
+
+				builder := NewApplicationBuilder(s.app)
+				builder.runners = func() []foundation.Runner {
+					return []foundation.Runner{runner}
+				}
+				s.app.builder = builder
+				s.app.bootedRunners = nil
+				s.app.runnersToRun = nil
+
+				mockRepo := mocksfoundation.NewProviderRepository(s.T())
+				mockRepo.EXPECT().GetBooted().Return([]foundation.ServiceProvider{}).Once()
+				s.app.providerRepository = mockRepo
+
+				s.app.configureRunners()
+				s.Equal(0, len(s.app.runnersToRun))
+			},
+		},
+		{
+			name: "skip runner listed in app.disabled_runners (service provider)",
+			setup: func() {
+				runner := mocksfoundation.NewRunner(s.T())
+				runner.EXPECT().Signature().Return("provider-runner").Once()
+				runner.EXPECT().ShouldRun().Return(true).Once()
+
+				mockConfig := mocksconfig.NewConfig(s.T())
+				mockConfig.EXPECT().GetStringSlice("app.disabled_runners", []string{}).Return([]string{"provider-runner"}).Once()
+				s.app.Container.Instance(binding.Config, mockConfig)
+
+				serviceProvider := mocksfoundation.NewServiceProviderWithRunners(s.T())
+				serviceProvider.EXPECT().Runners(s.app).Return([]foundation.Runner{runner}).Once()
+
+				builder := NewApplicationBuilder(s.app)
+				builder.runners = nil
+				s.app.builder = builder
+				s.app.bootedRunners = nil
+				s.app.runnersToRun = nil
+
+				mockRepo := mocksfoundation.NewProviderRepository(s.T())
+				mockRepo.EXPECT().GetBooted().Return([]foundation.ServiceProvider{serviceProvider}).Once()
+				s.app.providerRepository = mockRepo
+
+				s.app.configureRunners()
+				s.Equal(0, len(s.app.runnersToRun))
+			},
+		},
+		{
+			name: "empty app.disabled_runners runs all eligible runners",
+			setup: func() {
+				runner := mocksfoundation.NewRunner(s.T())
+				runner.EXPECT().Signature().Return("test-runner").Once()
+				runner.EXPECT().ShouldRun().Return(true).Once()
+
+				mockConfig := mocksconfig.NewConfig(s.T())
+				mockConfig.EXPECT().GetStringSlice("app.disabled_runners", []string{}).Return([]string{}).Once()
+				s.app.Container.Instance(binding.Config, mockConfig)
+
+				builder := NewApplicationBuilder(s.app)
+				builder.runners = func() []foundation.Runner {
+					return []foundation.Runner{runner}
+				}
+				s.app.builder = builder
+				s.app.bootedRunners = nil
+				s.app.runnersToRun = nil
+
+				mockRepo := mocksfoundation.NewProviderRepository(s.T())
+				mockRepo.EXPECT().GetBooted().Return([]foundation.ServiceProvider{}).Once()
+				s.app.providerRepository = mockRepo
+
+				s.app.configureRunners()
+				s.Equal(1, len(s.app.runnersToRun))
+				s.Equal("test-runner", s.app.runnersToRun[0].signature)
 			},
 		},
 	}

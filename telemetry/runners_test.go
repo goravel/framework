@@ -14,7 +14,7 @@ import (
 func TestTelemetryRunner(t *testing.T) {
 	t.Run("signature", func(t *testing.T) {
 		runner := &TelemetryRunner{}
-		assert.Equal(t, "telemetry", runner.Signature())
+		assert.Equal(t, "goravel:telemetry", runner.Signature())
 	})
 
 	t.Run("shutdown priority", func(t *testing.T) {

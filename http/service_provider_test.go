@@ -10,10 +10,11 @@ import (
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	frameworkerrors "github.com/goravel/framework/errors"
-	"github.com/goravel/framework/http/client"
 	foundationjson "github.com/goravel/framework/foundation/json"
+	"github.com/goravel/framework/http/client"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
+	mocksroute "github.com/goravel/framework/mocks/route"
 	"github.com/goravel/framework/support/binding"
 )
 
@@ -153,4 +154,22 @@ func TestServiceProviderBoot(t *testing.T) {
 	provider.Boot(app)
 
 	assert.Same(t, app, App)
+}
+
+func TestServiceProviderRunners(t *testing.T) {
+	provider := &ServiceProvider{}
+	app := mocksfoundation.NewApplication(t)
+	config := mocksconfig.NewConfig(t)
+	route := mocksroute.NewRoute(t)
+
+	app.EXPECT().MakeConfig().Return(config).Once()
+	app.EXPECT().MakeRoute().Return(route).Once()
+
+	runners := provider.Runners(app)
+
+	assert.Len(t, runners, 1)
+	runner, ok := runners[0].(*HTTPRunner)
+	assert.True(t, ok)
+	assert.Equal(t, config, runner.config)
+	assert.Equal(t, route, runner.route)
 }

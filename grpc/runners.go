@@ -18,7 +18,7 @@ func NewGrpcRunner(config config.Config, grpc grpc.Grpc) *GrpcRunner {
 }
 
 func (r *GrpcRunner) Signature() string {
-	return "grpc"
+	return "goravel:grpc"
 }
 
 func (r *GrpcRunner) ShouldRun() bool {

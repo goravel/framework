@@ -66,3 +66,7 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 		&console.MiddlewareMakeCommand{},
 	})
 }
+
+func (r *ServiceProvider) Runners(app foundation.Application) []foundation.Runner {
+	return []foundation.Runner{NewHTTPRunner(app.MakeConfig(), app.MakeRoute())}
+}

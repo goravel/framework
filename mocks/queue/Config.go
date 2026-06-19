@@ -855,6 +855,69 @@ func (_c *Config_GetString_Call) RunAndReturn(run func(string, ...string) string
 	return _c
 }
 
+// GetStringSlice provides a mock function with given fields: path, defaultValue
+func (_m *Config) GetStringSlice(path string, defaultValue ...[]string) []string {
+	_va := make([]interface{}, len(defaultValue))
+	for _i := range defaultValue {
+		_va[_i] = defaultValue[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, path)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetStringSlice")
+	}
+
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(string, ...[]string) []string); ok {
+		r0 = rf(path, defaultValue...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	return r0
+}
+
+// Config_GetStringSlice_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetStringSlice'
+type Config_GetStringSlice_Call struct {
+	*mock.Call
+}
+
+// GetStringSlice is a helper method to define mock.On call
+//   - path string
+//   - defaultValue ...[]string
+func (_e *Config_Expecter) GetStringSlice(path interface{}, defaultValue ...interface{}) *Config_GetStringSlice_Call {
+	return &Config_GetStringSlice_Call{Call: _e.mock.On("GetStringSlice",
+		append([]interface{}{path}, defaultValue...)...)}
+}
+
+func (_c *Config_GetStringSlice_Call) Run(run func(path string, defaultValue ...[]string)) *Config_GetStringSlice_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([][]string, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.([]string)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Config_GetStringSlice_Call) Return(_a0 []string) *Config_GetStringSlice_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Config_GetStringSlice_Call) RunAndReturn(run func(string, ...[]string) []string) *Config_GetStringSlice_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // UnmarshalKey provides a mock function with given fields: key, rawVal
 func (_m *Config) UnmarshalKey(key string, rawVal interface{}) error {
 	ret := _m.Called(key, rawVal)

@@ -611,6 +611,14 @@ func (r *Application) configureRoutes() {
 }
 
 func (r *Application) configureRunners() {
+	disabledRunners := []string{}
+	if config := r.MakeConfig(); config != nil {
+		disabledRunners = config.GetStringSlice("app.disabled_runners", []string{})
+	}
+	isDisabled := func(signature string) bool {
+		return slices.Contains(disabledRunners, signature)
+	}
+
 	for _, serviceProvider := range r.providerRepository.GetBooted() {
 		if serviceProviderWithRunners, ok := serviceProvider.(foundation.ServiceProviderWithRunners); ok {
 			for _, runner := range serviceProviderWithRunners.Runners(r) {
@@ -621,7 +629,7 @@ func (r *Application) configureRunners() {
 
 				r.bootedRunners = append(r.bootedRunners, signature)
 
-				if runner.ShouldRun() {
+				if runner.ShouldRun() && !isDisabled(signature) {
 					r.runnersToRun = append(r.runnersToRun, &RunnerWithInfo{signature: signature, runner: runner})
 				}
 			}
@@ -637,7 +645,7 @@ func (r *Application) configureRunners() {
 
 			r.bootedRunners = append(r.bootedRunners, signature)
 
-			if runner.ShouldRun() {
+			if runner.ShouldRun() && !isDisabled(signature) {
 				r.runnersToRun = append(r.runnersToRun, &RunnerWithInfo{signature: signature, runner: runner})
 			}
 		}
