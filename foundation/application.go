@@ -616,21 +616,6 @@ func (r *Application) configureRunners() {
 	if config := r.MakeConfig(); config != nil {
 		disabledRunners = config.GetStringSlice("app.disabled_runners", []string{})
 	}
-	isDisabled := func(signature string) bool {
-		for _, pattern := range disabledRunners {
-			matched, err := stdpath.Match(pattern, signature)
-			if err != nil {
-				if log := r.MakeLog(); log != nil {
-					log.Warningf("invalid app.disabled_runners pattern %q: %v", pattern, err)
-				}
-				continue
-			}
-			if matched {
-				return true
-			}
-		}
-		return false
-	}
 
 	for _, serviceProvider := range r.providerRepository.GetBooted() {
 		if serviceProviderWithRunners, ok := serviceProvider.(foundation.ServiceProviderWithRunners); ok {
@@ -642,7 +627,7 @@ func (r *Application) configureRunners() {
 
 				r.bootedRunners = append(r.bootedRunners, signature)
 
-				if !isDisabled(signature) && runner.ShouldRun() {
+				if !r.isRunnerDisabled(signature, disabledRunners) && runner.ShouldRun() {
 					r.runnersToRun = append(r.runnersToRun, &RunnerWithInfo{signature: signature, runner: runner})
 				}
 			}
@@ -658,11 +643,27 @@ func (r *Application) configureRunners() {
 
 			r.bootedRunners = append(r.bootedRunners, signature)
 
-			if !isDisabled(signature) && runner.ShouldRun() {
+			if !r.isRunnerDisabled(signature, disabledRunners) && runner.ShouldRun() {
 				r.runnersToRun = append(r.runnersToRun, &RunnerWithInfo{signature: signature, runner: runner})
 			}
 		}
 	}
+}
+
+func (r *Application) isRunnerDisabled(signature string, disabledRunners []string) bool {
+	for _, pattern := range disabledRunners {
+		matched, err := stdpath.Match(pattern, signature)
+		if err != nil {
+			if log := r.MakeLog(); log != nil {
+				log.Warning(errors.AppInvalidDisabledRunnersPattern.Args(pattern, err).Error())
+			}
+			continue
+		}
+		if matched {
+			return true
+		}
+	}
+	return false
 }
 
 func (r *Application) configureSchedule() {

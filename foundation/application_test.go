@@ -581,7 +581,7 @@ func (s *ApplicationTestSuite) TestConfigureRunners() {
 
 				mockConfig := mocksconfig.NewConfig(s.T())
 				mockConfig.EXPECT().GetStringSlice("app.disabled_runners", []string{}).Return([]string{"test-runner"}).Once()
-				s.app.Container.Instance(binding.Config, mockConfig)
+				s.app.Instance(binding.Config, mockConfig)
 
 				builder := NewApplicationBuilder(s.app)
 				builder.runners = func() []foundation.Runner {
@@ -607,7 +607,7 @@ func (s *ApplicationTestSuite) TestConfigureRunners() {
 
 				mockConfig := mocksconfig.NewConfig(s.T())
 				mockConfig.EXPECT().GetStringSlice("app.disabled_runners", []string{}).Return([]string{"provider-runner"}).Once()
-				s.app.Container.Instance(binding.Config, mockConfig)
+				s.app.Instance(binding.Config, mockConfig)
 
 				serviceProvider := mocksfoundation.NewServiceProviderWithRunners(s.T())
 				serviceProvider.EXPECT().Runners(s.app).Return([]foundation.Runner{runner}).Once()
@@ -635,7 +635,7 @@ func (s *ApplicationTestSuite) TestConfigureRunners() {
 
 				mockConfig := mocksconfig.NewConfig(s.T())
 				mockConfig.EXPECT().GetStringSlice("app.disabled_runners", []string{}).Return([]string{}).Once()
-				s.app.Container.Instance(binding.Config, mockConfig)
+				s.app.Instance(binding.Config, mockConfig)
 
 				builder := NewApplicationBuilder(s.app)
 				builder.runners = func() []foundation.Runner {
@@ -669,7 +669,7 @@ func (s *ApplicationTestSuite) TestConfigureRunners() {
 
 				mockConfig := mocksconfig.NewConfig(s.T())
 				mockConfig.EXPECT().GetStringSlice("app.disabled_runners", []string{}).Return([]string{"goravel:*"}).Once()
-				s.app.Container.Instance(binding.Config, mockConfig)
+				s.app.Instance(binding.Config, mockConfig)
 
 				builder := NewApplicationBuilder(s.app)
 				builder.runners = func() []foundation.Runner {
@@ -699,7 +699,7 @@ func (s *ApplicationTestSuite) TestConfigureRunners() {
 
 				mockConfig := mocksconfig.NewConfig(s.T())
 				mockConfig.EXPECT().GetStringSlice("app.disabled_runners", []string{}).Return([]string{"*"}).Once()
-				s.app.Container.Instance(binding.Config, mockConfig)
+				s.app.Instance(binding.Config, mockConfig)
 
 				builder := NewApplicationBuilder(s.app)
 				builder.runners = func() []foundation.Runner {
