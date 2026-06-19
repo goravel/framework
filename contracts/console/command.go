@@ -22,6 +22,14 @@ type Command interface {
 	Handle(ctx Context) error
 }
 
+// Shutdownable is an optional interface that commands can implement to receive
+// a cleanup callback when the process receives SIGINT or SIGTERM.
+// The framework calls ShutDown with a fresh Context after the signal fires,
+// then waits for Handle to return.
+type Shutdownable interface {
+	ShutDown(ctx Context) error
+}
+
 type Context interface {
 	// Context returns the context for the console command, which is cancelled on SIGINT/SIGTERM.
 	Context() context.Context

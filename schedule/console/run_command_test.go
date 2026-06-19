@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	consolecontracts "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	consolemocks "github.com/goravel/framework/mocks/console"
 	schedulemocks "github.com/goravel/framework/mocks/schedule"
@@ -16,6 +17,9 @@ func TestRunCommand(t *testing.T) {
 	mockContext := consolemocks.NewContext(t)
 	runCommand := NewRun(mockSchedule)
 
+	_, ok := any(runCommand).(consolecontracts.Shutdownable)
+	assert.True(t, ok)
+
 	ctx, cancel := context.WithCancel(context.Background())
 
 	runCh := make(chan struct{})
@@ -23,7 +27,6 @@ func TestRunCommand(t *testing.T) {
 	mockSchedule.EXPECT().Run().Run(func() {
 		close(runCh)
 	})
-	mockSchedule.EXPECT().Shutdown().Return(nil)
 
 	assert.Equal(t, "schedule:run", runCommand.Signature())
 	assert.Equal(t, "Run the scheduled commands", runCommand.Description())
@@ -38,4 +41,15 @@ func TestRunCommand(t *testing.T) {
 	cancel()
 
 	assert.NoError(t, <-errCh)
+}
+
+func TestRunCommand_ShutDown(t *testing.T) {
+	mockSchedule := schedulemocks.NewSchedule(t)
+	runCommand := NewRun(mockSchedule)
+
+	mockContext := consolemocks.NewContext(t)
+	mockContext.EXPECT().Context().Return(context.Background())
+	mockSchedule.EXPECT().Shutdown(context.Background()).Return(nil)
+
+	assert.NoError(t, runCommand.ShutDown(mockContext))
 }

@@ -2,12 +2,14 @@ package console
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"os/signal"
 	"slices"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/urfave/cli/v3"
 
@@ -193,8 +195,36 @@ func commandsToCliCommands(commands []console.Command) ([]*cli.Command, error) {
 
 				errCh := make(chan error, 1)
 				go func() {
+					defer func() {
+						if r := recover(); r != nil {
+							errCh <- fmt.Errorf("panic in Handle: %v", r)
+						}
+					}()
 					errCh <- item.Handle(cliCtx)
 				}()
+
+				shutdownable, ok := item.(console.Shutdownable)
+
+				if ok {
+					select {
+					case handleErr := <-errCh:
+						shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+						defer shutdownCancel()
+						_ = shutdownable.ShutDown(NewCliContext(cmd, arguments, shutdownCtx))
+						return handleErr
+					case <-ctx.Done():
+						shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+						defer shutdownCancel()
+						_ = shutdownable.ShutDown(NewCliContext(cmd, arguments, shutdownCtx))
+
+						select {
+						case handleErr := <-errCh:
+							return handleErr
+						case <-time.After(5 * time.Second):
+							return ctx.Err()
+						}
+					}
+				}
 
 				select {
 				case err := <-errCh:
