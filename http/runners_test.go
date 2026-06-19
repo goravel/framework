@@ -39,7 +39,6 @@ func (s *HTTPRunnerTestSuite) TestSignature() {
 
 func (s *HTTPRunnerTestSuite) TestShouldRun_WhenRouteNotNilAndDefaultConfigSet() {
 	s.mockConfig.EXPECT().GetString("http.default").Return("gin").Once()
-	s.mockConfig.EXPECT().GetBool("app.auto_run", true).Return(true).Once()
 
 	result := s.runner.ShouldRun()
 
@@ -222,7 +221,6 @@ func (s *HTTPRunnerTestSuite) TestShutdown_ErrorDuringShutdown() {
 func (s *HTTPRunnerTestSuite) TestIntegration_FullLifecycle() {
 	// Test ShouldRun
 	s.mockConfig.EXPECT().GetString("http.default").Return("gin").Once()
-	s.mockConfig.EXPECT().GetBool("app.auto_run", true).Return(true).Once()
 	s.True(s.runner.ShouldRun())
 
 	// Test Run

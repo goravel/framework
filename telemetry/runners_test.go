@@ -22,11 +22,8 @@ func TestTelemetryRunner(t *testing.T) {
 		assert.Equal(t, 100, runner.ShutdownPriority())
 	})
 
-	t.Run("should run when telemetry facade set and auto_run enabled", func(t *testing.T) {
-		config := mocksconfig.NewConfig(t)
-		config.EXPECT().GetBool(configKeyAutoRun, true).Return(true).Once()
-
-		runner := NewTelemetryRunner(config, mockstelemetry.NewTelemetry(t))
+	t.Run("should run when telemetry facade set", func(t *testing.T) {
+		runner := NewTelemetryRunner(mocksconfig.NewConfig(t), mockstelemetry.NewTelemetry(t))
 		assert.True(t, runner.ShouldRun())
 	})
 
@@ -35,11 +32,8 @@ func TestTelemetryRunner(t *testing.T) {
 		assert.False(t, runner.ShouldRun())
 	})
 
-	t.Run("should not run when auto_run disabled", func(t *testing.T) {
-		config := mocksconfig.NewConfig(t)
-		config.EXPECT().GetBool(configKeyAutoRun, true).Return(false).Once()
-
-		runner := NewTelemetryRunner(config, mockstelemetry.NewTelemetry(t))
+	t.Run("should not run when config is nil", func(t *testing.T) {
+		runner := NewTelemetryRunner(nil, mockstelemetry.NewTelemetry(t))
 		assert.False(t, runner.ShouldRun())
 	})
 

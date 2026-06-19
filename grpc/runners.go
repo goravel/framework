@@ -22,7 +22,7 @@ func (r *GrpcRunner) Signature() string {
 }
 
 func (r *GrpcRunner) ShouldRun() bool {
-	return r.grpc != nil && r.config.GetString("grpc.host") != "" && r.config.GetBool("app.auto_run", true)
+	return r.grpc != nil && r.config.GetString("grpc.host") != ""
 }
 
 func (r *GrpcRunner) Run() error {

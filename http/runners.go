@@ -22,7 +22,7 @@ func (r *HTTPRunner) Signature() string {
 }
 
 func (r *HTTPRunner) ShouldRun() bool {
-	return r.route != nil && r.config.GetString("http.default") != "" && r.config.GetBool("app.auto_run", true)
+	return r.route != nil && r.config.GetString("http.default") != ""
 }
 
 func (r *HTTPRunner) Run() error {

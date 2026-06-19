@@ -578,7 +578,6 @@ func (s *ApplicationTestSuite) TestConfigureRunners() {
 			setup: func() {
 				runner := mocksfoundation.NewRunner(s.T())
 				runner.EXPECT().Signature().Return("test-runner").Once()
-				runner.EXPECT().ShouldRun().Return(true).Once()
 
 				mockConfig := mocksconfig.NewConfig(s.T())
 				mockConfig.EXPECT().GetStringSlice("app.disabled_runners", []string{}).Return([]string{"test-runner"}).Once()
@@ -605,7 +604,6 @@ func (s *ApplicationTestSuite) TestConfigureRunners() {
 			setup: func() {
 				runner := mocksfoundation.NewRunner(s.T())
 				runner.EXPECT().Signature().Return("provider-runner").Once()
-				runner.EXPECT().ShouldRun().Return(true).Once()
 
 				mockConfig := mocksconfig.NewConfig(s.T())
 				mockConfig.EXPECT().GetStringSlice("app.disabled_runners", []string{}).Return([]string{"provider-runner"}).Once()
@@ -654,6 +652,69 @@ func (s *ApplicationTestSuite) TestConfigureRunners() {
 				s.app.configureRunners()
 				s.Equal(1, len(s.app.runnersToRun))
 				s.Equal("test-runner", s.app.runnersToRun[0].signature)
+			},
+		},
+		{
+			name: "wildcard pattern in app.disabled_runners skips matching runners",
+			setup: func() {
+				runner1 := mocksfoundation.NewRunner(s.T())
+				runner1.EXPECT().Signature().Return("goravel:http").Once()
+
+				runner2 := mocksfoundation.NewRunner(s.T())
+				runner2.EXPECT().Signature().Return("goravel:schedule").Once()
+
+				runner3 := mocksfoundation.NewRunner(s.T())
+				runner3.EXPECT().Signature().Return("acme:webhook").Once()
+				runner3.EXPECT().ShouldRun().Return(true).Once()
+
+				mockConfig := mocksconfig.NewConfig(s.T())
+				mockConfig.EXPECT().GetStringSlice("app.disabled_runners", []string{}).Return([]string{"goravel:*"}).Once()
+				s.app.Container.Instance(binding.Config, mockConfig)
+
+				builder := NewApplicationBuilder(s.app)
+				builder.runners = func() []foundation.Runner {
+					return []foundation.Runner{runner1, runner2, runner3}
+				}
+				s.app.builder = builder
+				s.app.bootedRunners = nil
+				s.app.runnersToRun = nil
+
+				mockRepo := mocksfoundation.NewProviderRepository(s.T())
+				mockRepo.EXPECT().GetBooted().Return([]foundation.ServiceProvider{}).Once()
+				s.app.providerRepository = mockRepo
+
+				s.app.configureRunners()
+				s.Equal(1, len(s.app.runnersToRun))
+				s.Equal("acme:webhook", s.app.runnersToRun[0].signature)
+			},
+		},
+		{
+			name: "star pattern in app.disabled_runners skips all runners",
+			setup: func() {
+				runner1 := mocksfoundation.NewRunner(s.T())
+				runner1.EXPECT().Signature().Return("goravel:http").Once()
+
+				runner2 := mocksfoundation.NewRunner(s.T())
+				runner2.EXPECT().Signature().Return("acme:webhook").Once()
+
+				mockConfig := mocksconfig.NewConfig(s.T())
+				mockConfig.EXPECT().GetStringSlice("app.disabled_runners", []string{}).Return([]string{"*"}).Once()
+				s.app.Container.Instance(binding.Config, mockConfig)
+
+				builder := NewApplicationBuilder(s.app)
+				builder.runners = func() []foundation.Runner {
+					return []foundation.Runner{runner1, runner2}
+				}
+				s.app.builder = builder
+				s.app.bootedRunners = nil
+				s.app.runnersToRun = nil
+
+				mockRepo := mocksfoundation.NewProviderRepository(s.T())
+				mockRepo.EXPECT().GetBooted().Return([]foundation.ServiceProvider{}).Once()
+				s.app.providerRepository = mockRepo
+
+				s.app.configureRunners()
+				s.Equal(0, len(s.app.runnersToRun))
 			},
 		},
 	}

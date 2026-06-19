@@ -33,8 +33,7 @@ func (r *QueueRunner) ShouldRun() bool {
 
 	return r.worker != nil &&
 		connection != "" &&
-		r.config.GetString(fmt.Sprintf("queue.connections.%s.driver", connection)) != SyncDriverName &&
-		r.config.GetBool("app.auto_run", true)
+		r.config.GetString(fmt.Sprintf("queue.connections.%s.driver", connection)) != SyncDriverName
 }
 
 func (r *QueueRunner) Run() error {

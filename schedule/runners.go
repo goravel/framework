@@ -22,7 +22,7 @@ func (r *ScheduleRunner) Signature() string {
 }
 
 func (r *ScheduleRunner) ShouldRun() bool {
-	return r.schedule != nil && len(r.schedule.Events()) > 0 && r.config.GetBool("app.auto_run", true)
+	return r.schedule != nil && len(r.schedule.Events()) > 0
 }
 
 func (r *ScheduleRunner) Run() error {

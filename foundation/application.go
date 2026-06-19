@@ -7,6 +7,7 @@ import (
 	"maps"
 	"os"
 	"os/signal"
+	stdpath "path"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -616,7 +617,19 @@ func (r *Application) configureRunners() {
 		disabledRunners = config.GetStringSlice("app.disabled_runners", []string{})
 	}
 	isDisabled := func(signature string) bool {
-		return slices.Contains(disabledRunners, signature)
+		for _, pattern := range disabledRunners {
+			matched, err := stdpath.Match(pattern, signature)
+			if err != nil {
+				if log := r.MakeLog(); log != nil {
+					log.Warningf("invalid app.disabled_runners pattern %q: %v", pattern, err)
+				}
+				continue
+			}
+			if matched {
+				return true
+			}
+		}
+		return false
 	}
 
 	for _, serviceProvider := range r.providerRepository.GetBooted() {
@@ -629,7 +642,7 @@ func (r *Application) configureRunners() {
 
 				r.bootedRunners = append(r.bootedRunners, signature)
 
-				if runner.ShouldRun() && !isDisabled(signature) {
+				if !isDisabled(signature) && runner.ShouldRun() {
 					r.runnersToRun = append(r.runnersToRun, &RunnerWithInfo{signature: signature, runner: runner})
 				}
 			}
@@ -645,7 +658,7 @@ func (r *Application) configureRunners() {
 
 			r.bootedRunners = append(r.bootedRunners, signature)
 
-			if runner.ShouldRun() && !isDisabled(signature) {
+			if !isDisabled(signature) && runner.ShouldRun() {
 				r.runnersToRun = append(r.runnersToRun, &RunnerWithInfo{signature: signature, runner: runner})
 			}
 		}
