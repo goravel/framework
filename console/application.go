@@ -174,12 +174,10 @@ func (r *Application) command() (*cli.Command, error) {
 	return command, nil
 }
 
-func shutdownCommand(shutdownable console.Shutdownable, cmd *cli.Command, arguments []command.Argument) {
+func shutdownCommand(shutdownable console.Shutdownable, cmd *cli.Command, arguments []command.Argument) error {
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer shutdownCancel()
-	if err := shutdownable.ShutDown(NewCliContext(shutdownCtx, cmd, arguments)); err != nil {
-		color.Errorln("ShutDown error:", err.Error())
-	}
+	return shutdownable.ShutDown(NewCliContext(shutdownCtx, cmd, arguments))
 }
 
 func commandsToCliCommands(commands []console.Command) ([]*cli.Command, error) {
@@ -218,13 +216,7 @@ func commandsToCliCommands(commands []console.Command) ([]*cli.Command, error) {
 						shutdownCommand(shutdownable, cmd, arguments)
 						return handleErr
 					case <-ctx.Done():
-						shutdownCommand(shutdownable, cmd, arguments)
-						select {
-						case handleErr := <-errCh:
-							return handleErr
-						case <-time.After(30 * time.Second):
-							return ctx.Err()
-						}
+						return shutdownCommand(shutdownable, cmd, arguments)
 					}
 				}
 
