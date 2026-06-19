@@ -583,7 +583,7 @@ func (receiver *TestShutdownableCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func (receiver *TestShutdownableCommand) ShutDown(_ console.Context) error {
+func (receiver *TestShutdownableCommand) Shutdown(_ console.Context) error {
 	receiver.shutdownCalled = true
 	return nil
 }

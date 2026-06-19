@@ -20,12 +20,12 @@ func (_m *Shutdownable) EXPECT() *Shutdownable_Expecter {
 	return &Shutdownable_Expecter{mock: &_m.Mock}
 }
 
-// ShutDown provides a mock function with given fields: ctx
-func (_m *Shutdownable) ShutDown(ctx console.Context) error {
+// Shutdown provides a mock function with given fields: ctx
+func (_m *Shutdownable) Shutdown(ctx console.Context) error {
 	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
-		panic("no return value specified for ShutDown")
+		panic("no return value specified for Shutdown")
 	}
 
 	var r0 error
@@ -38,30 +38,30 @@ func (_m *Shutdownable) ShutDown(ctx console.Context) error {
 	return r0
 }
 
-// Shutdownable_ShutDown_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ShutDown'
-type Shutdownable_ShutDown_Call struct {
+// Shutdownable_Shutdown_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Shutdown'
+type Shutdownable_Shutdown_Call struct {
 	*mock.Call
 }
 
-// ShutDown is a helper method to define mock.On call
+// Shutdown is a helper method to define mock.On call
 //   - ctx console.Context
-func (_e *Shutdownable_Expecter) ShutDown(ctx interface{}) *Shutdownable_ShutDown_Call {
-	return &Shutdownable_ShutDown_Call{Call: _e.mock.On("ShutDown", ctx)}
+func (_e *Shutdownable_Expecter) Shutdown(ctx interface{}) *Shutdownable_Shutdown_Call {
+	return &Shutdownable_Shutdown_Call{Call: _e.mock.On("Shutdown", ctx)}
 }
 
-func (_c *Shutdownable_ShutDown_Call) Run(run func(ctx console.Context)) *Shutdownable_ShutDown_Call {
+func (_c *Shutdownable_Shutdown_Call) Run(run func(ctx console.Context)) *Shutdownable_Shutdown_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(console.Context))
 	})
 	return _c
 }
 
-func (_c *Shutdownable_ShutDown_Call) Return(_a0 error) *Shutdownable_ShutDown_Call {
+func (_c *Shutdownable_Shutdown_Call) Return(_a0 error) *Shutdownable_Shutdown_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Shutdownable_ShutDown_Call) RunAndReturn(run func(console.Context) error) *Shutdownable_ShutDown_Call {
+func (_c *Shutdownable_Shutdown_Call) RunAndReturn(run func(console.Context) error) *Shutdownable_Shutdown_Call {
 	_c.Call.Return(run)
 	return _c
 }

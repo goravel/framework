@@ -27,7 +27,7 @@ type Command interface {
 // The framework calls ShutDown with a fresh Context after the signal fires,
 // then waits for Handle to return.
 type Shutdownable interface {
-	ShutDown(ctx Context) error
+	Shutdown(ctx Context) error
 }
 
 type Context interface {
