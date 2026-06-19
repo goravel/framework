@@ -38,13 +38,12 @@ type Application struct {
 	version    string
 	writer     io.Writer
 	ctx        context.Context
-	cancel     context.CancelFunc
 }
 
 // NewApplication Create a new Artisan application.
 // Will add artisan flag to the command if useArtisan is true.
 func NewApplication(name, usage, usageText, version string, useArtisan bool) *Application {
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	ctx, _ := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	return &Application{
 		name:       name,
 		usage:      usage,
@@ -53,7 +52,6 @@ func NewApplication(name, usage, usageText, version string, useArtisan bool) *Ap
 		version:    version,
 		writer:     os.Stdout,
 		ctx:        ctx,
-		cancel:     cancel,
 	}
 }
 
@@ -123,16 +121,13 @@ func (r *Application) Run(args []string, exitIfArtisan bool) error {
 		}
 
 		cliArgs := append([]string{args[0]}, args[artisanIndex+1:]...)
-		ctx := r.ctx
-		if ctx == nil {
-			ctx = context.Background()
-		}
-		if err := command.Run(ctx, cliArgs); err != nil {
+		if err := command.Run(r.ctx, cliArgs); err != nil {
 			if exitIfArtisan {
-				if errors.Is(err, context.Canceled) {
-					os.Exit(0)
+				if !errors.Is(err, context.Canceled) {
+					color.Errorln(err.Error())
+					os.Exit(1)
 				}
-				panic(err.Error())
+				os.Exit(0)
 			}
 
 			return err
