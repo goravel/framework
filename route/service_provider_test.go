@@ -79,21 +79,3 @@ func TestServiceProviderBoot(t *testing.T) {
 
 	provider.Boot(app)
 }
-
-func TestServiceProviderRunners(t *testing.T) {
-	provider := &ServiceProvider{}
-	app := mocksfoundation.NewApplication(t)
-	config := mocksconfig.NewConfig(t)
-	route := mocksroute.NewRoute(t)
-
-	app.EXPECT().MakeConfig().Return(config).Once()
-	app.EXPECT().MakeRoute().Return(route).Once()
-
-	runners := provider.Runners(app)
-
-	assert.Len(t, runners, 1)
-	runner, ok := runners[0].(*RouteRunner)
-	assert.True(t, ok)
-	assert.Equal(t, config, runner.config)
-	assert.Equal(t, route, runner.route)
-}

@@ -13,7 +13,6 @@ import (
 const (
 	runnerShutdownPriority   = 100
 	defaultShutdownTimeout   = 15 * time.Second
-	configKeyAutoRun         = "app.auto_run"
 	configKeyShutdownTimeout = "telemetry.shutdown_timeout"
 )
 
@@ -40,8 +39,7 @@ func (r *TelemetryRunner) Run() error {
 }
 
 func (r *TelemetryRunner) ShouldRun() bool {
-	return r.telemetry != nil && r.config != nil &&
-		r.config.GetBool(configKeyAutoRun, true)
+	return r.telemetry != nil && r.config != nil
 }
 
 func (r *TelemetryRunner) Shutdown() error {
@@ -63,5 +61,5 @@ func (r *TelemetryRunner) ShutdownPriority() int {
 }
 
 func (r *TelemetryRunner) Signature() string {
-	return "telemetry"
+	return "goravel:telemetry"
 }
