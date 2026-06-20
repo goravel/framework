@@ -65,6 +65,9 @@ type Application interface {
 	Build() Application
 	// Commands register the given commands with the console application.
 	Commands([]console.Command)
+	// CommandsFilter returns the positive-list of command signatures to keep
+	// (set via WithCommandsFilter). nil means no filter.
+	CommandsFilter() []string
 	// Context gets the application context.
 	Context() context.Context
 	// GetJson get the JSON implementation.

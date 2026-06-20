@@ -26,6 +26,7 @@ type ApplicationBuilder struct {
 	commands                   func() []console.Command
 	config                     func()
 	configuredServiceProviders func() []foundation.ServiceProvider
+	commandsFilter             func() []string
 	eventToListeners           func() map[event.Event][]event.Listener
 	filters                    func() []validation.Filter
 	grpcClientCredentials      func() map[string]credentials.TransportCredentials
@@ -63,6 +64,27 @@ func (r *ApplicationBuilder) WithCallback(callback func()) foundation.Applicatio
 
 func (r *ApplicationBuilder) WithCommands(fn func() []console.Command) foundation.ApplicationBuilder {
 	r.commands = fn
+
+	return r
+}
+
+// WithCommandsFilter registers a callback that returns the positive list of
+// command signatures to keep when the framework registers Artisan commands.
+// The callback runs once at Build() time.
+//
+// Matching is signature-only (category never consulted):
+//   - Entries without '*' are exact-matched against command.Signature().
+//   - Entries containing '*' use glob matching via path.Match against
+//     command.Signature() (only '*' triggers the glob path; '?' is matched
+//     literally as an exact match).
+//
+// Semantics:
+//   - Method not called           → keep every command (default).
+//   - Callback returns nil        → keep every command (no filter).
+//   - Callback returns []string{} → drop every command.
+//   - Callback returns entries    → keep only commands matching an entry.
+func (r *ApplicationBuilder) WithCommandsFilter(fn func() []string) foundation.ApplicationBuilder {
+	r.commandsFilter = fn
 
 	return r
 }

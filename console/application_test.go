@@ -607,3 +607,100 @@ func (receiver *TestBlockingCommand) Handle(ctx console.Context) error {
 	<-ctx.Done()
 	return nil
 }
+
+func TestFilterCommandsByAllowlist(t *testing.T) {
+	mkCmd := func(sig string) console.Command {
+		return &filterTestCommand{signature: sig}
+	}
+	commands := []console.Command{
+		mkCmd("env:encrypt"),
+		mkCmd("env:decrypt"),
+		mkCmd("make:controller"),
+		mkCmd("make:job"),
+		mkCmd("make:test"),
+		mkCmd("package:install"),
+		mkCmd("vendor:publish"),
+		mkCmd("up"),
+		mkCmd("down"),
+	}
+
+	tests := []struct {
+		name     string
+		allow    []string
+		expected []string
+	}{
+		{
+			name:     "nil allowlist returns the input slice as-is",
+			allow:    nil,
+			expected: []string{"env:encrypt", "env:decrypt", "make:controller", "make:job", "make:test", "package:install", "vendor:publish", "up", "down"},
+		},
+		{
+			name:     "empty allowlist drops everything",
+			allow:    []string{},
+			expected: []string{},
+		},
+		{
+			name:     "exact signature",
+			allow:    []string{"env:encrypt"},
+			expected: []string{"env:encrypt"},
+		},
+		{
+			name:     "glob prefix matches sub-commands",
+			allow:    []string{"env:*"},
+			expected: []string{"env:encrypt", "env:decrypt"},
+		},
+		{
+			name:     "glob prefix matches bare signature too",
+			allow:    []string{"make*"},
+			expected: []string{"make:controller", "make:job", "make:test"},
+		},
+		{
+			name:     "mixed exact and glob",
+			allow:    []string{"vendor:publish", "env:*"},
+			expected: []string{"env:encrypt", "env:decrypt", "vendor:publish"},
+		},
+		{
+			name:     "question mark is literal, not a wildcard",
+			allow:    []string{"env:?ncrypt"},
+			expected: []string{},
+		},
+		{
+			name:     "whitespace-only and empty entries are ignored",
+			allow:    []string{"  ", ""},
+			expected: []string{},
+		},
+		{
+			name:     "category is not consulted",
+			allow:    []string{"make"},
+			expected: []string{},
+		},
+		{
+			name:     "wildcard star matches everything",
+			allow:    []string{"*"},
+			expected: []string{"env:encrypt", "env:decrypt", "make:controller", "make:job", "make:test", "package:install", "vendor:publish", "up", "down"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := FilterCommandsByAllowlist(commands, tt.allow)
+			gotSigs := make([]string, 0, len(got))
+			for _, c := range got {
+				gotSigs = append(gotSigs, c.Signature())
+			}
+			assert.Equal(t, tt.expected, gotSigs)
+		})
+	}
+}
+
+type filterTestCommand struct {
+	console.Command
+	signature string
+}
+
+func (f *filterTestCommand) Signature() string  { return f.signature }
+func (f *filterTestCommand) Description() string { return f.signature }
+func (f *filterTestCommand) Extend() command.Extend {
+	return command.Extend{}
+}
+func (f *filterTestCommand) Handle(_ console.Context) error { return nil }

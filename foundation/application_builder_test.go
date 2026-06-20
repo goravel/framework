@@ -288,4 +288,29 @@ func (s *ApplicationBuilderTestSuite) TestWithCallback() {
 	s.True(called)
 }
 
+func (s *ApplicationBuilderTestSuite) TestWithCommandsFilter() {
+	called := false
+	fn := func() []string {
+		called = true
+		return []string{"up", "down"}
+	}
+
+	builder := s.builder.WithCommandsFilter(fn)
+
+	s.NotNil(builder)
+	s.NotNil(s.builder.commandsFilter)
+
+	// Verify the stored callback is the same one and can be invoked
+	got := s.builder.commandsFilter()
+	s.Equal([]string{"up", "down"}, got)
+	s.True(called)
+}
+
+func (s *ApplicationBuilderTestSuite) TestWithCommandsFilterNil() {
+	builder := s.builder.WithCommandsFilter(nil)
+
+	s.NotNil(builder)
+	s.Nil(s.builder.commandsFilter)
+}
+
 type mockStatsHandler struct{ stats.Handler }

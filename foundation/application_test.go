@@ -4,11 +4,13 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"slices"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -25,6 +27,7 @@ import (
 	"github.com/goravel/framework/contracts/validation"
 	foundationjson "github.com/goravel/framework/foundation/json"
 	mocksconfig "github.com/goravel/framework/mocks/config"
+	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mocksroute "github.com/goravel/framework/mocks/route"
 	"github.com/goravel/framework/support"
@@ -167,6 +170,139 @@ func (s *ApplicationTestSuite) TestDefaultCommandsDoesNotRegisterMaintenanceComm
 	s.NotContains(commandSignatures(commands), "up")
 	s.NotContains(commandSignatures(commands), "down")
 }
+
+func (s *ApplicationTestSuite) TestCommandsAppliesAllowlistFilter() {
+	tests := []struct {
+		name     string
+		allow    []string
+		expected []string
+		notHave  []string
+	}{
+		{
+			name:     "nil allowlist keeps all",
+			allow:    nil,
+			expected: []string{"about", "env:encrypt", "env:decrypt", "make:test", "make:package", "make:provider", "package:install", "package:uninstall", "vendor:publish"},
+			notHave:  nil,
+		},
+		{
+			name:     "empty allowlist drops all",
+			allow:    []string{},
+			expected: []string{},
+			notHave:  []string{"about", "env:encrypt", "make:test"},
+		},
+		{
+			name:     "exact signature",
+			allow:    []string{"env:encrypt"},
+			expected: []string{"env:encrypt"},
+			notHave:  []string{"env:decrypt", "about", "make:test"},
+		},
+		{
+			name:     "glob prefix",
+			allow:    []string{"env:*"},
+			expected: []string{"env:encrypt", "env:decrypt"},
+			notHave:  []string{"about", "make:test", "vendor:publish"},
+		},
+		{
+			name:     "glob prefix including bare",
+			allow:    []string{"make:*"},
+			expected: []string{"make:test", "make:package", "make:provider"},
+			notHave:  []string{"env:encrypt", "about"},
+		},
+		{
+			name:     "mixed exact and glob",
+			allow:    []string{"vendor:publish", "env:*"},
+			expected: []string{"env:encrypt", "env:decrypt", "vendor:publish"},
+			notHave:  []string{"about", "make:test"},
+		},
+		{
+			name:     "question mark is literal",
+			allow:    []string{"env:?ncrypt"},
+			expected: []string{},
+			notHave:  []string{"env:encrypt", "env:decrypt"},
+		},
+		{
+			name:     "whitespace only entries are ignored",
+			allow:    []string{"  ", ""},
+			expected: []string{},
+			notHave:  []string{"about", "env:encrypt"},
+		},
+		{
+			name:     "category is not matched",
+			allow:    []string{"make"},
+			expected: []string{},
+			notHave:  []string{"make:test", "make:package", "make:provider"},
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			s.SetupTest()
+			s.app.SetJson(foundationjson.New())
+			s.app.commandsFilter = tt.allow
+
+			mockArtisan := mocksconsole.NewArtisan(s.T())
+			mockArtisan.EXPECT().Register(mock.MatchedBy(func(cmds []console.Command) bool {
+				got := commandSignatures(cmds)
+				for _, expected := range tt.expected {
+					if !slices.Contains(got, expected) {
+						return false
+					}
+				}
+				for _, notExpected := range tt.notHave {
+					if slices.Contains(got, notExpected) {
+						return false
+					}
+				}
+				return true
+			})).Once()
+			s.app.Instance(binding.Artisan, mockArtisan)
+
+			s.app.Commands(s.app.defaultCommands())
+		})
+	}
+}
+
+func (s *ApplicationTestSuite) TestConfigureCommandsAppliesFilter() {
+	mockConfig := mocksconfig.NewConfig(s.T())
+	s.app.Instance(binding.Config, mockConfig)
+
+	userCmdA := &fakeCommand{signature: "user:a"}
+	userCmdB := &fakeCommand{signature: "user:b"}
+	userCmdC := &fakeCommand{signature: "user:c"}
+
+	mockArtisan := mocksconsole.NewArtisan(s.T())
+	// Only userCmdA and userCmdC survive the filter; the assertion verifies
+	// that userCmdB is dropped.
+	mockArtisan.EXPECT().Register(mock.MatchedBy(func(cmds []console.Command) bool {
+		sigs := make([]string, 0, len(cmds))
+		for _, c := range cmds {
+			sigs = append(sigs, c.Signature())
+		}
+		return slices.Contains(sigs, "user:a") &&
+			slices.Contains(sigs, "user:c") &&
+			!slices.Contains(sigs, "user:b")
+	})).Once()
+	s.app.Instance(binding.Artisan, mockArtisan)
+
+	builder := NewApplicationBuilder(s.app)
+	builder.commands = func() []console.Command {
+		return []console.Command{userCmdA, userCmdB, userCmdC}
+	}
+	builder.commandsFilter = func() []string {
+		return []string{"user:a", "user:c"}
+	}
+	s.app.builder = builder
+	s.app.commandsFilter = builder.commandsFilter()
+
+	s.app.configureCommands()
+}
+
+type fakeCommand struct {
+	console.Command
+	signature string
+}
+
+func (f *fakeCommand) Signature() string { return f.signature }
 
 func commandSignatures(commands []console.Command) []string {
 	signatures := make([]string, 0, len(commands))

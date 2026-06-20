@@ -68,16 +68,17 @@ func init() {
 
 type Application struct {
 	*Container
-	ctx                context.Context
-	cancel             context.CancelFunc
-	builder            *ApplicationBuilder
-	providerRepository foundation.ProviderRepository
-	publishes          map[string]map[string]string
-	publishGroups      map[string]map[string]string
-	json               foundation.Json
-	bootedRunners      []string
-	runnerWg           sync.WaitGroup
-	runnersToRun       []*RunnerWithInfo
+	ctx                   context.Context
+	cancel                context.CancelFunc
+	builder               *ApplicationBuilder
+	providerRepository    foundation.ProviderRepository
+	publishes             map[string]map[string]string
+	publishGroups         map[string]map[string]string
+	json                  foundation.Json
+	bootedRunners         []string
+	commandsFilter []string
+	runnerWg              sync.WaitGroup
+	runnersToRun          []*RunnerWithInfo
 }
 
 func NewApplication() foundation.Application {
@@ -113,6 +114,9 @@ func (r *Application) Build() foundation.Application {
 	r.setTimezone()
 	r.configurePaths()
 	r.configureCustomConfig()
+	if r.builder.commandsFilter != nil {
+		r.commandsFilter = r.builder.commandsFilter()
+	}
 	r.configureServiceProviders()
 	r.providerRepository.Register(r)
 	r.providerRepository.Boot(r)
@@ -327,6 +331,14 @@ func (r *Application) SetBuilder(builder foundation.ApplicationBuilder) foundati
 	return r
 }
 
+// CommandsFilter returns the positive-list of command signatures to keep.
+// nil means no filter is applied. Used by the console service provider so
+// its own command batch goes through the same gate as the framework's
+// defaultCommands batch.
+func (r *Application) CommandsFilter() []string {
+	return r.commandsFilter
+}
+
 func (r *Application) SetJson(j foundation.Json) {
 	if j != nil {
 		r.json = j
@@ -460,12 +472,7 @@ func (r *Application) configureCallback() {
 func (r *Application) configureCommands() {
 	if r.builder.commands != nil {
 		if commands := r.builder.commands(); len(commands) > 0 {
-			artisanFacade := r.MakeArtisan()
-			if artisanFacade == nil {
-				color.Errorln("Artisan facade not found, please install it first: ./artisan package:install Artisan")
-			} else {
-				artisanFacade.Register(commands)
-			}
+			r.registerCommands(commands)
 		}
 	}
 }
@@ -775,7 +782,7 @@ func (r *Application) registerCommands(commands []contractsconsole.Command) {
 		return
 	}
 
-	artisanFacade.Register(commands)
+	artisanFacade.Register(frameworkconsole.FilterCommandsByAllowlist(commands, r.commandsFilter))
 }
 
 func (r *Application) setTimezone() {

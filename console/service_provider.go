@@ -36,9 +36,14 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 
 func (r *ServiceProvider) registerCommands(app foundation.Application) {
 	artisanFacade := app.MakeArtisan()
+	if artisanFacade == nil {
+		return
+	}
+
 	configFacade := app.MakeConfig()
 	processFacade := app.MakeProcess()
-	artisanFacade.Register([]consolecontract.Command{
+
+	artisanFacade.Register(FilterCommandsByAllowlist([]consolecontract.Command{
 		console.NewListCommand(),
 		console.NewKeyGenerateCommand(configFacade),
 		console.NewMakeCommand(),
@@ -68,5 +73,5 @@ func (r *ServiceProvider) registerCommands(app foundation.Application) {
 		// 	"static": config.Env("DEPLOY_STATIC", true),
 		// },
 		// console.NewDeployCommand(configFacade, artisanFacade),
-	})
+	}, app.CommandsFilter()))
 }

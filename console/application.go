@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	stdpath "path"
 	"slices"
 	"strings"
 	"syscall"
@@ -173,6 +174,55 @@ func shutdownCommand(shutdownable console.Shutdownable, cmd *cli.Command, argume
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer shutdownCancel()
 	return shutdownable.Shutdown(NewCliContext(shutdownCtx, cmd, arguments))
+}
+
+// FilterCommandsByAllowlist returns the subset of commands whose Signature()
+// matches at least one entry in allowlist.
+//
+// Matching is signature-only (category never consulted):
+//   - Entries without '*' are exact-matched against command.Signature().
+//   - Entries containing '*' use glob matching via path.Match against
+//     command.Signature() (only '*' triggers the glob path; '?' is matched
+//     literally as an exact match).
+//
+// Special cases:
+//   - allowlist == nil            → every command is kept (no filter applied).
+//   - allowlist resolves to no usable entries → every command is dropped.
+func FilterCommandsByAllowlist(commands []console.Command, allowlist []string) []console.Command {
+	if allowlist == nil {
+		return commands
+	}
+	exact := make(map[string]struct{}, len(allowlist))
+	var globs []string
+	for _, s := range allowlist {
+		s = strings.TrimSpace(s)
+		if s == "" {
+			continue
+		}
+		if strings.Contains(s, "*") {
+			globs = append(globs, s)
+		} else {
+			exact[s] = struct{}{}
+		}
+	}
+	if len(exact) == 0 && len(globs) == 0 {
+		return nil
+	}
+	kept := make([]console.Command, 0, len(commands))
+	for _, cmd := range commands {
+		sig := cmd.Signature()
+		if _, ok := exact[sig]; ok {
+			kept = append(kept, cmd)
+			continue
+		}
+		for _, pattern := range globs {
+			if ok, _ := stdpath.Match(pattern, sig); ok {
+				kept = append(kept, cmd)
+				break
+			}
+		}
+	}
+	return kept
 }
 
 func commandsToCliCommands(commands []console.Command) ([]*cli.Command, error) {
