@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"go.opentelemetry.io/otel/codes"
 
-	contractsdb "github.com/goravel/framework/contracts/database/db"
 	mocksdb "github.com/goravel/framework/mocks/database/db"
 )
 
@@ -19,14 +18,9 @@ type stubResult struct{}
 func (stubResult) LastInsertId() (int64, error) { return 0, nil }
 func (stubResult) RowsAffected() (int64, error) { return 2, nil }
 
-func TestWrapBuilder_NilInstrumentPassesThrough(t *testing.T) {
-	inner := mocksdb.NewBuilder(t)
-	assert.Equal(t, contractsdb.Builder(inner), WrapBuilder(inner, nil))
-}
-
 func TestWrapBuilder_StructuredQuerySpan(t *testing.T) {
 	exporter := setupTelemetry(t, true)
-	inst := NewInstrument(FacadeResolver, testPool(), "postgres")
+	inst := NewInstrument(testPool(), "postgres")
 
 	inner := mocksdb.NewBuilder(t)
 	inner.EXPECT().SelectContext(mock.Anything, mock.Anything, "SELECT * FROM users WHERE id = ?", 1).Return(nil).Once()
@@ -49,7 +43,7 @@ func TestWrapBuilder_StructuredQuerySpan(t *testing.T) {
 
 func TestWrapBuilder_RawQueryHasNoCollection(t *testing.T) {
 	exporter := setupTelemetry(t, true)
-	inst := NewInstrument(FacadeResolver, testPool(), "postgres")
+	inst := NewInstrument(testPool(), "postgres")
 
 	inner := mocksdb.NewBuilder(t)
 	inner.EXPECT().ExecContext(mock.Anything, "UPDATE users SET name = ?", "x").Return(stubResult{}, nil).Once()
@@ -68,7 +62,7 @@ func TestWrapBuilder_RawQueryHasNoCollection(t *testing.T) {
 
 func TestWrapBuilder_ExecRecordsRows(t *testing.T) {
 	exporter := setupTelemetry(t, true)
-	inst := NewInstrument(FacadeResolver, testPool(), "postgres")
+	inst := NewInstrument(testPool(), "postgres")
 
 	inner := mocksdb.NewBuilder(t)
 	inner.EXPECT().ExecContext(mock.Anything, "INSERT INTO users (name) VALUES (?)", "x").Return(stubResult{}, nil).Once()
@@ -86,7 +80,7 @@ func TestWrapBuilder_ExecRecordsRows(t *testing.T) {
 
 func TestWrapBuilder_RecordsError(t *testing.T) {
 	exporter := setupTelemetry(t, true)
-	inst := NewInstrument(FacadeResolver, testPool(), "postgres")
+	inst := NewInstrument(testPool(), "postgres")
 
 	inner := mocksdb.NewBuilder(t)
 	inner.EXPECT().ExecContext(mock.Anything, "UPDATE users SET name = ?", "x").Return(nil, assert.AnError).Once()
@@ -102,7 +96,7 @@ func TestWrapBuilder_RecordsError(t *testing.T) {
 
 func TestWrapBuilder_QueryxSpan(t *testing.T) {
 	exporter := setupTelemetry(t, true)
-	inst := NewInstrument(FacadeResolver, testPool(), "postgres")
+	inst := NewInstrument(testPool(), "postgres")
 
 	inner := mocksdb.NewBuilder(t)
 	inner.EXPECT().QueryxContext(mock.Anything, "SELECT * FROM users").Return(nil, nil).Once()
@@ -118,25 +112,18 @@ func TestWrapBuilder_QueryxSpan(t *testing.T) {
 }
 
 func TestWrapTxBuilder(t *testing.T) {
-	t.Run("nil passes through", func(t *testing.T) {
-		inner := mocksdb.NewTxBuilder(t)
-		assert.Equal(t, contractsdb.TxBuilder(inner), WrapTxBuilder(inner, nil))
-	})
+	exporter := setupTelemetry(t, true)
+	inst := NewInstrument(testPool(), "postgres")
 
-	t.Run("records span", func(t *testing.T) {
-		exporter := setupTelemetry(t, true)
-		inst := NewInstrument(FacadeResolver, testPool(), "postgres")
+	inner := mocksdb.NewTxBuilder(t)
+	inner.EXPECT().ExecContext(mock.Anything, "UPDATE users SET name = ?", "x").Return(stubResult{}, nil).Once()
 
-		inner := mocksdb.NewTxBuilder(t)
-		inner.EXPECT().ExecContext(mock.Anything, "UPDATE users SET name = ?", "x").Return(stubResult{}, nil).Once()
+	wrapped := WrapTxBuilder(inner, inst)
+	ctx := ContextWithTable(context.Background(), "users")
 
-		wrapped := WrapTxBuilder(inner, inst)
-		ctx := ContextWithTable(context.Background(), "users")
+	_, err := wrapped.ExecContext(ctx, "UPDATE users SET name = ?", "x")
+	assert.NoError(t, err)
 
-		_, err := wrapped.ExecContext(ctx, "UPDATE users SET name = ?", "x")
-		assert.NoError(t, err)
-
-		assert.Len(t, exporter.spans, 1)
-		assert.Equal(t, "UPDATE users", exporter.spans[0].Name())
-	})
+	assert.Len(t, exporter.spans, 1)
+	assert.Equal(t, "UPDATE users", exporter.spans[0].Name())
 }

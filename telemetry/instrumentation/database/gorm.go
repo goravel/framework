@@ -10,7 +10,6 @@ import (
 	"gorm.io/gorm"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
-	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -37,10 +36,10 @@ type GormPlugin struct {
 }
 
 // NewGormPlugin returns the plugin. It is always registered: telemetry is
-// resolved lazily via resolver, so the callbacks no-op until it is available and
-// enabled rather than deciding at connection-build time when it may not be ready.
-func NewGormPlugin(resolver contractstelemetry.Resolver, pool contractsdatabase.Pool, connection string) *GormPlugin {
-	return &GormPlugin{instrument: NewInstrument(resolver, pool, connection)}
+// resolved lazily, so the callbacks no-op until it is available and enabled
+// rather than deciding at connection-build time when it may not be ready.
+func NewGormPlugin(pool contractsdatabase.Pool, connection string) *GormPlugin {
+	return &GormPlugin{instrument: NewInstrument(pool, connection)}
 }
 
 func (r *GormPlugin) Name() string {

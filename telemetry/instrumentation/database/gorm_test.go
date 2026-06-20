@@ -22,7 +22,7 @@ func setupTracedGorm(t *testing.T) (*gorm.DB, *recordingSpanExporter) {
 
 	exporter := setupTelemetry(t, true)
 
-	plugin := NewGormPlugin(FacadeResolver, testPool(), "postgres")
+	plugin := NewGormPlugin(testPool(), "postgres")
 	assert.NotNil(t, plugin)
 
 	db, err := gorm.Open(gormtests.DummyDialector{}, &gorm.Config{SkipDefaultTransaction: true, DryRun: true})
@@ -46,7 +46,7 @@ func TestNewGormPlugin(t *testing.T) {
 		telemetry.ConfigFacade = nil
 		t.Cleanup(func() { telemetry.ConfigFacade = original })
 
-		plugin := NewGormPlugin(FacadeResolver, testPool(), "postgres")
+		plugin := NewGormPlugin(testPool(), "postgres")
 
 		assert.NotNil(t, plugin)
 		assert.False(t, plugin.instrument.active())
@@ -55,7 +55,7 @@ func TestNewGormPlugin(t *testing.T) {
 	t.Run("inactive when disabled", func(t *testing.T) {
 		setupTelemetry(t, false)
 
-		plugin := NewGormPlugin(FacadeResolver, testPool(), "postgres")
+		plugin := NewGormPlugin(testPool(), "postgres")
 
 		assert.NotNil(t, plugin)
 		assert.False(t, plugin.instrument.active())

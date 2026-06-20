@@ -20,23 +20,14 @@ func ContextWithTable(ctx context.Context, table string) context.Context {
 	return context.WithValue(ctx, tableKey, table)
 }
 
-// WrapBuilder wraps a query builder with telemetry, or returns it unchanged when
-// inst is nil (telemetry off).
+// WrapBuilder wraps a query builder with telemetry. The wrapper resolves
+// telemetry lazily and no-ops until it is active.
 func WrapBuilder(inner contractsdb.Builder, inst *Instrument) contractsdb.Builder {
-	if inst == nil {
-		return inner
-	}
-
 	return &tracedBuilder{Builder: inner, instrument: inst}
 }
 
-// WrapTxBuilder wraps a transaction builder with telemetry, or returns it
-// unchanged when inst is nil.
+// WrapTxBuilder wraps a transaction builder with telemetry.
 func WrapTxBuilder(inner contractsdb.TxBuilder, inst *Instrument) contractsdb.TxBuilder {
-	if inst == nil {
-		return inner
-	}
-
 	return &tracedTxBuilder{TxBuilder: inner, instrument: inst}
 }
 
