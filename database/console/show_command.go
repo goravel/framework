@@ -10,6 +10,7 @@ import (
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -69,6 +70,11 @@ func (r *ShowCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *ShowCommand) Handle(ctx console.Context) error {
+	if orm := r.schema.Orm(); orm == nil || orm.Query() == nil {
+		ctx.Error(errors.SchemaOrmNotAvailable.Error())
+		return nil
+	}
+
 	if got := ctx.Argument(0); len(got) > 0 {
 		ctx.Error(fmt.Sprintf("No arguments expected for '%s' command, got '%s'.", r.Signature(), got))
 		return nil

@@ -101,17 +101,29 @@ func (s *MigratorSuite) TestCreate() {
 
 func (s *MigratorSuite) TestFresh() {
 	// Success
+	mockOrm := mocksorm.NewOrm(s.T())
+	mockQuery := mocksorm.NewQuery(s.T())
+	s.mockSchema.On("Orm").Return(mockOrm).Maybe().Once()
+	mockOrm.On("Query").Return(mockQuery).Maybe()
 	s.mockArtisan.EXPECT().Call("db:wipe --force").Return(nil).Once()
 	s.mockArtisan.EXPECT().Call("migrate").Return(nil).Once()
 
 	s.NoError(s.migrator.Fresh())
 
 	// db:wipe returns error
+	mockOrm = mocksorm.NewOrm(s.T())
+	mockQuery = mocksorm.NewQuery(s.T())
+	s.mockSchema.On("Orm").Return(mockOrm).Maybe().Once()
+	mockOrm.On("Query").Return(mockQuery).Maybe()
 	s.mockArtisan.EXPECT().Call("db:wipe --force").Return(assert.AnError).Once()
 
 	s.EqualError(s.migrator.Fresh(), assert.AnError.Error())
 
 	// migrate returns error
+	mockOrm = mocksorm.NewOrm(s.T())
+	mockQuery = mocksorm.NewQuery(s.T())
+	s.mockSchema.On("Orm").Return(mockOrm).Maybe().Once()
+	mockOrm.On("Query").Return(mockQuery).Maybe()
 	s.mockArtisan.EXPECT().Call("db:wipe --force").Return(nil).Once()
 	s.mockArtisan.EXPECT().Call("migrate").Return(assert.AnError).Once()
 
@@ -244,12 +256,20 @@ func (s *MigratorSuite) TestReset() {
 		{
 			name: "Get ran failed",
 			setup: func() {
+				mockOrm := mocksorm.NewOrm(s.T())
+				mockQuery := mocksorm.NewQuery(s.T())
+				s.mockSchema.On("Orm").Return(mockOrm).Maybe().Once()
+				mockOrm.On("Query").Return(mockQuery).Maybe()
 				s.mockRepository.EXPECT().RepositoryExists().Return(false).Once()
 			},
 		},
 		{
 			name: "failed to get ran",
 			setup: func() {
+				mockOrm := mocksorm.NewOrm(s.T())
+				mockQuery := mocksorm.NewQuery(s.T())
+				s.mockSchema.On("Orm").Return(mockOrm).Maybe().Once()
+				mockOrm.On("Query").Return(mockQuery).Maybe()
 				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockRepository.EXPECT().GetRan().Return(nil, assert.AnError).Once()
 			},
@@ -270,7 +290,7 @@ func (s *MigratorSuite) TestReset() {
 				s.mockRepository.EXPECT().GetMigrationsByStep(1).Return([]migration.File{{Migration: testMigration.Signature()}}, nil).Once()
 
 				mockOrm := mocksorm.NewOrm(s.T())
-				s.mockRunDown(mockOrm, previousConnection, testMigration.Signature(), "users", nil)
+				s.mockRunDown(mockOrm, previousConnection, testMigration.Signature(), "users", nil, 2)
 			},
 		},
 	}
@@ -299,6 +319,10 @@ func (s *MigratorSuite) TestRollback() {
 		{
 			name: "happy path - no files",
 			setup: func() {
+				mockOrm := mocksorm.NewOrm(s.T())
+				mockQuery := mocksorm.NewQuery(s.T())
+				s.mockSchema.On("Orm").Return(mockOrm).Maybe().Once()
+				mockOrm.On("Query").Return(mockQuery).Maybe()
 				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockRepository.EXPECT().GetMigrationsByStep(1).Return(nil, nil).Once()
 			},
@@ -317,12 +341,16 @@ func (s *MigratorSuite) TestRollback() {
 				s.mockRepository.EXPECT().GetMigrationsByStep(1).Return([]migration.File{{Migration: testMigration.Signature()}}, nil).Once()
 
 				mockOrm := mocksorm.NewOrm(s.T())
-				s.mockRunDown(mockOrm, previousConnection, testMigration.Signature(), "users", nil)
+				s.mockRunDown(mockOrm, previousConnection, testMigration.Signature(), "users", nil, 1)
 			},
 		},
 		{
 			name: "happy path - missing migration",
 			setup: func() {
+				mockOrm := mocksorm.NewOrm(s.T())
+				mockQuery := mocksorm.NewQuery(s.T())
+				s.mockSchema.On("Orm").Return(mockOrm).Maybe().Once()
+				mockOrm.On("Query").Return(mockQuery).Maybe()
 				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockRepository.EXPECT().GetMigrationsByStep(1).Return([]migration.File{{Migration: "20240817214502_create_users_table"}}, nil).Once()
 			},
@@ -341,13 +369,17 @@ func (s *MigratorSuite) TestRollback() {
 				s.mockRepository.EXPECT().GetMigrationsByStep(1).Return([]migration.File{{Migration: testMigration.Signature()}}, nil).Once()
 
 				mockOrm := mocksorm.NewOrm(s.T())
-				s.mockRunDown(mockOrm, previousConnection, testMigration.Signature(), "users", assert.AnError)
+				s.mockRunDown(mockOrm, previousConnection, testMigration.Signature(), "users", assert.AnError, 1)
 			},
 			expectErr: assert.AnError.Error(),
 		},
 		{
 			name: "failed to get migrations by step",
 			setup: func() {
+				mockOrm := mocksorm.NewOrm(s.T())
+				mockQuery := mocksorm.NewQuery(s.T())
+				s.mockSchema.On("Orm").Return(mockOrm).Maybe().Once()
+				mockOrm.On("Query").Return(mockQuery).Maybe()
 				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockRepository.EXPECT().GetMigrationsByStep(1).Return(nil, assert.AnError).Once()
 			},
@@ -356,6 +388,10 @@ func (s *MigratorSuite) TestRollback() {
 		{
 			name: "repository doesn't exist",
 			setup: func() {
+				mockOrm := mocksorm.NewOrm(s.T())
+				mockQuery := mocksorm.NewQuery(s.T())
+				s.mockSchema.On("Orm").Return(mockOrm).Maybe().Once()
+				mockOrm.On("Query").Return(mockQuery).Maybe()
 				s.mockRepository.EXPECT().RepositoryExists().Return(false).Once()
 			},
 		},
@@ -399,7 +435,7 @@ func (s *MigratorSuite) TestRun() {
 				}).Once()
 
 				mockOrm := mocksorm.NewOrm(s.T())
-				s.mockRunUp(mockOrm, previousConnection, testMigration.Signature(), "users", 1, nil)
+				s.mockRunUp(mockOrm, previousConnection, testMigration.Signature(), "users", 1, nil, 1)
 			},
 		},
 		{
@@ -416,13 +452,17 @@ func (s *MigratorSuite) TestRun() {
 				s.mockRepository.EXPECT().GetNextBatchNumber().Return(1, nil).Once()
 
 				mockOrm := mocksorm.NewOrm(s.T())
-				s.mockRunUp(mockOrm, previousConnection, testMigration.Signature(), "users", 1, assert.AnError)
+				s.mockRunUp(mockOrm, previousConnection, testMigration.Signature(), "users", 1, assert.AnError, 1)
 			},
 			expectError: assert.AnError.Error(),
 		},
 		{
 			name: "Sad path - GetNextBatchNumber returns error",
 			setup: func() {
+				mockOrm := mocksorm.NewOrm(s.T())
+				mockQuery := mocksorm.NewQuery(s.T())
+				s.mockSchema.On("Orm").Return(mockOrm).Maybe().Once()
+				mockOrm.On("Query").Return(mockQuery).Maybe()
 				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockRepository.EXPECT().GetRan().Return([]string{testConnectionMigration.Signature()}, nil).Once()
 				s.mockSchema.EXPECT().Migrations().Return([]contractsschema.Migration{
@@ -436,6 +476,10 @@ func (s *MigratorSuite) TestRun() {
 		{
 			name: "Sad path - GetRan returns error",
 			setup: func() {
+				mockOrm := mocksorm.NewOrm(s.T())
+				mockQuery := mocksorm.NewQuery(s.T())
+				s.mockSchema.On("Orm").Return(mockOrm).Maybe().Once()
+				mockOrm.On("Query").Return(mockQuery).Maybe()
 				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockRepository.EXPECT().GetRan().Return(nil, assert.AnError).Once()
 			},
@@ -481,14 +525,14 @@ func (s *MigratorSuite) TestRunDown() {
 			name:      "Happy path",
 			migration: testMigration,
 			setup: func() {
-				s.mockRunDown(mockOrm, previousConnection, testMigration.Signature(), "users", nil)
+				s.mockRunDown(mockOrm, previousConnection, testMigration.Signature(), "users", nil, 0)
 			},
 		},
 		{
 			name:      "Happy path - with connection",
 			migration: testConnectionMigration,
 			setup: func() {
-				s.mockRunDown(mockOrm, previousConnection, testConnectionMigration.Signature(), "agents", nil)
+				s.mockRunDown(mockOrm, previousConnection, testConnectionMigration.Signature(), "agents", nil, 0)
 			},
 		},
 		{
@@ -548,7 +592,7 @@ func (s *MigratorSuite) TestRunPending() {
 				mockOrm := mocksorm.NewOrm(s.T())
 
 				s.mockRepository.EXPECT().GetNextBatchNumber().Return(1, nil).Once()
-				s.mockRunUp(mockOrm, previousConnection, testMigration.Signature(), "users", 1, nil)
+				s.mockRunUp(mockOrm, previousConnection, testMigration.Signature(), "users", 1, nil, 0)
 			},
 		},
 		{
@@ -576,7 +620,7 @@ func (s *MigratorSuite) TestRunPending() {
 				mockOrm := mocksorm.NewOrm(s.T())
 
 				s.mockRepository.EXPECT().GetNextBatchNumber().Return(1, nil).Once()
-				s.mockRunUp(mockOrm, previousConnection, testMigration.Signature(), "users", 1, assert.AnError)
+				s.mockRunUp(mockOrm, previousConnection, testMigration.Signature(), "users", 1, assert.AnError, 0)
 			},
 			expectError: assert.AnError.Error(),
 		},
@@ -621,14 +665,14 @@ func (s *MigratorSuite) TestRunUp() {
 			name:      "Happy path",
 			migration: testMigration,
 			setup: func() {
-				s.mockRunUp(mockOrm, previousConnection, testMigration.Signature(), "users", batch, nil)
+				s.mockRunUp(mockOrm, previousConnection, testMigration.Signature(), "users", batch, nil, 0)
 			},
 		},
 		{
 			name:      "Happy path - with connection",
 			migration: testConnectionMigration,
 			setup: func() {
-				s.mockRunUp(mockOrm, previousConnection, testConnectionMigration.Signature(), "agents", batch, nil)
+				s.mockRunUp(mockOrm, previousConnection, testConnectionMigration.Signature(), "agents", batch, nil, 0)
 			},
 		},
 		{
@@ -679,6 +723,10 @@ func (s *MigratorSuite) TestStatus() {
 		{
 			name: "The migration table doesn't exist",
 			setup: func() {
+				mockOrm := mocksorm.NewOrm(s.T())
+				mockQuery := mocksorm.NewQuery(s.T())
+				s.mockSchema.On("Orm").Return(mockOrm).Maybe().Once()
+				mockOrm.On("Query").Return(mockQuery).Maybe()
 				s.mockRepository.EXPECT().RepositoryExists().Return(false).Once()
 			},
 			assert: func() {
@@ -692,6 +740,10 @@ func (s *MigratorSuite) TestStatus() {
 		{
 			name: "Get migration batches failed",
 			setup: func() {
+				mockOrm := mocksorm.NewOrm(s.T())
+				mockQuery := mocksorm.NewQuery(s.T())
+				s.mockSchema.On("Orm").Return(mockOrm).Maybe().Once()
+				mockOrm.On("Query").Return(mockQuery).Maybe()
 				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockRepository.EXPECT().GetMigrations().Return(nil, assert.AnError).Once()
 			},
@@ -704,6 +756,10 @@ func (s *MigratorSuite) TestStatus() {
 		{
 			name: "No migrations found",
 			setup: func() {
+				mockOrm := mocksorm.NewOrm(s.T())
+				mockQuery := mocksorm.NewQuery(s.T())
+				s.mockSchema.On("Orm").Return(mockOrm).Maybe().Once()
+				mockOrm.On("Query").Return(mockQuery).Maybe()
 				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockSchema.EXPECT().Migrations().Return(nil).Once()
 				s.mockRepository.EXPECT().GetMigrations().Return(nil, nil).Once()
@@ -719,6 +775,10 @@ func (s *MigratorSuite) TestStatus() {
 		{
 			name: "Success",
 			setup: func() {
+				mockOrm := mocksorm.NewOrm(s.T())
+				mockQuery := mocksorm.NewQuery(s.T())
+				s.mockSchema.On("Orm").Return(mockOrm).Maybe().Once()
+				mockOrm.On("Query").Return(mockQuery).Maybe()
 				testMigration := NewTestMigration(s.mockSchema)
 				testConnectionMigration := NewTestConnectionMigration(s.mockSchema)
 
@@ -762,12 +822,13 @@ func (s *MigratorSuite) mockRunDown(
 	mockOrm *mocksorm.Orm,
 	previousConnection, migrationSignature, table string,
 	err error,
+	extraOrmCalls int,
 ) {
 	s.mockSchema.EXPECT().GetConnection().Return(previousConnection).Once()
-	s.mockSchema.EXPECT().Orm().Return(mockOrm).Times(5)
+	s.mockSchema.EXPECT().Orm().Return(mockOrm).Times(5 + extraOrmCalls)
 
 	mockQuery := mocksorm.NewQuery(s.T())
-	mockOrm.EXPECT().Query().Return(mockQuery).Once()
+	mockOrm.EXPECT().Query().Return(mockQuery).Times(1 + extraOrmCalls)
 
 	testConnectionMigration := &TestConnectionMigration{}
 	if testConnectionMigration.Signature() == migrationSignature {
@@ -790,12 +851,13 @@ func (s *MigratorSuite) mockRunUp(
 	previousConnection, migrationSignature, table string,
 	batch int,
 	err error,
+	extraOrmCalls int,
 ) {
 	s.mockSchema.EXPECT().GetConnection().Return(previousConnection).Once()
-	s.mockSchema.EXPECT().Orm().Return(mockOrm).Times(5)
+	s.mockSchema.EXPECT().Orm().Return(mockOrm).Times(5 + extraOrmCalls)
 
 	mockQuery := mocksorm.NewQuery(s.T())
-	mockOrm.EXPECT().Query().Return(mockQuery).Once()
+	mockOrm.EXPECT().Query().Return(mockQuery).Times(1 + extraOrmCalls)
 
 	testConnectionMigration := &TestConnectionMigration{}
 	if testConnectionMigration.Signature() == migrationSignature {

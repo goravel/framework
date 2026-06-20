@@ -11,6 +11,7 @@ import (
 	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/schema"
 	mocksconsole "github.com/goravel/framework/mocks/console"
+	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	"github.com/goravel/framework/support/file"
 )
@@ -18,11 +19,15 @@ import (
 func TestModelMakeCommand(t *testing.T) {
 	mockSchema := mocksschema.NewSchema(t)
 	mockArtisan := mocksconsole.NewArtisan(t)
+	mockOrm := mocksorm.NewOrm(t)
+	mockQuery := mocksorm.NewQuery(t)
 
 	modelMakeCommand := NewModelMakeCommand(mockArtisan, mockSchema)
 	mockContext := mocksconsole.NewContext(t)
 
 	// Test: Empty model name
+	mockSchema.EXPECT().Orm().Return(mockOrm).Maybe()
+	mockOrm.EXPECT().Query().Return(mockQuery).Maybe()
 	mockContext.EXPECT().Argument(0).Return("").Once()
 	mockContext.EXPECT().Ask("Enter the model name", mock.Anything).Return("", errors.New("the model name cannot be empty")).Once()
 	mockContext.EXPECT().Error("the model name cannot be empty").Once()
@@ -30,6 +35,8 @@ func TestModelMakeCommand(t *testing.T) {
 	assert.False(t, file.Exists("app/models/user.go"))
 
 	// Test: Create model successfully
+	mockSchema.EXPECT().Orm().Return(mockOrm).Maybe()
+	mockOrm.EXPECT().Query().Return(mockQuery).Maybe()
 	mockContext.EXPECT().Argument(0).Return("User").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Option("table").Return("").Once()
@@ -53,12 +60,16 @@ type User struct {
 	assert.Equal(t, expectedUserContent, userModel)
 
 	// Test: Model already exists
+	mockSchema.EXPECT().Orm().Return(mockOrm).Maybe()
+	mockOrm.EXPECT().Query().Return(mockQuery).Maybe()
 	mockContext.EXPECT().Argument(0).Return("User").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Error("the model already exists. Use the --force or -f flag to overwrite").Once()
 	assert.Nil(t, modelMakeCommand.Handle(mockContext))
 
 	// Test: Create model in subdirectory
+	mockSchema.EXPECT().Orm().Return(mockOrm).Maybe()
+	mockOrm.EXPECT().Query().Return(mockQuery).Maybe()
 	mockContext.EXPECT().Argument(0).Return("User/Phone").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Option("table").Return("").Once()
@@ -84,6 +95,8 @@ type Phone struct {
 	assert.Equal(t, expectedPhoneContent, phoneModel)
 
 	// Test: Create model from table schema
+	mockSchema.EXPECT().Orm().Return(mockOrm).Maybe()
+	mockOrm.EXPECT().Query().Return(mockQuery).Maybe()
 	mockContext.EXPECT().Argument(0).Return("Product").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Option("table").Return("products").Once()
@@ -140,6 +153,8 @@ func (r *Product) TableName() string {
 	assert.Equal(t, expectedContent, model)
 
 	// Test: Table doesn't exist
+	mockSchema.EXPECT().Orm().Return(mockOrm).Maybe()
+	mockOrm.EXPECT().Query().Return(mockQuery).Maybe()
 	mockContext.EXPECT().Argument(0).Return("Invalid").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Option("table").Return("nonexistent").Once()
@@ -148,6 +163,8 @@ func (r *Product) TableName() string {
 	assert.Nil(t, modelMakeCommand.Handle(mockContext))
 
 	//Test: Error fetching columns
+	mockSchema.EXPECT().Orm().Return(mockOrm).Maybe()
+	mockOrm.EXPECT().Query().Return(mockQuery).Maybe()
 	mockContext.EXPECT().Argument(0).Return("Error").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Option("table").Return("error_table").Once()

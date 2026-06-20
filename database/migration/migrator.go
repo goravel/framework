@@ -33,6 +33,16 @@ func NewMigrator(artisan console.Artisan, schema contractsschema.Schema, table s
 	}
 }
 
+func (r *Migrator) requireOrm() error {
+	orm := r.schema.Orm()
+	if orm == nil || orm.Query() == nil {
+		color.Warningln(errors.SchemaOrmNotAvailable.Error())
+		return errors.SchemaOrmNotAvailable
+	}
+
+	return nil
+}
+
 func (r *Migrator) Create(name string, modelName string) (string, error) {
 	table, create := TableGuesser{}.Guess(name)
 
@@ -82,6 +92,10 @@ func (r *Migrator) Create(name string, modelName string) (string, error) {
 }
 
 func (r *Migrator) Fresh() error {
+	if err := r.requireOrm(); err != nil {
+		return err
+	}
+
 	if err := r.artisan.Call("db:wipe --force"); err != nil {
 		return err
 	}
@@ -93,6 +107,10 @@ func (r *Migrator) Fresh() error {
 }
 
 func (r *Migrator) Reset() error {
+	if err := r.requireOrm(); err != nil {
+		return err
+	}
+
 	if !r.repository.RepositoryExists() {
 		color.Warningln("Migration table not found")
 
@@ -108,6 +126,10 @@ func (r *Migrator) Reset() error {
 }
 
 func (r *Migrator) Rollback(step, batch int) error {
+	if err := r.requireOrm(); err != nil {
+		return err
+	}
+
 	if !r.repository.RepositoryExists() {
 		color.Warningln("Migration table not found")
 
@@ -145,6 +167,10 @@ func (r *Migrator) Rollback(step, batch int) error {
 }
 
 func (r *Migrator) Run() error {
+	if err := r.requireOrm(); err != nil {
+		return err
+	}
+
 	if err := r.prepareDatabase(); err != nil {
 		return err
 	}
@@ -160,6 +186,10 @@ func (r *Migrator) Run() error {
 }
 
 func (r *Migrator) Status() ([]contractsmigration.Status, error) {
+	if err := r.requireOrm(); err != nil {
+		return nil, err
+	}
+
 	if !r.repository.RepositoryExists() {
 		color.Warningln("Migration table not found")
 

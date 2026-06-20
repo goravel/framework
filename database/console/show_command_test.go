@@ -51,6 +51,8 @@ func TestShowCommand(t *testing.T) {
 		{
 			name: "invalid argument",
 			setup: func() {
+				mockSchema.EXPECT().Orm().Return(mockOrm).Once()
+				mockOrm.EXPECT().Query().Return(mockQuery).Once()
 				mockContext.EXPECT().Argument(0).Return("test").Once()
 				mockContext.EXPECT().Error("No arguments expected for 'db:show' command, got 'test'.").Once()
 			},
@@ -58,6 +60,8 @@ func TestShowCommand(t *testing.T) {
 		{
 			name: "get tables failed",
 			setup: func() {
+				mockSchema.EXPECT().Orm().Return(mockOrm).Once()
+				mockOrm.EXPECT().Query().Return(mockQuery).Once()
 				// Handle
 				mockContext.EXPECT().Argument(0).Return("").Once()
 				mockContext.EXPECT().Option("database").Return("test").Once()
@@ -83,6 +87,8 @@ func TestShowCommand(t *testing.T) {
 		{
 			name: "get views failed",
 			setup: func() {
+				mockSchema.EXPECT().Orm().Return(mockOrm).Once()
+				mockOrm.EXPECT().Query().Return(mockQuery).Once()
 				mockContext.EXPECT().Argument(0).Return("").Once()
 				mockContext.EXPECT().Option("database").Return("test").Once()
 				mockSchema.EXPECT().Connection("test").Return(mockSchema).Once()
@@ -109,6 +115,8 @@ func TestShowCommand(t *testing.T) {
 		{
 			name: "success",
 			setup: func() {
+				mockSchema.EXPECT().Orm().Return(mockOrm).Once()
+				mockOrm.EXPECT().Query().Return(mockQuery).Once()
 				mockContext.EXPECT().Argument(0).Return("").Once()
 				mockContext.EXPECT().Option("database").Return("test").Once()
 				mockSchema.EXPECT().Connection("test").Return(mockSchema).Once()

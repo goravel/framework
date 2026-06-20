@@ -9,6 +9,7 @@ import (
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/errors"
 )
 
 type TableCommand struct {
@@ -50,6 +51,11 @@ func (r *TableCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *TableCommand) Handle(ctx console.Context) error {
+	if orm := r.schema.Orm(); orm == nil || orm.Query() == nil {
+		ctx.Error(errors.SchemaOrmNotAvailable.Error())
+		return nil
+	}
+
 	ctx.NewLine()
 	r.schema = r.schema.Connection(ctx.Option("database"))
 	table := ctx.Argument(0)

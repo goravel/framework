@@ -62,6 +62,11 @@ func (r *WipeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *WipeCommand) Handle(ctx console.Context) error {
+	if orm := r.schema.Orm(); orm == nil || orm.Query() == nil {
+		ctx.Error(errors.SchemaOrmNotAvailable.Error())
+		return nil
+	}
+
 	if !supportconsole.ConfirmToProceed(ctx, r.config.GetString("app.env")) {
 		ctx.Warning(errors.ConsoleRunInProduction.Error())
 		return nil

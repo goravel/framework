@@ -72,6 +72,11 @@ func (r *ModelMakeCommand) Extend() command.Extend {
 }
 
 func (r *ModelMakeCommand) Handle(ctx console.Context) error {
+	if orm := r.schema.Orm(); orm == nil || orm.Query() == nil {
+		ctx.Error(errors.SchemaOrmNotAvailable.Error())
+		return nil
+	}
+
 	m, err := supportconsole.NewMake(ctx, "model", ctx.Argument(0), support.Config.Paths.Models)
 	if err != nil {
 		ctx.Error(err.Error())

@@ -10,6 +10,7 @@ import (
 	"github.com/goravel/framework/contracts/database/driver"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
+	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
 )
 
@@ -18,11 +19,17 @@ func TestTableCommand(t *testing.T) {
 		mockContext *mocksconsole.Context
 		mockConfig  *mocksconfig.Config
 		mockSchema  *mocksschema.Schema
+		mockOrm     *mocksorm.Orm
+		mockQuery   *mocksorm.Query
 	)
 	beforeEach := func() {
 		mockContext = mocksconsole.NewContext(t)
 		mockConfig = mocksconfig.NewConfig(t)
 		mockSchema = mocksschema.NewSchema(t)
+		mockOrm = mocksorm.NewOrm(t)
+		mockQuery = mocksorm.NewQuery(t)
+		mockSchema.EXPECT().Orm().Return(mockOrm).Maybe()
+		mockOrm.EXPECT().Query().Return(mockQuery).Maybe()
 	}
 	successCaseExpected := [][2]string{
 		{"<fg=green;op=bold>public.test</>", "<fg=gray>test_comment</>"},

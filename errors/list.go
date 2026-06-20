@@ -273,6 +273,7 @@ var (
 	SchemaFailedToDropColumns  = New("failed to drop %s table columns: %v")
 	SchemaFailedToGetTables    = New("failed to get %s tables: %v")
 	SchemaFailedToRenameTable  = New("failed to rename %s table: %v")
+	SchemaOrmNotAvailable      = New("database connection is not available, please check your database configuration")
 	SchemaInvalidModel         = New("model must be a struct or pointer to struct")
 	SchemaModelNotFound        = New("model %s not found in registered models")
 	SchemaTableNotFound        = New("table %s not found")

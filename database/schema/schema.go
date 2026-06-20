@@ -413,6 +413,15 @@ func (r *Schema) Orm() contractsorm.Orm {
 	return r.orm
 }
 
+func (r *Schema) RequireOrm() error {
+	if r.orm == nil || r.orm.Query() == nil {
+		color.Warningln(errors.SchemaOrmNotAvailable.Error())
+		return errors.SchemaOrmNotAvailable
+	}
+
+	return nil
+}
+
 func (r *Schema) Prune() error {
 	if sql := r.grammar.CompilePrune(r.orm.DatabaseName()); len(sql) > 0 {
 		_, err := r.orm.Query().Exec(sql)
