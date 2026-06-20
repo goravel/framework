@@ -26,7 +26,7 @@ type ApplicationBuilder struct {
 	commands                   func() []console.Command
 	config                     func()
 	configuredServiceProviders func() []foundation.ServiceProvider
-	commandsFilter      func() []string
+	commandsFilter             func() []string
 	eventToListeners           func() map[event.Event][]event.Listener
 	filters                    func() []validation.Filter
 	grpcClientCredentials      func() map[string]credentials.TransportCredentials
