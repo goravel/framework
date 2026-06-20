@@ -2,12 +2,16 @@ package database
 
 import (
 	"context"
+	"database/sql"
+	"sync"
 	"time"
 
 	"go.opentelemetry.io/otel/trace"
 	"gorm.io/gorm"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
+	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
+	"github.com/goravel/framework/support/color"
 )
 
 // PluginName is the gorm plugin name this instrumentation registers under.
@@ -28,15 +32,15 @@ type callbackRegistrar interface {
 
 type GormPlugin struct {
 	instrument *Instrument
+	sqlDB      *sql.DB
+	poolOnce   sync.Once
 }
 
-func NewGormPlugin(pool contractsdatabase.Pool, connection string) *GormPlugin {
-	inst := NewInstrument(pool, connection)
-	if inst == nil {
-		return nil
-	}
-
-	return &GormPlugin{instrument: inst}
+// NewGormPlugin returns the plugin. It is always registered: telemetry is
+// resolved lazily via resolver, so the callbacks no-op until it is available and
+// enabled rather than deciding at connection-build time when it may not be ready.
+func NewGormPlugin(resolver contractstelemetry.Resolver, pool contractsdatabase.Pool, connection string) *GormPlugin {
+	return &GormPlugin{instrument: NewInstrument(resolver, pool, connection)}
 }
 
 func (r *GormPlugin) Name() string {
@@ -71,18 +75,24 @@ func (r *GormPlugin) Initialize(db *gorm.DB) error {
 		}
 	}
 
-	// Pool metrics are best-effort: a dialector without a *sql.DB ConnPool has
-	// no stats to observe, so skip them while keeping the tracing callbacks.
-	sqlDB, err := db.DB()
-	if err != nil {
-		return nil
+	// Capture the *sql.DB for pool metrics, which are registered lazily once
+	// telemetry is active (see before). A dialector without one has no stats to
+	// observe, so skip it while keeping the tracing callbacks.
+	if sqlDB, err := db.DB(); err == nil {
+		r.sqlDB = sqlDB
 	}
 
-	return r.instrument.registerPoolMetrics(sqlDB)
+	return nil
 }
 
 func (r *GormPlugin) before(spanName string) func(*gorm.DB) {
 	return func(tx *gorm.DB) {
+		if !r.instrument.active() {
+			return
+		}
+
+		r.poolOnce.Do(r.registerPoolMetrics)
+
 		parent := tx.Statement.Context
 		spanCtx, _ := r.instrument.startSpan(parent, spanName)
 		tx.Statement.Context = contextWrapper{Context: spanCtx, parent: parent, start: time.Now()}
@@ -98,4 +108,16 @@ func (r *GormPlugin) after(tx *gorm.DB) {
 
 	span := trace.SpanFromContext(wrapper.Context)
 	r.instrument.endSpan(wrapper.Context, span, wrapper.start, tx.Statement.SQL.String(), tx.Statement.Table, tx.Statement.RowsAffected, tx.Error)
+}
+
+// registerPoolMetrics is best-effort: a registration failure warns but must not
+// disrupt the query that triggered it.
+func (r *GormPlugin) registerPoolMetrics() {
+	if r.sqlDB == nil {
+		return
+	}
+
+	if err := r.instrument.registerPoolMetrics(r.sqlDB); err != nil {
+		color.Warningln(err.Error())
+	}
 }

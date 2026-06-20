@@ -2,46 +2,36 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"go.opentelemetry.io/otel/codes"
 
 	contractsdb "github.com/goravel/framework/contracts/database/db"
+	mocksdb "github.com/goravel/framework/mocks/database/db"
 )
 
-type fakeBuilder struct {
-	execErr error
-}
+// stubResult is a minimal sql.Result for exec returns. sql.Result is a standard
+// library interface, so it has no generated mock to use here.
+type stubResult struct{}
 
-func (f *fakeBuilder) ExecContext(_ context.Context, _ string, _ ...any) (sql.Result, error) {
-	return fakeResult{}, f.execErr
-}
-func (f *fakeBuilder) GetContext(_ context.Context, _ any, _ string, _ ...any) error    { return nil }
-func (f *fakeBuilder) SelectContext(_ context.Context, _ any, _ string, _ ...any) error { return nil }
-func (f *fakeBuilder) QueryxContext(_ context.Context, _ string, _ ...any) (*sqlx.Rows, error) {
-	return nil, nil
-}
-func (f *fakeBuilder) Explain(_ string, _ ...any) string { return "" }
-func (f *fakeBuilder) Beginx() (*sqlx.Tx, error)         { return nil, nil }
-
-type fakeResult struct{}
-
-func (fakeResult) LastInsertId() (int64, error) { return 0, nil }
-func (fakeResult) RowsAffected() (int64, error) { return 2, nil }
+func (stubResult) LastInsertId() (int64, error) { return 0, nil }
+func (stubResult) RowsAffected() (int64, error) { return 2, nil }
 
 func TestWrapBuilder_NilInstrumentPassesThrough(t *testing.T) {
-	inner := &fakeBuilder{}
+	inner := mocksdb.NewBuilder(t)
 	assert.Equal(t, contractsdb.Builder(inner), WrapBuilder(inner, nil))
 }
 
 func TestWrapBuilder_StructuredQuerySpan(t *testing.T) {
 	exporter := setupTelemetry(t, true)
-	inst := NewInstrument(testPool(), "postgres")
+	inst := NewInstrument(FacadeResolver, testPool(), "postgres")
 
-	wrapped := WrapBuilder(&fakeBuilder{}, inst)
+	inner := mocksdb.NewBuilder(t)
+	inner.EXPECT().SelectContext(mock.Anything, mock.Anything, "SELECT * FROM users WHERE id = ?", 1).Return(nil).Once()
+
+	wrapped := WrapBuilder(inner, inst)
 	ctx := ContextWithTable(context.Background(), "users")
 
 	assert.NoError(t, wrapped.SelectContext(ctx, &[]any{}, "SELECT * FROM users WHERE id = ?", 1))
@@ -59,9 +49,12 @@ func TestWrapBuilder_StructuredQuerySpan(t *testing.T) {
 
 func TestWrapBuilder_RawQueryHasNoCollection(t *testing.T) {
 	exporter := setupTelemetry(t, true)
-	inst := NewInstrument(testPool(), "postgres")
+	inst := NewInstrument(FacadeResolver, testPool(), "postgres")
 
-	wrapped := WrapBuilder(&fakeBuilder{}, inst)
+	inner := mocksdb.NewBuilder(t)
+	inner.EXPECT().ExecContext(mock.Anything, "UPDATE users SET name = ?", "x").Return(stubResult{}, nil).Once()
+
+	wrapped := WrapBuilder(inner, inst)
 
 	_, err := wrapped.ExecContext(context.Background(), "UPDATE users SET name = ?", "x")
 	assert.NoError(t, err)
@@ -75,9 +68,12 @@ func TestWrapBuilder_RawQueryHasNoCollection(t *testing.T) {
 
 func TestWrapBuilder_ExecRecordsRows(t *testing.T) {
 	exporter := setupTelemetry(t, true)
-	inst := NewInstrument(testPool(), "postgres")
+	inst := NewInstrument(FacadeResolver, testPool(), "postgres")
 
-	wrapped := WrapBuilder(&fakeBuilder{}, inst)
+	inner := mocksdb.NewBuilder(t)
+	inner.EXPECT().ExecContext(mock.Anything, "INSERT INTO users (name) VALUES (?)", "x").Return(stubResult{}, nil).Once()
+
+	wrapped := WrapBuilder(inner, inst)
 
 	_, err := wrapped.ExecContext(context.Background(), "INSERT INTO users (name) VALUES (?)", "x")
 	assert.NoError(t, err)
@@ -90,9 +86,12 @@ func TestWrapBuilder_ExecRecordsRows(t *testing.T) {
 
 func TestWrapBuilder_RecordsError(t *testing.T) {
 	exporter := setupTelemetry(t, true)
-	inst := NewInstrument(testPool(), "postgres")
+	inst := NewInstrument(FacadeResolver, testPool(), "postgres")
 
-	wrapped := WrapBuilder(&fakeBuilder{execErr: assert.AnError}, inst)
+	inner := mocksdb.NewBuilder(t)
+	inner.EXPECT().ExecContext(mock.Anything, "UPDATE users SET name = ?", "x").Return(nil, assert.AnError).Once()
+
+	wrapped := WrapBuilder(inner, inst)
 
 	_, err := wrapped.ExecContext(context.Background(), "UPDATE users SET name = ?", "x")
 	assert.ErrorIs(t, err, assert.AnError)
@@ -103,9 +102,12 @@ func TestWrapBuilder_RecordsError(t *testing.T) {
 
 func TestWrapBuilder_QueryxSpan(t *testing.T) {
 	exporter := setupTelemetry(t, true)
-	inst := NewInstrument(testPool(), "postgres")
+	inst := NewInstrument(FacadeResolver, testPool(), "postgres")
 
-	wrapped := WrapBuilder(&fakeBuilder{}, inst)
+	inner := mocksdb.NewBuilder(t)
+	inner.EXPECT().QueryxContext(mock.Anything, "SELECT * FROM users").Return(nil, nil).Once()
+
+	wrapped := WrapBuilder(inner, inst)
 	ctx := ContextWithTable(context.Background(), "users")
 
 	_, err := wrapped.QueryxContext(ctx, "SELECT * FROM users")
@@ -117,15 +119,18 @@ func TestWrapBuilder_QueryxSpan(t *testing.T) {
 
 func TestWrapTxBuilder(t *testing.T) {
 	t.Run("nil passes through", func(t *testing.T) {
-		inner := &fakeTxBuilder{}
+		inner := mocksdb.NewTxBuilder(t)
 		assert.Equal(t, contractsdb.TxBuilder(inner), WrapTxBuilder(inner, nil))
 	})
 
 	t.Run("records span", func(t *testing.T) {
 		exporter := setupTelemetry(t, true)
-		inst := NewInstrument(testPool(), "postgres")
+		inst := NewInstrument(FacadeResolver, testPool(), "postgres")
 
-		wrapped := WrapTxBuilder(&fakeTxBuilder{}, inst)
+		inner := mocksdb.NewTxBuilder(t)
+		inner.EXPECT().ExecContext(mock.Anything, "UPDATE users SET name = ?", "x").Return(stubResult{}, nil).Once()
+
+		wrapped := WrapTxBuilder(inner, inst)
 		ctx := ContextWithTable(context.Background(), "users")
 
 		_, err := wrapped.ExecContext(ctx, "UPDATE users SET name = ?", "x")
@@ -135,17 +140,3 @@ func TestWrapTxBuilder(t *testing.T) {
 		assert.Equal(t, "UPDATE users", exporter.spans[0].Name())
 	})
 }
-
-type fakeTxBuilder struct{}
-
-func (f *fakeTxBuilder) ExecContext(_ context.Context, _ string, _ ...any) (sql.Result, error) {
-	return fakeResult{}, nil
-}
-func (f *fakeTxBuilder) GetContext(_ context.Context, _ any, _ string, _ ...any) error    { return nil }
-func (f *fakeTxBuilder) SelectContext(_ context.Context, _ any, _ string, _ ...any) error { return nil }
-func (f *fakeTxBuilder) QueryxContext(_ context.Context, _ string, _ ...any) (*sqlx.Rows, error) {
-	return nil, nil
-}
-func (f *fakeTxBuilder) Explain(_ string, _ ...any) string { return "" }
-func (f *fakeTxBuilder) Commit() error                     { return nil }
-func (f *fakeTxBuilder) Rollback() error                   { return nil }

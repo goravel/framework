@@ -5,19 +5,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	metricnoop "go.opentelemetry.io/otel/metric/noop"
-	tracenoop "go.opentelemetry.io/otel/trace/noop"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 	contractsdb "github.com/goravel/framework/contracts/database/db"
-	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksdb "github.com/goravel/framework/mocks/database/db"
 	mocksdriver "github.com/goravel/framework/mocks/database/driver"
 	mockslogger "github.com/goravel/framework/mocks/database/logger"
-	mockstelemetry "github.com/goravel/framework/mocks/telemetry"
 	"github.com/goravel/framework/support/carbon"
-	"github.com/goravel/framework/telemetry"
 )
 
 func TestTxSelectPassesParameterizedSQL(t *testing.T) {
@@ -65,49 +59,11 @@ func newMockDriver(t *testing.T) *mocksdriver.Driver {
 }
 
 func TestNewTx_BuildsInstrument(t *testing.T) {
-	t.Run("nil when telemetry is off", func(t *testing.T) {
-		tx := NewTx(context.Background(), newMockDriver(t), mockslogger.NewLogger(t), nil, nil, &[]TxLog{})
-		assert.Nil(t, tx.instrument)
-	})
+	// NewTx always builds the instrument and wraps the builder; telemetry is
+	// resolved lazily on the first query, so NewTx itself never touches it.
+	mockTxBuilder := mocksdb.NewTxBuilder(t)
+	tx := NewTx(context.Background(), newMockDriver(t), mockslogger.NewLogger(t), nil, mockTxBuilder, &[]TxLog{})
 
-	t.Run("built when telemetry is enabled", func(t *testing.T) {
-		mockTelemetry := mockstelemetry.NewTelemetry(t)
-		mockTelemetry.EXPECT().Tracer(mock.Anything).Return(tracenoop.NewTracerProvider().Tracer("test")).Maybe()
-		mockTelemetry.EXPECT().Meter(mock.Anything).Return(metricnoop.NewMeterProvider().Meter("test")).Maybe()
-		mockConfig := mocksconfig.NewConfig(t)
-		mockConfig.EXPECT().GetBool("telemetry.instrumentation.database.enabled", true).Return(true).Maybe()
-
-		originalFacade, originalConfig := telemetry.Facade, telemetry.ConfigFacade
-		telemetry.Facade, telemetry.ConfigFacade = mockTelemetry, mockConfig
-		defer func() { telemetry.Facade, telemetry.ConfigFacade = originalFacade, originalConfig }()
-
-		tx := NewTx(context.Background(), newMockDriver(t), mockslogger.NewLogger(t), nil, nil, &[]TxLog{})
-		assert.NotNil(t, tx.instrument)
-	})
-
-	t.Run("wraps tx builder when telemetry is enabled", func(t *testing.T) {
-		mockTelemetry := mockstelemetry.NewTelemetry(t)
-		mockTelemetry.EXPECT().Tracer(mock.Anything).Return(tracenoop.NewTracerProvider().Tracer("test")).Maybe()
-		mockTelemetry.EXPECT().Meter(mock.Anything).Return(metricnoop.NewMeterProvider().Meter("test")).Maybe()
-		mockConfig := mocksconfig.NewConfig(t)
-		mockConfig.EXPECT().GetBool("telemetry.instrumentation.database.enabled", true).Return(true).Maybe()
-
-		originalFacade, originalConfig := telemetry.Facade, telemetry.ConfigFacade
-		telemetry.Facade, telemetry.ConfigFacade = mockTelemetry, mockConfig
-		defer func() { telemetry.Facade, telemetry.ConfigFacade = originalFacade, originalConfig }()
-
-		mockTxBuilder := mocksdb.NewTxBuilder(t)
-		tx := NewTx(context.Background(), newMockDriver(t), mockslogger.NewLogger(t), nil, mockTxBuilder, &[]TxLog{})
-
-		assert.NotNil(t, tx.instrument)
-		assert.NotEqual(t, contractsdb.TxBuilder(mockTxBuilder), tx.txBuilder)
-	})
-
-	t.Run("passes tx builder through when telemetry is off", func(t *testing.T) {
-		mockTxBuilder := mocksdb.NewTxBuilder(t)
-		tx := NewTx(context.Background(), newMockDriver(t), mockslogger.NewLogger(t), nil, mockTxBuilder, &[]TxLog{})
-
-		assert.Nil(t, tx.instrument)
-		assert.Equal(t, contractsdb.TxBuilder(mockTxBuilder), tx.txBuilder)
-	})
+	assert.NotNil(t, tx.instrument)
+	assert.NotEqual(t, contractsdb.TxBuilder(mockTxBuilder), tx.txBuilder)
 }

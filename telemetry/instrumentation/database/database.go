@@ -7,6 +7,8 @@ import (
 	"errors"
 	"io"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"go.opentelemetry.io/otel/codes"
@@ -16,6 +18,7 @@ import (
 	"gorm.io/gorm"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
+	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/telemetry"
 )
 
@@ -31,34 +34,83 @@ const (
 var durationBuckets = []float64{0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10}
 
 // Instrument builds the spans and metrics shared by the gorm plugin and the
-// query-builder decorator.
+// query-builder decorator. It resolves the telemetry facade lazily on first use
+// via resolver, so a connection built before telemetry is ready still ends up
+// instrumented once telemetry becomes available.
 type Instrument struct {
+	resolver  contractstelemetry.Resolver
+	baseAttrs []telemetry.KeyValue
+
+	mu           sync.Mutex
+	ready        atomic.Bool
+	disabled     atomic.Bool
 	tracer       trace.Tracer
 	meter        metric.Meter
 	durationHist metric.Float64Histogram
-	baseAttrs    []telemetry.KeyValue
 }
 
-// NewInstrument returns the shared instrumentation core, or nil when telemetry
-// is off or database instrumentation is disabled.
-func NewInstrument(pool contractsdatabase.Pool, connection string) *Instrument {
-	if telemetry.Facade == nil || telemetry.ConfigFacade == nil || !telemetry.ConfigFacade.GetBool(enabledConfigKey, true) {
-		return nil
+// NewInstrument returns the shared instrumentation core. It never returns nil:
+// resolver is called lazily (see active), so callers always wrap and the wrapper
+// no-ops until telemetry is available and enabled.
+func NewInstrument(resolver contractstelemetry.Resolver, pool contractsdatabase.Pool, connection string) *Instrument {
+	return &Instrument{
+		resolver:  resolver,
+		baseAttrs: baseAttributes(pool, connection),
+	}
+}
+
+// FacadeResolver resolves the process-wide telemetry facade. It is the default
+// resolver the database layer passes to the instrumentation.
+func FacadeResolver() contractstelemetry.Telemetry {
+	return telemetry.Facade
+}
+
+// active reports whether instrumentation is on, resolving telemetry and building
+// the tracer and metric instruments once on the first call that finds it ready.
+func (r *Instrument) active() bool {
+	if r.ready.Load() {
+		return true
+	}
+	if r.disabled.Load() {
+		return false
 	}
 
-	meter := telemetry.Facade.Meter(instrumentationName)
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if r.ready.Load() {
+		return true
+	}
+	if r.disabled.Load() {
+		return false
+	}
+
+	if r.resolver == nil || telemetry.ConfigFacade == nil || !telemetry.ConfigFacade.GetBool(enabledConfigKey, true) {
+		r.disabled.Store(true)
+		return false
+	}
+
+	tel := r.resolver()
+	if tel == nil {
+		// Telemetry is not configured for this application; give up permanently so
+		// instrumented queries pay only a couple of atomic loads from here on.
+		r.disabled.Store(true)
+		return false
+	}
+
+	meter := tel.Meter(instrumentationName)
 	durationHist, _ := meter.Float64Histogram(metricOperationDuration,
 		metric.WithUnit(unitSeconds),
 		metric.WithDescription("Duration of database client operations"),
 		metric.WithExplicitBucketBoundaries(durationBuckets...),
 	)
 
-	return &Instrument{
-		tracer:       telemetry.Facade.Tracer(instrumentationName),
-		meter:        meter,
-		durationHist: durationHist,
-		baseAttrs:    baseAttributes(pool, connection),
-	}
+	r.tracer = tel.Tracer(instrumentationName)
+	r.meter = meter
+	r.durationHist = durationHist
+	r.ready.Store(true)
+
+	return true
 }
 
 func baseAttributes(pool contractsdatabase.Pool, connection string) []telemetry.KeyValue {
@@ -85,10 +137,18 @@ func baseAttributes(pool contractsdatabase.Pool, connection string) []telemetry.
 }
 
 func (r *Instrument) startSpan(ctx context.Context, name string) (context.Context, trace.Span) {
+	if !r.active() {
+		return ctx, nil
+	}
+
 	return r.tracer.Start(ctx, name, telemetry.WithSpanKind(telemetry.SpanKindClient))
 }
 
 func (r *Instrument) endSpan(ctx context.Context, span trace.Span, start time.Time, query, table string, rows int64, err error) {
+	if span == nil {
+		return
+	}
+
 	operation := operationName(query)
 
 	attrs := append([]telemetry.KeyValue{}, r.baseAttrs...)

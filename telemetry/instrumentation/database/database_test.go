@@ -14,6 +14,7 @@ import (
 	metricnoop "go.opentelemetry.io/otel/metric/noop"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
+	"go.opentelemetry.io/otel/trace"
 	"gorm.io/gorm"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
@@ -25,6 +26,9 @@ import (
 type recordingSpanExporter struct {
 	mu    sync.Mutex
 	spans []sdktrace.ReadOnlySpan
+	// tracer feeds this exporter; tests that need a parent span use it instead of
+	// the mocked facade, keeping the facade's Tracer call count deterministic.
+	tracer trace.Tracer
 }
 
 func (r *recordingSpanExporter) ExportSpans(_ context.Context, spans []sdktrace.ReadOnlySpan) error {
@@ -41,14 +45,19 @@ func setupTelemetry(t *testing.T, enabled bool) *recordingSpanExporter {
 
 	exporter := &recordingSpanExporter{}
 	provider := sdktrace.NewTracerProvider(sdktrace.WithSyncer(exporter))
+	exporter.tracer = provider.Tracer(instrumentationName)
 	t.Cleanup(func() { _ = provider.Shutdown(context.Background()) })
 
+	// The instrument resolves telemetry once, lazily, on the first query a test
+	// exercises: GetBool gates it, and Tracer/Meter are built only when enabled.
+	// Every caller drives a query, so these counts are exact.
 	mockTelemetry := mockstelemetry.NewTelemetry(t)
-	mockTelemetry.EXPECT().Tracer(instrumentationName).Return(provider.Tracer(instrumentationName)).Maybe()
-	mockTelemetry.EXPECT().Meter(instrumentationName).Return(metricnoop.NewMeterProvider().Meter(instrumentationName)).Maybe()
-
 	mockConfig := mocksconfig.NewConfig(t)
-	mockConfig.EXPECT().GetBool(enabledConfigKey, true).Return(enabled).Maybe()
+	mockConfig.EXPECT().GetBool(enabledConfigKey, true).Return(enabled).Once()
+	if enabled {
+		mockTelemetry.EXPECT().Tracer(instrumentationName).Return(provider.Tracer(instrumentationName)).Once()
+		mockTelemetry.EXPECT().Meter(instrumentationName).Return(metricnoop.NewMeterProvider().Meter(instrumentationName)).Once()
+	}
 
 	originalFacade, originalConfig := telemetry.Facade, telemetry.ConfigFacade
 	telemetry.Facade, telemetry.ConfigFacade = mockTelemetry, mockConfig
@@ -75,26 +84,29 @@ func attrValue(span sdktrace.ReadOnlySpan, key string) (string, bool) {
 }
 
 func TestNewInstrument(t *testing.T) {
-	t.Run("nil when facade is not set", func(t *testing.T) {
-		original := telemetry.Facade
-		telemetry.Facade = nil
-		t.Cleanup(func() { telemetry.Facade = original })
+	t.Run("inactive when telemetry is not configured", func(t *testing.T) {
+		original := telemetry.ConfigFacade
+		telemetry.ConfigFacade = nil
+		t.Cleanup(func() { telemetry.ConfigFacade = original })
 
-		assert.Nil(t, NewInstrument(testPool(), "postgres"))
-	})
-
-	t.Run("nil when disabled", func(t *testing.T) {
-		setupTelemetry(t, false)
-
-		assert.Nil(t, NewInstrument(testPool(), "postgres"))
-	})
-
-	t.Run("captures base attributes when enabled", func(t *testing.T) {
-		setupTelemetry(t, true)
-
-		inst := NewInstrument(testPool(), "postgres")
+		inst := NewInstrument(FacadeResolver, testPool(), "postgres")
 
 		assert.NotNil(t, inst)
+		assert.False(t, inst.active())
+	})
+
+	t.Run("inactive when disabled", func(t *testing.T) {
+		setupTelemetry(t, false)
+
+		inst := NewInstrument(FacadeResolver, testPool(), "postgres")
+
+		assert.NotNil(t, inst)
+		assert.False(t, inst.active())
+	})
+
+	t.Run("captures base attributes", func(t *testing.T) {
+		inst := NewInstrument(FacadeResolver, testPool(), "postgres")
+
 		assert.Equal(t, []telemetry.KeyValue{
 			semconv.DBSystemNamePostgreSQL,
 			semconv.DBNamespace("app"),
@@ -105,9 +117,7 @@ func TestNewInstrument(t *testing.T) {
 	})
 
 	t.Run("skips empty connection details", func(t *testing.T) {
-		setupTelemetry(t, true)
-
-		inst := NewInstrument(contractsdatabase.Pool{Writers: []contractsdatabase.Config{{Driver: "sqlite"}}}, "")
+		inst := NewInstrument(FacadeResolver, contractsdatabase.Pool{Writers: []contractsdatabase.Config{{Driver: "sqlite"}}}, "")
 
 		assert.Equal(t, []telemetry.KeyValue{semconv.DBSystemNameSQLite}, inst.baseAttrs)
 	})
@@ -116,7 +126,7 @@ func TestNewInstrument(t *testing.T) {
 func TestInstrument_EndSpan(t *testing.T) {
 	t.Run("records query attributes and renames span", func(t *testing.T) {
 		exporter := setupTelemetry(t, true)
-		inst := NewInstrument(testPool(), "postgres")
+		inst := NewInstrument(FacadeResolver, testPool(), "postgres")
 
 		ctx, span := inst.startSpan(context.Background(), "gorm.Query")
 		inst.endSpan(ctx, span, time.Now(), "SELECT * FROM users WHERE id = ?", "users", 3, nil)
@@ -145,7 +155,7 @@ func TestInstrument_EndSpan(t *testing.T) {
 
 	t.Run("records error status", func(t *testing.T) {
 		exporter := setupTelemetry(t, true)
-		inst := NewInstrument(testPool(), "postgres")
+		inst := NewInstrument(FacadeResolver, testPool(), "postgres")
 
 		ctx, span := inst.startSpan(context.Background(), "gorm.Query")
 		inst.endSpan(ctx, span, time.Now(), "SELECT * FROM users", "users", -1, assert.AnError)
@@ -155,7 +165,7 @@ func TestInstrument_EndSpan(t *testing.T) {
 
 	t.Run("ignores record not found", func(t *testing.T) {
 		exporter := setupTelemetry(t, true)
-		inst := NewInstrument(testPool(), "postgres")
+		inst := NewInstrument(FacadeResolver, testPool(), "postgres")
 
 		ctx, span := inst.startSpan(context.Background(), "gorm.Query")
 		inst.endSpan(ctx, span, time.Now(), "SELECT * FROM users", "users", -1, gorm.ErrRecordNotFound)

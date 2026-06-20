@@ -22,7 +22,7 @@ func setupTracedGorm(t *testing.T) (*gorm.DB, *recordingSpanExporter) {
 
 	exporter := setupTelemetry(t, true)
 
-	plugin := NewGormPlugin(testPool(), "postgres")
+	plugin := NewGormPlugin(FacadeResolver, testPool(), "postgres")
 	assert.NotNil(t, plugin)
 
 	db, err := gorm.Open(gormtests.DummyDialector{}, &gorm.Config{SkipDefaultTransaction: true, DryRun: true})
@@ -41,18 +41,24 @@ func assertAttr(t *testing.T, span sdktrace.ReadOnlySpan, key, expected string) 
 }
 
 func TestNewGormPlugin(t *testing.T) {
-	t.Run("nil when facade is not set", func(t *testing.T) {
-		original := telemetry.Facade
-		telemetry.Facade = nil
-		t.Cleanup(func() { telemetry.Facade = original })
+	t.Run("inactive when telemetry is not configured", func(t *testing.T) {
+		original := telemetry.ConfigFacade
+		telemetry.ConfigFacade = nil
+		t.Cleanup(func() { telemetry.ConfigFacade = original })
 
-		assert.Nil(t, NewGormPlugin(testPool(), "postgres"))
+		plugin := NewGormPlugin(FacadeResolver, testPool(), "postgres")
+
+		assert.NotNil(t, plugin)
+		assert.False(t, plugin.instrument.active())
 	})
 
-	t.Run("nil when disabled", func(t *testing.T) {
+	t.Run("inactive when disabled", func(t *testing.T) {
 		setupTelemetry(t, false)
 
-		assert.Nil(t, NewGormPlugin(testPool(), "postgres"))
+		plugin := NewGormPlugin(FacadeResolver, testPool(), "postgres")
+
+		assert.NotNil(t, plugin)
+		assert.False(t, plugin.instrument.active())
 	})
 }
 
@@ -99,7 +105,7 @@ func TestGormPlugin_SequentialQueriesAreSiblings(t *testing.T) {
 func TestGormPlugin_NestsUnderParentSpan(t *testing.T) {
 	db, exporter := setupTracedGorm(t)
 
-	ctx, parent := telemetry.Facade.Tracer(instrumentationName).Start(context.Background(), "parent")
+	ctx, parent := exporter.tracer.Start(context.Background(), "parent")
 	var users []testUser
 	db.WithContext(ctx).Find(&users)
 	parent.End()

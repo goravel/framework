@@ -88,6 +88,10 @@ func tableFromContext(ctx context.Context) string {
 }
 
 func tracedExec(ctx context.Context, inst *Instrument, inner contractsdb.CommonBuilder, query string, args ...any) (sql.Result, error) {
+	if !inst.active() {
+		return inner.ExecContext(ctx, query, args...)
+	}
+
 	start := time.Now()
 	spanCtx, span := inst.startSpan(ctx, operationName(query))
 
@@ -106,6 +110,10 @@ func tracedExec(ctx context.Context, inst *Instrument, inner contractsdb.CommonB
 }
 
 func tracedRead(ctx context.Context, inst *Instrument, exec func(context.Context, any, string, ...any) error, dest any, query string, args ...any) error {
+	if !inst.active() {
+		return exec(ctx, dest, query, args...)
+	}
+
 	start := time.Now()
 	spanCtx, span := inst.startSpan(ctx, operationName(query))
 
@@ -117,6 +125,10 @@ func tracedRead(ctx context.Context, inst *Instrument, exec func(context.Context
 }
 
 func tracedQueryx(ctx context.Context, inst *Instrument, inner contractsdb.CommonBuilder, query string, args ...any) (*sqlx.Rows, error) {
+	if !inst.active() {
+		return inner.QueryxContext(ctx, query, args...)
+	}
+
 	start := time.Now()
 	spanCtx, span := inst.startSpan(ctx, operationName(query))
 

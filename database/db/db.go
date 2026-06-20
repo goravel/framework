@@ -147,7 +147,7 @@ func NewTx(
 ) *Tx {
 	pool := driver.Pool()
 	driverName := pool.Writers[0].Driver
-	instrument := instrumentationdatabase.NewInstrument(pool, pool.Writers[0].Connection)
+	instrument := instrumentationdatabase.NewInstrument(instrumentationdatabase.FacadeResolver, pool, pool.Writers[0].Connection)
 
 	if txBuilder != nil {
 		txBuilder = instrumentationdatabase.WrapTxBuilder(txBuilder, instrument)
