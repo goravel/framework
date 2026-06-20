@@ -4,12 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"gorm.io/gorm"
 	gormtests "gorm.io/gorm/utils/tests"
-
-	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 )
 
 type testUser struct {
@@ -17,92 +15,89 @@ type testUser struct {
 	Name string
 }
 
-func setupTracedGorm(t *testing.T) (*gorm.DB, *recordingSpanExporter) {
-	t.Helper()
+type GormPluginTestSuite struct {
+	suite.Suite
+	db       *gorm.DB
+	exporter *recordingSpanExporter
+}
 
-	exporter, mockConfig, resolver := setupTelemetry(t, true)
+func TestGormPluginTestSuite(t *testing.T) {
+	suite.Run(t, &GormPluginTestSuite{})
+}
 
-	plugin := NewGormPlugin(testPool(), "postgres", mockConfig, resolver)
-	assert.NotNil(t, plugin)
+func (s *GormPluginTestSuite) SetupTest() {
+	exporter, resolver := setupTelemetry(s.T())
+
+	plugin := NewGormPlugin(testPool(), "postgres", resolver)
+	s.Require().NotNil(plugin)
 
 	db, err := gorm.Open(gormtests.DummyDialector{}, &gorm.Config{SkipDefaultTransaction: true, DryRun: true})
-	assert.NoError(t, err)
-	assert.NoError(t, db.Use(plugin))
+	s.Require().NoError(err)
+	s.Require().NoError(db.Use(plugin))
 
-	return db, exporter
+	s.db = db
+	s.exporter = exporter
 }
 
-func assertAttr(t *testing.T, span sdktrace.ReadOnlySpan, key, expected string) {
-	t.Helper()
-
-	value, ok := attrValue(span, key)
-	assert.True(t, ok, key)
-	assert.Equal(t, expected, value, key)
+func (s *GormPluginTestSuite) lastSpan() sdktrace.ReadOnlySpan {
+	s.Require().NotEmpty(s.exporter.spans)
+	return s.exporter.spans[len(s.exporter.spans)-1]
 }
 
-func TestNewGormPlugin(t *testing.T) {
-	t.Run("inactive when config is nil", func(t *testing.T) {
-		plugin := NewGormPlugin(testPool(), "postgres", nil, func() contractstelemetry.Telemetry { return nil })
-		assert.NotNil(t, plugin)
-		assert.False(t, plugin.instrument.active())
-	})
-
-	t.Run("inactive when disabled", func(t *testing.T) {
-		_, mockConfig, resolver := setupTelemetry(t, false)
-		plugin := NewGormPlugin(testPool(), "postgres", mockConfig, resolver)
-		assert.NotNil(t, plugin)
-		assert.False(t, plugin.instrument.active())
-	})
+func (s *GormPluginTestSuite) TestInactiveWhenResolverIsNil() {
+	plugin := NewGormPlugin(testPool(), "postgres", nil)
+	s.NotNil(plugin)
+	s.False(plugin.instrument.active())
 }
 
-func TestGormPlugin_QuerySpan(t *testing.T) {
-	db, exporter := setupTracedGorm(t)
-
+func (s *GormPluginTestSuite) TestQuerySpan() {
 	var users []testUser
-	db.WithContext(context.Background()).Where("name = ?", "Goravel").Find(&users)
+	s.db.WithContext(context.Background()).Where("name = ?", "Goravel").Find(&users)
 
-	assert.Len(t, exporter.spans, 1)
-	span := exporter.spans[0]
-	assert.Equal(t, "SELECT test_users", span.Name())
-	assertAttr(t, span, "db.collection.name", "test_users")
-	assertAttr(t, span, "db.namespace", "app")
-	assertAttr(t, span, "db.client.connection.pool.name", "postgres")
+	s.Require().Len(s.exporter.spans, 1)
+	span := s.lastSpan()
+	s.Equal("SELECT test_users", span.Name())
+
+	for key, expected := range map[string]string{
+		"db.collection.name":             "test_users",
+		"db.namespace":                   "app",
+		"db.client.connection.pool.name": "postgres",
+	} {
+		val, ok := attrValue(span, key)
+		s.True(ok, key)
+		s.Equal(expected, val, key)
+	}
 
 	query, ok := attrValue(span, "db.query.text")
-	assert.True(t, ok)
-	assert.Contains(t, query, "?", "query text should keep placeholders")
-	assert.NotContains(t, query, "Goravel", "query text must not contain bound values")
+	s.True(ok)
+	s.Contains(query, "?")
+	s.NotContains(query, "Goravel")
 }
 
-func TestGormPlugin_CreateSpan(t *testing.T) {
-	db, exporter := setupTracedGorm(t)
+func (s *GormPluginTestSuite) TestCreateSpan() {
+	s.db.WithContext(context.Background()).Create(&testUser{Name: "Goravel"})
 
-	db.WithContext(context.Background()).Create(&testUser{Name: "Goravel"})
-
-	assert.Len(t, exporter.spans, 1)
-	assert.Equal(t, "INSERT test_users", exporter.spans[0].Name())
+	s.Require().Len(s.exporter.spans, 1)
+	s.Equal("INSERT test_users", s.lastSpan().Name())
 }
 
-func TestGormPlugin_SequentialQueriesAreSiblings(t *testing.T) {
-	db, exporter := setupTracedGorm(t)
+func (s *GormPluginTestSuite) TestSequentialQueriesAreSiblings() {
 	ctx := context.Background()
 
 	var users []testUser
-	db.WithContext(ctx).Find(&users)
-	db.WithContext(ctx).Find(&users)
+	s.db.WithContext(ctx).Find(&users)
+	s.db.WithContext(ctx).Find(&users)
 
-	assert.Len(t, exporter.spans, 2)
-	assert.False(t, exporter.spans[1].Parent().IsValid(), "second span must not be a child of the first")
+	s.Require().Len(s.exporter.spans, 2)
+	s.False(s.exporter.spans[1].Parent().IsValid())
 }
 
-func TestGormPlugin_NestsUnderParentSpan(t *testing.T) {
-	db, exporter := setupTracedGorm(t)
-
-	ctx, parent := exporter.tracer.Start(context.Background(), "parent")
+func (s *GormPluginTestSuite) TestNestsUnderParentSpan() {
+	ctx, parent := s.exporter.tracer.Start(context.Background(), "parent")
 	var users []testUser
-	db.WithContext(ctx).Find(&users)
+	s.db.WithContext(ctx).Find(&users)
 	parent.End()
 
-	assert.Len(t, exporter.spans, 2)
-	assert.Equal(t, parent.SpanContext().SpanID(), exporter.spans[0].Parent().SpanID())
+	s.Require().Len(s.exporter.spans, 2)
+	s.Equal(parent.SpanContext().SpanID(), s.exporter.spans[0].Parent().SpanID())
 }

@@ -35,7 +35,11 @@ type DB struct {
 
 func NewDB(ctx context.Context, config config.Config, driver contractsdriver.Driver, logger contractslogger.Logger, gormDB *gorm.DB, telemetryResolver contractstelemetry.Resolver) (*DB, error) {
 	pool := driver.Pool()
-	instrument := instrumentationdatabase.NewInstrument(pool, pool.Writers[0].Connection, config, telemetryResolver)
+
+	var instrument *instrumentationdatabase.Instrument
+	if telemetryResolver != nil && instrumentationdatabase.Enabled(config) {
+		instrument = instrumentationdatabase.NewInstrument(pool, pool.Writers[0].Connection, telemetryResolver)
+	}
 
 	return &DB{
 		Tx:                NewTx(ctx, driver, logger, gormDB, nil, &[]TxLog{}, instrument),

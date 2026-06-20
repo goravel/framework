@@ -53,7 +53,7 @@ func TestTxSelectPassesParameterizedSQL(t *testing.T) {
 
 func TestNewTx_UsesSharedInstrument(t *testing.T) {
 	pool := contractsdatabase.Pool{Writers: []contractsdatabase.Config{{Driver: "postgres", Connection: "primary"}}}
-	instrument := instrumentationdatabase.NewInstrument(pool, "primary", nil, nil)
+	instrument := instrumentationdatabase.NewInstrument(pool, "primary", nil)
 
 	driver := mocksdriver.NewDriver(t)
 	driver.EXPECT().Pool().Return(pool).Once()

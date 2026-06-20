@@ -33,9 +33,12 @@ const (
 
 var durationBuckets = []float64{0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10}
 
+func Enabled(config config.Config) bool {
+	return config != nil && config.GetBool(enabledConfigKey, true)
+}
+
 type Instrument struct {
 	baseAttrs []telemetry.KeyValue
-	config    config.Config
 	resolver  contractstelemetry.Resolver
 
 	mu           sync.Mutex
@@ -44,24 +47,23 @@ type Instrument struct {
 	durationHist metric.Float64Histogram
 }
 
-func NewInstrument(pool contractsdatabase.Pool, connection string, config config.Config, resolver contractstelemetry.Resolver) *Instrument {
+func NewInstrument(pool contractsdatabase.Pool, connection string, resolver contractstelemetry.Resolver) *Instrument {
 	return &Instrument{
 		baseAttrs: baseAttributes(pool, connection),
-		config:    config,
 		resolver:  resolver,
 	}
 }
 
 func (r *Instrument) active() bool {
+	if r == nil || r.resolver == nil {
+		return false
+	}
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	if r.tracer != nil {
 		return true
-	}
-
-	if r.config == nil || r.resolver == nil || !r.config.GetBool(enabledConfigKey, true) {
-		return false
 	}
 
 	tel := r.resolver()
@@ -113,9 +115,11 @@ func (r *Instrument) endSpan(ctx context.Context, span trace.Span, start time.Ti
 	attrs := append([]telemetry.KeyValue{}, r.baseAttrs...)
 	attrs = append(attrs, semconv.DBOperationName(operation), semconv.DBQueryText(query))
 	if table != "" {
-		summary := operation + " " + table
-		attrs = append(attrs, semconv.DBCollectionName(table), semconv.DBQuerySummary(summary))
-		span.SetName(summary)
+		name := operation + " " + table
+		attrs = append(attrs, semconv.DBCollectionName(table), semconv.DBQuerySummary(name))
+		span.SetName(name)
+	} else {
+		span.SetName(operation)
 	}
 	if rows >= 0 {
 		attrs = append(attrs, semconv.DBResponseReturnedRows(int(rows)))

@@ -69,6 +69,7 @@ func stubPool() database.Pool {
 
 func stubGormConfig(t *testing.T) *mocksconfig.Config {
 	mockConfig := mocksconfig.NewConfig(t)
+	mockConfig.EXPECT().GetBool(mock.Anything, mock.Anything).Return(true).Maybe()
 	mockConfig.EXPECT().GetInt(mock.Anything, mock.Anything).Return(10).Maybe()
 	mockConfig.EXPECT().GetDuration(mock.Anything, mock.Anything).Return(time.Duration(3600)).Maybe()
 

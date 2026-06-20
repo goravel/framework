@@ -1,7 +1,6 @@
 package database
 
 import (
-	"context"
 	"database/sql"
 	"sync"
 	"time"
@@ -9,26 +8,18 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"gorm.io/gorm"
 
-	"github.com/goravel/framework/contracts/config"
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/support/color"
 )
 
-// PluginName is the gorm plugin name this instrumentation registers under.
 const PluginName = "goravel:telemetry"
 
-// contextWrapper carries the span context through gorm's Statement.Context for
-// the duration of one operation while retaining the original parent, so after()
-// can restore it and keep sequential queries as siblings rather than nesting.
-type contextWrapper struct {
-	context.Context
-	parent context.Context
-	start  time.Time
-}
+const spanSettingsKey = PluginName + ":span"
 
-type callbackRegistrar interface {
-	Register(name string, fn func(*gorm.DB)) error
+type spanState struct {
+	span  trace.Span
+	start time.Time
 }
 
 type GormPlugin struct {
@@ -37,8 +28,8 @@ type GormPlugin struct {
 	poolOnce   sync.Once
 }
 
-func NewGormPlugin(pool contractsdatabase.Pool, connection string, config config.Config, resolver contractstelemetry.Resolver) *GormPlugin {
-	return &GormPlugin{instrument: NewInstrument(pool, connection, config, resolver)}
+func NewGormPlugin(pool contractsdatabase.Pool, connection string, resolver contractstelemetry.Resolver) *GormPlugin {
+	return &GormPlugin{instrument: NewInstrument(pool, connection, resolver)}
 }
 
 func (r *GormPlugin) Name() string {
@@ -46,36 +37,45 @@ func (r *GormPlugin) Name() string {
 }
 
 func (r *GormPlugin) Initialize(db *gorm.DB) error {
-	// Each row holds three intentionally distinct strings: key is the
-	// registration suffix, spanName is the fallback span name (endSpan renames
-	// it to "<op> <table>" once known), and "gorm:<op>" is gorm's built-in hook
-	// the before/after callbacks anchor to.
-	registrations := []struct {
-		key      string
-		spanName string
-		before   callbackRegistrar
-		after    callbackRegistrar
-	}{
-		{"create", "gorm.Create", db.Callback().Create().Before("gorm:create"), db.Callback().Create().After("gorm:create")},
-		{"query", "gorm.Query", db.Callback().Query().Before("gorm:query"), db.Callback().Query().After("gorm:query")},
-		{"update", "gorm.Update", db.Callback().Update().Before("gorm:update"), db.Callback().Update().After("gorm:update")},
-		{"delete", "gorm.Delete", db.Callback().Delete().Before("gorm:delete"), db.Callback().Delete().After("gorm:delete")},
-		{"row", "gorm.Row", db.Callback().Row().Before("gorm:row"), db.Callback().Row().After("gorm:row")},
-		{"raw", "gorm.Raw", db.Callback().Raw().Before("gorm:raw"), db.Callback().Raw().After("gorm:raw")},
+	cb := db.Callback()
+
+	if err := cb.Create().Before("gorm:create").Register(PluginName+":before_create", r.before); err != nil {
+		return err
+	}
+	if err := cb.Create().After("gorm:create").Register(PluginName+":after_create", r.after); err != nil {
+		return err
+	}
+	if err := cb.Query().Before("gorm:query").Register(PluginName+":before_query", r.before); err != nil {
+		return err
+	}
+	if err := cb.Query().After("gorm:query").Register(PluginName+":after_query", r.after); err != nil {
+		return err
+	}
+	if err := cb.Update().Before("gorm:update").Register(PluginName+":before_update", r.before); err != nil {
+		return err
+	}
+	if err := cb.Update().After("gorm:update").Register(PluginName+":after_update", r.after); err != nil {
+		return err
+	}
+	if err := cb.Delete().Before("gorm:delete").Register(PluginName+":before_delete", r.before); err != nil {
+		return err
+	}
+	if err := cb.Delete().After("gorm:delete").Register(PluginName+":after_delete", r.after); err != nil {
+		return err
+	}
+	if err := cb.Row().Before("gorm:row").Register(PluginName+":before_row", r.before); err != nil {
+		return err
+	}
+	if err := cb.Row().After("gorm:row").Register(PluginName+":after_row", r.after); err != nil {
+		return err
+	}
+	if err := cb.Raw().Before("gorm:raw").Register(PluginName+":before_raw", r.before); err != nil {
+		return err
+	}
+	if err := cb.Raw().After("gorm:raw").Register(PluginName+":after_raw", r.after); err != nil {
+		return err
 	}
 
-	for _, registration := range registrations {
-		if err := registration.before.Register(PluginName+":before_"+registration.key, r.before(registration.spanName)); err != nil {
-			return err
-		}
-		if err := registration.after.Register(PluginName+":after_"+registration.key, r.after); err != nil {
-			return err
-		}
-	}
-
-	// Capture the *sql.DB for pool metrics, which are registered lazily once
-	// telemetry is active (see before). A dialector without one has no stats to
-	// observe, so skip it while keeping the tracing callbacks.
 	if sqlDB, err := db.DB(); err == nil {
 		r.sqlDB = sqlDB
 	}
@@ -83,33 +83,28 @@ func (r *GormPlugin) Initialize(db *gorm.DB) error {
 	return nil
 }
 
-func (r *GormPlugin) before(spanName string) func(*gorm.DB) {
-	return func(tx *gorm.DB) {
-		if !r.instrument.active() {
-			return
-		}
-
-		r.poolOnce.Do(r.registerPoolMetrics)
-
-		parent := tx.Statement.Context
-		spanCtx, _ := r.instrument.startSpan(parent, spanName)
-		tx.Statement.Context = contextWrapper{Context: spanCtx, parent: parent, start: time.Now()}
+func (r *GormPlugin) before(tx *gorm.DB) {
+	if !r.instrument.active() {
+		return
 	}
+
+	r.poolOnce.Do(r.registerPoolMetrics)
+
+	ctx, span := r.instrument.startSpan(tx.Statement.Context, "db")
+	tx.Statement.Context = ctx
+	tx.Statement.Settings.Store(spanSettingsKey, spanState{span: span, start: time.Now()})
 }
 
 func (r *GormPlugin) after(tx *gorm.DB) {
-	wrapper, ok := tx.Statement.Context.(contextWrapper)
+	val, ok := tx.Statement.Settings.Load(spanSettingsKey)
 	if !ok {
 		return
 	}
-	tx.Statement.Context = wrapper.parent
 
-	span := trace.SpanFromContext(wrapper.Context)
-	r.instrument.endSpan(wrapper.Context, span, wrapper.start, tx.Statement.SQL.String(), tx.Statement.Table, tx.Statement.RowsAffected, tx.Error)
+	state := val.(spanState)
+	r.instrument.endSpan(tx.Statement.Context, state.span, state.start, tx.Statement.SQL.String(), tx.Statement.Table, tx.Statement.RowsAffected, tx.Error)
 }
 
-// registerPoolMetrics is best-effort: a registration failure warns but must not
-// disrupt the query that triggered it.
 func (r *GormPlugin) registerPoolMetrics() {
 	if r.sqlDB == nil {
 		return

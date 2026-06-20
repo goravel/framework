@@ -29,9 +29,9 @@ func TestBuilderTestSuite(t *testing.T) {
 }
 
 func (s *BuilderTestSuite) SetupTest() {
-	exporter, mockConfig, resolver := setupTelemetry(s.T(), true)
+	exporter, resolver := setupTelemetry(s.T())
 	s.exporter = exporter
-	s.instrument = NewInstrument(testPool(), "postgres", mockConfig, resolver)
+	s.instrument = NewInstrument(testPool(), "postgres", resolver)
 }
 
 func (s *BuilderTestSuite) lastSpan() sdktrace.ReadOnlySpan {

@@ -6,7 +6,7 @@ import (
 	"database/sql/driver"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
@@ -21,42 +21,78 @@ type stubDriver struct{}
 
 func (stubDriver) Open(string) (driver.Conn, error) { return nil, driver.ErrBadConn }
 
-func TestInstrument_RegisterPoolMetrics(t *testing.T) {
-	reader := sdkmetric.NewManualReader()
-	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
-	t.Cleanup(func() { _ = provider.Shutdown(context.Background()) })
+type PoolMetricsTestSuite struct {
+	suite.Suite
+	reader *sdkmetric.ManualReader
+	inst   *Instrument
+	db     *sql.DB
+}
 
-	inst := &Instrument{
+func TestPoolMetricsTestSuite(t *testing.T) {
+	suite.Run(t, &PoolMetricsTestSuite{})
+}
+
+func (s *PoolMetricsTestSuite) SetupTest() {
+	s.reader = sdkmetric.NewManualReader()
+	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(s.reader))
+	s.T().Cleanup(func() { _ = provider.Shutdown(context.Background()) })
+
+	s.inst = &Instrument{
 		baseAttrs: baseAttributes(testPool(), "postgres"),
 		meter:     provider.Meter(instrumentationName),
 	}
 
-	db := sql.OpenDB(stubConnector{})
-	defer func() { _ = db.Close() }()
+	s.db = sql.OpenDB(stubConnector{})
+	s.T().Cleanup(func() { _ = s.db.Close() })
+}
 
-	assert.NoError(t, inst.registerPoolMetrics(db))
-
+func (s *PoolMetricsTestSuite) collect() map[string]metricdata.Metrics {
 	var rm metricdata.ResourceMetrics
-	assert.NoError(t, reader.Collect(context.Background(), &rm))
+	s.Require().NoError(s.reader.Collect(context.Background(), &rm))
 
-	names := map[string]bool{}
+	result := map[string]metricdata.Metrics{}
 	for _, sm := range rm.ScopeMetrics {
 		for _, m := range sm.Metrics {
-			names[m.Name] = true
-			if m.Name == metricConnectionMax {
-				data := m.Data.(metricdata.Sum[int64])
-				assert.NotEmpty(t, data.DataPoints)
-				poolName, ok := data.DataPoints[0].Attributes.Value(semconv.DBClientConnectionPoolNameKey)
-				assert.True(t, ok)
-				assert.Equal(t, "postgres", poolName.AsString())
-			}
-			if m.Name == metricConnectionCount {
-				data := m.Data.(metricdata.Sum[int64])
-				assert.Len(t, data.DataPoints, 2)
-			}
+			result[m.Name] = m
 		}
 	}
+	return result
+}
+
+func (s *PoolMetricsTestSuite) TestRegistersAllMetrics() {
+	s.Require().NoError(s.inst.registerPoolMetrics(s.db))
+
+	metrics := s.collect()
 	for _, name := range []string{metricConnectionCount, metricConnectionMax, metricConnectionWaitTime, metricConnectionTimeouts} {
-		assert.True(t, names[name], name)
+		s.Contains(metrics, name)
 	}
+}
+
+func (s *PoolMetricsTestSuite) TestConnectionCountHasIdleAndUsedStates() {
+	s.Require().NoError(s.inst.registerPoolMetrics(s.db))
+
+	metrics := s.collect()
+	data := metrics[metricConnectionCount].Data.(metricdata.Sum[int64])
+	s.Require().Len(data.DataPoints, 2)
+
+	states := map[string]bool{}
+	for _, dp := range data.DataPoints {
+		val, ok := dp.Attributes.Value(semconv.DBClientConnectionStateKey)
+		s.True(ok)
+		states[val.AsString()] = true
+	}
+	s.Contains(states, "idle")
+	s.Contains(states, "used")
+}
+
+func (s *PoolMetricsTestSuite) TestPoolNameAttribute() {
+	s.Require().NoError(s.inst.registerPoolMetrics(s.db))
+
+	metrics := s.collect()
+	data := metrics[metricConnectionMax].Data.(metricdata.Sum[int64])
+	s.Require().NotEmpty(data.DataPoints)
+
+	poolName, ok := data.DataPoints[0].Attributes.Value(semconv.DBClientConnectionPoolNameKey)
+	s.True(ok)
+	s.Equal("postgres", poolName.AsString())
 }

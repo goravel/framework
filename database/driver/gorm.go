@@ -73,8 +73,10 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 		}
 	}
 
-	if err = instance.Use(instrumentationdatabase.NewGormPlugin(pool, connection, config, telemetryResolver)); err != nil {
-		color.Warningln(err.Error())
+	if telemetryResolver != nil && instrumentationdatabase.Enabled(config) {
+		if err = instance.Use(instrumentationdatabase.NewGormPlugin(pool, connection, telemetryResolver)); err != nil {
+			color.Warningln(err.Error())
+		}
 	}
 
 	maxIdleConns := config.GetInt("database.pool.max_idle_conns", 10)
