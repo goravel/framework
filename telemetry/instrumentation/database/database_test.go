@@ -47,14 +47,22 @@ type telemetryStub struct {
 	meterProvider otelmetric.MeterProvider
 }
 
-func (s *telemetryStub) ForceFlush(_ context.Context) error                               { return nil }
-func (s *telemetryStub) Shutdown(_ context.Context) error                                 { return nil }
-func (s *telemetryStub) Logger(_ string, _ ...otellog.LoggerOption) otellog.Logger         { return lognoop.NewLoggerProvider().Logger("") }
-func (s *telemetryStub) Meter(name string, _ ...otelmetric.MeterOption) otelmetric.Meter   { return s.meterProvider.Meter(name) }
-func (s *telemetryStub) MeterProvider() otelmetric.MeterProvider                           { return s.meterProvider }
-func (s *telemetryStub) Propagator() propagation.TextMapPropagator                         { return propagation.NewCompositeTextMapPropagator() }
-func (s *telemetryStub) Tracer(name string, _ ...oteltrace.TracerOption) oteltrace.Tracer  { return s.traceProvider.Tracer(name) }
-func (s *telemetryStub) TracerProvider() oteltrace.TracerProvider                          { return s.traceProvider }
+func (s *telemetryStub) ForceFlush(_ context.Context) error { return nil }
+func (s *telemetryStub) Shutdown(_ context.Context) error   { return nil }
+func (s *telemetryStub) Logger(_ string, _ ...otellog.LoggerOption) otellog.Logger {
+	return lognoop.NewLoggerProvider().Logger("")
+}
+func (s *telemetryStub) Meter(name string, _ ...otelmetric.MeterOption) otelmetric.Meter {
+	return s.meterProvider.Meter(name)
+}
+func (s *telemetryStub) MeterProvider() otelmetric.MeterProvider { return s.meterProvider }
+func (s *telemetryStub) Propagator() propagation.TextMapPropagator {
+	return propagation.NewCompositeTextMapPropagator()
+}
+func (s *telemetryStub) Tracer(name string, _ ...oteltrace.TracerOption) oteltrace.Tracer {
+	return s.traceProvider.Tracer(name)
+}
+func (s *telemetryStub) TracerProvider() oteltrace.TracerProvider { return s.traceProvider }
 
 func setupTelemetry(t *testing.T) (*recordingSpanExporter, contractstelemetry.Resolver) {
 	t.Helper()
@@ -255,7 +263,7 @@ func (s *InstrumentTestSuite) TestEndSpan() {
 			s.True(inst.active())
 
 			ctx, span := inst.startSpan(context.Background(), "db")
-			inst.endSpan(ctx, span, time.Now(), tt.query, tt.table, tt.rows, tt.err)
+			inst.endSpan(ctx, span, time.Now(), tt.query, tt.table, tt.rows, tt.err, "")
 
 			s.Require().Len(exporter.spans, 1)
 			recorded := exporter.spans[0]
@@ -268,6 +276,33 @@ func (s *InstrumentTestSuite) TestEndSpan() {
 			s.Equal(tt.hasRows, ok)
 		})
 	}
+}
+
+func (s *InstrumentTestSuite) TestEndSpan_ResolverMode() {
+	exporter, resolver := setupTelemetry(s.T())
+	inst := NewInstrument(testPool(), "postgres", resolver)
+	s.True(inst.active())
+
+	ctx, span := inst.startSpan(context.Background(), "db")
+	inst.endSpan(ctx, span, time.Now(), "SELECT * FROM users", "users", 1, nil, "replica")
+
+	s.Require().Len(exporter.spans, 1)
+	val, ok := attrValue(exporter.spans[0], attrResolverMode)
+	s.True(ok)
+	s.Equal("replica", val)
+}
+
+func (s *InstrumentTestSuite) TestEndSpan_EmptyResolverModeOmitsAttribute() {
+	exporter, resolver := setupTelemetry(s.T())
+	inst := NewInstrument(testPool(), "postgres", resolver)
+	s.True(inst.active())
+
+	ctx, span := inst.startSpan(context.Background(), "db")
+	inst.endSpan(ctx, span, time.Now(), "SELECT * FROM users", "users", 1, nil, "")
+
+	s.Require().Len(exporter.spans, 1)
+	_, ok := attrValue(exporter.spans[0], attrResolverMode)
+	s.False(ok)
 }
 
 func (s *InstrumentTestSuite) TestDBSystem() {

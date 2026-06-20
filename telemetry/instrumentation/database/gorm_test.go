@@ -28,7 +28,8 @@ func TestGormPluginTestSuite(t *testing.T) {
 func (s *GormPluginTestSuite) SetupTest() {
 	exporter, resolver := setupTelemetry(s.T())
 
-	plugin := NewGormPlugin(testPool(), "postgres", resolver)
+	instrument := NewInstrument(testPool(), "postgres", resolver)
+	plugin := NewGormPlugin(instrument)
 	s.Require().NotNil(plugin)
 
 	db, err := gorm.Open(gormtests.DummyDialector{}, &gorm.Config{SkipDefaultTransaction: true, DryRun: true})
@@ -45,7 +46,8 @@ func (s *GormPluginTestSuite) lastSpan() sdktrace.ReadOnlySpan {
 }
 
 func (s *GormPluginTestSuite) TestInactiveWhenResolverIsNil() {
-	plugin := NewGormPlugin(testPool(), "postgres", nil)
+	instrument := NewInstrument(testPool(), "postgres", nil)
+	plugin := NewGormPlugin(instrument)
 	s.NotNil(plugin)
 	s.False(plugin.instrument.active())
 }

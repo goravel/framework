@@ -39,6 +39,9 @@ func NewDB(ctx context.Context, config config.Config, driver contractsdriver.Dri
 	var instrument *instrumentationdatabase.Instrument
 	if telemetryResolver != nil && instrumentationdatabase.Enabled(config) {
 		instrument = instrumentationdatabase.NewInstrument(pool, pool.Writers[0].Connection, telemetryResolver)
+		if sqlDB, err := gormDB.DB(); err == nil {
+			instrument.SetDB(sqlDB)
+		}
 	}
 
 	return &DB{

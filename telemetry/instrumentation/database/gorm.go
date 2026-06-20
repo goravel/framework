@@ -1,17 +1,22 @@
 package database
 
 import (
-	"database/sql"
-	"sync"
+	"context"
 	"time"
 
 	"go.opentelemetry.io/otel/trace"
 	"gorm.io/gorm"
-
-	contractsdatabase "github.com/goravel/framework/contracts/database"
-	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
-	"github.com/goravel/framework/support/color"
+	"gorm.io/plugin/dbresolver"
 )
+
+var resolverModeKey = dbresolver.ResolverModeKey("dbresolver:resolver_mode_key")
+
+func resolverMode(ctx context.Context) string {
+	if mode, ok := ctx.Value(resolverModeKey).(dbresolver.ResolverMode); ok {
+		return string(mode)
+	}
+	return ""
+}
 
 const PluginName = "goravel:telemetry"
 
@@ -24,12 +29,10 @@ type spanState struct {
 
 type GormPlugin struct {
 	instrument *Instrument
-	sqlDB      *sql.DB
-	poolOnce   sync.Once
 }
 
-func NewGormPlugin(pool contractsdatabase.Pool, connection string, resolver contractstelemetry.Resolver) *GormPlugin {
-	return &GormPlugin{instrument: NewInstrument(pool, connection, resolver)}
+func NewGormPlugin(instrument *Instrument) *GormPlugin {
+	return &GormPlugin{instrument: instrument}
 }
 
 func (r *GormPlugin) Name() string {
@@ -76,10 +79,6 @@ func (r *GormPlugin) Initialize(db *gorm.DB) error {
 		return err
 	}
 
-	if sqlDB, err := db.DB(); err == nil {
-		r.sqlDB = sqlDB
-	}
-
 	return nil
 }
 
@@ -87,8 +86,6 @@ func (r *GormPlugin) before(tx *gorm.DB) {
 	if !r.instrument.active() {
 		return
 	}
-
-	r.poolOnce.Do(r.registerPoolMetrics)
 
 	ctx, span := r.instrument.startSpan(tx.Statement.Context, "db")
 	tx.Statement.Context = ctx
@@ -102,15 +99,5 @@ func (r *GormPlugin) after(tx *gorm.DB) {
 	}
 
 	state := val.(spanState)
-	r.instrument.endSpan(tx.Statement.Context, state.span, state.start, tx.Statement.SQL.String(), tx.Statement.Table, tx.Statement.RowsAffected, tx.Error)
-}
-
-func (r *GormPlugin) registerPoolMetrics() {
-	if r.sqlDB == nil {
-		return
-	}
-
-	if err := r.instrument.observePool(r.sqlDB); err != nil {
-		color.Warningln(err.Error())
-	}
+	r.instrument.endSpan(tx.Statement.Context, state.span, state.start, tx.Statement.SQL.String(), tx.Statement.Table, tx.Statement.RowsAffected, tx.Error, resolverMode(tx.Statement.Context))
 }

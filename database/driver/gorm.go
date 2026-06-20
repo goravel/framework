@@ -73,8 +73,10 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 		}
 	}
 
+	var instrument *instrumentationdatabase.Instrument
 	if telemetryResolver != nil && instrumentationdatabase.Enabled(config) {
-		if err = instance.Use(instrumentationdatabase.NewGormPlugin(pool, connection, telemetryResolver)); err != nil {
+		instrument = instrumentationdatabase.NewInstrument(pool, connection, telemetryResolver)
+		if err = instance.Use(instrumentationdatabase.NewGormPlugin(instrument)); err != nil {
 			color.Warningln(err.Error())
 		}
 	}
@@ -94,6 +96,10 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 		db.SetMaxOpenConns(maxOpenConns)
 		db.SetConnMaxIdleTime(connMaxIdleTime * time.Second)
 		db.SetConnMaxLifetime(connMaxLifetime * time.Second)
+
+		if instrument != nil {
+			instrument.SetDB(db)
+		}
 
 		connectionToDB.Store(connection, instance)
 
@@ -123,6 +129,12 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 		SetConnMaxLifetime(connMaxLifetime * time.Second).
 		SetConnMaxIdleTime(connMaxIdleTime * time.Second)); err != nil {
 		return nil, err
+	}
+
+	if instrument != nil {
+		if sqlDB, err := instance.DB(); err == nil {
+			instrument.SetDB(sqlDB)
+		}
 	}
 
 	connectionToDB.Store(connection, instance)

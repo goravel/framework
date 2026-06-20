@@ -95,7 +95,7 @@ func tracedExec(ctx context.Context, inst *Instrument, inner contractsdb.CommonB
 		}
 	}
 
-	inst.endSpan(spanCtx, span, start, query, tableFromContext(ctx), rows, err)
+	inst.endSpan(spanCtx, span, start, query, tableFromContext(ctx), rows, err, "")
 
 	return result, err
 }
@@ -110,7 +110,7 @@ func tracedRead(ctx context.Context, inst *Instrument, exec func(context.Context
 
 	err := exec(spanCtx, dest, query, args...)
 
-	inst.endSpan(spanCtx, span, start, query, tableFromContext(ctx), -1, err)
+	inst.endSpan(spanCtx, span, start, query, tableFromContext(ctx), -1, err, "")
 
 	return err
 }
@@ -125,7 +125,7 @@ func tracedQueryx(ctx context.Context, inst *Instrument, inner contractsdb.Commo
 
 	rows, err := inner.QueryxContext(spanCtx, query, args...)
 
-	inst.endSpan(spanCtx, span, start, query, tableFromContext(ctx), -1, err)
+	inst.endSpan(spanCtx, span, start, query, tableFromContext(ctx), -1, err, "")
 
 	return rows, err
 }

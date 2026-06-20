@@ -30,6 +30,8 @@ const (
 
 	metricOperationDuration = "db.client.operation.duration"
 	unitSeconds             = "s"
+
+	attrResolverMode = "db.client.connection.pool.state"
 )
 
 var durationBuckets = []float64{0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10}
@@ -55,9 +57,12 @@ type Instrument struct {
 // Pool metrics cover the writer pool only; dbresolver replica pools are
 // internal gorm.ConnPool instances with no public sql.DBStats access.
 func (r *Instrument) SetDB(db *sql.DB) {
-	if r != nil {
-		r.sqlDB = db
+	if r == nil {
+		return
 	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.sqlDB = db
 }
 
 func NewInstrument(pool contractsdatabase.Pool, connection string, resolver contractstelemetry.Resolver) *Instrument {
@@ -109,6 +114,10 @@ func (r *Instrument) startPoolObservation() {
 	}
 }
 
+// baseAttributes uses Writers[0] for server.address and server.port.
+// In read/write setups the db.client.connection.pool.state span attribute
+// distinguishes source from replica, but the specific replica host is not
+// available from gorm's callback layer.
 func baseAttributes(pool contractsdatabase.Pool, connection string) []telemetry.KeyValue {
 	if len(pool.Writers) == 0 {
 		return nil
@@ -136,7 +145,7 @@ func (r *Instrument) startSpan(ctx context.Context, name string) (context.Contex
 	return r.tracer.Start(ctx, name, telemetry.WithSpanKind(telemetry.SpanKindClient))
 }
 
-func (r *Instrument) endSpan(ctx context.Context, span trace.Span, start time.Time, query, table string, rows int64, err error) {
+func (r *Instrument) endSpan(ctx context.Context, span trace.Span, start time.Time, query, table string, rows int64, err error, resolverMode string) {
 	operation := operationName(query)
 
 	attrs := append([]telemetry.KeyValue{}, r.baseAttrs...)
@@ -150,6 +159,9 @@ func (r *Instrument) endSpan(ctx context.Context, span trace.Span, start time.Ti
 	}
 	if rows >= 0 {
 		attrs = append(attrs, semconv.DBResponseReturnedRows(int(rows)))
+	}
+	if resolverMode != "" {
+		attrs = append(attrs, telemetry.String(attrResolverMode, resolverMode))
 	}
 
 	metricAttrs := append([]telemetry.KeyValue{}, r.baseAttrs...)

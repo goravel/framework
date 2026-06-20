@@ -39,12 +39,12 @@ type TestQuery struct {
 func NewTestQuery(ctx context.Context, driver contractsdriver.Driver, config config.Config, connection string) (*TestQuery, error) {
 	pool := driver.Pool()
 	logger := databasedb.NewLogger(config, utils.NewTestLog())
-	gorm, err := databasedriver.BuildGorm(config, logger.ToGorm(), pool, connection)
+	gorm, err := databasedriver.BuildGorm(config, logger.ToGorm(), pool, connection, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	db, err := databasedb.NewDB(ctx, config, driver, logger, gorm)
+	db, err := databasedb.NewDB(ctx, config, driver, logger, gorm, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func NewTestQuery(ctx context.Context, driver contractsdriver.Driver, config con
 		config: config,
 		db:     db,
 		driver: driver,
-		query:  databasegorm.NewQuery(ctx, config, pool.Writers[0], gorm, driver.Grammar(), utils.NewTestLog(), nil, nil),
+		query:  databasegorm.NewQuery(ctx, config, pool.Writers[0], gorm, driver.Grammar(), utils.NewTestLog(), nil, nil, nil),
 	}
 
 	return testQuery, nil
@@ -115,7 +115,7 @@ func (r *TestQuery) WithSchema(schema string) {
 	r.MockConfig().EXPECT().Add(fmt.Sprintf("database.connections.%s.schema", dbConfig.Connection), schema)
 	r.config.Add(fmt.Sprintf("database.connections.%s.schema", dbConfig.Connection), schema)
 
-	query, _, err := databasegorm.BuildQuery(context.Background(), r.config, dbConfig.Connection, utils.NewTestLog(), nil)
+	query, _, err := databasegorm.BuildQuery(context.Background(), r.config, dbConfig.Connection, utils.NewTestLog(), nil, nil)
 	if err != nil {
 		panic(fmt.Sprintf("connect to %s failed: %v", dbConfig.Connection, err))
 	}
