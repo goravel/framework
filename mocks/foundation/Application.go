@@ -518,6 +518,53 @@ func (_c *Application_ConfigPath_Call) RunAndReturn(run func(...string) string) 
 	return _c
 }
 
+// ConsoleCommandsFilter provides a mock function with no fields
+func (_m *Application) ConsoleCommandsFilter() []string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for ConsoleCommandsFilter")
+	}
+
+	var r0 []string
+	if rf, ok := ret.Get(0).(func() []string); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	return r0
+}
+
+// Application_ConsoleCommandsFilter_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ConsoleCommandsFilter'
+type Application_ConsoleCommandsFilter_Call struct {
+	*mock.Call
+}
+
+// ConsoleCommandsFilter is a helper method to define mock.On call
+func (_e *Application_Expecter) ConsoleCommandsFilter() *Application_ConsoleCommandsFilter_Call {
+	return &Application_ConsoleCommandsFilter_Call{Call: _e.mock.On("ConsoleCommandsFilter")}
+}
+
+func (_c *Application_ConsoleCommandsFilter_Call) Run(run func()) *Application_ConsoleCommandsFilter_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Application_ConsoleCommandsFilter_Call) Return(_a0 []string) *Application_ConsoleCommandsFilter_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Application_ConsoleCommandsFilter_Call) RunAndReturn(run func() []string) *Application_ConsoleCommandsFilter_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Context provides a mock function with no fields
 func (_m *Application) Context() context.Context {
 	ret := _m.Called()

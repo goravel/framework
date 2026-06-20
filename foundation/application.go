@@ -68,16 +68,17 @@ func init() {
 
 type Application struct {
 	*Container
-	ctx                context.Context
-	cancel             context.CancelFunc
-	builder            *ApplicationBuilder
-	providerRepository foundation.ProviderRepository
-	publishes          map[string]map[string]string
-	publishGroups      map[string]map[string]string
-	json               foundation.Json
-	bootedRunners      []string
-	runnerWg           sync.WaitGroup
-	runnersToRun       []*RunnerWithInfo
+	ctx                   context.Context
+	cancel                context.CancelFunc
+	builder               *ApplicationBuilder
+	providerRepository    foundation.ProviderRepository
+	publishes             map[string]map[string]string
+	publishGroups         map[string]map[string]string
+	json                  foundation.Json
+	bootedRunners         []string
+	consoleCommandsFilter []string
+	runnerWg              sync.WaitGroup
+	runnersToRun          []*RunnerWithInfo
 }
 
 func NewApplication() foundation.Application {
@@ -113,6 +114,9 @@ func (r *Application) Build() foundation.Application {
 	r.setTimezone()
 	r.configurePaths()
 	r.configureCustomConfig()
+	if r.builder.consoleCommandsFilter != nil {
+		r.consoleCommandsFilter = r.builder.consoleCommandsFilter()
+	}
 	r.configureServiceProviders()
 	r.providerRepository.Register(r)
 	r.providerRepository.Boot(r)
@@ -327,6 +331,14 @@ func (r *Application) SetBuilder(builder foundation.ApplicationBuilder) foundati
 	return r
 }
 
+// ConsoleCommandsFilter returns the captured positive-list of command
+// signatures to keep. nil means no filter is applied. Used by the console
+// service provider so its own command batch goes through the same gate as
+// the framework's defaultCommands batch.
+func (r *Application) ConsoleCommandsFilter() []string {
+	return r.consoleCommandsFilter
+}
+
 func (r *Application) SetJson(j foundation.Json) {
 	if j != nil {
 		r.json = j
@@ -464,7 +476,7 @@ func (r *Application) configureCommands() {
 			if artisanFacade == nil {
 				color.Errorln("Artisan facade not found, please install it first: ./artisan package:install Artisan")
 			} else {
-				artisanFacade.Register(commands)
+				artisanFacade.Register(frameworkconsole.FilterCommandsByAllowlist(commands, r.consoleCommandsFilter))
 			}
 		}
 	}
@@ -757,7 +769,7 @@ func (r *Application) defaultCommands() []contractsconsole.Command {
 		commands = append(commands, console.NewUpCommand(maintenance), console.NewDownCommand(view, hash, maintenance))
 	}
 
-	return commands
+	return frameworkconsole.FilterCommandsByAllowlist(commands, r.consoleCommandsFilter)
 }
 
 func (r *Application) baseServiceProviders() []foundation.ServiceProvider {

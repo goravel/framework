@@ -26,6 +26,7 @@ type ApplicationBuilder struct {
 	commands                   func() []console.Command
 	config                     func()
 	configuredServiceProviders func() []foundation.ServiceProvider
+	consoleCommandsFilter      func() []string
 	eventToListeners           func() map[event.Event][]event.Listener
 	filters                    func() []validation.Filter
 	grpcClientCredentials      func() map[string]credentials.TransportCredentials
@@ -63,6 +64,40 @@ func (r *ApplicationBuilder) WithCallback(callback func()) foundation.Applicatio
 
 func (r *ApplicationBuilder) WithCommands(fn func() []console.Command) foundation.ApplicationBuilder {
 	r.commands = fn
+
+	return r
+}
+
+// WithCommandsFilter registers a callback that returns the positive list of
+// command signatures to keep when the framework registers its own Artisan
+// commands. The callback runs once at Build() time; the user can call
+// facades.Config() inside it to read app.env or any other setting without
+// needing a parameter.
+//
+// Each entry in the returned slice is matched in one of two ways:
+//
+//   - Exact match (no wildcard) — checked against command.Signature().
+//   - Glob match (the entry contains '*') — checked against
+//     command.Signature() using stdpath.Match. '*' matches any sequence
+//     of non-'/' characters. '?' is not a wildcard.
+//
+// Category is never consulted. The filter is signature-only.
+//
+// Semantics:
+//
+//   - Method not called           → keep every command (default).
+//   - Callback returns nil        → keep every command (no filter).
+//   - Callback returns []string{} → drop every command (filter, no matches).
+//   - Callback returns entries    → keep only commands whose signature
+//     matches an entry (exact or glob).
+//
+// Composition with WithCommands:
+//
+// WithCommands adds extra commands to the framework's set; WithCommandsFilter
+// then trims the combined set. The filter applies to user-added commands
+// too, so the user cannot bypass the filter by adding commands.
+func (r *ApplicationBuilder) WithCommandsFilter(fn func() []string) foundation.ApplicationBuilder {
+	r.consoleCommandsFilter = fn
 
 	return r
 }

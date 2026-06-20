@@ -185,6 +185,54 @@ func (_c *ApplicationBuilder_WithCommands_Call) RunAndReturn(run func(func() []c
 	return _c
 }
 
+// WithCommandsFilter provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithCommandsFilter(_a0 func() []string) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithCommandsFilter")
+	}
+
+	var r0 foundation.ApplicationBuilder
+	if rf, ok := ret.Get(0).(func(func() []string) foundation.ApplicationBuilder); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(foundation.ApplicationBuilder)
+		}
+	}
+
+	return r0
+}
+
+// ApplicationBuilder_WithCommandsFilter_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithCommandsFilter'
+type ApplicationBuilder_WithCommandsFilter_Call struct {
+	*mock.Call
+}
+
+// WithCommandsFilter is a helper method to define mock.On call
+//   - _a0 func() []string
+func (_e *ApplicationBuilder_Expecter) WithCommandsFilter(_a0 interface{}) *ApplicationBuilder_WithCommandsFilter_Call {
+	return &ApplicationBuilder_WithCommandsFilter_Call{Call: _e.mock.On("WithCommandsFilter", _a0)}
+}
+
+func (_c *ApplicationBuilder_WithCommandsFilter_Call) Run(run func(_a0 func() []string)) *ApplicationBuilder_WithCommandsFilter_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func() []string))
+	})
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithCommandsFilter_Call) Return(_a0 foundation.ApplicationBuilder) *ApplicationBuilder_WithCommandsFilter_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithCommandsFilter_Call) RunAndReturn(run func(func() []string) foundation.ApplicationBuilder) *ApplicationBuilder_WithCommandsFilter_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // WithConfig provides a mock function with given fields: _a0
 func (_m *ApplicationBuilder) WithConfig(_a0 func()) foundation.ApplicationBuilder {
 	ret := _m.Called(_a0)
