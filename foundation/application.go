@@ -76,7 +76,7 @@ type Application struct {
 	publishGroups         map[string]map[string]string
 	json                  foundation.Json
 	bootedRunners         []string
-	consoleCommandsFilter []string
+	commandsFilter []string
 	runnerWg              sync.WaitGroup
 	runnersToRun          []*RunnerWithInfo
 }
@@ -114,8 +114,8 @@ func (r *Application) Build() foundation.Application {
 	r.setTimezone()
 	r.configurePaths()
 	r.configureCustomConfig()
-	if r.builder.consoleCommandsFilter != nil {
-		r.consoleCommandsFilter = r.builder.consoleCommandsFilter()
+	if r.builder.commandsFilter != nil {
+		r.commandsFilter = r.builder.commandsFilter()
 	}
 	r.configureServiceProviders()
 	r.providerRepository.Register(r)
@@ -331,12 +331,12 @@ func (r *Application) SetBuilder(builder foundation.ApplicationBuilder) foundati
 	return r
 }
 
-// ConsoleCommandsFilter returns the captured positive-list of command
-// signatures to keep. nil means no filter is applied. Used by the console
-// service provider so its own command batch goes through the same gate as
-// the framework's defaultCommands batch.
-func (r *Application) ConsoleCommandsFilter() []string {
-	return r.consoleCommandsFilter
+// CommandsFilter returns the positive-list of command signatures to keep.
+// nil means no filter is applied. Used by the console service provider so
+// its own command batch goes through the same gate as the framework's
+// defaultCommands batch.
+func (r *Application) CommandsFilter() []string {
+	return r.commandsFilter
 }
 
 func (r *Application) SetJson(j foundation.Json) {
@@ -476,7 +476,7 @@ func (r *Application) configureCommands() {
 			if artisanFacade == nil {
 				color.Errorln("Artisan facade not found, please install it first: ./artisan package:install Artisan")
 			} else {
-				artisanFacade.Register(frameworkconsole.FilterCommandsByAllowlist(commands, r.consoleCommandsFilter))
+				artisanFacade.Register(frameworkconsole.FilterCommandsByAllowlist(commands, r.commandsFilter))
 			}
 		}
 	}
@@ -769,7 +769,7 @@ func (r *Application) defaultCommands() []contractsconsole.Command {
 		commands = append(commands, console.NewUpCommand(maintenance), console.NewDownCommand(view, hash, maintenance))
 	}
 
-	return frameworkconsole.FilterCommandsByAllowlist(commands, r.consoleCommandsFilter)
+	return frameworkconsole.FilterCommandsByAllowlist(commands, r.commandsFilter)
 }
 
 func (r *Application) baseServiceProviders() []foundation.ServiceProvider {

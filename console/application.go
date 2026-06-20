@@ -86,7 +86,8 @@ func (r *Application) CallAndExit(command string) {
 	_ = r.Run(append(commands, strings.Split(command, " ")...), true)
 }
 
-// Register commands to the application.
+// Register commands to the application. Filtering is the caller's
+// responsibility; this method appends without consulting any allowlist.
 func (r *Application) Register(commands []console.Command) {
 	r.commands = append(r.commands, commands...)
 }
@@ -177,15 +178,13 @@ func shutdownCommand(shutdownable console.Shutdownable, cmd *cli.Command, argume
 }
 
 // FilterCommandsByAllowlist returns the subset of commands whose Signature()
-// matches at least one entry in allowlist. Each entry is matched in one of
-// two ways:
+// matches at least one entry in allowlist.
 //
-//   - Exact match (no wildcard) — checked against command.Signature().
-//   - Glob match (the entry contains '*') — checked against
-//     command.Signature() using stdpath.Match. '*' matches any sequence of
-//     non-'/' characters. '?' is not a wildcard.
-//
-// Category is never consulted. The filter is signature-only.
+// Matching is signature-only (category never consulted):
+//   - Entries without '*' are exact-matched against command.Signature().
+//   - Entries containing '*' use glob matching via path.Match against
+//     command.Signature() (only '*' triggers the glob path; '?' is matched
+//     literally as an exact match).
 //
 // Special cases:
 //   - allowlist == nil            → every command is kept (no filter applied).

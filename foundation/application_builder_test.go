@@ -298,10 +298,10 @@ func (s *ApplicationBuilderTestSuite) TestWithCommandsFilter() {
 	builder := s.builder.WithCommandsFilter(fn)
 
 	s.NotNil(builder)
-	s.NotNil(s.builder.consoleCommandsFilter)
+	s.NotNil(s.builder.commandsFilter)
 
 	// Verify the stored callback is the same one and can be invoked
-	got := s.builder.consoleCommandsFilter()
+	got := s.builder.commandsFilter()
 	s.Equal([]string{"up", "down"}, got)
 	s.True(called)
 }
@@ -310,7 +310,7 @@ func (s *ApplicationBuilderTestSuite) TestWithCommandsFilterNil() {
 	builder := s.builder.WithCommandsFilter(nil)
 
 	s.NotNil(builder)
-	s.Nil(s.builder.consoleCommandsFilter)
+	s.Nil(s.builder.commandsFilter)
 }
 
 type mockStatsHandler struct{ stats.Handler }

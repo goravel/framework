@@ -63,9 +63,9 @@ func TestServiceProviderBootNilAllowlistRegistersAll(t *testing.T) {
 
 	// nil allowlist means all four console/console/* commands are registered.
 	app.EXPECT().MakeArtisan().Return(artisan).Once()
-	app.EXPECT().MakeConfig().Return(configFacade).Maybe()
-	app.EXPECT().MakeProcess().Return(processFacade).Maybe()
-	app.EXPECT().ConsoleCommandsFilter().Return(nil).Once()
+	app.EXPECT().MakeConfig().Return(configFacade).Once()
+	app.EXPECT().MakeProcess().Return(processFacade).Once()
+	app.EXPECT().CommandsFilter().Return(nil).Once()
 	artisan.EXPECT().Register(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
 		return len(commands) == 4
 	})).Once()
@@ -82,9 +82,9 @@ func TestServiceProviderBootEmptyAllowlistRegistersNothing(t *testing.T) {
 
 	// empty allowlist means all commands are dropped.
 	app.EXPECT().MakeArtisan().Return(artisan).Once()
-	app.EXPECT().MakeConfig().Return(configFacade).Maybe()
-	app.EXPECT().MakeProcess().Return(processFacade).Maybe()
-	app.EXPECT().ConsoleCommandsFilter().Return([]string{}).Once()
+	app.EXPECT().MakeConfig().Return(configFacade).Once()
+	app.EXPECT().MakeProcess().Return(processFacade).Once()
+	app.EXPECT().CommandsFilter().Return([]string{}).Once()
 	artisan.EXPECT().Register(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
 		return len(commands) == 0
 	})).Once()
@@ -100,12 +100,10 @@ func TestServiceProviderBootAllowlistApplies(t *testing.T) {
 	processFacade := mocksprocess.NewProcess(t)
 
 	// glob pattern keep-list: only "list" and the make sub-command survive.
-	// The framework still constructs every command before filtering, so
-	// MakeConfig and MakeProcess are called for the dropped commands too.
 	app.EXPECT().MakeArtisan().Return(artisan).Once()
-	app.EXPECT().MakeConfig().Return(configFacade).Maybe()
-	app.EXPECT().MakeProcess().Return(processFacade).Maybe()
-	app.EXPECT().ConsoleCommandsFilter().Return([]string{"list", "make:*"}).Once()
+	app.EXPECT().MakeConfig().Return(configFacade).Once()
+	app.EXPECT().MakeProcess().Return(processFacade).Once()
+	app.EXPECT().CommandsFilter().Return([]string{"list", "make:*"}).Once()
 	artisan.EXPECT().Register(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
 		got := signaturesOf(commands)
 		want := []string{"list", "make:command"}

@@ -23,26 +23,20 @@ type ApplicationBuilder interface {
 	// WithCommands sets the application's commands.
 	WithCommands(func() []console.Command) ApplicationBuilder
 	// WithCommandsFilter registers a callback that returns the positive list of
-	// command signatures to keep when the framework registers its own Artisan
-	// commands. The callback runs once at Build() time.
+	// command signatures to keep when the framework registers Artisan commands.
+	// The callback runs once at Build() time.
 	//
-	// Each entry in the returned slice is matched in one of two ways:
-	//   - Exact match (no wildcard) — checked against command.Signature().
-	//   - Glob match (the entry contains '*') — checked against
-	//     command.Signature() using stdpath.Match. '*' matches any sequence
-	//     of non-'/' characters. '?' is not a wildcard.
-	//
-	// Category is never consulted. The filter is signature-only.
+	// Matching is signature-only (category never consulted):
+	//   - Entries without '*' are exact-matched against command.Signature().
+	//   - Entries containing '*' use glob matching via path.Match against
+	//     command.Signature() (only '*' triggers the glob path; '?' is
+	//     matched literally as an exact match).
 	//
 	// Semantics:
 	//   - Method not called           → keep every command (default).
 	//   - Callback returns nil        → keep every command (no filter).
-	//   - Callback returns []string{} → drop every command (filter, no matches).
-	//   - Callback returns entries    → keep only commands whose signature
-	//     matches an entry (exact or glob).
-	//
-	// The filter applies to user-added commands from WithCommands as well,
-	// so the user cannot bypass the filter by adding commands.
+	//   - Callback returns []string{} → drop every command.
+	//   - Callback returns entries    → keep only commands matching an entry.
 	WithCommandsFilter(func() []string) ApplicationBuilder
 	// WithConfig sets a callback function to configure the application.
 	WithConfig(func()) ApplicationBuilder

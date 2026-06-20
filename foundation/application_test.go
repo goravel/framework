@@ -238,7 +238,7 @@ func (s *ApplicationTestSuite) TestDefaultCommandsAppliesAllowlistFilter() {
 		s.Run(tt.name, func() {
 			s.SetupTest()
 			s.app.SetJson(foundationjson.New())
-			s.app.consoleCommandsFilter = tt.allow
+			s.app.commandsFilter = tt.allow
 
 			commands := s.app.defaultCommands()
 			got := commandSignatures(commands)
@@ -251,19 +251,6 @@ func (s *ApplicationTestSuite) TestDefaultCommandsAppliesAllowlistFilter() {
 			}
 		})
 	}
-}
-
-func (s *ApplicationTestSuite) TestDefaultCommandsUpDownBySignature() {
-	s.app.SetJson(foundationjson.New())
-	s.app.Instance(binding.Route, mocksroute.NewRoute(s.T()))
-	s.app.consoleCommandsFilter = []string{"up", "down"}
-
-	commands := s.app.defaultCommands()
-	got := commandSignatures(commands)
-
-	s.Contains(got, "up")
-	s.Contains(got, "down")
-	s.NotContains(got, "about")
 }
 
 func (s *ApplicationTestSuite) TestConfigureCommandsAppliesFilter() {
@@ -292,11 +279,11 @@ func (s *ApplicationTestSuite) TestConfigureCommandsAppliesFilter() {
 	builder.commands = func() []console.Command {
 		return []console.Command{userCmdA, userCmdB, userCmdC}
 	}
-	builder.consoleCommandsFilter = func() []string {
+	builder.commandsFilter = func() []string {
 		return []string{"user:a", "user:c"}
 	}
 	s.app.builder = builder
-	s.app.consoleCommandsFilter = builder.consoleCommandsFilter()
+	s.app.commandsFilter = builder.commandsFilter()
 
 	s.app.configureCommands()
 }

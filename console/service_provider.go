@@ -73,5 +73,5 @@ func (r *ServiceProvider) registerCommands(app foundation.Application) {
 		// 	"static": config.Env("DEPLOY_STATIC", true),
 		// },
 		// console.NewDeployCommand(configFacade, artisanFacade),
-	}, app.ConsoleCommandsFilter()))
+	}, app.CommandsFilter()))
 }
