@@ -72,8 +72,7 @@ func (r *ModelMakeCommand) Extend() command.Extend {
 }
 
 func (r *ModelMakeCommand) Handle(ctx console.Context) error {
-	if orm := r.schema.Orm(); orm == nil || orm.Query() == nil {
-		ctx.Error(errors.SchemaOrmNotAvailable.Error())
+	if !requireSchemaOrm(ctx, r.schema) {
 		return nil
 	}
 

@@ -27,8 +27,8 @@ func TestWipeCommand(t *testing.T) {
 		mockSchema = mocksschema.NewSchema(t)
 		mockOrm = mocksorm.NewOrm(t)
 		mockQuery = mocksorm.NewQuery(t)
-		mockSchema.EXPECT().Orm().Return(mockOrm).Maybe()
-		mockOrm.EXPECT().Query().Return(mockQuery).Maybe()
+		mockSchema.EXPECT().Orm().Return(mockOrm).Once()
+		mockOrm.EXPECT().Query().Return(mockQuery).Once()
 	}
 
 	tests := []struct {

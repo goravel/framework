@@ -36,7 +36,6 @@ func NewMigrator(artisan console.Artisan, schema contractsschema.Schema, table s
 func (r *Migrator) requireOrm() error {
 	orm := r.schema.Orm()
 	if orm == nil || orm.Query() == nil {
-		color.Warningln(errors.SchemaOrmNotAvailable.Error())
 		return errors.SchemaOrmNotAvailable
 	}
 
