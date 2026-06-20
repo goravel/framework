@@ -472,12 +472,7 @@ func (r *Application) configureCallback() {
 func (r *Application) configureCommands() {
 	if r.builder.commands != nil {
 		if commands := r.builder.commands(); len(commands) > 0 {
-			artisanFacade := r.MakeArtisan()
-			if artisanFacade == nil {
-				color.Errorln("Artisan facade not found, please install it first: ./artisan package:install Artisan")
-			} else {
-				artisanFacade.Register(frameworkconsole.FilterCommandsByAllowlist(commands, r.commandsFilter))
-			}
+			r.registerCommands(commands)
 		}
 	}
 }
@@ -769,7 +764,7 @@ func (r *Application) defaultCommands() []contractsconsole.Command {
 		commands = append(commands, console.NewUpCommand(maintenance), console.NewDownCommand(view, hash, maintenance))
 	}
 
-	return frameworkconsole.FilterCommandsByAllowlist(commands, r.commandsFilter)
+	return commands
 }
 
 func (r *Application) baseServiceProviders() []foundation.ServiceProvider {
@@ -787,7 +782,7 @@ func (r *Application) registerCommands(commands []contractsconsole.Command) {
 		return
 	}
 
-	artisanFacade.Register(commands)
+	artisanFacade.Register(frameworkconsole.FilterCommandsByAllowlist(commands, r.commandsFilter))
 }
 
 func (r *Application) setTimezone() {

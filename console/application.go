@@ -86,8 +86,7 @@ func (r *Application) CallAndExit(command string) {
 	_ = r.Run(append(commands, strings.Split(command, " ")...), true)
 }
 
-// Register commands to the application. Filtering is the caller's
-// responsibility; this method appends without consulting any allowlist.
+// Register commands to the application.
 func (r *Application) Register(commands []console.Command) {
 	r.commands = append(r.commands, commands...)
 }

@@ -171,7 +171,7 @@ func (s *ApplicationTestSuite) TestDefaultCommandsDoesNotRegisterMaintenanceComm
 	s.NotContains(commandSignatures(commands), "down")
 }
 
-func (s *ApplicationTestSuite) TestDefaultCommandsAppliesAllowlistFilter() {
+func (s *ApplicationTestSuite) TestCommandsAppliesAllowlistFilter() {
 	tests := []struct {
 		name     string
 		allow    []string
@@ -240,15 +240,24 @@ func (s *ApplicationTestSuite) TestDefaultCommandsAppliesAllowlistFilter() {
 			s.app.SetJson(foundationjson.New())
 			s.app.commandsFilter = tt.allow
 
-			commands := s.app.defaultCommands()
-			got := commandSignatures(commands)
+			mockArtisan := mocksconsole.NewArtisan(s.T())
+			mockArtisan.EXPECT().Register(mock.MatchedBy(func(cmds []console.Command) bool {
+				got := commandSignatures(cmds)
+				for _, expected := range tt.expected {
+					if !slices.Contains(got, expected) {
+						return false
+					}
+				}
+				for _, notExpected := range tt.notHave {
+					if slices.Contains(got, notExpected) {
+						return false
+					}
+				}
+				return true
+			})).Once()
+			s.app.Instance(binding.Artisan, mockArtisan)
 
-			for _, expected := range tt.expected {
-				s.Contains(got, expected)
-			}
-			for _, notExpected := range tt.notHave {
-				s.NotContains(got, notExpected)
-			}
+			s.app.Commands(s.app.defaultCommands())
 		})
 	}
 }
