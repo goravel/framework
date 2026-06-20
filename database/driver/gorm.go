@@ -11,6 +11,7 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database"
+	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/color"
@@ -23,7 +24,7 @@ var (
 	pingWarning        sync.Once
 )
 
-func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool, connection string) (*gorm.DB, error) {
+func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool, connection string, telemetryResolver contractstelemetry.Resolver) (*gorm.DB, error) {
 	if db, ok := connectionToDB.Load(connection); ok {
 		return db.(*gorm.DB), nil
 	}
@@ -72,9 +73,7 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 		}
 	}
 
-	// Telemetry is a cross-cutting concern: a registration failure warns but
-	// must not abort building the database, matching the ping handling above.
-	if err = instance.Use(instrumentationdatabase.NewGormPlugin(pool, connection)); err != nil {
+	if err = instance.Use(instrumentationdatabase.NewGormPlugin(pool, connection, config, telemetryResolver)); err != nil {
 		color.Warningln(err.Error())
 	}
 

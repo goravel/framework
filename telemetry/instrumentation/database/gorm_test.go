@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 	gormtests "gorm.io/gorm/utils/tests"
 
-	"github.com/goravel/framework/telemetry"
+	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 )
 
 type testUser struct {
@@ -20,9 +20,9 @@ type testUser struct {
 func setupTracedGorm(t *testing.T) (*gorm.DB, *recordingSpanExporter) {
 	t.Helper()
 
-	exporter := setupTelemetry(t, true)
+	exporter, mockConfig, resolver := setupTelemetry(t, true)
 
-	plugin := NewGormPlugin(testPool(), "postgres")
+	plugin := NewGormPlugin(testPool(), "postgres", mockConfig, resolver)
 	assert.NotNil(t, plugin)
 
 	db, err := gorm.Open(gormtests.DummyDialector{}, &gorm.Config{SkipDefaultTransaction: true, DryRun: true})
@@ -41,22 +41,15 @@ func assertAttr(t *testing.T, span sdktrace.ReadOnlySpan, key, expected string) 
 }
 
 func TestNewGormPlugin(t *testing.T) {
-	t.Run("inactive when telemetry is not configured", func(t *testing.T) {
-		original := telemetry.ConfigFacade
-		telemetry.ConfigFacade = nil
-		t.Cleanup(func() { telemetry.ConfigFacade = original })
-
-		plugin := NewGormPlugin(testPool(), "postgres")
-
+	t.Run("inactive when config is nil", func(t *testing.T) {
+		plugin := NewGormPlugin(testPool(), "postgres", nil, func() contractstelemetry.Telemetry { return nil })
 		assert.NotNil(t, plugin)
 		assert.False(t, plugin.instrument.active())
 	})
 
 	t.Run("inactive when disabled", func(t *testing.T) {
-		setupTelemetry(t, false)
-
-		plugin := NewGormPlugin(testPool(), "postgres")
-
+		_, mockConfig, resolver := setupTelemetry(t, false)
+		plugin := NewGormPlugin(testPool(), "postgres", mockConfig, resolver)
 		assert.NotNil(t, plugin)
 		assert.False(t, plugin.instrument.active())
 	})

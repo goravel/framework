@@ -28,7 +28,7 @@ func TestAddGlobalScopes(t *testing.T) {
 			setupQuery: func() *Query {
 				conditions := Conditions{}
 				conditions.model = &ModelWithGlobalScopes{}
-				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions)
+				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions, nil)
 				return query
 			},
 			expectedScopesApplied: true,
@@ -39,7 +39,7 @@ func TestAddGlobalScopes(t *testing.T) {
 			setupQuery: func() *Query {
 				conditions := Conditions{}
 				conditions.model = &ModelWithoutGlobalScopes{}
-				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions)
+				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions, nil)
 				return query
 			},
 			expectedScopesApplied: false,
@@ -51,7 +51,7 @@ func TestAddGlobalScopes(t *testing.T) {
 				conditions := Conditions{}
 				conditions.model = &ModelWithGlobalScopes{}
 				conditions.withoutGlobalScopes = []string{"*"}
-				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions)
+				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions, nil)
 				return query
 			},
 			expectedScopesApplied: false,
@@ -63,7 +63,7 @@ func TestAddGlobalScopes(t *testing.T) {
 				conditions := Conditions{}
 				conditions.model = &ModelWithGlobalScopes{}
 				conditions.withoutGlobalScopes = []string{"active"}
-				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions)
+				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions, nil)
 				return query
 			},
 			expectedScopesApplied: true,
@@ -73,7 +73,7 @@ func TestAddGlobalScopes(t *testing.T) {
 			name: "should not apply scopes when model is nil",
 			setupQuery: func() *Query {
 				conditions := Conditions{}
-				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions)
+				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions, nil)
 				return query
 			},
 			expectedScopesApplied: false,
@@ -84,7 +84,7 @@ func TestAddGlobalScopes(t *testing.T) {
 			setupQuery: func() *Query {
 				conditions := Conditions{}
 				conditions.dest = &ModelWithGlobalScopes{}
-				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions)
+				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions, nil)
 				return query
 			},
 			expectedScopesApplied: true,
@@ -95,7 +95,7 @@ func TestAddGlobalScopes(t *testing.T) {
 			setupQuery: func() *Query {
 				conditions := Conditions{}
 				conditions.model = &ModelWithEmptyGlobalScopes{}
-				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions)
+				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions, nil)
 				return query
 			},
 			expectedScopesApplied: false,
@@ -106,7 +106,7 @@ func TestAddGlobalScopes(t *testing.T) {
 			setupQuery: func() *Query {
 				conditions := Conditions{}
 				conditions.model = &ModelWithGlobalScopes{}
-				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions)
+				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions, nil)
 				return query
 			},
 			expectedScopesApplied: true,
@@ -118,7 +118,7 @@ func TestAddGlobalScopes(t *testing.T) {
 				conditions := Conditions{}
 				conditions.model = &ModelWithGlobalScopes{}
 				conditions.withoutGlobalScopes = []string{"active", "verified"}
-				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions)
+				query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions, nil)
 				return query
 			},
 			expectedScopesApplied: false,
@@ -171,7 +171,7 @@ func TestAddGlobalScopesWithPointerTypes(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			conditions := Conditions{}
 			conditions.model = tt.model
-			query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions)
+			query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions, nil)
 
 			result := query.addGlobalScopes()
 
@@ -207,7 +207,7 @@ func TestAddGlobalScopesWithSliceAndArray(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			conditions := Conditions{}
 			conditions.model = tt.model
-			query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions)
+			query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, &conditions, nil)
 
 			result := query.addGlobalScopes()
 

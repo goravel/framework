@@ -14,6 +14,7 @@ import (
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	contractslogger "github.com/goravel/framework/contracts/database/logger"
 	"github.com/goravel/framework/contracts/log"
+	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	databasedriver "github.com/goravel/framework/database/driver"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
@@ -22,27 +23,34 @@ import (
 
 type DB struct {
 	contractsdb.Tx
-	config  config.Config
-	ctx     context.Context
-	driver  contractsdriver.Driver
-	gorm    *gorm.DB
-	logger  contractslogger.Logger
-	queries map[string]contractsdb.DB
+	config            config.Config
+	ctx               context.Context
+	driver            contractsdriver.Driver
+	gorm              *gorm.DB
+	instrument        *instrumentationdatabase.Instrument
+	logger            contractslogger.Logger
+	queries           map[string]contractsdb.DB
+	telemetryResolver contractstelemetry.Resolver
 }
 
-func NewDB(ctx context.Context, config config.Config, driver contractsdriver.Driver, logger contractslogger.Logger, gormDB *gorm.DB) (*DB, error) {
+func NewDB(ctx context.Context, config config.Config, driver contractsdriver.Driver, logger contractslogger.Logger, gormDB *gorm.DB, telemetryResolver contractstelemetry.Resolver) (*DB, error) {
+	pool := driver.Pool()
+	instrument := instrumentationdatabase.NewInstrument(pool, pool.Writers[0].Connection, config, telemetryResolver)
+
 	return &DB{
-		Tx:      NewTx(ctx, driver, logger, gormDB, nil, &[]TxLog{}),
-		ctx:     ctx,
-		config:  config,
-		driver:  driver,
-		gorm:    gormDB,
-		logger:  logger,
-		queries: make(map[string]contractsdb.DB),
+		Tx:                NewTx(ctx, driver, logger, gormDB, nil, &[]TxLog{}, instrument),
+		ctx:               ctx,
+		config:            config,
+		driver:            driver,
+		gorm:              gormDB,
+		instrument:        instrument,
+		logger:            logger,
+		queries:           make(map[string]contractsdb.DB),
+		telemetryResolver: telemetryResolver,
 	}, nil
 }
 
-func BuildDB(ctx context.Context, config config.Config, log log.Log, connection string) (*DB, error) {
+func BuildDB(ctx context.Context, config config.Config, log log.Log, connection string, telemetryResolver contractstelemetry.Resolver) (*DB, error) {
 	driverCallback, exist := config.Get(fmt.Sprintf("database.connections.%s.via", connection)).(func() (contractsdriver.Driver, error))
 	if !exist {
 		return nil, errors.DatabaseConfigNotFound
@@ -55,12 +63,12 @@ func BuildDB(ctx context.Context, config config.Config, log log.Log, connection 
 
 	pool := driver.Pool()
 	logger := NewLogger(config, log)
-	gorm, err := databasedriver.BuildGorm(config, logger.ToGorm(), pool, connection)
+	gorm, err := databasedriver.BuildGorm(config, logger.ToGorm(), pool, connection, telemetryResolver)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewDB(ctx, config, driver, logger, gorm)
+	return NewDB(ctx, config, driver, logger, gorm, telemetryResolver)
 }
 
 func (r *DB) BeginTransaction() (contractsdb.Tx, error) {
@@ -70,7 +78,7 @@ func (r *DB) BeginTransaction() (contractsdb.Tx, error) {
 		return nil, err
 	}
 
-	return NewTx(r.ctx, r.driver, r.logger, nil, txBuilder, &[]TxLog{}), nil
+	return NewTx(r.ctx, r.driver, r.logger, nil, txBuilder, &[]TxLog{}, r.instrument), nil
 }
 
 func (r *DB) Connection(name string) contractsdb.DB {
@@ -79,7 +87,7 @@ func (r *DB) Connection(name string) contractsdb.DB {
 	}
 
 	if _, ok := r.queries[name]; !ok {
-		db, err := BuildDB(r.ctx, r.config, r.logger.Log(), name)
+		db, err := BuildDB(r.ctx, r.config, r.logger.Log(), name, r.telemetryResolver)
 		if err != nil {
 			r.logger.Panicf(r.ctx, err.Error())
 			return nil
@@ -118,7 +126,7 @@ func (r *DB) Transaction(callback func(tx contractsdb.Tx) error) (err error) {
 }
 
 func (r *DB) WithContext(ctx context.Context) contractsdb.DB {
-	db, err := NewDB(ctx, r.config, r.driver, r.logger, r.gorm)
+	db, err := NewDB(ctx, r.config, r.driver, r.logger, r.gorm, r.telemetryResolver)
 	if err != nil {
 		r.logger.Panicf(r.ctx, err.Error())
 		return nil
@@ -144,18 +152,15 @@ func NewTx(
 	gormDB *gorm.DB,
 	txBuilder contractsdb.TxBuilder,
 	txLogs *[]TxLog,
+	instrument *instrumentationdatabase.Instrument,
 ) *Tx {
-	pool := driver.Pool()
-	driverName := pool.Writers[0].Driver
-	instrument := instrumentationdatabase.NewInstrument(pool, pool.Writers[0].Connection)
-
 	if txBuilder != nil {
 		txBuilder = instrumentationdatabase.WrapTxBuilder(txBuilder, instrument)
 	}
 
 	return &Tx{
 		ctx:        ctx,
-		driverName: driverName,
+		driverName: driver.Pool().Writers[0].Driver,
 		gormDB:     gormDB,
 		grammar:    driver.Grammar(),
 		instrument: instrument,
@@ -246,8 +251,10 @@ func (r *Tx) Statement(sql string, args ...any) error {
 }
 
 func (r *Tx) Table(name string) contractsdb.Query {
+	ctx := instrumentationdatabase.ContextWithTable(r.ctx, name)
+
 	if r.txBuilder != nil {
-		return NewQuery(r.ctx, r.txBuilder, r.txBuilder, r.grammar, r.logger, name, r.txLogs)
+		return NewQuery(ctx, r.txBuilder, r.txBuilder, r.grammar, r.logger, name, r.txLogs)
 	}
 
 	readBuilder, err := r.readBuilder()
@@ -262,7 +269,7 @@ func (r *Tx) Table(name string) contractsdb.Query {
 		return nil
 	}
 
-	return NewQuery(r.ctx, readBuilder, writeBuilder, r.grammar, r.logger, name, nil)
+	return NewQuery(ctx, readBuilder, writeBuilder, r.grammar, r.logger, name, nil)
 }
 
 func (r *Tx) Update(sql string, args ...any) (*contractsdb.Result, error) {

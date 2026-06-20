@@ -22,8 +22,6 @@ import (
 	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/framework/support/deep"
 	"github.com/goravel/framework/support/str"
-	"github.com/goravel/framework/telemetry"
-	instrumentationdatabase "github.com/goravel/framework/telemetry/instrumentation/database"
 )
 
 type Query struct {
@@ -38,13 +36,6 @@ type Query struct {
 }
 
 func NewQuery(ctx context.Context, readBuilder db.CommonBuilder, writeBuilder db.CommonBuilder, grammar contractsdriver.Grammar, logger logger.Logger, table string, txLogs *[]TxLog) *Query {
-	// Tag the table when telemetry is plausibly active. This is a coarse proxy:
-	// the wrapped builder reads it only when an instrument exists, which is a
-	// strictly stronger condition, so a tag is never missing where it is needed.
-	if telemetry.Facade != nil {
-		ctx = instrumentationdatabase.ContextWithTable(ctx, table)
-	}
-
 	return &Query{
 		conditions: contractsdriver.Conditions{
 			Table: table,

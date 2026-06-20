@@ -43,7 +43,7 @@ func (s *OrmSuite) SetupTest() {
 	}
 
 	dbConfig := s.queries[s.defaultConnection].Driver().Pool().Writers[0]
-	s.orm = orm.NewOrm(context.Background(), nil, dbConfig.Connection, dbConfig, queries[s.defaultConnection], queries, nil, nil, nil)
+	s.orm = orm.NewOrm(context.Background(), nil, dbConfig.Connection, dbConfig, queries[s.defaultConnection], queries, nil, nil, nil, nil)
 }
 
 func (s *OrmSuite) TearDownSuite() {

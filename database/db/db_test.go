@@ -12,6 +12,7 @@ import (
 	mocksdriver "github.com/goravel/framework/mocks/database/driver"
 	mockslogger "github.com/goravel/framework/mocks/database/logger"
 	"github.com/goravel/framework/support/carbon"
+	instrumentationdatabase "github.com/goravel/framework/telemetry/instrumentation/database"
 )
 
 func TestTxSelectPassesParameterizedSQL(t *testing.T) {
@@ -50,20 +51,17 @@ func TestTxSelectPassesParameterizedSQL(t *testing.T) {
 	})
 }
 
-func newMockDriver(t *testing.T) *mocksdriver.Driver {
+func TestNewTx_UsesSharedInstrument(t *testing.T) {
 	pool := contractsdatabase.Pool{Writers: []contractsdatabase.Config{{Driver: "postgres", Connection: "primary"}}}
+	instrument := instrumentationdatabase.NewInstrument(pool, "primary", nil, nil)
+
 	driver := mocksdriver.NewDriver(t)
 	driver.EXPECT().Pool().Return(pool).Once()
 	driver.EXPECT().Grammar().Return(nil).Once()
-	return driver
-}
 
-func TestNewTx_BuildsInstrument(t *testing.T) {
-	// NewTx always builds the instrument and wraps the builder; telemetry is
-	// resolved lazily on the first query, so NewTx itself never touches it.
 	mockTxBuilder := mocksdb.NewTxBuilder(t)
-	tx := NewTx(context.Background(), newMockDriver(t), mockslogger.NewLogger(t), nil, mockTxBuilder, &[]TxLog{})
+	tx := NewTx(context.Background(), driver, mockslogger.NewLogger(t), nil, mockTxBuilder, &[]TxLog{}, instrument)
 
-	assert.NotNil(t, tx.instrument)
+	assert.Equal(t, instrument, tx.instrument)
 	assert.NotEqual(t, contractsdb.TxBuilder(mockTxBuilder), tx.txBuilder)
 }

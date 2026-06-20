@@ -9,7 +9,9 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"gorm.io/gorm"
 
+	"github.com/goravel/framework/contracts/config"
 	contractsdatabase "github.com/goravel/framework/contracts/database"
+	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -35,11 +37,8 @@ type GormPlugin struct {
 	poolOnce   sync.Once
 }
 
-// NewGormPlugin returns the plugin. It is always registered: telemetry is
-// resolved lazily, so the callbacks no-op until it is available and enabled
-// rather than deciding at connection-build time when it may not be ready.
-func NewGormPlugin(pool contractsdatabase.Pool, connection string) *GormPlugin {
-	return &GormPlugin{instrument: NewInstrument(pool, connection)}
+func NewGormPlugin(pool contractsdatabase.Pool, connection string, config config.Config, resolver contractstelemetry.Resolver) *GormPlugin {
+	return &GormPlugin{instrument: NewInstrument(pool, connection, config, resolver)}
 }
 
 func (r *GormPlugin) Name() string {

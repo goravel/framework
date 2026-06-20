@@ -14,17 +14,16 @@ import (
 	gormtests "gorm.io/gorm/utils/tests"
 
 	"github.com/goravel/framework/contracts/database"
+	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	instrumentationdatabase "github.com/goravel/framework/telemetry/instrumentation/database"
 )
 
 func TestBuildGorm_TelemetryPlugin(t *testing.T) {
-	// The telemetry plugin is always registered; it resolves telemetry lazily and
-	// no-ops until available and enabled, so registration never touches telemetry
-	// when the connection is built.
 	t.Cleanup(ResetConnections)
 
-	instance, err := BuildGorm(stubGormConfig(t), gormlogger.Discard, stubPool(), "primary")
+	resolver := func() contractstelemetry.Telemetry { return nil }
+	instance, err := BuildGorm(stubGormConfig(t), gormlogger.Discard, stubPool(), "primary", resolver)
 	assert.NoError(t, err)
 	assert.NotNil(t, instance)
 	t.Cleanup(func() {
@@ -69,8 +68,6 @@ func stubPool() database.Pool {
 }
 
 func stubGormConfig(t *testing.T) *mocksconfig.Config {
-	// Pool sizing is incidental to plugin registration; accept whatever reads
-	// BuildGorm makes without pinning their exact count.
 	mockConfig := mocksconfig.NewConfig(t)
 	mockConfig.EXPECT().GetInt(mock.Anything, mock.Anything).Return(10).Maybe()
 	mockConfig.EXPECT().GetDuration(mock.Anything, mock.Anything).Return(time.Duration(3600)).Maybe()

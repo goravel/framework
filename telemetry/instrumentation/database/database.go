@@ -16,7 +16,9 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"gorm.io/gorm"
 
+	"github.com/goravel/framework/contracts/config"
 	contractsdatabase "github.com/goravel/framework/contracts/database"
+	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/telemetry"
 )
 
@@ -31,53 +33,51 @@ const (
 
 var durationBuckets = []float64{0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10}
 
-// Instrument builds the spans and metrics shared by the gorm plugin and the
-// query-builder decorator. It resolves the telemetry facade lazily on first use,
-// so a connection built before telemetry has booted still ends up instrumented
-// once telemetry becomes available.
 type Instrument struct {
 	baseAttrs []telemetry.KeyValue
+	config    config.Config
+	resolver  contractstelemetry.Resolver
 
-	once         sync.Once
+	mu           sync.Mutex
 	tracer       trace.Tracer
 	meter        metric.Meter
 	durationHist metric.Float64Histogram
 }
 
-// NewInstrument returns the shared instrumentation core. It never returns nil:
-// telemetry is resolved lazily (see active), so callers always wrap and the
-// wrapper no-ops until telemetry is available and enabled.
-func NewInstrument(pool contractsdatabase.Pool, connection string) *Instrument {
-	return &Instrument{baseAttrs: baseAttributes(pool, connection)}
+func NewInstrument(pool contractsdatabase.Pool, connection string, config config.Config, resolver contractstelemetry.Resolver) *Instrument {
+	return &Instrument{
+		baseAttrs: baseAttributes(pool, connection),
+		config:    config,
+		resolver:  resolver,
+	}
 }
 
-// active reports whether instrumentation is on, resolving telemetry and building
-// the tracer and metric instruments once on first use.
 func (r *Instrument) active() bool {
-	r.once.Do(r.resolve)
-	return r.tracer != nil
-}
+	r.mu.Lock()
+	defer r.mu.Unlock()
 
-func (r *Instrument) resolve() {
-	if telemetry.ConfigFacade == nil || !telemetry.ConfigFacade.GetBool(enabledConfigKey, true) {
-		return
+	if r.tracer != nil {
+		return true
 	}
 
-	tel := telemetry.Facade
+	if r.config == nil || r.resolver == nil || !r.config.GetBool(enabledConfigKey, true) {
+		return false
+	}
+
+	tel := r.resolver()
 	if tel == nil {
-		return
+		return false
 	}
 
-	meter := tel.Meter(instrumentationName)
-	durationHist, _ := meter.Float64Histogram(metricOperationDuration,
+	r.tracer = tel.Tracer(instrumentationName)
+	r.meter = tel.Meter(instrumentationName)
+	r.durationHist, _ = r.meter.Float64Histogram(metricOperationDuration,
 		metric.WithUnit(unitSeconds),
 		metric.WithDescription("Duration of database client operations"),
 		metric.WithExplicitBucketBoundaries(durationBuckets...),
 	)
 
-	r.tracer = tel.Tracer(instrumentationName)
-	r.meter = meter
-	r.durationHist = durationHist
+	return true
 }
 
 func baseAttributes(pool contractsdatabase.Pool, connection string) []telemetry.KeyValue {
@@ -103,8 +103,6 @@ func baseAttributes(pool contractsdatabase.Pool, connection string) []telemetry.
 	return attrs
 }
 
-// startSpan assumes the caller has confirmed active; it is only reached on the
-// instrumented path.
 func (r *Instrument) startSpan(ctx context.Context, name string) (context.Context, trace.Span) {
 	return r.tracer.Start(ctx, name, telemetry.WithSpanKind(telemetry.SpanKindClient))
 }
@@ -137,8 +135,6 @@ func (r *Instrument) endSpan(ctx context.Context, span trace.Span, start time.Ti
 
 	span.SetAttributes(attrs...)
 
-	// Record the metric while the span is still active so the SDK can attach an
-	// exemplar correlating it to this span, then end the span.
 	r.durationHist.Record(ctx, time.Since(start).Seconds(), metric.WithAttributes(metricAttrs...))
 
 	span.End()
@@ -160,12 +156,14 @@ func dbSystem(driverName string) telemetry.KeyValue {
 }
 
 func operationName(query string) string {
-	fields := strings.Fields(query)
-	if len(fields) == 0 {
+	query = strings.TrimLeft(query, " \t\n\r")
+	if query == "" {
 		return ""
 	}
-
-	return strings.ToUpper(fields[0])
+	if i := strings.IndexByte(query, ' '); i > 0 {
+		return strings.ToUpper(query[:i])
+	}
+	return strings.ToUpper(query)
 }
 
 var ignoredErrors = []error{gorm.ErrRecordNotFound, sql.ErrNoRows, driver.ErrSkip, io.EOF}

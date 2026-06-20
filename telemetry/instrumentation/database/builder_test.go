@@ -6,124 +6,118 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
 	"go.opentelemetry.io/otel/codes"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	mocksdb "github.com/goravel/framework/mocks/database/db"
 )
 
-// stubResult is a minimal sql.Result for exec returns. sql.Result is a standard
-// library interface, so it has no generated mock to use here.
 type stubResult struct{}
 
 func (stubResult) LastInsertId() (int64, error) { return 0, nil }
 func (stubResult) RowsAffected() (int64, error) { return 2, nil }
 
-func TestWrapBuilder_StructuredQuerySpan(t *testing.T) {
-	exporter := setupTelemetry(t, true)
-	inst := NewInstrument(testPool(), "postgres")
+type BuilderTestSuite struct {
+	suite.Suite
+	exporter   *recordingSpanExporter
+	instrument *Instrument
+}
 
-	inner := mocksdb.NewBuilder(t)
+func TestBuilderTestSuite(t *testing.T) {
+	suite.Run(t, &BuilderTestSuite{})
+}
+
+func (s *BuilderTestSuite) SetupTest() {
+	exporter, mockConfig, resolver := setupTelemetry(s.T(), true)
+	s.exporter = exporter
+	s.instrument = NewInstrument(testPool(), "postgres", mockConfig, resolver)
+}
+
+func (s *BuilderTestSuite) lastSpan() sdktrace.ReadOnlySpan {
+	s.Require().NotEmpty(s.exporter.spans)
+	return s.exporter.spans[len(s.exporter.spans)-1]
+}
+
+func (s *BuilderTestSuite) TestSelectContext_StructuredQuerySpan() {
+	inner := mocksdb.NewBuilder(s.T())
 	inner.EXPECT().SelectContext(mock.Anything, mock.Anything, "SELECT * FROM users WHERE id = ?", 1).Return(nil).Once()
 
-	wrapped := WrapBuilder(inner, inst)
+	wrapped := WrapBuilder(inner, s.instrument)
 	ctx := ContextWithTable(context.Background(), "users")
 
-	assert.NoError(t, wrapped.SelectContext(ctx, &[]any{}, "SELECT * FROM users WHERE id = ?", 1))
+	s.NoError(wrapped.SelectContext(ctx, &[]any{}, "SELECT * FROM users WHERE id = ?", 1))
 
-	assert.Len(t, exporter.spans, 1)
-	span := exporter.spans[0]
-	assert.Equal(t, "SELECT users", span.Name())
+	span := s.lastSpan()
+	s.Equal("SELECT users", span.Name())
 	collection, ok := attrValue(span, "db.collection.name")
-	assert.True(t, ok)
-	assert.Equal(t, "users", collection)
+	s.True(ok)
+	s.Equal("users", collection)
 	query, ok := attrValue(span, "db.query.text")
-	assert.True(t, ok)
-	assert.Contains(t, query, "?")
+	s.True(ok)
+	s.Contains(query, "?")
 }
 
-func TestWrapBuilder_RawQueryHasNoCollection(t *testing.T) {
-	exporter := setupTelemetry(t, true)
-	inst := NewInstrument(testPool(), "postgres")
-
-	inner := mocksdb.NewBuilder(t)
+func (s *BuilderTestSuite) TestExecContext_RawQueryHasNoCollection() {
+	inner := mocksdb.NewBuilder(s.T())
 	inner.EXPECT().ExecContext(mock.Anything, "UPDATE users SET name = ?", "x").Return(stubResult{}, nil).Once()
 
-	wrapped := WrapBuilder(inner, inst)
+	wrapped := WrapBuilder(inner, s.instrument)
 
 	_, err := wrapped.ExecContext(context.Background(), "UPDATE users SET name = ?", "x")
-	assert.NoError(t, err)
+	s.NoError(err)
 
-	assert.Len(t, exporter.spans, 1)
-	span := exporter.spans[0]
-	assert.Equal(t, "UPDATE", span.Name())
+	span := s.lastSpan()
+	s.Equal("UPDATE", span.Name())
 	_, ok := attrValue(span, "db.collection.name")
-	assert.False(t, ok)
+	s.False(ok)
 }
 
-func TestWrapBuilder_ExecRecordsRows(t *testing.T) {
-	exporter := setupTelemetry(t, true)
-	inst := NewInstrument(testPool(), "postgres")
-
-	inner := mocksdb.NewBuilder(t)
+func (s *BuilderTestSuite) TestExecContext_RecordsRowsAffected() {
+	inner := mocksdb.NewBuilder(s.T())
 	inner.EXPECT().ExecContext(mock.Anything, "INSERT INTO users (name) VALUES (?)", "x").Return(stubResult{}, nil).Once()
 
-	wrapped := WrapBuilder(inner, inst)
+	wrapped := WrapBuilder(inner, s.instrument)
 
 	_, err := wrapped.ExecContext(context.Background(), "INSERT INTO users (name) VALUES (?)", "x")
-	assert.NoError(t, err)
+	s.NoError(err)
 
-	assert.Len(t, exporter.spans, 1)
-	rows, ok := attrValue(exporter.spans[0], "db.response.returned_rows")
-	assert.True(t, ok)
-	assert.Equal(t, "2", rows)
+	rows, ok := attrValue(s.lastSpan(), "db.response.returned_rows")
+	s.True(ok)
+	s.Equal("2", rows)
 }
 
-func TestWrapBuilder_RecordsError(t *testing.T) {
-	exporter := setupTelemetry(t, true)
-	inst := NewInstrument(testPool(), "postgres")
-
-	inner := mocksdb.NewBuilder(t)
+func (s *BuilderTestSuite) TestExecContext_RecordsError() {
+	inner := mocksdb.NewBuilder(s.T())
 	inner.EXPECT().ExecContext(mock.Anything, "UPDATE users SET name = ?", "x").Return(nil, assert.AnError).Once()
 
-	wrapped := WrapBuilder(inner, inst)
+	wrapped := WrapBuilder(inner, s.instrument)
 
 	_, err := wrapped.ExecContext(context.Background(), "UPDATE users SET name = ?", "x")
-	assert.ErrorIs(t, err, assert.AnError)
-
-	assert.Len(t, exporter.spans, 1)
-	assert.Equal(t, codes.Error, exporter.spans[0].Status().Code)
+	s.ErrorIs(err, assert.AnError)
+	s.Equal(codes.Error, s.lastSpan().Status().Code)
 }
 
-func TestWrapBuilder_QueryxSpan(t *testing.T) {
-	exporter := setupTelemetry(t, true)
-	inst := NewInstrument(testPool(), "postgres")
-
-	inner := mocksdb.NewBuilder(t)
+func (s *BuilderTestSuite) TestQueryxContext_Span() {
+	inner := mocksdb.NewBuilder(s.T())
 	inner.EXPECT().QueryxContext(mock.Anything, "SELECT * FROM users").Return(nil, nil).Once()
 
-	wrapped := WrapBuilder(inner, inst)
+	wrapped := WrapBuilder(inner, s.instrument)
 	ctx := ContextWithTable(context.Background(), "users")
 
 	_, err := wrapped.QueryxContext(ctx, "SELECT * FROM users")
-	assert.NoError(t, err)
-
-	assert.Len(t, exporter.spans, 1)
-	assert.Equal(t, "SELECT users", exporter.spans[0].Name())
+	s.NoError(err)
+	s.Equal("SELECT users", s.lastSpan().Name())
 }
 
-func TestWrapTxBuilder(t *testing.T) {
-	exporter := setupTelemetry(t, true)
-	inst := NewInstrument(testPool(), "postgres")
-
-	inner := mocksdb.NewTxBuilder(t)
+func (s *BuilderTestSuite) TestTxBuilder_ExecContext() {
+	inner := mocksdb.NewTxBuilder(s.T())
 	inner.EXPECT().ExecContext(mock.Anything, "UPDATE users SET name = ?", "x").Return(stubResult{}, nil).Once()
 
-	wrapped := WrapTxBuilder(inner, inst)
+	wrapped := WrapTxBuilder(inner, s.instrument)
 	ctx := ContextWithTable(context.Background(), "users")
 
 	_, err := wrapped.ExecContext(ctx, "UPDATE users SET name = ?", "x")
-	assert.NoError(t, err)
-
-	assert.Len(t, exporter.spans, 1)
-	assert.Equal(t, "UPDATE users", exporter.spans[0].Name())
+	s.NoError(err)
+	s.Equal("UPDATE users", s.lastSpan().Name())
 }

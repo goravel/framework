@@ -11,24 +11,26 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel/codes"
+	otellog "go.opentelemetry.io/otel/log"
+	lognoop "go.opentelemetry.io/otel/log/noop"
+	otelmetric "go.opentelemetry.io/otel/metric"
 	metricnoop "go.opentelemetry.io/otel/metric/noop"
+	"go.opentelemetry.io/otel/propagation"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
-	"go.opentelemetry.io/otel/trace"
+	oteltrace "go.opentelemetry.io/otel/trace"
 	"gorm.io/gorm"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
+	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	mocksconfig "github.com/goravel/framework/mocks/config"
-	mockstelemetry "github.com/goravel/framework/mocks/telemetry"
 	"github.com/goravel/framework/telemetry"
 )
 
 type recordingSpanExporter struct {
 	mu    sync.Mutex
 	spans []sdktrace.ReadOnlySpan
-	// tracer feeds this exporter; tests that need a parent span use it instead of
-	// the mocked facade, keeping the facade's Tracer call count deterministic.
-	tracer trace.Tracer
+	tracer oteltrace.Tracer
 }
 
 func (r *recordingSpanExporter) ExportSpans(_ context.Context, spans []sdktrace.ReadOnlySpan) error {
@@ -40,7 +42,21 @@ func (r *recordingSpanExporter) ExportSpans(_ context.Context, spans []sdktrace.
 
 func (r *recordingSpanExporter) Shutdown(_ context.Context) error { return nil }
 
-func setupTelemetry(t *testing.T, enabled bool) *recordingSpanExporter {
+type telemetryStub struct {
+	traceProvider *sdktrace.TracerProvider
+	meterProvider otelmetric.MeterProvider
+}
+
+func (s *telemetryStub) ForceFlush(_ context.Context) error                                          { return nil }
+func (s *telemetryStub) Shutdown(_ context.Context) error                                            { return nil }
+func (s *telemetryStub) Logger(_ string, _ ...otellog.LoggerOption) otellog.Logger                   { return lognoop.NewLoggerProvider().Logger("") }
+func (s *telemetryStub) Meter(name string, _ ...otelmetric.MeterOption) otelmetric.Meter             { return s.meterProvider.Meter(name) }
+func (s *telemetryStub) MeterProvider() otelmetric.MeterProvider                                     { return s.meterProvider }
+func (s *telemetryStub) Propagator() propagation.TextMapPropagator                                   { return propagation.NewCompositeTextMapPropagator() }
+func (s *telemetryStub) Tracer(name string, _ ...oteltrace.TracerOption) oteltrace.Tracer            { return s.traceProvider.Tracer(name) }
+func (s *telemetryStub) TracerProvider() oteltrace.TracerProvider                                    { return s.traceProvider }
+
+func setupTelemetry(t *testing.T, enabled bool) (*recordingSpanExporter, *mocksconfig.Config, contractstelemetry.Resolver) {
 	t.Helper()
 
 	exporter := &recordingSpanExporter{}
@@ -48,22 +64,13 @@ func setupTelemetry(t *testing.T, enabled bool) *recordingSpanExporter {
 	exporter.tracer = provider.Tracer(instrumentationName)
 	t.Cleanup(func() { _ = provider.Shutdown(context.Background()) })
 
-	// The instrument resolves telemetry once, lazily, on the first query a test
-	// exercises: GetBool gates it, and Tracer/Meter are built only when enabled.
-	// Every caller drives a query, so these counts are exact.
-	mockTelemetry := mockstelemetry.NewTelemetry(t)
 	mockConfig := mocksconfig.NewConfig(t)
-	mockConfig.EXPECT().GetBool(enabledConfigKey, true).Return(enabled).Once()
-	if enabled {
-		mockTelemetry.EXPECT().Tracer(instrumentationName).Return(provider.Tracer(instrumentationName)).Once()
-		mockTelemetry.EXPECT().Meter(instrumentationName).Return(metricnoop.NewMeterProvider().Meter(instrumentationName)).Once()
-	}
+	mockConfig.EXPECT().GetBool(enabledConfigKey, true).Return(enabled).Maybe()
 
-	originalFacade, originalConfig := telemetry.Facade, telemetry.ConfigFacade
-	telemetry.Facade, telemetry.ConfigFacade = mockTelemetry, mockConfig
-	t.Cleanup(func() { telemetry.Facade, telemetry.ConfigFacade = originalFacade, originalConfig })
+	tel := &telemetryStub{traceProvider: provider, meterProvider: metricnoop.NewMeterProvider()}
+	resolver := func() contractstelemetry.Telemetry { return tel }
 
-	return exporter
+	return exporter, mockConfig, resolver
 }
 
 func testPool() contractsdatabase.Pool {
@@ -84,29 +91,26 @@ func attrValue(span sdktrace.ReadOnlySpan, key string) (string, bool) {
 }
 
 func TestNewInstrument(t *testing.T) {
-	t.Run("inactive when telemetry is not configured", func(t *testing.T) {
-		original := telemetry.ConfigFacade
-		telemetry.ConfigFacade = nil
-		t.Cleanup(func() { telemetry.ConfigFacade = original })
+	t.Run("inactive when config is nil", func(t *testing.T) {
+		inst := NewInstrument(testPool(), "postgres", nil, func() contractstelemetry.Telemetry { return nil })
+		assert.False(t, inst.active())
+	})
 
-		inst := NewInstrument(testPool(), "postgres")
-
-		assert.NotNil(t, inst)
+	t.Run("inactive when resolver is nil", func(t *testing.T) {
+		mockConfig := mocksconfig.NewConfig(t)
+		mockConfig.EXPECT().GetBool(enabledConfigKey, true).Return(true).Maybe()
+		inst := NewInstrument(testPool(), "postgres", mockConfig, nil)
 		assert.False(t, inst.active())
 	})
 
 	t.Run("inactive when disabled", func(t *testing.T) {
-		setupTelemetry(t, false)
-
-		inst := NewInstrument(testPool(), "postgres")
-
-		assert.NotNil(t, inst)
+		_, mockConfig, resolver := setupTelemetry(t, false)
+		inst := NewInstrument(testPool(), "postgres", mockConfig, resolver)
 		assert.False(t, inst.active())
 	})
 
 	t.Run("captures base attributes", func(t *testing.T) {
-		inst := NewInstrument(testPool(), "postgres")
-
+		inst := NewInstrument(testPool(), "postgres", nil, nil)
 		assert.Equal(t, []telemetry.KeyValue{
 			semconv.DBSystemNamePostgreSQL,
 			semconv.DBNamespace("app"),
@@ -117,16 +121,33 @@ func TestNewInstrument(t *testing.T) {
 	})
 
 	t.Run("skips empty connection details", func(t *testing.T) {
-		inst := NewInstrument(contractsdatabase.Pool{Writers: []contractsdatabase.Config{{Driver: "sqlite"}}}, "")
-
+		inst := NewInstrument(contractsdatabase.Pool{Writers: []contractsdatabase.Config{{Driver: "sqlite"}}}, "", nil, nil)
 		assert.Equal(t, []telemetry.KeyValue{semconv.DBSystemNameSQLite}, inst.baseAttrs)
+	})
+
+	t.Run("retries resolution when resolver returns nil then succeeds", func(t *testing.T) {
+		mockConfig := mocksconfig.NewConfig(t)
+		mockConfig.EXPECT().GetBool(enabledConfigKey, true).Return(true).Maybe()
+
+		var tel contractstelemetry.Telemetry
+		resolver := func() contractstelemetry.Telemetry { return tel }
+
+		inst := NewInstrument(testPool(), "postgres", mockConfig, resolver)
+		assert.False(t, inst.active())
+
+		exporter := &recordingSpanExporter{}
+		provider := sdktrace.NewTracerProvider(sdktrace.WithSyncer(exporter))
+		t.Cleanup(func() { _ = provider.Shutdown(context.Background()) })
+		tel = &telemetryStub{traceProvider: provider, meterProvider: metricnoop.NewMeterProvider()}
+
+		assert.True(t, inst.active())
 	})
 }
 
 func TestInstrument_EndSpan(t *testing.T) {
 	t.Run("records query attributes and renames span", func(t *testing.T) {
-		exporter := setupTelemetry(t, true)
-		inst := NewInstrument(testPool(), "postgres")
+		exporter, mockConfig, resolver := setupTelemetry(t, true)
+		inst := NewInstrument(testPool(), "postgres", mockConfig, resolver)
 		assert.True(t, inst.active())
 
 		ctx, span := inst.startSpan(context.Background(), "gorm.Query")
@@ -155,8 +176,8 @@ func TestInstrument_EndSpan(t *testing.T) {
 	})
 
 	t.Run("records error status", func(t *testing.T) {
-		exporter := setupTelemetry(t, true)
-		inst := NewInstrument(testPool(), "postgres")
+		exporter, mockConfig, resolver := setupTelemetry(t, true)
+		inst := NewInstrument(testPool(), "postgres", mockConfig, resolver)
 		assert.True(t, inst.active())
 
 		ctx, span := inst.startSpan(context.Background(), "gorm.Query")
@@ -166,14 +187,43 @@ func TestInstrument_EndSpan(t *testing.T) {
 	})
 
 	t.Run("ignores record not found", func(t *testing.T) {
-		exporter := setupTelemetry(t, true)
-		inst := NewInstrument(testPool(), "postgres")
+		exporter, mockConfig, resolver := setupTelemetry(t, true)
+		inst := NewInstrument(testPool(), "postgres", mockConfig, resolver)
 		assert.True(t, inst.active())
 
 		ctx, span := inst.startSpan(context.Background(), "gorm.Query")
 		inst.endSpan(ctx, span, time.Now(), "SELECT * FROM users", "users", -1, gorm.ErrRecordNotFound)
 
 		assert.Equal(t, codes.Unset, exporter.spans[0].Status().Code)
+	})
+
+	t.Run("raw query without table omits collection name", func(t *testing.T) {
+		exporter, mockConfig, resolver := setupTelemetry(t, true)
+		inst := NewInstrument(testPool(), "postgres", mockConfig, resolver)
+		assert.True(t, inst.active())
+
+		ctx, span := inst.startSpan(context.Background(), "SELECT")
+		inst.endSpan(ctx, span, time.Now(), "SELECT 1", "", -1, nil)
+
+		assert.Len(t, exporter.spans, 1)
+		recorded := exporter.spans[0]
+		assert.Equal(t, "SELECT", recorded.Name())
+		_, ok := attrValue(recorded, "db.collection.name")
+		assert.False(t, ok)
+		_, ok = attrValue(recorded, "db.query.summary")
+		assert.False(t, ok)
+	})
+
+	t.Run("negative rows omits returned_rows attribute", func(t *testing.T) {
+		exporter, mockConfig, resolver := setupTelemetry(t, true)
+		inst := NewInstrument(testPool(), "postgres", mockConfig, resolver)
+		assert.True(t, inst.active())
+
+		ctx, span := inst.startSpan(context.Background(), "gorm.Query")
+		inst.endSpan(ctx, span, time.Now(), "SELECT * FROM users", "users", -1, nil)
+
+		_, ok := attrValue(exporter.spans[0], "db.response.returned_rows")
+		assert.False(t, ok)
 	})
 }
 
@@ -200,17 +250,21 @@ func TestDBSystem(t *testing.T) {
 
 func TestOperationName(t *testing.T) {
 	tests := []struct {
+		name     string
 		query    string
 		expected string
 	}{
-		{"SELECT * FROM users", "SELECT"},
-		{"  insert into users values (?)", "INSERT"},
-		{"UPDATE users SET name = ?", "UPDATE"},
-		{"", ""},
+		{"select", "SELECT * FROM users", "SELECT"},
+		{"leading spaces", "  insert into users values (?)", "INSERT"},
+		{"update", "UPDATE users SET name = ?", "UPDATE"},
+		{"empty", "", ""},
+		{"whitespace only", "   ", ""},
+		{"leading newline", "\n\tDELETE FROM users", "DELETE"},
+		{"single word", "COMMIT", "COMMIT"},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.expected, func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			assert.Equal(t, tt.expected, operationName(tt.query))
 		})
 	}
