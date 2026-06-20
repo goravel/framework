@@ -104,11 +104,6 @@ func (s *InstrumentTestSuite) SetupTest() {
 	s.instrument = NewInstrument(testPool(), "postgres", resolver)
 }
 
-func (s *InstrumentTestSuite) lastSpan() sdktrace.ReadOnlySpan {
-	s.Require().NotEmpty(s.exporter.spans)
-	return s.exporter.spans[len(s.exporter.spans)-1]
-}
-
 func (s *InstrumentTestSuite) TestEnabled() {
 	s.Run("nil config", func() {
 		s.False(Enabled(nil))
