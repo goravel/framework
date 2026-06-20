@@ -19,7 +19,7 @@ const (
 	unitTimeout     = "{timeout}"
 )
 
-func (r *Instrument) registerPoolMetrics(db *sql.DB) error {
+func (r *Instrument) observePool(db *sql.DB) error {
 	count, err := r.meter.Int64ObservableUpDownCounter(metricConnectionCount,
 		metric.WithUnit(unitConnections),
 		metric.WithDescription("Open connections by state"),

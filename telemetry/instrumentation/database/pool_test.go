@@ -60,7 +60,7 @@ func (s *PoolMetricsTestSuite) collect() map[string]metricdata.Metrics {
 }
 
 func (s *PoolMetricsTestSuite) TestRegistersAllMetrics() {
-	s.Require().NoError(s.inst.registerPoolMetrics(s.db))
+	s.Require().NoError(s.inst.observePool(s.db))
 
 	metrics := s.collect()
 	for _, name := range []string{metricConnectionCount, metricConnectionMax, metricConnectionWaitTime, metricConnectionTimeouts} {
@@ -69,7 +69,7 @@ func (s *PoolMetricsTestSuite) TestRegistersAllMetrics() {
 }
 
 func (s *PoolMetricsTestSuite) TestConnectionCountHasIdleAndUsedStates() {
-	s.Require().NoError(s.inst.registerPoolMetrics(s.db))
+	s.Require().NoError(s.inst.observePool(s.db))
 
 	metrics := s.collect()
 	data := metrics[metricConnectionCount].Data.(metricdata.Sum[int64])
@@ -86,7 +86,7 @@ func (s *PoolMetricsTestSuite) TestConnectionCountHasIdleAndUsedStates() {
 }
 
 func (s *PoolMetricsTestSuite) TestPoolNameAttribute() {
-	s.Require().NoError(s.inst.registerPoolMetrics(s.db))
+	s.Require().NoError(s.inst.observePool(s.db))
 
 	metrics := s.collect()
 	data := metrics[metricConnectionMax].Data.(metricdata.Sum[int64])

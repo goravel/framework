@@ -110,7 +110,7 @@ func (r *GormPlugin) registerPoolMetrics() {
 		return
 	}
 
-	if err := r.instrument.registerPoolMetrics(r.sqlDB); err != nil {
+	if err := r.instrument.observePool(r.sqlDB); err != nil {
 		color.Warningln(err.Error())
 	}
 }

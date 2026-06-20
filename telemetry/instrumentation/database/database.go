@@ -19,6 +19,7 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/telemetry"
 )
 
@@ -45,6 +46,18 @@ type Instrument struct {
 	tracer       trace.Tracer
 	meter        metric.Meter
 	durationHist metric.Float64Histogram
+
+	sqlDB        *sql.DB
+	poolObserved bool
+}
+
+// SetDB stores the primary writer's *sql.DB for pool metrics.
+// Pool metrics cover the writer pool only; dbresolver replica pools are
+// internal gorm.ConnPool instances with no public sql.DBStats access.
+func (r *Instrument) SetDB(db *sql.DB) {
+	if r != nil {
+		r.sqlDB = db
+	}
 }
 
 func NewInstrument(pool contractsdatabase.Pool, connection string, resolver contractstelemetry.Resolver) *Instrument {
@@ -63,6 +76,7 @@ func (r *Instrument) active() bool {
 	defer r.mu.Unlock()
 
 	if r.tracer != nil {
+		r.startPoolObservation()
 		return true
 	}
 
@@ -79,7 +93,20 @@ func (r *Instrument) active() bool {
 		metric.WithExplicitBucketBoundaries(durationBuckets...),
 	)
 
+	r.startPoolObservation()
+
 	return true
+}
+
+func (r *Instrument) startPoolObservation() {
+	if r.poolObserved || r.sqlDB == nil {
+		return
+	}
+	r.poolObserved = true
+
+	if err := r.observePool(r.sqlDB); err != nil {
+		color.Warningln(err.Error())
+	}
 }
 
 func baseAttributes(pool contractsdatabase.Pool, connection string) []telemetry.KeyValue {
