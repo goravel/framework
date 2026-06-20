@@ -110,6 +110,86 @@ func (_c *View_GetShared_Call) RunAndReturn(run func() map[string]interface{}) *
 	return _c
 }
 
+// LoadViewsFrom provides a mock function with given fields: path
+func (_m *View) LoadViewsFrom(path string) {
+	_m.Called(path)
+}
+
+// View_LoadViewsFrom_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LoadViewsFrom'
+type View_LoadViewsFrom_Call struct {
+	*mock.Call
+}
+
+// LoadViewsFrom is a helper method to define mock.On call
+//   - path string
+func (_e *View_Expecter) LoadViewsFrom(path interface{}) *View_LoadViewsFrom_Call {
+	return &View_LoadViewsFrom_Call{Call: _e.mock.On("LoadViewsFrom", path)}
+}
+
+func (_c *View_LoadViewsFrom_Call) Run(run func(path string)) *View_LoadViewsFrom_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *View_LoadViewsFrom_Call) Return() *View_LoadViewsFrom_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *View_LoadViewsFrom_Call) RunAndReturn(run func(string)) *View_LoadViewsFrom_Call {
+	_c.Run(run)
+	return _c
+}
+
+// RegisteredViews provides a mock function with no fields
+func (_m *View) RegisteredViews() []string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for RegisteredViews")
+	}
+
+	var r0 []string
+	if rf, ok := ret.Get(0).(func() []string); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	return r0
+}
+
+// View_RegisteredViews_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RegisteredViews'
+type View_RegisteredViews_Call struct {
+	*mock.Call
+}
+
+// RegisteredViews is a helper method to define mock.On call
+func (_e *View_Expecter) RegisteredViews() *View_RegisteredViews_Call {
+	return &View_RegisteredViews_Call{Call: _e.mock.On("RegisteredViews")}
+}
+
+func (_c *View_RegisteredViews_Call) Run(run func()) *View_RegisteredViews_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *View_RegisteredViews_Call) Return(_a0 []string) *View_RegisteredViews_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *View_RegisteredViews_Call) RunAndReturn(run func() []string) *View_RegisteredViews_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Share provides a mock function with given fields: key, value
 func (_m *View) Share(key string, value interface{}) {
 	_m.Called(key, value)

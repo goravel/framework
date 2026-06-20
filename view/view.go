@@ -9,6 +9,8 @@ import (
 )
 
 type View struct {
+	mu     sync.RWMutex
+	paths  []string
 	shared sync.Map
 }
 
@@ -17,7 +19,33 @@ func NewView() *View {
 }
 
 func (r *View) Exists(view string) bool {
-	return file.Exists(paths.Abs(support.Config.Paths.Resources, "views", view))
+	if file.Exists(paths.Abs(support.Config.Paths.Resources, "views", view)) {
+		return true
+	}
+
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	for _, p := range r.paths {
+		if file.Exists(paths.Abs(p, view)) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (r *View) LoadViewsFrom(path string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.paths = append(r.paths, path)
+}
+
+func (r *View) RegisteredViews() []string {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	out := make([]string, len(r.paths))
+	copy(out, r.paths)
+	return out
 }
 
 func (r *View) Share(key string, value any) {
