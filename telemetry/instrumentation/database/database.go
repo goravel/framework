@@ -92,11 +92,17 @@ func (r *Instrument) active() bool {
 
 	r.tracer = tel.Tracer(instrumentationName)
 	r.meter = tel.Meter(instrumentationName)
-	r.durationHist, _ = r.meter.Float64Histogram(metricOperationDuration,
+
+	hist, err := r.meter.Float64Histogram(metricOperationDuration,
 		metric.WithUnit(unitSeconds),
 		metric.WithDescription("Duration of database client operations"),
 		metric.WithExplicitBucketBoundaries(durationBuckets...),
 	)
+	if err != nil {
+		color.Warningln("database telemetry: " + err.Error())
+		return false
+	}
+	r.durationHist = hist
 
 	r.startPoolObservation()
 
@@ -110,7 +116,7 @@ func (r *Instrument) startPoolObservation() {
 	r.poolObserved = true
 
 	if err := r.observePool(r.sqlDB); err != nil {
-		color.Warningln(err.Error())
+		color.Warningln("database telemetry: " + err.Error())
 	}
 }
 
@@ -145,15 +151,23 @@ func (r *Instrument) startSpan(ctx context.Context, name string) (context.Contex
 	return r.tracer.Start(ctx, name, telemetry.WithSpanKind(telemetry.SpanKindClient))
 }
 
+const unknownOperation = "UNKNOWN"
+
 func (r *Instrument) endSpan(ctx context.Context, span trace.Span, start time.Time, query, table string, rows int64, err error, resolverMode string) {
 	operation := operationName(query)
+	if operation == "" {
+		operation = unknownOperation
+	}
 
 	attrs := append([]telemetry.KeyValue{}, r.baseAttrs...)
-	attrs = append(attrs, semconv.DBOperationName(operation), semconv.DBQueryText(query))
+	attrs = append(attrs, semconv.DBOperationName(operation))
+	if operationName(query) != "" {
+		attrs = append(attrs, semconv.DBQueryText(query))
+	}
 	if table != "" {
-		name := operation + " " + table
-		attrs = append(attrs, semconv.DBCollectionName(table), semconv.DBQuerySummary(name))
-		span.SetName(name)
+		spanName := operation + " " + table
+		attrs = append(attrs, semconv.DBCollectionName(table), semconv.DBQuerySummary(spanName))
+		span.SetName(spanName)
 	} else {
 		span.SetName(operation)
 	}

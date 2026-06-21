@@ -197,15 +197,18 @@ func (s *InstrumentTestSuite) TestBaseAttributes() {
 
 func (s *InstrumentTestSuite) TestEndSpan() {
 	tests := []struct {
-		name           string
-		query          string
-		table          string
-		rows           int64
-		err            error
-		expectedName   string
-		expectedStatus codes.Code
-		hasCollection  bool
-		hasRows        bool
+		name                 string
+		query                string
+		table                string
+		rows                 int64
+		err                  error
+		resolverMode         string
+		expectedName         string
+		expectedStatus       codes.Code
+		hasCollection        bool
+		hasRows              bool
+		hasQueryText         bool
+		expectedResolverMode string
 	}{
 		{
 			name:           "query with table",
@@ -216,6 +219,7 @@ func (s *InstrumentTestSuite) TestEndSpan() {
 			expectedStatus: codes.Unset,
 			hasCollection:  true,
 			hasRows:        true,
+			hasQueryText:   true,
 		},
 		{
 			name:           "error status",
@@ -226,6 +230,7 @@ func (s *InstrumentTestSuite) TestEndSpan() {
 			expectedName:   "SELECT users",
 			expectedStatus: codes.Error,
 			hasCollection:  true,
+			hasQueryText:   true,
 		},
 		{
 			name:           "record not found is not an error",
@@ -236,6 +241,7 @@ func (s *InstrumentTestSuite) TestEndSpan() {
 			expectedName:   "SELECT users",
 			expectedStatus: codes.Unset,
 			hasCollection:  true,
+			hasQueryText:   true,
 		},
 		{
 			name:           "raw query without table",
@@ -244,6 +250,7 @@ func (s *InstrumentTestSuite) TestEndSpan() {
 			rows:           -1,
 			expectedName:   "SELECT",
 			expectedStatus: codes.Unset,
+			hasQueryText:   true,
 		},
 		{
 			name:           "negative rows omits attribute",
@@ -253,6 +260,57 @@ func (s *InstrumentTestSuite) TestEndSpan() {
 			expectedName:   "SELECT users",
 			expectedStatus: codes.Unset,
 			hasCollection:  true,
+			hasQueryText:   true,
+		},
+		{
+			name:           "empty query uses UNKNOWN fallback",
+			query:          "",
+			table:          "",
+			rows:           -1,
+			expectedName:   "UNKNOWN",
+			expectedStatus: codes.Unset,
+		},
+		{
+			name:           "whitespace query uses UNKNOWN fallback",
+			query:          "   ",
+			table:          "",
+			rows:           -1,
+			expectedName:   "UNKNOWN",
+			expectedStatus: codes.Unset,
+		},
+		{
+			name:           "empty query with table",
+			query:          "",
+			table:          "users",
+			rows:           -1,
+			expectedName:   "UNKNOWN users",
+			expectedStatus: codes.Unset,
+			hasCollection:  true,
+		},
+		{
+			name:                 "resolver mode set",
+			query:                "SELECT * FROM users",
+			table:                "users",
+			rows:                 1,
+			resolverMode:         "replica",
+			expectedName:         "SELECT users",
+			expectedStatus:       codes.Unset,
+			hasCollection:        true,
+			hasRows:              true,
+			hasQueryText:         true,
+			expectedResolverMode: "replica",
+		},
+		{
+			name:           "empty resolver mode omits attribute",
+			query:          "SELECT * FROM users",
+			table:          "users",
+			rows:           1,
+			resolverMode:   "",
+			expectedName:   "SELECT users",
+			expectedStatus: codes.Unset,
+			hasCollection:  true,
+			hasRows:        true,
+			hasQueryText:   true,
 		},
 	}
 
@@ -263,7 +321,7 @@ func (s *InstrumentTestSuite) TestEndSpan() {
 			s.True(inst.active())
 
 			ctx, span := inst.startSpan(context.Background(), "db")
-			inst.endSpan(ctx, span, time.Now(), tt.query, tt.table, tt.rows, tt.err, "")
+			inst.endSpan(ctx, span, time.Now(), tt.query, tt.table, tt.rows, tt.err, tt.resolverMode)
 
 			s.Require().Len(exporter.spans, 1)
 			recorded := exporter.spans[0]
@@ -274,35 +332,19 @@ func (s *InstrumentTestSuite) TestEndSpan() {
 			s.Equal(tt.hasCollection, ok)
 			_, ok = attrValue(recorded, "db.response.returned_rows")
 			s.Equal(tt.hasRows, ok)
+			_, ok = attrValue(recorded, "db.query.text")
+			s.Equal(tt.hasQueryText, ok)
+
+			if tt.expectedResolverMode != "" {
+				val, ok := attrValue(recorded, attrResolverMode)
+				s.True(ok)
+				s.Equal(tt.expectedResolverMode, val)
+			} else {
+				_, ok := attrValue(recorded, attrResolverMode)
+				s.False(ok)
+			}
 		})
 	}
-}
-
-func (s *InstrumentTestSuite) TestEndSpan_ResolverMode() {
-	exporter, resolver := setupTelemetry(s.T())
-	inst := NewInstrument(testPool(), "postgres", resolver)
-	s.True(inst.active())
-
-	ctx, span := inst.startSpan(context.Background(), "db")
-	inst.endSpan(ctx, span, time.Now(), "SELECT * FROM users", "users", 1, nil, "replica")
-
-	s.Require().Len(exporter.spans, 1)
-	val, ok := attrValue(exporter.spans[0], attrResolverMode)
-	s.True(ok)
-	s.Equal("replica", val)
-}
-
-func (s *InstrumentTestSuite) TestEndSpan_EmptyResolverModeOmitsAttribute() {
-	exporter, resolver := setupTelemetry(s.T())
-	inst := NewInstrument(testPool(), "postgres", resolver)
-	s.True(inst.active())
-
-	ctx, span := inst.startSpan(context.Background(), "db")
-	inst.endSpan(ctx, span, time.Now(), "SELECT * FROM users", "users", 1, nil, "")
-
-	s.Require().Len(exporter.spans, 1)
-	_, ok := attrValue(exporter.spans[0], attrResolverMode)
-	s.False(ok)
 }
 
 func (s *InstrumentTestSuite) TestDBSystem() {

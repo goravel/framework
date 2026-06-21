@@ -314,7 +314,11 @@ func (r *Tx) readBuilder() (contractsdb.Builder, error) {
 		return nil, err
 	}
 
-	return instrumentationdatabase.WrapBuilder(builder, r.instrument), nil
+	if r.instrument != nil {
+		return instrumentationdatabase.WrapBuilder(builder, r.instrument), nil
+	}
+
+	return builder, nil
 }
 
 func (r *Tx) writeBuilder() (contractsdb.Builder, error) {
@@ -323,5 +327,9 @@ func (r *Tx) writeBuilder() (contractsdb.Builder, error) {
 		return nil, err
 	}
 
-	return instrumentationdatabase.WrapBuilder(builder, r.instrument), nil
+	if r.instrument != nil {
+		return instrumentationdatabase.WrapBuilder(builder, r.instrument), nil
+	}
+
+	return builder, nil
 }

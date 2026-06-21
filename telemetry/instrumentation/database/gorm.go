@@ -98,6 +98,9 @@ func (r *GormPlugin) after(tx *gorm.DB) {
 		return
 	}
 
-	state := val.(spanState)
+	state, ok2 := val.(spanState)
+	if !ok2 {
+		return
+	}
 	r.instrument.endSpan(tx.Statement.Context, state.span, state.start, tx.Statement.SQL.String(), tx.Statement.Table, tx.Statement.RowsAffected, tx.Error, resolverMode(tx.Statement.Context))
 }

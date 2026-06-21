@@ -18,6 +18,11 @@ import (
 	instrumentationdatabase "github.com/goravel/framework/telemetry/instrumentation/database"
 )
 
+type cachedConnection struct {
+	db         *gorm.DB
+	instrument *instrumentationdatabase.Instrument
+}
+
 var (
 	connectionToDB     sync.Map
 	connectionToDBLock sync.Mutex
@@ -25,8 +30,9 @@ var (
 )
 
 func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool, connection string, telemetryResolver contractstelemetry.Resolver) (*gorm.DB, *instrumentationdatabase.Instrument, error) {
-	if db, ok := connectionToDB.Load(connection); ok {
-		return db.(*gorm.DB), nil, nil
+	if cached, ok := connectionToDB.Load(connection); ok {
+		c := cached.(cachedConnection)
+		return c.db, c.instrument, nil
 	}
 
 	if len(pool.Writers) == 0 {
@@ -41,8 +47,9 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 	connectionToDBLock.Lock()
 	defer connectionToDBLock.Unlock()
 
-	if db, ok := connectionToDB.Load(connection); ok {
-		return db.(*gorm.DB), nil, nil
+	if cached, ok := connectionToDB.Load(connection); ok {
+		c := cached.(cachedConnection)
+		return c.db, c.instrument, nil
 	}
 
 	gormConfig := &gorm.Config{
@@ -101,7 +108,7 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 			instrument.SetDB(db)
 		}
 
-		connectionToDB.Store(connection, instance)
+		connectionToDB.Store(connection, cachedConnection{db: instance, instrument: instrument})
 
 		return instance, instrument, nil
 	}
@@ -137,7 +144,7 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 		}
 	}
 
-	connectionToDB.Store(connection, instance)
+	connectionToDB.Store(connection, cachedConnection{db: instance, instrument: instrument})
 
 	return instance, instrument, nil
 }
