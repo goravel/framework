@@ -33,17 +33,7 @@ type DB struct {
 	telemetryResolver contractstelemetry.Resolver
 }
 
-func NewDB(ctx context.Context, config config.Config, driver contractsdriver.Driver, logger contractslogger.Logger, gormDB *gorm.DB, telemetryResolver contractstelemetry.Resolver) (*DB, error) {
-	pool := driver.Pool()
-
-	var instrument *instrumentationdatabase.Instrument
-	if telemetryResolver != nil && instrumentationdatabase.Enabled(config) {
-		instrument = instrumentationdatabase.NewInstrument(pool, pool.Writers[0].Connection, telemetryResolver)
-		if sqlDB, err := gormDB.DB(); err == nil {
-			instrument.SetDB(sqlDB)
-		}
-	}
-
+func NewDB(ctx context.Context, config config.Config, driver contractsdriver.Driver, logger contractslogger.Logger, gormDB *gorm.DB, instrument *instrumentationdatabase.Instrument, telemetryResolver contractstelemetry.Resolver) (*DB, error) {
 	return &DB{
 		Tx:                NewTx(ctx, driver, logger, gormDB, nil, &[]TxLog{}, instrument),
 		ctx:               ctx,
@@ -70,12 +60,12 @@ func BuildDB(ctx context.Context, config config.Config, log log.Log, connection 
 
 	pool := driver.Pool()
 	logger := NewLogger(config, log)
-	gorm, err := databasedriver.BuildGorm(config, logger.ToGorm(), pool, connection, telemetryResolver)
+	gorm, instrument, err := databasedriver.BuildGorm(config, logger.ToGorm(), pool, connection, telemetryResolver)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewDB(ctx, config, driver, logger, gorm, telemetryResolver)
+	return NewDB(ctx, config, driver, logger, gorm, instrument, telemetryResolver)
 }
 
 func (r *DB) BeginTransaction() (contractsdb.Tx, error) {
@@ -133,7 +123,7 @@ func (r *DB) Transaction(callback func(tx contractsdb.Tx) error) (err error) {
 }
 
 func (r *DB) WithContext(ctx context.Context) contractsdb.DB {
-	db, err := NewDB(ctx, r.config, r.driver, r.logger, r.gorm, r.telemetryResolver)
+	db, err := NewDB(ctx, r.config, r.driver, r.logger, r.gorm, r.instrument, r.telemetryResolver)
 	if err != nil {
 		r.logger.Panicf(r.ctx, err.Error())
 		return nil
@@ -161,7 +151,7 @@ func NewTx(
 	txLogs *[]TxLog,
 	instrument *instrumentationdatabase.Instrument,
 ) *Tx {
-	if txBuilder != nil {
+	if txBuilder != nil && instrument != nil {
 		txBuilder = instrumentationdatabase.WrapTxBuilder(txBuilder, instrument)
 	}
 

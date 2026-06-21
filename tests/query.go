@@ -39,12 +39,12 @@ type TestQuery struct {
 func NewTestQuery(ctx context.Context, driver contractsdriver.Driver, config config.Config, connection string) (*TestQuery, error) {
 	pool := driver.Pool()
 	logger := databasedb.NewLogger(config, utils.NewTestLog())
-	gorm, err := databasedriver.BuildGorm(config, logger.ToGorm(), pool, connection, nil)
+	gorm, instrument, err := databasedriver.BuildGorm(config, logger.ToGorm(), pool, connection, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	db, err := databasedb.NewDB(ctx, config, driver, logger, gorm, nil)
+	db, err := databasedb.NewDB(ctx, config, driver, logger, gorm, instrument, nil)
 	if err != nil {
 		return nil, err
 	}

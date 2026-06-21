@@ -90,7 +90,7 @@ func BuildQuery(ctx context.Context, config config.Config, connection string, lo
 
 	pool := driver.Pool()
 	logger := db.NewLogger(config, log).ToGorm()
-	gorm, err := databasedriver.BuildGorm(config, logger, pool, connection, telemetryResolver)
+	gorm, _, err := databasedriver.BuildGorm(config, logger, pool, connection, telemetryResolver)
 	if err != nil {
 		return nil, pool.Writers[0], err
 	}

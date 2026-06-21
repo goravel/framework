@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
 	gormtests "gorm.io/gorm/utils/tests"
@@ -23,7 +22,7 @@ func TestBuildGorm_TelemetryPlugin(t *testing.T) {
 	t.Cleanup(ResetConnections)
 
 	resolver := func() contractstelemetry.Telemetry { return nil }
-	instance, err := BuildGorm(stubGormConfig(t), gormlogger.Discard, stubPool(), "primary", resolver)
+	instance, _, err := BuildGorm(stubGormConfig(t), gormlogger.Discard, stubPool(), "primary", resolver)
 	assert.NoError(t, err)
 	assert.NotNil(t, instance)
 	t.Cleanup(func() {
@@ -69,9 +68,11 @@ func stubPool() database.Pool {
 
 func stubGormConfig(t *testing.T) *mocksconfig.Config {
 	mockConfig := mocksconfig.NewConfig(t)
-	mockConfig.EXPECT().GetBool(mock.Anything, mock.Anything).Return(true).Maybe()
-	mockConfig.EXPECT().GetInt(mock.Anything, mock.Anything).Return(10).Maybe()
-	mockConfig.EXPECT().GetDuration(mock.Anything, mock.Anything).Return(time.Duration(3600)).Maybe()
+	mockConfig.EXPECT().GetBool("telemetry.instrumentation.database.enabled", true).Return(true).Once()
+	mockConfig.EXPECT().GetInt("database.pool.max_idle_conns", 10).Return(10).Once()
+	mockConfig.EXPECT().GetInt("database.pool.max_open_conns", 100).Return(100).Once()
+	mockConfig.EXPECT().GetDuration("database.pool.conn_max_idletime", time.Duration(3600)).Return(time.Duration(3600)).Once()
+	mockConfig.EXPECT().GetDuration("database.pool.conn_max_lifetime", time.Duration(3600)).Return(time.Duration(3600)).Once()
 
 	return mockConfig
 }

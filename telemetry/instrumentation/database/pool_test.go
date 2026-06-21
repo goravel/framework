@@ -63,7 +63,7 @@ func (s *PoolMetricsTestSuite) TestRegistersAllMetrics() {
 	s.Require().NoError(s.inst.observePool(s.db))
 
 	metrics := s.collect()
-	for _, name := range []string{metricConnectionCount, metricConnectionMax, metricConnectionWaitTime, metricConnectionTimeouts} {
+	for _, name := range []string{metricConnectionCount, metricConnectionMax} {
 		s.Contains(metrics, name)
 	}
 }

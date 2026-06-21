@@ -13,10 +13,19 @@ import (
 	mocksdb "github.com/goravel/framework/mocks/database/db"
 )
 
-type stubResult struct{}
+type MockResult struct {
+	mock.Mock
+}
 
-func (stubResult) LastInsertId() (int64, error) { return 0, nil }
-func (stubResult) RowsAffected() (int64, error) { return 2, nil }
+func (m *MockResult) LastInsertId() (int64, error) {
+	args := m.Called()
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockResult) RowsAffected() (int64, error) {
+	args := m.Called()
+	return args.Get(0).(int64), args.Error(1)
+}
 
 type BuilderTestSuite struct {
 	suite.Suite
@@ -40,13 +49,15 @@ func (s *BuilderTestSuite) lastSpan() sdktrace.ReadOnlySpan {
 }
 
 func (s *BuilderTestSuite) TestSelectContext_StructuredQuerySpan() {
+	var users []any
 	inner := mocksdb.NewBuilder(s.T())
-	inner.EXPECT().SelectContext(mock.Anything, mock.Anything, "SELECT * FROM users WHERE id = ?", 1).Return(nil).Once()
+	// Context uses mock.Anything because the tracing wrapper injects a span into it.
+	inner.EXPECT().SelectContext(mock.Anything, &users, "SELECT * FROM users WHERE id = ?", 1).Return(nil).Once()
 
 	wrapped := WrapBuilder(inner, s.instrument)
 	ctx := ContextWithTable(context.Background(), "users")
 
-	s.NoError(wrapped.SelectContext(ctx, &[]any{}, "SELECT * FROM users WHERE id = ?", 1))
+	s.NoError(wrapped.SelectContext(ctx, &users, "SELECT * FROM users WHERE id = ?", 1))
 
 	span := s.lastSpan()
 	s.Equal("SELECT users", span.Name())
@@ -59,8 +70,11 @@ func (s *BuilderTestSuite) TestSelectContext_StructuredQuerySpan() {
 }
 
 func (s *BuilderTestSuite) TestExecContext_RawQueryHasNoCollection() {
+	mockResult := &MockResult{}
+	mockResult.On("RowsAffected").Return(int64(1), nil)
+
 	inner := mocksdb.NewBuilder(s.T())
-	inner.EXPECT().ExecContext(mock.Anything, "UPDATE users SET name = ?", "x").Return(stubResult{}, nil).Once()
+	inner.EXPECT().ExecContext(mock.Anything, "UPDATE users SET name = ?", "x").Return(mockResult, nil).Once()
 
 	wrapped := WrapBuilder(inner, s.instrument)
 
@@ -71,11 +85,15 @@ func (s *BuilderTestSuite) TestExecContext_RawQueryHasNoCollection() {
 	s.Equal("UPDATE", span.Name())
 	_, ok := attrValue(span, "db.collection.name")
 	s.False(ok)
+	mockResult.AssertExpectations(s.T())
 }
 
 func (s *BuilderTestSuite) TestExecContext_RecordsRowsAffected() {
+	mockResult := &MockResult{}
+	mockResult.On("RowsAffected").Return(int64(2), nil)
+
 	inner := mocksdb.NewBuilder(s.T())
-	inner.EXPECT().ExecContext(mock.Anything, "INSERT INTO users (name) VALUES (?)", "x").Return(stubResult{}, nil).Once()
+	inner.EXPECT().ExecContext(mock.Anything, "INSERT INTO users (name) VALUES (?)", "x").Return(mockResult, nil).Once()
 
 	wrapped := WrapBuilder(inner, s.instrument)
 
@@ -85,6 +103,7 @@ func (s *BuilderTestSuite) TestExecContext_RecordsRowsAffected() {
 	rows, ok := attrValue(s.lastSpan(), "db.response.returned_rows")
 	s.True(ok)
 	s.Equal("2", rows)
+	mockResult.AssertExpectations(s.T())
 }
 
 func (s *BuilderTestSuite) TestExecContext_RecordsError() {
@@ -111,8 +130,11 @@ func (s *BuilderTestSuite) TestQueryxContext_Span() {
 }
 
 func (s *BuilderTestSuite) TestTxBuilder_ExecContext() {
+	mockResult := &MockResult{}
+	mockResult.On("RowsAffected").Return(int64(1), nil)
+
 	inner := mocksdb.NewTxBuilder(s.T())
-	inner.EXPECT().ExecContext(mock.Anything, "UPDATE users SET name = ?", "x").Return(stubResult{}, nil).Once()
+	inner.EXPECT().ExecContext(mock.Anything, "UPDATE users SET name = ?", "x").Return(mockResult, nil).Once()
 
 	wrapped := WrapTxBuilder(inner, s.instrument)
 	ctx := ContextWithTable(context.Background(), "users")
@@ -120,4 +142,5 @@ func (s *BuilderTestSuite) TestTxBuilder_ExecContext() {
 	_, err := wrapped.ExecContext(ctx, "UPDATE users SET name = ?", "x")
 	s.NoError(err)
 	s.Equal("UPDATE users", s.lastSpan().Name())
+	mockResult.AssertExpectations(s.T())
 }

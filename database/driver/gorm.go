@@ -24,25 +24,25 @@ var (
 	pingWarning        sync.Once
 )
 
-func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool, connection string, telemetryResolver contractstelemetry.Resolver) (*gorm.DB, error) {
+func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool, connection string, telemetryResolver contractstelemetry.Resolver) (*gorm.DB, *instrumentationdatabase.Instrument, error) {
 	if db, ok := connectionToDB.Load(connection); ok {
-		return db.(*gorm.DB), nil
+		return db.(*gorm.DB), nil, nil
 	}
 
 	if len(pool.Writers) == 0 {
-		return nil, errors.DatabaseConfigNotFound
+		return nil, nil, errors.DatabaseConfigNotFound
 	}
 
 	// If the database is empty, it means the database is not configured, we don't want to return an error or print a warning here.
 	if pool.Writers[0].Database == "" {
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	connectionToDBLock.Lock()
 	defer connectionToDBLock.Unlock()
 
 	if db, ok := connectionToDB.Load(connection); ok {
-		return db.(*gorm.DB), nil
+		return db.(*gorm.DB), nil, nil
 	}
 
 	gormConfig := &gorm.Config{
@@ -63,7 +63,7 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 
 	instance, err := gorm.Open(pool.Writers[0].Dialector, gormConfig)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if pinger, ok := instance.ConnPool.(interface{ Ping() error }); ok {
 		if err = pinger.Ping(); err != nil {
@@ -76,8 +76,8 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 	var instrument *instrumentationdatabase.Instrument
 	if telemetryResolver != nil && instrumentationdatabase.Enabled(config) {
 		instrument = instrumentationdatabase.NewInstrument(pool, connection, telemetryResolver)
-		if err = instance.Use(instrumentationdatabase.NewGormPlugin(instrument)); err != nil {
-			color.Warningln(err.Error())
+		if pluginErr := instance.Use(instrumentationdatabase.NewGormPlugin(instrument)); pluginErr != nil {
+			color.Warningln("database telemetry: " + pluginErr.Error())
 		}
 	}
 
@@ -89,7 +89,7 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 	if len(pool.Writers) == 1 && len(pool.Readers) == 0 {
 		db, err := instance.DB()
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		db.SetMaxIdleConns(maxIdleConns)
@@ -103,7 +103,7 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 
 		connectionToDB.Store(connection, instance)
 
-		return instance, nil
+		return instance, instrument, nil
 	}
 
 	var (
@@ -128,7 +128,7 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 		SetMaxOpenConns(maxOpenConns).
 		SetConnMaxLifetime(connMaxLifetime * time.Second).
 		SetConnMaxIdleTime(connMaxIdleTime * time.Second)); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if instrument != nil {
@@ -139,7 +139,7 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 
 	connectionToDB.Store(connection, instance)
 
-	return instance, nil
+	return instance, instrument, nil
 }
 
 func ResetConnections() {

@@ -10,13 +10,10 @@ import (
 )
 
 const (
-	metricConnectionCount    = "db.client.connection.count"
-	metricConnectionMax      = "db.client.connection.max"
-	metricConnectionWaitTime = "db.client.connection.wait_time"
-	metricConnectionTimeouts = "db.client.connection.timeouts"
+	metricConnectionCount = "db.client.connection.count"
+	metricConnectionMax   = "db.client.connection.max"
 
 	unitConnections = "{connection}"
-	unitTimeout     = "{timeout}"
 )
 
 func (r *Instrument) observePool(db *sql.DB) error {
@@ -36,22 +33,6 @@ func (r *Instrument) observePool(db *sql.DB) error {
 		return err
 	}
 
-	waitTime, err := r.meter.Float64ObservableCounter(metricConnectionWaitTime,
-		metric.WithUnit(unitSeconds),
-		metric.WithDescription("Cumulative time blocked waiting for an available connection"),
-	)
-	if err != nil {
-		return err
-	}
-
-	timeouts, err := r.meter.Int64ObservableCounter(metricConnectionTimeouts,
-		metric.WithUnit(unitTimeout),
-		metric.WithDescription("Cumulative count of connection pool timeouts (idle, lifetime, idle time)"),
-	)
-	if err != nil {
-		return err
-	}
-
 	idle := metric.WithAttributes(append(slices.Clone(r.baseAttrs), semconv.DBClientConnectionStateIdle)...)
 	used := metric.WithAttributes(append(slices.Clone(r.baseAttrs), semconv.DBClientConnectionStateUsed)...)
 	base := metric.WithAttributes(r.baseAttrs...)
@@ -61,10 +42,8 @@ func (r *Instrument) observePool(db *sql.DB) error {
 		observer.ObserveInt64(count, int64(stats.InUse), used)
 		observer.ObserveInt64(count, int64(stats.Idle), idle)
 		observer.ObserveInt64(maxConns, int64(stats.MaxOpenConnections), base)
-		observer.ObserveFloat64(waitTime, stats.WaitDuration.Seconds(), base)
-		observer.ObserveInt64(timeouts, stats.MaxIdleClosed+stats.MaxIdleTimeClosed+stats.MaxLifetimeClosed, base)
 		return nil
-	}, count, maxConns, waitTime, timeouts)
+	}, count, maxConns)
 
 	return err
 }
