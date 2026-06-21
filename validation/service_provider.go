@@ -39,11 +39,8 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 	ormFacade = app.MakeOrm()
 	langFacade = app.MakeLang
 
-	app.Publishes("github.com/goravel/framework/validation", map[string]string{
-		"lang": app.LangPath(),
-	}, "goravel-validation-lang")
-
 	app.Commands([]consolecontract.Command{
+		console.NewLangPublishCommand(app.LangPath(), LangFS),
 		&console.RuleMakeCommand{},
 		&console.FilterMakeCommand{},
 	})
