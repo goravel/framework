@@ -137,6 +137,31 @@ func (r *Orm) Query() contractsorm.Query {
 	return r.query
 }
 
+// Related returns a Query pre-scoped to the related rows for parent.relation. parent must be
+// a non-nil pointer to a struct. See contractsorm.Orm.Related for the per-kind shape.
+func (r *Orm) Related(parent any, relation string) contractsorm.Query {
+	q := r.Query()
+	gq, ok := q.(*gorm.Query)
+	if !ok {
+		// Implementation invariant: r.query is always a *gorm.Query in this driver.
+		// If a future driver implements contractsorm.Orm differently, that driver provides its
+		// own Related; this branch should never run in practice.
+		_ = q
+		return nil
+	}
+	return gq.Related(parent, relation)
+}
+
+// Relation returns a RelationWriter bound to (parent, name) for FK-safe write operations.
+// See contractsorm.Orm.Relation for usage.
+func (r *Orm) Relation(parent any, name string) contractsorm.RelationWriter {
+	gq, ok := r.Query().(*gorm.Query)
+	if !ok {
+		return nil
+	}
+	return gq.Relation(parent, name)
+}
+
 func (r *Orm) SetQuery(query contractsorm.Query) {
 	r.query = query
 }
