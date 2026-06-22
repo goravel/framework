@@ -11,10 +11,17 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database"
+	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/color"
+	instrumentationdatabase "github.com/goravel/framework/telemetry/instrumentation/database"
 )
+
+type cachedConnection struct {
+	db         *gorm.DB
+	instrument *instrumentationdatabase.Instrument
+}
 
 var (
 	connectionToDB     sync.Map
@@ -22,25 +29,27 @@ var (
 	pingWarning        sync.Once
 )
 
-func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool, connection string) (*gorm.DB, error) {
-	if db, ok := connectionToDB.Load(connection); ok {
-		return db.(*gorm.DB), nil
+func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool, connection string, telemetryResolver contractstelemetry.Resolver) (*gorm.DB, *instrumentationdatabase.Instrument, error) {
+	if cached, ok := connectionToDB.Load(connection); ok {
+		c := cached.(cachedConnection)
+		return c.db, c.instrument, nil
 	}
 
 	if len(pool.Writers) == 0 {
-		return nil, errors.DatabaseConfigNotFound
+		return nil, nil, errors.DatabaseConfigNotFound
 	}
 
 	// If the database is empty, it means the database is not configured, we don't want to return an error or print a warning here.
 	if pool.Writers[0].Database == "" {
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	connectionToDBLock.Lock()
 	defer connectionToDBLock.Unlock()
 
-	if db, ok := connectionToDB.Load(connection); ok {
-		return db.(*gorm.DB), nil
+	if cached, ok := connectionToDB.Load(connection); ok {
+		c := cached.(cachedConnection)
+		return c.db, c.instrument, nil
 	}
 
 	gormConfig := &gorm.Config{
@@ -61,13 +70,21 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 
 	instance, err := gorm.Open(pool.Writers[0].Dialector, gormConfig)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if pinger, ok := instance.ConnPool.(interface{ Ping() error }); ok {
 		if err = pinger.Ping(); err != nil {
 			pingWarning.Do(func() {
 				color.Warningln(err.Error())
 			})
+		}
+	}
+
+	var instrument *instrumentationdatabase.Instrument
+	if telemetryResolver != nil && instrumentationdatabase.Enabled(config) {
+		instrument = instrumentationdatabase.NewInstrument(pool, connection, telemetryResolver)
+		if pluginErr := instance.Use(instrumentationdatabase.NewGormPlugin(instrument)); pluginErr != nil {
+			color.Warningln("database telemetry: " + pluginErr.Error())
 		}
 	}
 
@@ -79,7 +96,7 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 	if len(pool.Writers) == 1 && len(pool.Readers) == 0 {
 		db, err := instance.DB()
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		db.SetMaxIdleConns(maxIdleConns)
@@ -87,9 +104,13 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 		db.SetConnMaxIdleTime(connMaxIdleTime * time.Second)
 		db.SetConnMaxLifetime(connMaxLifetime * time.Second)
 
-		connectionToDB.Store(connection, instance)
+		if instrument != nil {
+			instrument.SetDB(db)
+		}
 
-		return instance, nil
+		connectionToDB.Store(connection, cachedConnection{db: instance, instrument: instrument})
+
+		return instance, instrument, nil
 	}
 
 	var (
@@ -114,12 +135,18 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 		SetMaxOpenConns(maxOpenConns).
 		SetConnMaxLifetime(connMaxLifetime * time.Second).
 		SetConnMaxIdleTime(connMaxIdleTime * time.Second)); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	connectionToDB.Store(connection, instance)
+	if instrument != nil {
+		if sqlDB, err := instance.DB(); err == nil {
+			instrument.SetDB(sqlDB)
+		}
+	}
 
-	return instance, nil
+	connectionToDB.Store(connection, cachedConnection{db: instance, instrument: instrument})
+
+	return instance, instrument, nil
 }
 
 func ResetConnections() {

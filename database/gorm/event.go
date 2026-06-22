@@ -93,7 +93,7 @@ func (e *Event) IsDirty(columns ...string) bool {
 }
 
 func (e *Event) Query() orm.Query {
-	return NewQuery(e.query.ctx, e.query.config, e.query.dbConfig, e.query.instance.Session(&gorm.Session{NewDB: true}), e.query.grammar, e.query.log, e.query.modelToObserver, nil)
+	return NewQuery(e.query.ctx, e.query.config, e.query.dbConfig, e.query.instance.Session(&gorm.Session{NewDB: true}), e.query.grammar, e.query.log, e.query.modelToObserver, nil, e.query.telemetryResolver)
 }
 
 func (e *Event) SetAttribute(key string, value any) {

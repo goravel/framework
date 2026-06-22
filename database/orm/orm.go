@@ -12,22 +12,24 @@ import (
 	"github.com/goravel/framework/contracts/database"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/log"
+	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/database/driver"
 	"github.com/goravel/framework/database/factory"
 	"github.com/goravel/framework/database/gorm"
 )
 
 type Orm struct {
-	ctx             context.Context
-	config          config.Config
-	log             log.Log
-	query           contractsorm.Query
-	queries         map[string]contractsorm.Query
-	fresh           func(key ...any)
-	connection      string
-	modelToObserver []contractsorm.ModelToObserver
-	dbConfig        database.Config
-	mutex           sync.Mutex
+	ctx               context.Context
+	config            config.Config
+	log               log.Log
+	query             contractsorm.Query
+	queries           map[string]contractsorm.Query
+	fresh             func(key ...any)
+	connection        string
+	modelToObserver   []contractsorm.ModelToObserver
+	dbConfig          database.Config
+	mutex             sync.Mutex
+	telemetryResolver contractstelemetry.Resolver
 }
 
 func NewOrm(
@@ -40,31 +42,33 @@ func NewOrm(
 	log log.Log,
 	modelToObserver []contractsorm.ModelToObserver,
 	fresh func(key ...any),
+	telemetryResolver contractstelemetry.Resolver,
 ) *Orm {
 	return &Orm{
-		ctx:             ctx,
-		config:          config,
-		connection:      connection,
-		dbConfig:        dbConfig,
-		log:             log,
-		modelToObserver: modelToObserver,
-		query:           query,
-		queries:         queries,
-		fresh:           fresh,
+		ctx:               ctx,
+		config:            config,
+		connection:        connection,
+		dbConfig:          dbConfig,
+		log:               log,
+		modelToObserver:   modelToObserver,
+		query:             query,
+		queries:           queries,
+		fresh:             fresh,
+		telemetryResolver: telemetryResolver,
 	}
 }
 
-func BuildOrm(ctx context.Context, config config.Config, connection string, log log.Log, fresh func(key ...any)) (*Orm, error) {
-	query, dbConfig, err := gorm.BuildQuery(ctx, config, connection, log, nil)
+func BuildOrm(ctx context.Context, config config.Config, connection string, log log.Log, fresh func(key ...any), telemetryResolver contractstelemetry.Resolver) (*Orm, error) {
+	query, dbConfig, err := gorm.BuildQuery(ctx, config, connection, log, nil, telemetryResolver)
 	if err != nil {
-		return NewOrm(ctx, config, connection, dbConfig, nil, nil, log, nil, fresh), err
+		return NewOrm(ctx, config, connection, dbConfig, nil, nil, log, nil, fresh, telemetryResolver), err
 	}
 
 	queries := map[string]contractsorm.Query{
 		connection: query,
 	}
 
-	return NewOrm(ctx, config, connection, dbConfig, query, queries, log, nil, fresh), nil
+	return NewOrm(ctx, config, connection, dbConfig, query, queries, log, nil, fresh, telemetryResolver), nil
 }
 
 func (r *Orm) Config() database.Config {
@@ -76,19 +80,19 @@ func (r *Orm) Connection(name string) contractsorm.Orm {
 		name = r.config.GetString("database.default")
 	}
 	if instance, exist := r.queries[name]; exist {
-		return NewOrm(r.ctx, r.config, name, r.dbConfig, instance, r.queries, r.log, r.modelToObserver, r.fresh)
+		return NewOrm(r.ctx, r.config, name, r.dbConfig, instance, r.queries, r.log, r.modelToObserver, r.fresh, r.telemetryResolver)
 	}
 
-	query, dbConfig, err := gorm.BuildQuery(r.ctx, r.config, name, r.log, r.modelToObserver)
+	query, dbConfig, err := gorm.BuildQuery(r.ctx, r.config, name, r.log, r.modelToObserver, r.telemetryResolver)
 	if err != nil || query == nil {
 		r.log.Errorf("[Orm] Init %s connection error: %v", name, err)
 
-		return NewOrm(r.ctx, r.config, name, dbConfig, nil, r.queries, r.log, r.modelToObserver, r.fresh)
+		return NewOrm(r.ctx, r.config, name, dbConfig, nil, r.queries, r.log, r.modelToObserver, r.fresh, r.telemetryResolver)
 	}
 
 	r.queries[name] = query
 
-	return NewOrm(r.ctx, r.config, name, dbConfig, query, r.queries, r.log, r.modelToObserver, r.fresh)
+	return NewOrm(r.ctx, r.config, name, dbConfig, query, r.queries, r.log, r.modelToObserver, r.fresh, r.telemetryResolver)
 }
 
 func (r *Orm) DB() (*sql.DB, error) {
@@ -175,5 +179,5 @@ func (r *Orm) Transaction(txFunc func(tx contractsorm.Query) error) (err error) 
 }
 
 func (r *Orm) WithContext(ctx context.Context) contractsorm.Orm {
-	return NewOrm(ctx, r.config, r.connection, r.dbConfig, r.query, r.queries, r.log, r.modelToObserver, r.fresh)
+	return NewOrm(ctx, r.config, r.connection, r.dbConfig, r.query, r.queries, r.log, r.modelToObserver, r.fresh, r.telemetryResolver)
 }

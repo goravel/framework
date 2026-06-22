@@ -8,6 +8,7 @@ import (
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/foundation"
+	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	"github.com/goravel/framework/database/console"
 	consolemigration "github.com/goravel/framework/database/console/migration"
 	"github.com/goravel/framework/database/db"
@@ -51,12 +52,14 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.LogFacadeNotSet.SetModule(errors.ModuleOrm)
 		}
 
+		telemetryResolver := telemetryResolverFrom(app)
+
 		connection := config.GetString("database.default")
 		if connection == "" {
 			return nil, nil
 		}
 
-		orm, err := databaseorm.BuildOrm(ctx, config, connection, log, app.Fresh)
+		orm, err := databaseorm.BuildOrm(ctx, config, connection, log, app.Fresh, telemetryResolver)
 		if err != nil {
 			color.Warningln(errors.OrmInitConnection.Args(connection, err).SetModule(errors.ModuleOrm))
 
@@ -77,12 +80,14 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.LogFacadeNotSet.SetModule(errors.ModuleDB)
 		}
 
+		telemetryResolver := telemetryResolverFrom(app)
+
 		connection := config.GetString("database.default")
 		if connection == "" {
 			return nil, nil
 		}
 
-		db, err := db.BuildDB(context.Background(), config, log, connection)
+		db, err := db.BuildDB(context.Background(), config, log, connection, telemetryResolver)
 		if err != nil {
 			color.Warningln(errors.OrmInitConnection.Args(connection, err).SetModule(errors.ModuleDB))
 
@@ -156,5 +161,11 @@ func (r *ServiceProvider) registerCommands(app foundation.Application) {
 			console.NewShowCommand(config, schema),
 			console.NewWipeCommand(config, schema),
 		})
+	}
+}
+
+func telemetryResolverFrom(app foundation.Application) contractstelemetry.Resolver {
+	return func() contractstelemetry.Telemetry {
+		return app.MakeTelemetry()
 	}
 }
