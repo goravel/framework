@@ -13,7 +13,7 @@ type Grpc interface {
 	// DEPRECATED: Use Connect instead, will be removed in v1.18.
 	Client(ctx context.Context, name string) (*grpc.ClientConn, error)
 	// ClientCredentials registers groups of transport credentials for gRPC clients
-	// (e.g. mTLS). Keys are referenced via `grpc.servers.<name>.creds` and
+	// (e.g. mTLS). Keys are referenced via `grpc.clients.<name>.creds` and
 	// override the default insecure credentials on matching connections.
 	ClientCredentials(map[string]credentials.TransportCredentials)
 	// ClientStatsHandlerGroups sets the gRPC client stats handler groups.

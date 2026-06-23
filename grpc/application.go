@@ -32,15 +32,15 @@ type Application struct {
 	clientCredentialsGroups      map[string]credentials.TransportCredentials
 	clientStatsHandlerGroups     map[string][]stats.Handler
 
-	// Mutex protects the servers map
+	// Mutex protects the clients map
 	mu      sync.RWMutex
-	servers map[string]*grpc.ClientConn
+	clients map[string]*grpc.ClientConn
 }
 
 func NewApplication(config config.Config) *Application {
 	return &Application{
 		config:                       config,
-		servers:                      make(map[string]*grpc.ClientConn),
+		clients:                      make(map[string]*grpc.ClientConn),
 		unaryServerInterceptors:      make([]grpc.UnaryServerInterceptor, 0),
 		serverStatsHandlers:          make([]stats.Handler, 0),
 		unaryClientInterceptorGroups: make(map[string][]grpc.UnaryClientInterceptor),
@@ -56,7 +56,7 @@ func (r *Application) Client(ctx context.Context, name string) (*grpc.ClientConn
 
 func (r *Application) Connect(server string) (*grpc.ClientConn, error) {
 	r.mu.RLock()
-	conn, ok := r.servers[server]
+	conn, ok := r.clients[server]
 	r.mu.RUnlock()
 
 	if ok {
@@ -70,22 +70,22 @@ func (r *Application) Connect(server string) (*grpc.ClientConn, error) {
 	defer r.mu.Unlock()
 
 	// Double-Check: Someone else might have created it while we waited for the lock
-	if conn, ok = r.servers[server]; ok {
+	if conn, ok = r.clients[server]; ok {
 		if conn.GetState() != connectivity.Shutdown {
 			return conn, nil
 		}
 		// Found a Shutdown connection. Close and remove it immediately.
 		// This prevents stale connections from lingering if the subsequent creation fails.
 		_ = conn.Close()
-		delete(r.servers, server)
+		delete(r.clients, server)
 	}
 
-	host := r.config.GetString(fmt.Sprintf("grpc.servers.%s.host", server))
+	host := r.config.GetString(fmt.Sprintf("grpc.clients.%s.host", server))
 	if host == "" {
 		return nil, errors.GrpcEmptyClientHost
 	}
 	if !strings.Contains(host, ":") {
-		port := r.config.GetString(fmt.Sprintf("grpc.servers.%s.port", server))
+		port := r.config.GetString(fmt.Sprintf("grpc.clients.%s.port", server))
 		if port == "" {
 			return nil, errors.GrpcEmptyClientPort
 		}
@@ -93,7 +93,7 @@ func (r *Application) Connect(server string) (*grpc.ClientConn, error) {
 		host += ":" + port
 	}
 
-	interceptorKeys, ok := r.config.Get(fmt.Sprintf("grpc.servers.%s.interceptors", server)).([]string)
+	interceptorKeys, ok := r.config.Get(fmt.Sprintf("grpc.clients.%s.interceptors", server)).([]string)
 	if !ok {
 		return nil, errors.GrpcInvalidInterceptorsType.Args(server)
 	}
@@ -105,7 +105,7 @@ func (r *Application) Connect(server string) (*grpc.ClientConn, error) {
 		dialOpts = append(dialOpts, grpc.WithChainUnaryInterceptor(interceptors...))
 	}
 
-	statsHandlerKeys, ok := r.config.Get(fmt.Sprintf("grpc.servers.%s.stats_handlers", server)).([]string)
+	statsHandlerKeys, ok := r.config.Get(fmt.Sprintf("grpc.clients.%s.stats_handlers", server)).([]string)
 	if ok {
 		if handlers := r.getClientStatsHandlers(statsHandlerKeys); len(handlers) > 0 {
 			for _, h := range handlers {
@@ -122,7 +122,7 @@ func (r *Application) Connect(server string) (*grpc.ClientConn, error) {
 		return nil, err
 	}
 
-	r.servers[server] = newConn
+	r.clients[server] = newConn
 
 	return newConn, nil
 }
@@ -197,12 +197,12 @@ func (r *Application) Shutdown(force ...bool) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	for _, conn := range r.servers {
+	for _, conn := range r.clients {
 		_ = conn.Close()
 	}
 
 	// Clear the map to allow Garbage Collection
-	r.servers = make(map[string]*grpc.ClientConn)
+	r.clients = make(map[string]*grpc.ClientConn)
 
 	return nil
 }
@@ -261,14 +261,14 @@ func (r *Application) getClientInterceptors(keys []string) []grpc.UnaryClientInt
 
 // resolveClientCredentials returns the transport credentials for the given server.
 // When a credentials group is registered and referenced via the
-// `grpc.servers.<name>.creds` config key, those credentials are used;
+// `grpc.clients.<name>.creds` config key, those credentials are used;
 // otherwise insecure credentials are returned to preserve existing behavior.
 func (r *Application) resolveClientCredentials(server string) credentials.TransportCredentials {
 	if len(r.clientCredentialsGroups) == 0 {
 		return insecure.NewCredentials()
 	}
 
-	credsKey := r.config.GetString(fmt.Sprintf("grpc.servers.%s.credentials", server))
+	credsKey := r.config.GetString(fmt.Sprintf("grpc.clients.%s.credentials", server))
 	if credsKey == "" {
 		return insecure.NewCredentials()
 	}
