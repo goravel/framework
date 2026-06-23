@@ -154,9 +154,9 @@ func (_c *Grpc_ClientStatsHandlerGroups_Call) RunAndReturn(run func(map[string][
 	return _c
 }
 
-// Connect provides a mock function with given fields: server
-func (_m *Grpc) Connect(server string) (*grpc.ClientConn, error) {
-	ret := _m.Called(server)
+// Connect provides a mock function with given fields: client
+func (_m *Grpc) Connect(client string) (*grpc.ClientConn, error) {
+	ret := _m.Called(client)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Connect")
@@ -165,10 +165,10 @@ func (_m *Grpc) Connect(server string) (*grpc.ClientConn, error) {
 	var r0 *grpc.ClientConn
 	var r1 error
 	if rf, ok := ret.Get(0).(func(string) (*grpc.ClientConn, error)); ok {
-		return rf(server)
+		return rf(client)
 	}
 	if rf, ok := ret.Get(0).(func(string) *grpc.ClientConn); ok {
-		r0 = rf(server)
+		r0 = rf(client)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*grpc.ClientConn)
@@ -176,7 +176,7 @@ func (_m *Grpc) Connect(server string) (*grpc.ClientConn, error) {
 	}
 
 	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(server)
+		r1 = rf(client)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -190,12 +190,12 @@ type Grpc_Connect_Call struct {
 }
 
 // Connect is a helper method to define mock.On call
-//   - server string
-func (_e *Grpc_Expecter) Connect(server interface{}) *Grpc_Connect_Call {
-	return &Grpc_Connect_Call{Call: _e.mock.On("Connect", server)}
+//   - client string
+func (_e *Grpc_Expecter) Connect(client interface{}) *Grpc_Connect_Call {
+	return &Grpc_Connect_Call{Call: _e.mock.On("Connect", client)}
 }
 
-func (_c *Grpc_Connect_Call) Run(run func(server string)) *Grpc_Connect_Call {
+func (_c *Grpc_Connect_Call) Run(run func(client string)) *Grpc_Connect_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})

@@ -54,9 +54,9 @@ func (r *Application) Client(ctx context.Context, name string) (*grpc.ClientConn
 	return r.Connect(name)
 }
 
-func (r *Application) Connect(server string) (*grpc.ClientConn, error) {
+func (r *Application) Connect(client string) (*grpc.ClientConn, error) {
 	r.mu.RLock()
-	conn, ok := r.clients[server]
+	conn, ok := r.clients[client]
 	r.mu.RUnlock()
 
 	if ok {
@@ -70,22 +70,22 @@ func (r *Application) Connect(server string) (*grpc.ClientConn, error) {
 	defer r.mu.Unlock()
 
 	// Double-Check: Someone else might have created it while we waited for the lock
-	if conn, ok = r.clients[server]; ok {
+	if conn, ok = r.clients[client]; ok {
 		if conn.GetState() != connectivity.Shutdown {
 			return conn, nil
 		}
 		// Found a Shutdown connection. Close and remove it immediately.
 		// This prevents stale connections from lingering if the subsequent creation fails.
 		_ = conn.Close()
-		delete(r.clients, server)
+		delete(r.clients, client)
 	}
 
-	host := r.config.GetString(fmt.Sprintf("grpc.clients.%s.host", server))
+	host := r.config.GetString(fmt.Sprintf("grpc.clients.%s.host", client))
 	if host == "" {
 		return nil, errors.GrpcEmptyClientHost
 	}
 	if !strings.Contains(host, ":") {
-		port := r.config.GetString(fmt.Sprintf("grpc.clients.%s.port", server))
+		port := r.config.GetString(fmt.Sprintf("grpc.clients.%s.port", client))
 		if port == "" {
 			return nil, errors.GrpcEmptyClientPort
 		}
@@ -93,19 +93,19 @@ func (r *Application) Connect(server string) (*grpc.ClientConn, error) {
 		host += ":" + port
 	}
 
-	interceptorKeys, ok := r.config.Get(fmt.Sprintf("grpc.clients.%s.interceptors", server)).([]string)
+	interceptorKeys, ok := r.config.Get(fmt.Sprintf("grpc.clients.%s.interceptors", client)).([]string)
 	if !ok {
-		return nil, errors.GrpcInvalidInterceptorsType.Args(server)
+		return nil, errors.GrpcInvalidInterceptorsType.Args(client)
 	}
 
 	var dialOpts []grpc.DialOption
-	dialOpts = append(dialOpts, grpc.WithTransportCredentials(r.resolveClientCredentials(server)))
+	dialOpts = append(dialOpts, grpc.WithTransportCredentials(r.resolveClientCredentials(client)))
 
 	if interceptors := r.getClientInterceptors(interceptorKeys); len(interceptors) > 0 {
 		dialOpts = append(dialOpts, grpc.WithChainUnaryInterceptor(interceptors...))
 	}
 
-	statsHandlerKeys, ok := r.config.Get(fmt.Sprintf("grpc.clients.%s.stats_handlers", server)).([]string)
+	statsHandlerKeys, ok := r.config.Get(fmt.Sprintf("grpc.clients.%s.stats_handlers", client)).([]string)
 	if ok {
 		if handlers := r.getClientStatsHandlers(statsHandlerKeys); len(handlers) > 0 {
 			for _, h := range handlers {
@@ -122,7 +122,7 @@ func (r *Application) Connect(server string) (*grpc.ClientConn, error) {
 		return nil, err
 	}
 
-	r.clients[server] = newConn
+	r.clients[client] = newConn
 
 	return newConn, nil
 }
@@ -259,23 +259,23 @@ func (r *Application) getClientInterceptors(keys []string) []grpc.UnaryClientInt
 	return result
 }
 
-// resolveClientCredentials returns the transport credentials for the given server.
+// resolveClientCredentials returns the transport credentials for the given client.
 // When a credentials group is registered and referenced via the
 // `grpc.clients.<name>.creds` config key, those credentials are used;
 // otherwise insecure credentials are returned to preserve existing behavior.
-func (r *Application) resolveClientCredentials(server string) credentials.TransportCredentials {
+func (r *Application) resolveClientCredentials(client string) credentials.TransportCredentials {
 	if len(r.clientCredentialsGroups) == 0 {
 		return insecure.NewCredentials()
 	}
 
-	credsKey := r.config.GetString(fmt.Sprintf("grpc.clients.%s.credentials", server))
+	credsKey := r.config.GetString(fmt.Sprintf("grpc.clients.%s.credentials", client))
 	if credsKey == "" {
 		return insecure.NewCredentials()
 	}
 
 	creds, ok := r.clientCredentialsGroups[credsKey]
 	if !ok {
-		color.Warningln(fmt.Sprintf("[GRPC] client credentials group %q is not registered for server %q; falling back to insecure credentials.", credsKey, server))
+		color.Warningln(fmt.Sprintf("[GRPC] client credentials group %q is not registered for client %q; falling back to insecure credentials.", credsKey, client))
 		return insecure.NewCredentials()
 	}
 

@@ -18,9 +18,9 @@ type Grpc interface {
 	ClientCredentials(map[string]credentials.TransportCredentials)
 	// ClientStatsHandlerGroups sets the gRPC client stats handler groups.
 	ClientStatsHandlerGroups(map[string][]stats.Handler)
-	// Connect gets a gRPC client connection to the given server.
-	// The server connection will be cached to improve performance.
-	Connect(server string) (*grpc.ClientConn, error)
+	// Connect gets a gRPC client connection to the given client.
+	// The client connection will be cached to improve performance.
+	Connect(client string) (*grpc.ClientConn, error)
 	// Listen starts the gRPC server with the given listener.
 	Listen(l net.Listener) error
 	// Run starts the gRPC server.

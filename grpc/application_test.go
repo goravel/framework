@@ -464,7 +464,7 @@ func TestClientCreds(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, conn)
 		})
-		assert.Contains(t, got, `[GRPC] client credentials group "unknown" is not registered for server "partial-service"`)
+		assert.Contains(t, got, `[GRPC] client credentials group "unknown" is not registered for client "partial-service"`)
 	})
 
 	t.Run("connect without registered groups skips config lookup", func(t *testing.T) {
