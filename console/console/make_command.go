@@ -52,10 +52,19 @@ func (r *MakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *MakeCommand) Handle(ctx console.Context) error {
-	make, err := supportconsole.NewMake(ctx, "command", ctx.Argument(0), support.Config.Paths.Commands)
+	for _, name := range supportconsole.MakeNames(ctx) {
+		if err := r.makeOne(ctx, name); err != nil {
+			ctx.Error(err.Error())
+		}
+	}
+
+	return nil
+}
+
+func (r *MakeCommand) makeOne(ctx console.Context, name string) error {
+	make, err := supportconsole.NewMake(ctx, "command", name, support.Config.Paths.Commands)
 	if err != nil {
-		ctx.Error(err.Error())
-		return nil
+		return err
 	}
 
 	if err := file.PutContent(make.GetFilePath(), r.populateStub(r.getStub(), make.GetPackageName(), make.GetStructName(), make.GetSignature())); err != nil {
@@ -71,8 +80,7 @@ func (r *MakeCommand) Handle(ctx console.Context) error {
 	}
 
 	if err != nil {
-		ctx.Error(errors.ConsoleCommandRegisterFailed.Args(make.GetSignature(), err).Error())
-		return nil
+		return errors.ConsoleCommandRegisterFailed.Args(make.GetSignature(), err)
 	}
 
 	ctx.Success("Console command registered successfully")
