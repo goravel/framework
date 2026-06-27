@@ -5,13 +5,16 @@ import (
 
 	contractshttp "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/foundation"
+	mocksai "github.com/goravel/framework/mocks/ai"
 	mocksauth "github.com/goravel/framework/mocks/auth"
 	mocksaccess "github.com/goravel/framework/mocks/auth/access"
 	mockscache "github.com/goravel/framework/mocks/cache"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mockscrypt "github.com/goravel/framework/mocks/crypt"
+	mocksdb "github.com/goravel/framework/mocks/database/db"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
+	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	mocksseeder "github.com/goravel/framework/mocks/database/seeder"
 	mocksevent "github.com/goravel/framework/mocks/event"
 	mocksfilesystem "github.com/goravel/framework/mocks/filesystem"
@@ -23,7 +26,11 @@ import (
 	mocksmail "github.com/goravel/framework/mocks/mail"
 	mocksprocess "github.com/goravel/framework/mocks/process"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
+	mocksroute "github.com/goravel/framework/mocks/route"
+	mocksschedule "github.com/goravel/framework/mocks/schedule"
+	mockssession "github.com/goravel/framework/mocks/session"
 	mockstelemetry "github.com/goravel/framework/mocks/telemetry"
+	mockstesting "github.com/goravel/framework/mocks/testing"
 	mockstranslation "github.com/goravel/framework/mocks/translation"
 	mocksvalidate "github.com/goravel/framework/mocks/validation"
 	mocksview "github.com/goravel/framework/mocks/view"
@@ -47,23 +54,30 @@ func (r *factory) App() *mocksfoundation.Application {
 	return r.app
 }
 
+func (r *factory) AI() *mocksai.AI {
+	mockAi := &mocksai.AI{}
+	r.app.EXPECT().MakeAI().Return(mockAi)
+
+	return mockAi
+}
+
 func (r *factory) Artisan() *mocksconsole.Artisan {
 	mockArtisan := &mocksconsole.Artisan{}
-	r.app.On("MakeArtisan").Return(mockArtisan)
+	r.app.EXPECT().MakeArtisan().Return(mockArtisan)
 
 	return mockArtisan
 }
 
 func (r *factory) Auth(ctx contractshttp.Context) *mocksauth.Auth {
 	mockAuth := &mocksauth.Auth{}
-	r.app.On("MakeAuth", ctx).Return(mockAuth)
+	r.app.EXPECT().MakeAuth(ctx).Return(mockAuth)
 
 	return mockAuth
 }
 
 func (r *factory) Cache() *mockscache.Cache {
 	mockCache := &mockscache.Cache{}
-	r.app.On("MakeCache").Return(mockCache)
+	r.app.EXPECT().MakeCache().Return(mockCache)
 
 	return mockCache
 }
@@ -90,21 +104,28 @@ func (r *factory) ContextResponse() *mockshttp.ContextResponse {
 
 func (r *factory) Config() *mocksconfig.Config {
 	mockConfig := &mocksconfig.Config{}
-	r.app.On("MakeConfig").Return(mockConfig)
+	r.app.EXPECT().MakeConfig().Return(mockConfig)
 
 	return mockConfig
 }
 
 func (r *factory) Crypt() *mockscrypt.Crypt {
 	mockCrypt := &mockscrypt.Crypt{}
-	r.app.On("MakeCrypt").Return(mockCrypt)
+	r.app.EXPECT().MakeCrypt().Return(mockCrypt)
 
 	return mockCrypt
 }
 
+func (r *factory) DB() *mocksdb.DB {
+	mockDB := &mocksdb.DB{}
+	r.app.EXPECT().MakeDB().Return(mockDB)
+
+	return mockDB
+}
+
 func (r *factory) Event() *mocksevent.Instance {
 	mockEvent := &mocksevent.Instance{}
-	r.app.On("MakeEvent").Return(mockEvent)
+	r.app.EXPECT().MakeEvent().Return(mockEvent)
 
 	return mockEvent
 }
@@ -115,53 +136,53 @@ func (r *factory) EventTask() *mocksevent.Task {
 
 func (r *factory) Gate() *mocksaccess.Gate {
 	mockGate := &mocksaccess.Gate{}
-	r.app.On("MakeGate").Return(mockGate)
+	r.app.EXPECT().MakeGate().Return(mockGate)
 
 	return mockGate
 }
 
 func (r *factory) Grpc() *mocksgrpc.Grpc {
 	mockGrpc := &mocksgrpc.Grpc{}
-	r.app.On("MakeGrpc").Return(mockGrpc)
+	r.app.EXPECT().MakeGrpc().Return(mockGrpc)
 
 	return mockGrpc
 }
 
 func (r *factory) Hash() *mockshash.Hash {
 	mockHash := &mockshash.Hash{}
-	r.app.On("MakeHash").Return(mockHash)
+	r.app.EXPECT().MakeHash().Return(mockHash)
 
 	return mockHash
 }
 
 func (r *factory) Http() *mockshttpclient.Factory {
 	mockHttp := &mockshttpclient.Factory{}
-	r.app.On("MakeHttp").Return(mockHttp)
+	r.app.EXPECT().MakeHttp().Return(mockHttp)
 
 	return mockHttp
 }
 
 func (r *factory) Lang(ctx context.Context) *mockstranslation.Translator {
 	mockTranslator := &mockstranslation.Translator{}
-	r.app.On("MakeLang", ctx).Return(mockTranslator)
+	r.app.EXPECT().MakeLang(ctx).Return(mockTranslator)
 
 	return mockTranslator
 }
 
 func (r *factory) Log() {
-	r.app.On("MakeLog").Return(utils.NewTestLog())
+	r.app.EXPECT().MakeLog().Return(utils.NewTestLog())
 }
 
 func (r *factory) Mail() *mocksmail.Mail {
 	mockMail := &mocksmail.Mail{}
-	r.app.On("MakeMail").Return(mockMail)
+	r.app.EXPECT().MakeMail().Return(mockMail)
 
 	return mockMail
 }
 
 func (r *factory) Orm() *mocksorm.Orm {
 	mockOrm := &mocksorm.Orm{}
-	r.app.On("MakeOrm").Return(mockOrm)
+	r.app.EXPECT().MakeOrm().Return(mockOrm)
 
 	return mockOrm
 }
@@ -187,7 +208,7 @@ func (r *factory) Process() *mocksprocess.Process {
 
 func (r *factory) Queue() *mocksqueue.Queue {
 	mockQueue := &mocksqueue.Queue{}
-	r.app.On("MakeQueue").Return(mockQueue)
+	r.app.EXPECT().MakeQueue().Return(mockQueue)
 
 	return mockQueue
 }
@@ -198,7 +219,7 @@ func (r *factory) QueueTask() *mocksqueue.Task {
 
 func (r *factory) RateLimiter() *mockshttp.RateLimiter {
 	mockRateLimiter := &mockshttp.RateLimiter{}
-	r.app.On("MakeRateLimiter").Return(mockRateLimiter)
+	r.app.EXPECT().MakeRateLimiter().Return(mockRateLimiter)
 
 	return mockRateLimiter
 }
@@ -219,16 +240,44 @@ func (r *factory) ResponseView() *mockshttp.ResponseView {
 	return &mockshttp.ResponseView{}
 }
 
+func (r *factory) Route() *mocksroute.Route {
+	mockRoute := &mocksroute.Route{}
+	r.app.EXPECT().MakeRoute().Return(mockRoute)
+
+	return mockRoute
+}
+
+func (r *factory) Schedule() *mocksschedule.Schedule {
+	mockSchedule := &mocksschedule.Schedule{}
+	r.app.EXPECT().MakeSchedule().Return(mockSchedule)
+
+	return mockSchedule
+}
+
+func (r *factory) Schema() *mocksschema.Schema {
+	mockSchema := &mocksschema.Schema{}
+	r.app.EXPECT().MakeSchema().Return(mockSchema)
+
+	return mockSchema
+}
+
 func (r *factory) Seeder() *mocksseeder.Facade {
 	mockSeeder := &mocksseeder.Facade{}
-	r.app.On("MakeSeeder").Return(mockSeeder)
+	r.app.EXPECT().MakeSeeder().Return(mockSeeder)
 
 	return mockSeeder
 }
 
+func (r *factory) Session() *mockssession.Manager {
+	mockSession := &mockssession.Manager{}
+	r.app.EXPECT().MakeSession().Return(mockSession)
+
+	return mockSession
+}
+
 func (r *factory) Storage() *mocksfilesystem.Storage {
 	mockStorage := &mocksfilesystem.Storage{}
-	r.app.On("MakeStorage").Return(mockStorage)
+	r.app.EXPECT().MakeStorage().Return(mockStorage)
 
 	return mockStorage
 }
@@ -248,9 +297,16 @@ func (r *factory) Telemetry() *mockstelemetry.Telemetry {
 	return mockTelemetry
 }
 
+func (r *factory) Testing() *mockstesting.Testing {
+	mockTesting := &mockstesting.Testing{}
+	r.app.EXPECT().MakeTesting().Return(mockTesting)
+
+	return mockTesting
+}
+
 func (r *factory) Validation() *mocksvalidate.Validation {
 	mockValidation := &mocksvalidate.Validation{}
-	r.app.On("MakeValidation").Return(mockValidation)
+	r.app.EXPECT().MakeValidation().Return(mockValidation)
 
 	return mockValidation
 }
@@ -265,7 +321,7 @@ func (r *factory) ValidationErrors() *mocksvalidate.Errors {
 
 func (r *factory) View() *mocksview.View {
 	mockView := &mocksview.View{}
-	r.app.On("MakeView").Return(mockView)
+	r.app.EXPECT().MakeView().Return(mockView)
 
 	return mockView
 }
