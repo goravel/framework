@@ -57,18 +57,33 @@ func TestResetConnections_KeepsPoolOpen(t *testing.T) {
 	assert.NoError(t, err)
 	sqlDB, err := first.DB()
 	assert.NoError(t, err)
+	t.Cleanup(func() { _ = sqlDB.Close() })
 
 	ResetConnections()
 
-	// The pool is dropped from the cache but not closed (a caller may still hold it).
 	err = sqlDB.Ping()
 	assert.Error(t, err)
 	assert.NotContains(t, err.Error(), "database is closed")
 
-	// The next build reconnects instead of returning the dropped instance.
 	second, _, err := BuildGorm(stubGormConfig(t), gormlogger.Discard, stubPool(), "primary", resolver)
 	assert.NoError(t, err)
 	assert.NotSame(t, first, second)
+}
+
+func TestResetConnections_NilInstrument(t *testing.T) {
+	t.Cleanup(CloseConnections)
+
+	config := mocksconfig.NewConfig(t)
+	config.EXPECT().GetInt("database.pool.max_idle_conns", 10).Return(10).Once()
+	config.EXPECT().GetInt("database.pool.max_open_conns", 100).Return(100).Once()
+	config.EXPECT().GetDuration("database.pool.conn_max_idletime", time.Duration(3600)).Return(time.Duration(3600)).Once()
+	config.EXPECT().GetDuration("database.pool.conn_max_lifetime", time.Duration(3600)).Return(time.Duration(3600)).Once()
+
+	_, instrument, err := BuildGorm(config, gormlogger.Discard, stubPool(), "primary", nil)
+	assert.NoError(t, err)
+	assert.Nil(t, instrument)
+
+	assert.NotPanics(t, ResetConnections)
 }
 
 type stubConnector struct{}

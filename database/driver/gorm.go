@@ -165,19 +165,16 @@ func drainConnections() []cachedConnection {
 	return stale
 }
 
-// ResetConnections drops the cached connections so a later build reconnects with
-// the current configuration, and unregisters their pool-metrics callbacks. The
-// pools are left open because a caller may still hold the *gorm.DB; use
-// CloseConnections when the connections are known to be idle.
+// ResetConnections drops the cached connections and unregisters their telemetry,
+// leaving the pools open for callers that may still hold the *gorm.DB.
 func ResetConnections() {
 	for _, cached := range drainConnections() {
 		cached.instrument.Shutdown()
 	}
 }
 
-// CloseConnections drops the cached connections, unregisters their callbacks and
-// closes the pools. Call it only when the connections are idle (e.g. the database
-// provider's Register, which runs after app.Restart has stopped the runners).
+// CloseConnections drops the cached connections, unregisters their telemetry and
+// closes the pools. Call it only when the connections are idle.
 func CloseConnections() {
 	for _, cached := range drainConnections() {
 		cached.instrument.Shutdown()
@@ -186,7 +183,7 @@ func CloseConnections() {
 		}
 		if sqlDB, err := cached.db.DB(); err == nil {
 			if err := sqlDB.Close(); err != nil {
-				color.Warningln("close database connection: " + err.Error())
+				color.Warningln("database: close connection: " + err.Error())
 			}
 		}
 	}

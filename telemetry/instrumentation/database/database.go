@@ -54,7 +54,8 @@ type Instrument struct {
 	poolRegistration metric.Registration
 }
 
-// Shutdown unregisters the pool-metrics callback.
+// Shutdown unregisters the pool-metrics callback and clears the resolved
+// telemetry so the next use re-resolves against the current provider.
 func (r *Instrument) Shutdown() {
 	if r == nil {
 		return
@@ -65,6 +66,10 @@ func (r *Instrument) Shutdown() {
 		_ = r.poolRegistration.Unregister()
 		r.poolRegistration = nil
 	}
+	r.tracer = nil
+	r.meter = nil
+	r.durationHist = nil
+	r.poolObserved = false
 }
 
 // SetDB stores the primary writer's *sql.DB for pool metrics.
