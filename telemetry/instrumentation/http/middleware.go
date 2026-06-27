@@ -28,7 +28,7 @@ const (
 
 type disabledTelemetry struct{}
 
-func (d *disabledTelemetry) Signature() string { return "telemetry_disabled" }
+func (d *disabledTelemetry) Signature() string { return "telemetry" }
 func (d *disabledTelemetry) Handle(ctx http.Context) { ctx.Request().Next() }
 
 // Telemetry creates HTTP server telemetry middleware that instruments incoming

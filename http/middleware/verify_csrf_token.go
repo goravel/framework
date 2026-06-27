@@ -11,15 +11,15 @@ import (
 
 const HeaderCsrfKey = "X-CSRF-TOKEN"
 
-type Csrf struct {
+type csrf struct {
 	exceptPaths []string
 }
 
-func (c *Csrf) Signature() string {
+func (c *csrf) Signature() string {
 	return "verify_csrf_token"
 }
 
-func (c *Csrf) Handle(ctx contractshttp.Context) {
+func (c *csrf) Handle(ctx contractshttp.Context) {
 	if isReading(ctx.Request().Method()) || isExcept(c.exceptPaths, ctx.Request().Path()) || isTokenMatch(ctx) {
 		ctx.Response().Header(HeaderCsrfKey, ctx.Request().Session().Token())
 		ctx.Request().Next()
@@ -34,7 +34,7 @@ func VerifyCsrfToken(excepts ...[]string) contractshttp.Middleware {
 		exceptPaths = parseExceptPaths(excepts[0])
 	}
 
-	return &Csrf{exceptPaths: exceptPaths}
+	return &csrf{exceptPaths: exceptPaths}
 }
 
 func isTokenMatch(ctx contractshttp.Context) bool {

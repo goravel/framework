@@ -8,13 +8,13 @@ import (
 	"github.com/goravel/framework/http"
 )
 
-type MaintenanceMode struct{}
+type maintenanceMode struct{}
 
-func (m *MaintenanceMode) Signature() string {
+func (m *maintenanceMode) Signature() string {
 	return "check_for_maintenance_mode"
 }
 
-func (m *MaintenanceMode) Handle(ctx contractshttp.Context) {
+func (m *maintenanceMode) Handle(ctx contractshttp.Context) {
 	config := http.App.MakeConfig()
 	cache := http.App.MakeCache()
 	storage := http.App.MakeStorage()
@@ -77,7 +77,7 @@ func (m *MaintenanceMode) Handle(ctx contractshttp.Context) {
 }
 
 func CheckForMaintenanceMode() contractshttp.Middleware {
-	return &MaintenanceMode{}
+	return &maintenanceMode{}
 }
 
 func abortMaintenanceMode(ctx contractshttp.Context, err error) {
