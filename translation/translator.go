@@ -24,7 +24,6 @@ type Translator struct {
 	selector   *MessageSelector
 	locale     string
 	fallback   string
-	key        string
 	mu         sync.Mutex
 }
 
@@ -72,10 +71,6 @@ func (t *Translator) Choice(key string, number int, options ...translationcontra
 }
 
 func (t *Translator) Get(key string, options ...translationcontract.Option) string {
-	if t.key == "" {
-		t.key = key
-	}
-
 	locale := t.CurrentLocale()
 	// Check if a custom locale is provided in options.
 	if len(options) > 0 && options[0].Locale != "" {
@@ -118,7 +113,7 @@ func (t *Translator) Get(key string, options ...translationcontract.Option) stri
 	}
 
 	// Return the original key if no translation is found.
-	return t.key
+	return key
 }
 
 func (t *Translator) GetFallback() string {
@@ -167,10 +162,10 @@ func (t *Translator) getLine(locale string, group string, key string, options ..
 			return ""
 		}
 		if errors.Is(err, errors.LangNoLoaderAvailable) {
-			return t.key
+			return ""
 		}
 		t.logger.Panic(err)
-		return t.key
+		return ""
 	}
 
 	keyValue := getValue(loaded[locale][group], key)
