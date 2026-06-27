@@ -4,7 +4,10 @@ import (
 	"context"
 )
 
-type Middleware func(Context)
+type Middleware interface {
+	Handle(Context)
+	Signature() string
+}
 
 type HandlerFunc func(Context) Response
 

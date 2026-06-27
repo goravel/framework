@@ -91,10 +91,14 @@ import (
 	"github.com/goravel/framework/contracts/http"
 )
 
-func DummyMiddleware() http.Middleware {
-	return func(ctx http.Context) {
-		ctx.Request().Next()
-	}
+type DummyMiddleware struct{}
+
+func (m *DummyMiddleware) Signature() string {
+	return "DummyMiddleware"
+}
+
+func (m *DummyMiddleware) Handle(ctx http.Context) {
+	ctx.Request().Next()
 }
 `
 }

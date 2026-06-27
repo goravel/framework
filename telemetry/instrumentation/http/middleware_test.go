@@ -169,8 +169,7 @@ func (s *MiddlewareTestSuite) TestTelemetry() {
 func testMiddleware(next nethttp.Handler, opts ...Option) nethttp.Handler {
 	mw := Telemetry(opts...)
 	return nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
-		ctx := NewTestContext(r.Context(), next, w, r)
-		mw(ctx)
+		mw.Handle(NewTestContext(r.Context(), next, w, r))
 	})
 }
 

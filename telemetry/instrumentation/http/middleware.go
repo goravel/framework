@@ -26,6 +26,11 @@ const (
 	unitBytes   = "By"
 )
 
+type disabledTelemetry struct{}
+
+func (d *disabledTelemetry) Signature() string { return "goravel:telemetry" }
+func (d *disabledTelemetry) Handle(ctx http.Context) { ctx.Request().Next() }
+
 // Telemetry creates HTTP server telemetry middleware that instruments incoming
 // requests with tracing and metrics. The optional opts parameters allow
 // customizing the server configuration (such as span naming and enabling or
@@ -35,17 +40,13 @@ const (
 // initialized.
 func Telemetry(opts ...Option) http.Middleware {
 	if telemetry.ConfigFacade == nil || telemetry.Facade == nil {
-		return func(ctx http.Context) {
-			ctx.Request().Next()
-		}
+		return &disabledTelemetry{}
 	}
 
 	var cfg ServerConfig
 	if err := telemetry.ConfigFacade.UnmarshalKey("telemetry.instrumentation.http_server", &cfg); err != nil {
 		color.Warningln("Failed to load http server telemetry instrumentation config:", err)
-		return func(ctx http.Context) {
-			ctx.Request().Next()
-		}
+		return &disabledTelemetry{}
 	}
 
 	for _, opt := range opts {
@@ -53,9 +54,7 @@ func Telemetry(opts ...Option) http.Middleware {
 	}
 
 	if !cfg.Enabled {
-		return func(ctx http.Context) {
-			ctx.Request().Next()
-		}
+		return &disabledTelemetry{}
 	}
 
 	if cfg.SpanNameFormatter == nil {
@@ -87,7 +86,7 @@ func Telemetry(opts ...Option) http.Middleware {
 		excludedMethods:  excludedMethods,
 	}
 
-	return h.Handle
+	return h
 }
 
 type MiddlewareHandler struct {
@@ -102,6 +101,8 @@ type MiddlewareHandler struct {
 	excludedPaths   map[string]bool
 	excludedMethods map[string]bool
 }
+
+func (r *MiddlewareHandler) Signature() string { return "goravel:telemetry" }
 
 func (r *MiddlewareHandler) Handle(ctx http.Context) {
 	req := ctx.Request()

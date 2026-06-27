@@ -11,20 +11,30 @@ import (
 
 const HeaderCsrfKey = "X-CSRF-TOKEN"
 
+type csrf struct {
+	exceptPaths []string
+}
+
+func (c *csrf) Signature() string {
+	return "goravel:verify_csrf_token"
+}
+
+func (c *csrf) Handle(ctx contractshttp.Context) {
+	if isReading(ctx.Request().Method()) || isExcept(c.exceptPaths, ctx.Request().Path()) || isTokenMatch(ctx) {
+		ctx.Response().Header(HeaderCsrfKey, ctx.Request().Session().Token())
+		ctx.Request().Next()
+	} else {
+		ctx.Request().Abort(contractshttp.StatusTokenMismatch)
+	}
+}
+
 func VerifyCsrfToken(excepts ...[]string) contractshttp.Middleware {
 	var exceptPaths []string
 	if len(excepts) > 0 {
 		exceptPaths = parseExceptPaths(excepts[0])
 	}
 
-	return func(ctx contractshttp.Context) {
-		if isReading(ctx.Request().Method()) || isExcept(exceptPaths, ctx.Request().Path()) || isTokenMatch(ctx) {
-			ctx.Response().Header(HeaderCsrfKey, ctx.Request().Session().Token())
-			ctx.Request().Next()
-		} else {
-			ctx.Request().Abort(contractshttp.StatusTokenMismatch)
-		}
-	}
+	return &csrf{exceptPaths: exceptPaths}
 }
 
 func isTokenMatch(ctx contractshttp.Context) bool {
