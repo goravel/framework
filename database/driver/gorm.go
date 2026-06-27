@@ -149,12 +149,46 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 	return instance, instrument, nil
 }
 
-func ResetConnections() {
+func drainConnections() []cachedConnection {
 	connectionToDBLock.Lock()
 	defer connectionToDBLock.Unlock()
 
+	var stale []cachedConnection
 	connectionToDB.Range(func(key, value any) bool {
+		if cached, ok := value.(cachedConnection); ok {
+			stale = append(stale, cached)
+		}
 		connectionToDB.Delete(key)
 		return true
 	})
+
+	return stale
+}
+
+// ResetConnections drops the cached connections so a later build reconnects with
+// the current configuration, and unregisters their pool-metrics callbacks. The
+// pools are left open because a caller may still hold the *gorm.DB; use
+// CloseConnections when the connections are known to be idle.
+func ResetConnections() {
+	for _, cached := range drainConnections() {
+		cached.instrument.Shutdown()
+	}
+}
+
+// CloseConnections drops the cached connections, unregisters their callbacks and
+// closes the pools. Call it only when the connections are idle (e.g. the database
+// provider's Register, which runs after app.Restart has stopped the runners).
+func CloseConnections() {
+	for _, cached := range drainConnections() {
+		cached.instrument.Shutdown()
+		if cached.db == nil {
+			continue
+		}
+		// DB() is the writer pool; dbresolver replica pools are internal and not closed here.
+		if sqlDB, err := cached.db.DB(); err == nil {
+			if err := sqlDB.Close(); err != nil {
+				color.Warningln("close database connection: " + err.Error())
+			}
+		}
+	}
 }

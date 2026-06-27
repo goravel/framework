@@ -37,13 +37,18 @@ func (r *Instrument) observePool(db *sql.DB) error {
 	used := metric.WithAttributes(append(slices.Clone(r.baseAttrs), semconv.DBClientConnectionStateUsed)...)
 	base := metric.WithAttributes(r.baseAttrs...)
 
-	_, err = r.meter.RegisterCallback(func(_ context.Context, observer metric.Observer) error {
+	registration, err := r.meter.RegisterCallback(func(_ context.Context, observer metric.Observer) error {
 		stats := db.Stats()
 		observer.ObserveInt64(count, int64(stats.InUse), used)
 		observer.ObserveInt64(count, int64(stats.Idle), idle)
 		observer.ObserveInt64(maxConns, int64(stats.MaxOpenConnections), base)
 		return nil
 	}, count, maxConns)
+	if err != nil {
+		return err
+	}
 
-	return err
+	r.poolRegistration = registration
+
+	return nil
 }

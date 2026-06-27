@@ -35,6 +35,42 @@ func TestBuildGorm_TelemetryPlugin(t *testing.T) {
 	assert.True(t, registered)
 }
 
+func TestCloseConnections_ClosesPool(t *testing.T) {
+	t.Cleanup(CloseConnections)
+
+	resolver := func() contractstelemetry.Telemetry { return nil }
+	instance, _, err := BuildGorm(stubGormConfig(t), gormlogger.Discard, stubPool(), "primary", resolver)
+	assert.NoError(t, err)
+	sqlDB, err := instance.DB()
+	assert.NoError(t, err)
+
+	CloseConnections()
+
+	assert.ErrorContains(t, sqlDB.Ping(), "database is closed")
+}
+
+func TestResetConnections_KeepsPoolOpen(t *testing.T) {
+	t.Cleanup(CloseConnections)
+
+	resolver := func() contractstelemetry.Telemetry { return nil }
+	first, _, err := BuildGorm(stubGormConfig(t), gormlogger.Discard, stubPool(), "primary", resolver)
+	assert.NoError(t, err)
+	sqlDB, err := first.DB()
+	assert.NoError(t, err)
+
+	ResetConnections()
+
+	// The pool is dropped from the cache but left open for any caller still holding it.
+	if err := sqlDB.Ping(); err != nil {
+		assert.NotContains(t, err.Error(), "database is closed")
+	}
+
+	// The next build reconnects instead of returning the dropped instance.
+	second, _, err := BuildGorm(stubGormConfig(t), gormlogger.Discard, stubPool(), "primary", resolver)
+	assert.NoError(t, err)
+	assert.NotSame(t, first, second)
+}
+
 type stubConnector struct{}
 
 func (stubConnector) Connect(context.Context) (driver.Conn, error) { return nil, driver.ErrBadConn }

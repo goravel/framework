@@ -68,6 +68,16 @@ func (s *PoolMetricsTestSuite) TestRegistersAllMetrics() {
 	}
 }
 
+func (s *PoolMetricsTestSuite) TestShutdownUnregistersCallback() {
+	s.Require().NoError(s.inst.observePool(s.db))
+	s.Contains(s.collect(), metricConnectionCount)
+
+	s.inst.Shutdown()
+
+	// Once the callback is unregistered the pool is no longer observed.
+	s.NotContains(s.collect(), metricConnectionCount)
+}
+
 func (s *PoolMetricsTestSuite) TestConnectionCountHasIdleAndUsedStates() {
 	s.Require().NoError(s.inst.observePool(s.db))
 
