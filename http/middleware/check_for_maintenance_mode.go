@@ -11,7 +11,7 @@ import (
 type maintenanceMode struct{}
 
 func (m *maintenanceMode) Signature() string {
-	return "check_for_maintenance_mode"
+	return "goravel:check_for_maintenance_mode"
 }
 
 func (m *maintenanceMode) Handle(ctx contractshttp.Context) {

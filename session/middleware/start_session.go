@@ -9,7 +9,7 @@ import (
 type startSessionMiddleware struct{}
 
 func (s *startSessionMiddleware) Signature() string {
-	return "start_session"
+	return "goravel:start_session"
 }
 
 func (s *startSessionMiddleware) Handle(ctx http.Context) {

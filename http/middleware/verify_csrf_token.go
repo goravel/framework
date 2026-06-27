@@ -16,7 +16,7 @@ type csrf struct {
 }
 
 func (c *csrf) Signature() string {
-	return "verify_csrf_token"
+	return "goravel:verify_csrf_token"
 }
 
 func (c *csrf) Handle(ctx contractshttp.Context) {

@@ -28,7 +28,7 @@ type throttleMiddleware struct {
 }
 
 func (t *throttleMiddleware) Signature() string {
-	return "throttle:" + t.name
+	return "goravel:throttle:" + t.name
 }
 
 func (t *throttleMiddleware) Handle(ctx httpcontract.Context) {

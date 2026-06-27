@@ -28,7 +28,7 @@ const (
 
 type disabledTelemetry struct{}
 
-func (d *disabledTelemetry) Signature() string { return "telemetry" }
+func (d *disabledTelemetry) Signature() string { return "goravel:telemetry" }
 func (d *disabledTelemetry) Handle(ctx http.Context) { ctx.Request().Next() }
 
 // Telemetry creates HTTP server telemetry middleware that instruments incoming
@@ -102,7 +102,7 @@ type MiddlewareHandler struct {
 	excludedMethods map[string]bool
 }
 
-func (r *MiddlewareHandler) Signature() string { return "telemetry" }
+func (r *MiddlewareHandler) Signature() string { return "goravel:telemetry" }
 
 func (r *MiddlewareHandler) Handle(ctx http.Context) {
 	req := ctx.Request()
