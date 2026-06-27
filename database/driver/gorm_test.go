@@ -60,10 +60,10 @@ func TestResetConnections_KeepsPoolOpen(t *testing.T) {
 
 	ResetConnections()
 
-	// The pool is dropped from the cache but left open for any caller still holding it.
-	if err := sqlDB.Ping(); err != nil {
-		assert.NotContains(t, err.Error(), "database is closed")
-	}
+	// The pool is dropped from the cache but not closed (a caller may still hold it).
+	err = sqlDB.Ping()
+	assert.Error(t, err)
+	assert.NotContains(t, err.Error(), "database is closed")
 
 	// The next build reconnects instead of returning the dropped instance.
 	second, _, err := BuildGorm(stubGormConfig(t), gormlogger.Discard, stubPool(), "primary", resolver)

@@ -41,9 +41,8 @@ func (r *ServiceProvider) Relationship() contractsbinding.Relationship {
 }
 
 func (r *ServiceProvider) Register(app foundation.Application) {
-	// Release cached connections so a rebuild (e.g. app.Restart) reconnects using
-	// the current configuration. Register runs after the runners are stopped, so
-	// closing the idle pools here is safe.
+	// Release cached connections so a rebuild (e.g. app.Restart) reconnects with
+	// the current config. Register runs after the runners stop, so closing is safe.
 	databasedriver.CloseConnections()
 
 	app.Singleton(contractsbinding.Orm, func(app foundation.Application) (any, error) {

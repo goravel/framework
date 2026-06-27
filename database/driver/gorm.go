@@ -184,7 +184,6 @@ func CloseConnections() {
 		if cached.db == nil {
 			continue
 		}
-		// DB() is the writer pool; dbresolver replica pools are internal and not closed here.
 		if sqlDB, err := cached.db.DB(); err == nil {
 			if err := sqlDB.Close(); err != nil {
 				color.Warningln("close database connection: " + err.Error())
