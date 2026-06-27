@@ -12,6 +12,7 @@ import (
 	"github.com/goravel/framework/database/console"
 	consolemigration "github.com/goravel/framework/database/console/migration"
 	"github.com/goravel/framework/database/db"
+	databasedriver "github.com/goravel/framework/database/driver"
 	"github.com/goravel/framework/database/migration"
 	databaseorm "github.com/goravel/framework/database/orm"
 	databaseschema "github.com/goravel/framework/database/schema"
@@ -40,6 +41,10 @@ func (r *ServiceProvider) Relationship() contractsbinding.Relationship {
 }
 
 func (r *ServiceProvider) Register(app foundation.Application) {
+	// Drop cached connections so a rebuild (e.g. app.Restart) reconnects using the
+	// current configuration instead of a connection bound to the previous one.
+	databasedriver.ResetConnections()
+
 	app.Singleton(contractsbinding.Orm, func(app foundation.Application) (any, error) {
 		ctx := context.Background()
 		config := app.MakeConfig()
