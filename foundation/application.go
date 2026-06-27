@@ -119,8 +119,8 @@ func (r *Application) Build() foundation.Application {
 	}
 	r.configureServiceProviders()
 	r.providerRepository.Register(r)
-	r.providerRepository.Boot(r)
 	r.configureMiddleware()
+	r.providerRepository.Boot(r)
 	r.configureEventListeners()
 	r.configureCommands()
 	r.configureSchedule()
