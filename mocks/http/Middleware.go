@@ -20,36 +20,81 @@ func (_m *Middleware) EXPECT() *Middleware_Expecter {
 	return &Middleware_Expecter{mock: &_m.Mock}
 }
 
-// Execute provides a mock function with given fields: _a0
-func (_m *Middleware) Execute(_a0 http.Context) {
+// Handle provides a mock function with given fields: _a0
+func (_m *Middleware) Handle(_a0 http.Context) {
 	_m.Called(_a0)
 }
 
-// Middleware_Execute_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Execute'
-type Middleware_Execute_Call struct {
+// Middleware_Handle_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Handle'
+type Middleware_Handle_Call struct {
 	*mock.Call
 }
 
-// Execute is a helper method to define mock.On call
+// Handle is a helper method to define mock.On call
 //   - _a0 http.Context
-func (_e *Middleware_Expecter) Execute(_a0 interface{}) *Middleware_Execute_Call {
-	return &Middleware_Execute_Call{Call: _e.mock.On("Execute", _a0)}
+func (_e *Middleware_Expecter) Handle(_a0 interface{}) *Middleware_Handle_Call {
+	return &Middleware_Handle_Call{Call: _e.mock.On("Handle", _a0)}
 }
 
-func (_c *Middleware_Execute_Call) Run(run func(_a0 http.Context)) *Middleware_Execute_Call {
+func (_c *Middleware_Handle_Call) Run(run func(_a0 http.Context)) *Middleware_Handle_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(http.Context))
 	})
 	return _c
 }
 
-func (_c *Middleware_Execute_Call) Return() *Middleware_Execute_Call {
+func (_c *Middleware_Handle_Call) Return() *Middleware_Handle_Call {
 	_c.Call.Return()
 	return _c
 }
 
-func (_c *Middleware_Execute_Call) RunAndReturn(run func(http.Context)) *Middleware_Execute_Call {
+func (_c *Middleware_Handle_Call) RunAndReturn(run func(http.Context)) *Middleware_Handle_Call {
 	_c.Run(run)
+	return _c
+}
+
+// Signature provides a mock function with no fields
+func (_m *Middleware) Signature() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Signature")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Middleware_Signature_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Signature'
+type Middleware_Signature_Call struct {
+	*mock.Call
+}
+
+// Signature is a helper method to define mock.On call
+func (_e *Middleware_Expecter) Signature() *Middleware_Signature_Call {
+	return &Middleware_Signature_Call{Call: _e.mock.On("Signature")}
+}
+
+func (_c *Middleware_Signature_Call) Run(run func()) *Middleware_Signature_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Middleware_Signature_Call) Return(_a0 string) *Middleware_Signature_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Middleware_Signature_Call) RunAndReturn(run func() string) *Middleware_Signature_Call {
+	_c.Call.Return(run)
 	return _c
 }
 

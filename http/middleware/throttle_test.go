@@ -53,7 +53,7 @@ func (s *ThrottleTestSuite) TestThrottle_NoLimiterFound() {
 	s.mockRequest.EXPECT().Next().Once()
 
 	middleware := Throttle("test")
-	middleware(s.mockCtx)
+	middleware.Handle(s.mockCtx)
 }
 
 func (s *ThrottleTestSuite) TestThrottle_LimiterReturnsEmptyLimits() {
@@ -66,7 +66,7 @@ func (s *ThrottleTestSuite) TestThrottle_LimiterReturnsEmptyLimits() {
 	s.mockRequest.EXPECT().Next().Once()
 
 	middleware := Throttle("test")
-	middleware(s.mockCtx)
+	middleware.Handle(s.mockCtx)
 }
 
 func (s *ThrottleTestSuite) TestThrottle_RequestAllowed() {
@@ -93,7 +93,7 @@ func (s *ThrottleTestSuite) TestThrottle_RequestAllowed() {
 	s.mockResponse.EXPECT().Header("X-RateLimit-Remaining", "9").Return(s.mockResponse).Once()
 
 	middleware := Throttle("api")
-	middleware(s.mockCtx)
+	middleware.Handle(s.mockCtx)
 }
 
 func (s *ThrottleTestSuite) TestThrottle_RequestAllowedWithCustomKey() {
@@ -117,7 +117,7 @@ func (s *ThrottleTestSuite) TestThrottle_RequestAllowedWithCustomKey() {
 	s.mockResponse.EXPECT().Header("X-RateLimit-Remaining", "59").Return(s.mockResponse).Once()
 
 	middleware := Throttle("api")
-	middleware(s.mockCtx)
+	middleware.Handle(s.mockCtx)
 }
 
 func (s *ThrottleTestSuite) TestThrottle_RequestRateLimited() {
@@ -150,7 +150,7 @@ func (s *ThrottleTestSuite) TestThrottle_RequestRateLimited() {
 	s.mockLimit.EXPECT().GetResponse().Return(nil).Once()
 
 	middleware := Throttle("api")
-	middleware(s.mockCtx)
+	middleware.Handle(s.mockCtx)
 }
 
 func (s *ThrottleTestSuite) TestThrottle_RequestRateLimitedWithCustomCallback() {
@@ -184,7 +184,7 @@ func (s *ThrottleTestSuite) TestThrottle_RequestRateLimitedWithCustomCallback() 
 	s.mockLimit.EXPECT().GetResponse().Return(customCallback).Once()
 
 	middleware := Throttle("api")
-	middleware(s.mockCtx)
+	middleware.Handle(s.mockCtx)
 
 	s.True(callbackCalled)
 }
@@ -210,7 +210,7 @@ func (s *ThrottleTestSuite) TestThrottle_StoreTakeError() {
 	s.mockLog.EXPECT().Error(errors.HttpRateLimitFailedToCheckThrottle.Args(assert.AnError)).Once()
 
 	middleware := Throttle("api")
-	middleware(s.mockCtx)
+	middleware.Handle(s.mockCtx)
 }
 
 func (s *ThrottleTestSuite) TestThrottle_MultipleLimits() {
@@ -245,7 +245,7 @@ func (s *ThrottleTestSuite) TestThrottle_MultipleLimits() {
 	s.mockResponse.EXPECT().Header("X-RateLimit-Remaining", "99").Return(s.mockResponse).Once()
 
 	middleware := Throttle("api")
-	middleware(s.mockCtx)
+	middleware.Handle(s.mockCtx)
 }
 
 type KeyTestSuite struct {

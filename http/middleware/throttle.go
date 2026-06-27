@@ -23,45 +23,55 @@ const (
 	HeaderRetryAfter = "Retry-After"
 )
 
-func Throttle(name string) httpcontract.Middleware {
-	return func(ctx httpcontract.Context) {
-		logFacade := http.App.MakeLog()
-		rateLimiterFacade := http.App.MakeRateLimiter()
+type throttleMiddleware struct {
+	name string
+}
 
-		if logFacade == nil {
-			panic(errors.LogFacadeNotSet)
-		}
+func (t *throttleMiddleware) Signature() string {
+	return "throttle:" + t.name
+}
 
-		if rateLimiterFacade == nil {
-			panic(errors.RateLimiterFacadeNotSet)
-		}
+func (t *throttleMiddleware) Handle(ctx httpcontract.Context) {
+	logFacade := http.App.MakeLog()
+	rateLimiterFacade := http.App.MakeRateLimiter()
 
-		if limiter := rateLimiterFacade.Limiter(name); limiter != nil {
-			if limits := limiter(ctx); len(limits) > 0 {
-				for index, limit := range limits {
-					tokens, remaining, reset, ok, err := limit.GetStore().Take(ctx, key(ctx, limit, name, index))
-					if err != nil {
-						logFacade.Error(errors.HttpRateLimitFailedToCheckThrottle.Args(err))
-						break
-					}
+	if logFacade == nil {
+		panic(errors.LogFacadeNotSet)
+	}
 
-					resetTime := carbon.FromTimestampNano(int64(reset)).SetTimezone(carbon.UTC)
-					retryAfter := carbon.Now().DiffInSeconds(resetTime)
-					ctx.Response().Header(HeaderRateLimitLimit, strconv.FormatUint(tokens, 10))
-					ctx.Response().Header(HeaderRateLimitRemaining, strconv.FormatUint(remaining, 10))
+	if rateLimiterFacade == nil {
+		panic(errors.RateLimiterFacadeNotSet)
+	}
 
-					if !ok {
-						ctx.Response().Header(HeaderRateLimitReset, strconv.Itoa(int(resetTime.Timestamp())))
-						ctx.Response().Header(HeaderRetryAfter, strconv.Itoa(int(retryAfter)))
-						response(ctx, limit)
-						return
-					}
+	if limiter := rateLimiterFacade.Limiter(t.name); limiter != nil {
+		if limits := limiter(ctx); len(limits) > 0 {
+			for index, limit := range limits {
+				tokens, remaining, reset, ok, err := limit.GetStore().Take(ctx, key(ctx, limit, t.name, index))
+				if err != nil {
+					logFacade.Error(errors.HttpRateLimitFailedToCheckThrottle.Args(err))
+					break
+				}
+
+				resetTime := carbon.FromTimestampNano(int64(reset)).SetTimezone(carbon.UTC)
+				retryAfter := carbon.Now().DiffInSeconds(resetTime)
+				ctx.Response().Header(HeaderRateLimitLimit, strconv.FormatUint(tokens, 10))
+				ctx.Response().Header(HeaderRateLimitRemaining, strconv.FormatUint(remaining, 10))
+
+				if !ok {
+					ctx.Response().Header(HeaderRateLimitReset, strconv.Itoa(int(resetTime.Timestamp())))
+					ctx.Response().Header(HeaderRetryAfter, strconv.Itoa(int(retryAfter)))
+					response(ctx, limit)
+					return
 				}
 			}
 		}
-
-		ctx.Request().Next()
 	}
+
+	ctx.Request().Next()
+}
+
+func Throttle(name string) httpcontract.Middleware {
+	return &throttleMiddleware{name: name}
 }
 
 func key(ctx httpcontract.Context, limit httpcontract.Limit, name string, index int) string {

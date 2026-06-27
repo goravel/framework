@@ -10,11 +10,20 @@ import (
 	contractshttp "github.com/goravel/framework/contracts/http"
 )
 
-// makeMiddleware returns a middleware function annotated with an id via closure.
+type testMiddleware struct {
+	id string
+}
+
+func (m *testMiddleware) Handle(ctx contractshttp.Context) {
+	fmt.Println(m.id)
+}
+
+func (m *testMiddleware) Signature() string {
+	return m.id
+}
+
 func makeMiddleware(id string) contractshttp.Middleware {
-	return func(ctx contractshttp.Context) {
-		fmt.Println(id)
-	}
+	return &testMiddleware{id: id}
 }
 
 type MiddlewareTestSuite struct {

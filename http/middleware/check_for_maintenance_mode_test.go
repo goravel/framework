@@ -100,7 +100,7 @@ func (s *MaintenanceTestSuite) TestMaintenaneMode_NotUnderMaintenance() {
 	s.mockStorage.EXPECT().Exists("framework/maintenance.json").Return(false).Once()
 
 	middleware := CheckForMaintenanceMode()
-	middleware(s.mockCtx)
+	middleware.Handle(s.mockCtx)
 }
 
 func (s *MaintenanceTestSuite) TestMaintenaneMode_MissingConfigPassesThrough() {
@@ -109,7 +109,7 @@ func (s *MaintenanceTestSuite) TestMaintenaneMode_MissingConfigPassesThrough() {
 	s.mockRequest.EXPECT().Next().Once()
 
 	middleware := CheckForMaintenanceMode()
-	middleware(s.mockCtx)
+	middleware.Handle(s.mockCtx)
 }
 
 func (s *MaintenanceTestSuite) TestMaintenaneMode_MissingCachePassesThrough() {
@@ -118,7 +118,7 @@ func (s *MaintenanceTestSuite) TestMaintenaneMode_MissingCachePassesThrough() {
 	s.mockRequest.EXPECT().Next().Once()
 
 	middleware := CheckForMaintenanceMode()
-	middleware(s.mockCtx)
+	middleware.Handle(s.mockCtx)
 }
 
 func (s *MaintenanceTestSuite) TestMaintenaneMode_MissingStoragePassesThrough() {
@@ -127,7 +127,7 @@ func (s *MaintenanceTestSuite) TestMaintenaneMode_MissingStoragePassesThrough() 
 	s.mockRequest.EXPECT().Next().Once()
 
 	middleware := CheckForMaintenanceMode()
-	middleware(s.mockCtx)
+	middleware.Handle(s.mockCtx)
 }
 
 func (s *MaintenanceTestSuite) TestMaintenaneMode_MissingHashPassesThrough() {
@@ -136,7 +136,7 @@ func (s *MaintenanceTestSuite) TestMaintenaneMode_MissingHashPassesThrough() {
 	s.mockRequest.EXPECT().Next().Once()
 
 	middleware := CheckForMaintenanceMode()
-	middleware(s.mockCtx)
+	middleware.Handle(s.mockCtx)
 }
 
 func (s *MaintenanceTestSuite) TestMaintenaneMode_StorageFilePermissionIssue() {
@@ -152,7 +152,7 @@ func (s *MaintenanceTestSuite) TestMaintenaneMode_StorageFilePermissionIssue() {
 
 	middleware := CheckForMaintenanceMode()
 	assert.PanicsWithError(s.T(), err.Error(), func() {
-		middleware(s.mockCtx)
+		middleware.Handle(s.mockCtx)
 	})
 }
 
@@ -168,7 +168,7 @@ func (s *MaintenanceTestSuite) TestMaintenaneMode_StorageFileInvalidJSON() {
 
 	middleware := CheckForMaintenanceMode()
 	assert.PanicsWithError(s.T(), err.Error(), func() {
-		middleware(s.mockCtx)
+		middleware.Handle(s.mockCtx)
 	})
 }
 
@@ -184,7 +184,7 @@ func (s *MaintenanceTestSuite) TestMaintenaneMode_SecretDoesNotMatch() {
 	s.mockResponse.EXPECT().String(contractshttp.StatusServiceUnavailable, "Under Maintenance").Return(s.mockAbortableResponse).Once()
 
 	middleware := CheckForMaintenanceMode()
-	middleware(s.mockCtx)
+	middleware.Handle(s.mockCtx)
 }
 
 func (s *MaintenanceTestSuite) TestMaintenaneMode_SecretMatches() {
@@ -197,7 +197,7 @@ func (s *MaintenanceTestSuite) TestMaintenaneMode_SecretMatches() {
 	s.mockStorage.EXPECT().GetBytes("framework/maintenance.json").Return([]byte(`{"secret":"hashed-secret", "reason": "Under Maintenance", "status": 503}`), nil).Once()
 
 	middleware := CheckForMaintenanceMode()
-	middleware(s.mockCtx)
+	middleware.Handle(s.mockCtx)
 }
 
 func (s *MaintenanceTestSuite) TestMaintenaneMode_Redirect() {
@@ -212,7 +212,7 @@ func (s *MaintenanceTestSuite) TestMaintenaneMode_Redirect() {
 	s.mockAbortableResponse.EXPECT().Abort().Return(nil).Once()
 
 	middleware := CheckForMaintenanceMode()
-	middleware(s.mockCtx)
+	middleware.Handle(s.mockCtx)
 }
 
 func (s *MaintenanceTestSuite) TestMaintenaneMode_Render() {
@@ -231,7 +231,7 @@ func (s *MaintenanceTestSuite) TestMaintenaneMode_Render() {
 	s.mockCtx.EXPECT().Response().Return(s.mockResponse).Once()
 
 	middleware := CheckForMaintenanceMode()
-	middleware(s.mockCtx)
+	middleware.Handle(s.mockCtx)
 }
 
 func (s *MaintenanceTestSuite) TestMaintenaneMode_CacheDriver() {
@@ -245,7 +245,7 @@ func (s *MaintenanceTestSuite) TestMaintenaneMode_CacheDriver() {
 	s.mockResponse.EXPECT().String(contractshttp.StatusServiceUnavailable, "Under Maintenance").Return(s.mockAbortableResponse).Once()
 
 	middleware := CheckForMaintenanceMode()
-	middleware(s.mockCtx)
+	middleware.Handle(s.mockCtx)
 }
 
 func (s *MaintenanceTestSuite) TestMaintenaneMode_NamedCacheStore() {
@@ -266,5 +266,5 @@ func (s *MaintenanceTestSuite) TestMaintenaneMode_NamedCacheStore() {
 	s.mockResponse.EXPECT().String(contractshttp.StatusServiceUnavailable, "Under Maintenance").Return(s.mockAbortableResponse).Once()
 
 	middleware := CheckForMaintenanceMode()
-	middleware(s.mockCtx)
+	middleware.Handle(s.mockCtx)
 }
