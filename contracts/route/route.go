@@ -54,6 +54,10 @@ type Router interface {
 	Prefix(path string) Router
 	// Middleware sets the middleware for the router.
 	Middleware(middlewares ...contractshttp.Middleware) Router
+	// WithoutMiddleware excludes the specified middleware from the routes registered with the router.
+	// This only works for middleware applied at the route or group level,
+	// not global middleware.
+	WithoutMiddleware(middlewares ...contractshttp.Middleware) Router
 
 	// Any registers a new route responding to all verbs.
 	Any(path string, handler contractshttp.HandlerFunc) Action
@@ -82,4 +86,8 @@ type Router interface {
 
 type Action interface {
 	Name(name string) Action
+	// WithoutMiddleware excludes the specified middleware from the route.
+	// This only works for middleware applied at the route or group level,
+	// not global middleware.
+	WithoutMiddleware(middleware ...contractshttp.Middleware) Action
 }

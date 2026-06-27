@@ -129,8 +129,9 @@ type FormRequestWithPrepareForValidation interface {
 }
 
 type Info struct {
-	Handler string `json:"handler"`
-	Method  string `json:"method"`
-	Name    string `json:"name"`
-	Path    string `json:"path"`
+	Handler            string      `json:"handler"`
+	Method             string      `json:"method"`
+	Name               string      `json:"name"`
+	Path               string      `json:"path"`
+	ExcludedMiddleware []Middleware `json:"excluded_middleware,omitempty"`
 }
