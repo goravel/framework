@@ -91,6 +91,20 @@ var (
 			Dependencies: []string{
 				Config,
 			},
+			Drivers: []Driver{
+				{
+					Name:    "OpenAI",
+					Package: "github.com/goravel/openai",
+				},
+				{
+					Name:    "Anthropic",
+					Package: "github.com/goravel/anthropic",
+				},
+				{
+					Name:    "Gemini",
+					Package: "github.com/goravel/gemini",
+				},
+			},
 		},
 		Auth: {
 			Description: "Provides support for JWT and Session drivers.",
