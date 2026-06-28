@@ -49,8 +49,27 @@ type Instrument struct {
 	meter        metric.Meter
 	durationHist metric.Float64Histogram
 
-	sqlDB        *sql.DB
-	poolObserved bool
+	sqlDB            *sql.DB
+	poolObserved     bool
+	poolRegistration metric.Registration
+}
+
+// Shutdown unregisters the pool-metrics callback and clears the resolved
+// telemetry so the next use re-resolves against the current provider.
+func (r *Instrument) Shutdown() {
+	if r == nil {
+		return
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.poolRegistration != nil {
+		_ = r.poolRegistration.Unregister()
+		r.poolRegistration = nil
+	}
+	r.tracer = nil
+	r.meter = nil
+	r.durationHist = nil
+	r.poolObserved = false
 }
 
 // SetDB stores the primary writer's *sql.DB for pool metrics.
