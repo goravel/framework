@@ -307,6 +307,15 @@ func (s *TranslatorTestSuite) TestHas() {
 		Locale: "fr",
 	})
 	s.True(hasKey)
+
+	// Case: Reused translator with distinct missing keys
+	translator = NewTranslator(s.ctx, nil, s.mockLoader, "en", "en", s.mockLog)
+	s.mockLoader.EXPECT().Load("en", "*").Return(map[string]any{}, errors.LangFileNotExist).Times(3)
+	s.mockLoader.EXPECT().Load("en", "account").Return(map[string]any{"name": "Bowen"}, nil).Once()
+	s.mockLoader.EXPECT().Load("en", "post").Return(map[string]any{"title": "Hello"}, nil).Once()
+	s.False(translator.Has("account.email"))
+	s.False(translator.Has("post.body"))
+	s.Equal("post.body", translator.Get("post.body"))
 }
 
 func (s *TranslatorTestSuite) TestSetFallback() {
