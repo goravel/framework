@@ -68,17 +68,17 @@ func init() {
 
 type Application struct {
 	*Container
-	ctx                   context.Context
-	cancel                context.CancelFunc
-	builder               *ApplicationBuilder
-	providerRepository    foundation.ProviderRepository
-	publishes             map[string]map[string]string
-	publishGroups         map[string]map[string]string
-	json                  foundation.Json
-	bootedRunners         []string
-	commandsFilter []string
-	runnerWg              sync.WaitGroup
-	runnersToRun          []*RunnerWithInfo
+	ctx                context.Context
+	cancel             context.CancelFunc
+	builder            *ApplicationBuilder
+	providerRepository foundation.ProviderRepository
+	publishes          map[string]map[string]string
+	publishGroups      map[string]map[string]string
+	json               foundation.Json
+	bootedRunners      []string
+	commandsFilter     []string
+	runnerWg           sync.WaitGroup
+	runnersToRun       []*RunnerWithInfo
 }
 
 func NewApplication() foundation.Application {
@@ -729,12 +729,12 @@ func (r *Application) configureValidation() {
 		} else {
 			if len(rules) > 0 {
 				if err := validationFacade.AddRules(rules); err != nil {
-					color.Errorf("add validation rules error: %+v", err)
+					color.Errorf("add validation rules error: %+v\n", err)
 				}
 			}
 			if len(filters) > 0 {
 				if err := validationFacade.AddFilters(filters); err != nil {
-					color.Errorf("add validation filters error: %+v", err)
+					color.Errorf("add validation filters error: %+v\n", err)
 				}
 			}
 		}
