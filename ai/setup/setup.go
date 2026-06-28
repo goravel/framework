@@ -16,6 +16,9 @@ func main() {
 	modulePath := setup.Paths().Module().Import()
 	aiServiceProvider := "&ai.ServiceProvider{}"
 	facadesPackage := setup.Paths().Facades().Package()
+	env := `
+AI_PROVIDER=
+`
 
 	setup.Install(
 		// Add the ai service provider to the providers array in bootstrap/providers.go
@@ -26,7 +29,12 @@ func main() {
 
 		// Add the AI facade
 		modify.File(aiFacadePath).Overwrite(stubs.AIFacade(facadesPackage)),
+
+		// Add configurations to the .env and .env.example files
+		modify.WhenFileExists(path.Base(".env"), modify.WhenFileNotContains(path.Base(".env"), "AI_PROVIDER", modify.File(path.Base(".env")).Append(env))),
+		modify.WhenFileExists(path.Base(".env.example"), modify.WhenFileNotContains(path.Base(".env.example"), "AI_PROVIDER", modify.File(path.Base(".env.example")).Append(env))),
 	).Uninstall(
+
 		// Remove the AI facade
 		modify.File(aiFacadePath).Remove(),
 
