@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"go.opentelemetry.io/otel/codes"
@@ -28,7 +29,7 @@ const (
 
 type disabledTelemetry struct{}
 
-func (d *disabledTelemetry) Signature() string { return "goravel:telemetry" }
+func (d *disabledTelemetry) Signature() string       { return "goravel:telemetry" }
 func (d *disabledTelemetry) Handle(ctx http.Context) { ctx.Request().Next() }
 
 // Telemetry creates HTTP server telemetry middleware that instruments incoming
@@ -38,7 +39,31 @@ func (d *disabledTelemetry) Handle(ctx http.Context) { ctx.Request().Next() }
 // context, records spans and metrics when telemetry is enabled, and otherwise
 // transparently passes requests through when telemetry is disabled or not
 // initialized.
+//
+// The underlying handler is resolved lazily on the first request. The
+// application configures middleware before booting providers, so the telemetry
+// facade is not yet available when Telemetry is called; resolving eagerly would
+// permanently capture a disabled handler.
 func Telemetry(opts ...Option) http.Middleware {
+	return &lazyMiddleware{opts: opts}
+}
+
+type lazyMiddleware struct {
+	opts    []Option
+	once    sync.Once
+	handler http.Middleware
+}
+
+func (m *lazyMiddleware) Signature() string { return "goravel:telemetry" }
+
+func (m *lazyMiddleware) Handle(ctx http.Context) {
+	m.once.Do(func() {
+		m.handler = newTelemetry(m.opts...)
+	})
+	m.handler.Handle(ctx)
+}
+
+func newTelemetry(opts ...Option) http.Middleware {
 	if telemetry.ConfigFacade == nil || telemetry.Facade == nil {
 		return &disabledTelemetry{}
 	}
