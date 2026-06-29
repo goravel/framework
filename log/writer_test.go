@@ -435,6 +435,42 @@ func TestWriter_LevelNotMatch(t *testing.T) {
 	assert.False(t, file.Contains(dailyLog, "test.debug: No Debug Goravel"))
 }
 
+func TestWriter_SingleChannelLevelNotMatch(t *testing.T) {
+
+	// This test verifies that with a single channel (no FanoutHandler wrapping),
+	// the Enabled() check in Writer.log() correctly filters log levels.
+	// This covers the exact scenario from issue #977: LOG_LEVEL=error but
+	// info logs still appear when the stack has only one channel.
+	clearChannelCache()
+
+	mockConfig := mocksconfig.NewConfig(t)
+	mockConfig.EXPECT().GetString("logging.channels.daily.driver").Return("daily").Once()
+	mockConfig.EXPECT().GetString("logging.channels.daily.path").Return(singleLog).Once()
+	mockConfig.EXPECT().GetInt("logging.channels.daily.days").Return(7).Once()
+	mockConfig.EXPECT().GetBool("logging.channels.daily.print").Return(false).Once()
+	mockConfig.EXPECT().GetString("logging.channels.daily.level").Return("error").Once()
+	mockConfig.EXPECT().GetString("logging.channels.daily.formatter", "text").Return("text").Once()
+	// app.env is only called when Error is actually logged
+	mockConfig.EXPECT().GetString("app.env").Return("test").Once()
+
+	log, err := NewApplication(context.Background(), []string{"daily"}, mockConfig, json.New())
+	assert.Nil(t, err)
+
+	// Debug should be filtered out (level error > debug)
+	log.Debug("No Debug Goravel")
+	assert.False(t, file.Contains(dailyLog, "test.debug: No Debug Goravel"))
+
+	// Info should be filtered out (level error > info)
+	log.Info("No Info Goravel")
+	assert.False(t, file.Contains(dailyLog, "test.info: No Info Goravel"))
+
+	// Error should pass through (level error == error)
+	log.Error("Error Goravel")
+	assert.True(t, file.Contains(dailyLog, "test.error: Error Goravel"))
+
+	_ = file.Remove("storage")
+}
+
 func TestWriter_DailyLogWithDifferentDays(t *testing.T) {
 	// Clear handler cache
 	clearChannelCache()
