@@ -26,7 +26,7 @@ require (
 	github.com/spf13/cast v1.10.0
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
-	github.com/urfave/cli/v3 v3.10.0
+	github.com/urfave/cli/v3 v3.10.1
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.69.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.69.0
 	go.opentelemetry.io/contrib/propagators/b3 v1.44.0
@@ -51,7 +51,7 @@ require (
 	golang.org/x/exp v0.0.0-20260611194520-c48552f49976
 	google.golang.org/grpc v1.81.1
 	google.golang.org/protobuf v1.36.11
-	gorm.io/gorm v1.31.1
+	gorm.io/gorm v1.31.2
 	gorm.io/plugin/dbresolver v1.6.2
 )
 
@@ -137,14 +137,14 @@ require (
 	golang.org/x/sys v0.46.0
 	golang.org/x/term v0.44.0 // indirect
 	golang.org/x/text v0.38.0
-	golang.org/x/tools v0.46.0
+	golang.org/x/tools v0.47.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 replace (
-	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260618152121-87f3d3e198d3
-	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20260618152121-87f3d3e198d3
+	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260622175928-b703f567277d
+	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20260622175928-b703f567277d
 )
 
 tool github.com/vektra/mockery/v2
