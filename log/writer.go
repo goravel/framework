@@ -183,6 +183,13 @@ func (r *Writer) WithTrace() log.Writer {
 }
 
 func (r *Writer) log(level log.Level, msg string) {
+	if !r.logger.Enabled(r.ctx, slog.Level(level)) {
+		if r.entry != nil {
+			releaseEntry(r.entry)
+		}
+		return
+	}
+
 	entry := r.entry
 	if entry == nil {
 		// For direct log calls without fluent methods, acquire a fresh entry
