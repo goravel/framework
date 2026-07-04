@@ -19,7 +19,7 @@ func init() {
 		// Default AI Provider
 		//
 		// This option controls the default AI provider that will be used.
-		"default": "",
+		"default": config.Env("AI_PROVIDER"),
 
 		// AI Providers
 		//
