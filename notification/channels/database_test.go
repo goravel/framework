@@ -1,0 +1,169 @@
+package channels_test
+
+import (
+	"errors"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+
+	contractsnotification "github.com/goravel/framework/contracts/notification"
+	mocksconfig "github.com/goravel/framework/mocks/config"
+	mockorm "github.com/goravel/framework/mocks/database/orm"
+	mocklog "github.com/goravel/framework/mocks/log"
+	"github.com/goravel/framework/notification/channels"
+)
+
+// ---- Fakes ----
+
+type dbNotifiable struct{ id string }
+
+func (d *dbNotifiable) RouteNotificationFor(channel string) string {
+	if channel == "database" {
+		return d.id
+	}
+	return ""
+}
+
+// dbNotification does NOT implement DatabaseNotification — tests the fallback payload.
+type dbNotification struct{}
+
+func (d *dbNotification) Via(_ contractsnotification.Notifiable) []string {
+	return []string{"database"}
+}
+func (d *dbNotification) ID() string { return "fixed-uuid-1234" }
+
+// richDbNotification implements DatabaseNotification.
+type richDbNotification struct{}
+
+func (r *richDbNotification) Via(_ contractsnotification.Notifiable) []string {
+	return []string{"database"}
+}
+func (r *richDbNotification) ID() string { return "" }
+func (r *richDbNotification) ToDatabase(_ contractsnotification.Notifiable) map[string]any {
+	return map[string]any{"invoice_id": 99, "amount": "250.00"}
+}
+
+// ---- Tests ----
+
+func TestDatabaseChannel_Name(t *testing.T) {
+	ch := channels.NewDatabaseChannel(nil, nil, nil)
+	assert.Equal(t, "database", ch.Name())
+}
+
+func TestDatabaseChannel_Send_InsertsRecord_WithDefaultPayload(t *testing.T) {
+	logger := mocklog.NewLog(t)
+	logger.On("Debugf", mock.Anything, mock.Anything, mock.Anything).Maybe()
+
+	query := mockorm.NewQuery(t)
+	query.On("Create", mock.AnythingOfType("*channels.DatabaseNotificationModel")).
+		Return(nil).Once()
+
+	o := mockorm.NewOrm(t)
+	o.On("Query").Return(query)
+
+	ch := channels.NewDatabaseChannel(o, logger, nil)
+	notifiable := &dbNotifiable{id: "42"}
+	n := &dbNotification{}
+
+	err := ch.Send(notifiable, n)
+	assert.NoError(t, err)
+	query.AssertExpectations(t)
+}
+
+func TestDatabaseChannel_Send_InsertsRecord_WithCustomPayload(t *testing.T) {
+	logger := mocklog.NewLog(t)
+	logger.On("Debugf", mock.Anything, mock.Anything, mock.Anything).Maybe()
+
+	query := mockorm.NewQuery(t)
+	query.On("Create", mock.MatchedBy(func(r *channels.DatabaseNotificationModel) bool {
+		// Verify the JSON payload contains the custom fields.
+		return r.NotifiableID == "42" && len(r.Data) > 0
+	})).Return(nil).Once()
+
+	o := mockorm.NewOrm(t)
+	o.On("Query").Return(query)
+
+	ch := channels.NewDatabaseChannel(o, logger, nil)
+	notifiable := &dbNotifiable{id: "42"}
+	n := &richDbNotification{}
+
+	err := ch.Send(notifiable, n)
+	assert.NoError(t, err)
+	query.AssertExpectations(t)
+}
+
+func TestDatabaseChannel_Send_ReturnsError_WhenEmptyID(t *testing.T) {
+	logger := mocklog.NewLog(t)
+	o := mockorm.NewOrm(t)
+
+	ch := channels.NewDatabaseChannel(o, logger, nil)
+	notifiable := &dbNotifiable{id: ""} // no routing ID
+	n := &dbNotification{}
+
+	err := ch.Send(notifiable, n)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "empty ID")
+}
+
+func TestDatabaseChannel_Send_WrapsOrmError(t *testing.T) {
+	logger := mocklog.NewLog(t)
+
+	query := mockorm.NewQuery(t)
+	query.On("Create", mock.Anything).Return(errors.New("unique constraint violation")).Once()
+
+	o := mockorm.NewOrm(t)
+	o.On("Query").Return(query)
+
+	ch := channels.NewDatabaseChannel(o, logger, nil)
+	err := ch.Send(&dbNotifiable{id: "1"}, &dbNotification{})
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "unique constraint violation")
+}
+
+func TestDatabaseChannel_Send_UsesConfiguredConnection_WhenSet(t *testing.T) {
+	logger := mocklog.NewLog(t)
+	logger.On("Debugf", mock.Anything, mock.Anything, mock.Anything).Maybe()
+
+	query := mockorm.NewQuery(t)
+	query.On("Create", mock.AnythingOfType("*channels.DatabaseNotificationModel")).
+		Return(nil).Once()
+
+	// The "reporting" connection's Orm is what should actually receive Query().
+	reportingOrm := mockorm.NewOrm(t)
+	reportingOrm.On("Query").Return(query)
+
+	o := mockorm.NewOrm(t)
+	o.On("Connection", "reporting").Return(reportingOrm)
+
+	config := mocksconfig.NewConfig(t)
+	config.On("GetString", "notification.channels.database.connection").Return("reporting")
+
+	ch := channels.NewDatabaseChannel(o, logger, config)
+	err := ch.Send(&dbNotifiable{id: "42"}, &dbNotification{})
+
+	assert.NoError(t, err)
+	query.AssertExpectations(t)
+}
+
+func TestDatabaseChannel_Send_UsesDefaultConnection_WhenConfigConnectionEmpty(t *testing.T) {
+	logger := mocklog.NewLog(t)
+	logger.On("Debugf", mock.Anything, mock.Anything, mock.Anything).Maybe()
+
+	query := mockorm.NewQuery(t)
+	query.On("Create", mock.AnythingOfType("*channels.DatabaseNotificationModel")).
+		Return(nil).Once()
+
+	o := mockorm.NewOrm(t)
+	o.On("Query").Return(query)
+
+	config := mocksconfig.NewConfig(t)
+	config.On("GetString", "notification.channels.database.connection").Return("")
+
+	ch := channels.NewDatabaseChannel(o, logger, config)
+	err := ch.Send(&dbNotifiable{id: "42"}, &dbNotification{})
+
+	assert.NoError(t, err)
+	query.AssertExpectations(t)
+}
