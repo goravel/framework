@@ -47,6 +47,16 @@ func (c *DatabaseChannel) Send(
 	notifiable contractsnotification.Notifiable,
 	n contractsnotification.Notification,
 ) error {
+	return c.SendNow(notifiable, n)
+}
+
+// SendNow is identical to Send — DatabaseChannel has no queued mode of
+// its own, only Manager does. Exists so callers can bypass Manager's
+// queue routing entirely: facades.Notification().Channel("database").SendNow(u, n).
+func (c *DatabaseChannel) SendNow(
+	notifiable contractsnotification.Notifiable,
+	n contractsnotification.Notification,
+) error {
 	route, payload, err := c.Resolve(notifiable, n)
 	if err != nil {
 		return err
@@ -85,7 +95,10 @@ func (c *DatabaseChannel) Resolve(
 		return "", nil, fmt.Errorf("database channel: failed to marshal payload for %T: %w", n, err)
 	}
 
-	id := n.ID()
+	var id string
+	if withID, ok := n.(contractsnotification.NotificationWithID); ok {
+		id = withID.ID()
+	}
 	if id == "" {
 		id = uuid.NewString()
 	}

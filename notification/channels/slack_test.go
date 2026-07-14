@@ -204,3 +204,26 @@ func TestSlackChannel_Send_DoesNotOverride_WhenNotificationSetsUsernameAndIconEm
 	assert.NoError(t, err)
 	assert.Equal(t, ":white_check_mark:", received["icon_emoji"])
 }
+
+// TestSlackChannel_SendNow_BehavesIdenticallyToSend confirms the
+// Send-delegates-to-SendNow relationship for the Slack channel.
+func TestSlackChannel_SendNow_BehavesIdenticallyToSend(t *testing.T) {
+	logger := mocklog.NewLog(t)
+	logger.On("Debugf", mock.Anything, mock.Anything, mock.Anything).Maybe()
+
+	var received map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(body, &received)
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	ch := channels.NewSlackChannel(logger, nil)
+	notifiable := &slackNotifiable{webhook: server.URL}
+	n := &plainSlackNotification{}
+
+	err := ch.SendNow(notifiable, n)
+	assert.NoError(t, err)
+	assert.Contains(t, received["text"], "plainSlackNotification")
+}

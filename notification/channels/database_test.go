@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
@@ -32,6 +33,14 @@ func (d *dbNotification) Via(_ contractsnotification.Notifiable) []string {
 	return []string{"database"}
 }
 func (d *dbNotification) ID() string { return "fixed-uuid-1234" }
+
+// plainDbNotification implements only Notification (no ID() at all),
+// proving NotificationWithID is truly optional, not just "return empty".
+type plainDbNotification struct{}
+
+func (p *plainDbNotification) Via(_ contractsnotification.Notifiable) []string {
+	return []string{"database"}
+}
 
 // richDbNotification implements DatabaseNotification.
 type richDbNotification struct{}
@@ -90,6 +99,47 @@ func TestDatabaseChannel_Send_InsertsRecord_WithCustomPayload(t *testing.T) {
 
 	err := ch.Send(notifiable, n)
 	assert.NoError(t, err)
+	query.AssertExpectations(t)
+}
+
+func TestDatabaseChannel_Send_UsesCallerAssignedID_WhenNotificationWithIDImplemented(t *testing.T) {
+	logger := mocklog.NewLog(t)
+	logger.On("Debugf", mock.Anything, mock.Anything, mock.Anything).Maybe()
+
+	query := mockorm.NewQuery(t)
+	query.On("Create", mock.MatchedBy(func(r *channels.DatabaseNotificationModel) bool {
+		return r.ID == "fixed-uuid-1234"
+	})).Return(nil).Once()
+
+	o := mockorm.NewOrm(t)
+	o.On("Query").Return(query)
+
+	ch := channels.NewDatabaseChannel(o, logger, nil)
+	err := ch.Send(&dbNotifiable{id: "42"}, &dbNotification{})
+	assert.NoError(t, err)
+	query.AssertExpectations(t)
+}
+
+func TestDatabaseChannel_Send_GeneratesUUID_WhenNotificationWithIDNotImplemented(t *testing.T) {
+	logger := mocklog.NewLog(t)
+	logger.On("Debugf", mock.Anything, mock.Anything, mock.Anything).Maybe()
+
+	var generatedID string
+	query := mockorm.NewQuery(t)
+	query.On("Create", mock.MatchedBy(func(r *channels.DatabaseNotificationModel) bool {
+		generatedID = r.ID
+		return r.ID != ""
+	})).Return(nil).Once()
+
+	o := mockorm.NewOrm(t)
+	o.On("Query").Return(query)
+
+	ch := channels.NewDatabaseChannel(o, logger, nil)
+	err := ch.Send(&dbNotifiable{id: "42"}, &plainDbNotification{})
+	assert.NoError(t, err)
+
+	_, parseErr := uuid.Parse(generatedID)
+	assert.NoError(t, parseErr, "expected a generated UUID when NotificationWithID isn't implemented")
 	query.AssertExpectations(t)
 }
 
@@ -164,6 +214,28 @@ func TestDatabaseChannel_Send_UsesDefaultConnection_WhenConfigConnectionEmpty(t 
 	ch := channels.NewDatabaseChannel(o, logger, config)
 	err := ch.Send(&dbNotifiable{id: "42"}, &dbNotification{})
 
+	assert.NoError(t, err)
+	query.AssertExpectations(t)
+}
+
+// TestDatabaseChannel_SendNow_BehavesIdenticallyToSend confirms the
+// Send-delegates-to-SendNow relationship for the database channel.
+func TestDatabaseChannel_SendNow_BehavesIdenticallyToSend(t *testing.T) {
+	logger := mocklog.NewLog(t)
+	logger.On("Debugf", mock.Anything, mock.Anything, mock.Anything).Maybe()
+
+	query := mockorm.NewQuery(t)
+	query.On("Create", mock.AnythingOfType("*channels.DatabaseNotificationModel")).
+		Return(nil).Once()
+
+	o := mockorm.NewOrm(t)
+	o.On("Query").Return(query)
+
+	ch := channels.NewDatabaseChannel(o, logger, nil)
+	notifiable := &dbNotifiable{id: "42"}
+	n := &dbNotification{}
+
+	err := ch.SendNow(notifiable, n)
 	assert.NoError(t, err)
 	query.AssertExpectations(t)
 }

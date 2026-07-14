@@ -26,6 +26,24 @@ func (m *mailNotifiable) RouteNotificationFor(channel string) string {
 	return ""
 }
 
+// mailRoutableNotifiable implements MailRoutable in addition to
+// Notifiable, to test multi-address mail routing.
+type mailRoutableNotifiable struct {
+	addr      string // used only as the RouteNotificationFor("mail") fallback
+	addresses []string
+}
+
+func (m *mailRoutableNotifiable) RouteNotificationFor(channel string) string {
+	if channel == "mail" {
+		return m.addr
+	}
+	return ""
+}
+
+func (m *mailRoutableNotifiable) RouteNotificationForMail(_ contractsnotification.Notification) []string {
+	return m.addresses
+}
+
 // plainNotification does NOT implement MailableNotification — tests the fallback path.
 type plainNotification struct{}
 
@@ -127,6 +145,78 @@ func TestMailChannel_Send_MapsHtmlViewAndTextView(t *testing.T) {
 	mailer.AssertExpectations(t)
 }
 
+func TestMailChannel_Send_UsesMailRoutable_ForMultipleAddresses(t *testing.T) {
+	logger := mocklog.NewLog(t)
+	mailer := mockmail.NewMail(t)
+
+	mailer.On("Send", mock.MatchedBy(func(m contractsmail.Mailable) bool {
+		env := m.Envelope()
+		return env != nil &&
+			len(env.To) == 2 &&
+			env.To[0] == "primary@example.com" &&
+			env.To[1] == "secondary@example.com"
+	})).Return(nil).Once()
+
+	ch := channels.NewMailChannel(mailer, logger)
+	notifiable := &mailRoutableNotifiable{
+		addr:      "fallback@example.com", // should be ignored — MailRoutable takes priority
+		addresses: []string{"primary@example.com", "secondary@example.com"},
+	}
+	n := &plainNotification{}
+
+	err := ch.Send(notifiable, n)
+	assert.NoError(t, err)
+	mailer.AssertExpectations(t)
+}
+
+func TestMailChannel_Send_FallsBackToRouteNotificationFor_WhenMailRoutableReturnsEmpty(t *testing.T) {
+	logger := mocklog.NewLog(t)
+	mailer := mockmail.NewMail(t)
+
+	mailer.On("Send", mock.MatchedBy(func(m contractsmail.Mailable) bool {
+		env := m.Envelope()
+		return env != nil && len(env.To) == 1 && env.To[0] == "fallback@example.com"
+	})).Return(nil).Once()
+
+	ch := channels.NewMailChannel(mailer, logger)
+	notifiable := &mailRoutableNotifiable{
+		addr:      "fallback@example.com",
+		addresses: nil, // implements MailRoutable but has nothing to say
+	}
+	n := &plainNotification{}
+
+	err := ch.Send(notifiable, n)
+	assert.NoError(t, err)
+	mailer.AssertExpectations(t)
+}
+
+func TestMailChannel_Send_ToMailOverridesResolvedAddresses_WhenSet(t *testing.T) {
+	logger := mocklog.NewLog(t)
+	mailer := mockmail.NewMail(t)
+
+	mailer.On("Send", mock.MatchedBy(func(m contractsmail.Mailable) bool {
+		env := m.Envelope()
+		return env != nil && len(env.To) == 1 && env.To[0] == "explicit@example.com"
+	})).Return(nil).Once()
+
+	ch := channels.NewMailChannel(mailer, logger)
+	notifiable := &mailRoutableNotifiable{
+		addr:      "fallback@example.com",
+		addresses: []string{"primary@example.com", "secondary@example.com"},
+	}
+	n := &richNotification{
+		msg: contractsnotification.MailMessage{
+			To:      []string{"explicit@example.com"}, // ToMail() explicitly sets To
+			Subject: "Invoice Paid",
+			Content: contractsnotification.MailContent{Text: "Your invoice was paid."},
+		},
+	}
+
+	err := ch.Send(notifiable, n)
+	assert.NoError(t, err)
+	mailer.AssertExpectations(t)
+}
+
 func TestMailChannel_Send_ReturnsError_WhenEmptyAddress(t *testing.T) {
 	logger := mocklog.NewLog(t)
 	mailer := mockmail.NewMail(t)
@@ -159,3 +249,22 @@ func TestMailChannel_Send_WrapsMailerError(t *testing.T) {
 
 // Verify the Mailable adapter satisfies the contractsmail.Mailable interface at compile time.
 var _ contractsmail.Mailable = (*channels.NotificationMailable)(nil)
+
+// TestMailChannel_SendNow_BehavesIdenticallyToSend confirms the
+// Send-delegates-to-SendNow relationship: calling SendNow directly
+// (bypassing Manager entirely) produces the same delivery as Send.
+func TestMailChannel_SendNow_BehavesIdenticallyToSend(t *testing.T) {
+	logger := mocklog.NewLog(t)
+	mailer := mockmail.NewMail(t)
+
+	mailer.On("Send", mock.AnythingOfType("*channels.NotificationMailable")).
+		Return(nil).Once()
+
+	ch := channels.NewMailChannel(mailer, logger)
+	notifiable := &mailNotifiable{addr: "user@example.com"}
+	n := &plainNotification{}
+
+	err := ch.SendNow(notifiable, n)
+	assert.NoError(t, err)
+	mailer.AssertExpectations(t)
+}

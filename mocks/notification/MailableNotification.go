@@ -20,51 +20,6 @@ func (_m *MailableNotification) EXPECT() *MailableNotification_Expecter {
 	return &MailableNotification_Expecter{mock: &_m.Mock}
 }
 
-// ID provides a mock function with no fields
-func (_m *MailableNotification) ID() string {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for ID")
-	}
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
-// MailableNotification_ID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ID'
-type MailableNotification_ID_Call struct {
-	*mock.Call
-}
-
-// ID is a helper method to define mock.On call
-func (_e *MailableNotification_Expecter) ID() *MailableNotification_ID_Call {
-	return &MailableNotification_ID_Call{Call: _e.mock.On("ID")}
-}
-
-func (_c *MailableNotification_ID_Call) Run(run func()) *MailableNotification_ID_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *MailableNotification_ID_Call) Return(_a0 string) *MailableNotification_ID_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *MailableNotification_ID_Call) RunAndReturn(run func() string) *MailableNotification_ID_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // ToMail provides a mock function with given fields: notifiable
 func (_m *MailableNotification) ToMail(notifiable notification.Notifiable) notification.MailMessage {
 	ret := _m.Called(notifiable)

@@ -1,16 +1,13 @@
-package channels
-
 // Package channels contains the built-in delivery drivers for Goravel's
-// notification module. Ported from codedsultan/goravel-notification;
-// each channel is split into Resolve (live values → plain data) and
-// Deliver (plain data → actual send), with Send kept as a thin wrapper
-// of the two — so Send's external behavior, and every existing test
-// against it, is unchanged. See notification/job.go for why the split
-// exists.
+// notification module. Each channel splits into Resolve (live values →
+// plain data) and Deliver (plain data → actual send), with Send as a
+// thin wrapper of the two, so it can be dispatched via the queue safely.
+package channels
 
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	contractsnotification "github.com/goravel/framework/contracts/notification"
 
@@ -34,6 +31,16 @@ func (c *MailChannel) Send(
 	notifiable contractsnotification.Notifiable,
 	n contractsnotification.Notification,
 ) error {
+	return c.SendNow(notifiable, n)
+}
+
+// SendNow is identical to Send — MailChannel has no queued mode of its
+// own, only Manager does. Exists so callers can bypass Manager's queue
+// routing entirely: facades.Notification().Channel("mail").SendNow(u, n).
+func (c *MailChannel) SendNow(
+	notifiable contractsnotification.Notifiable,
+	n contractsnotification.Notification,
+) error {
 	route, payload, err := c.Resolve(notifiable, n)
 	if err != nil {
 		return err
@@ -43,16 +50,14 @@ func (c *MailChannel) Send(
 
 // Resolve builds the MailMessage — via ToMail() if the notification
 // implements MailableNotification, else a sensible fallback — and
-// JSON-encodes it alongside the resolved recipient address. Identical
-// logic to the original Send(), just split out and made reusable by the
-// queue path.
+// JSON-encodes it alongside the resolved recipient address(es).
 func (c *MailChannel) Resolve(
 	notifiable contractsnotification.Notifiable,
 	n contractsnotification.Notification,
 ) (string, []byte, error) {
-	to := notifiable.RouteNotificationFor("mail")
-	if to == "" {
-		return "", nil, fmt.Errorf("mail channel: %T.RouteNotificationFor(\"mail\") returned empty address", notifiable)
+	addresses, err := c.resolveAddresses(notifiable, n)
+	if err != nil {
+		return "", nil, err
 	}
 
 	var msg contractsnotification.MailMessage
@@ -61,13 +66,36 @@ func (c *MailChannel) Resolve(
 	} else {
 		msg = c.defaultMessage(n)
 	}
+	if len(msg.To) == 0 {
+		msg.To = addresses
+	}
 
 	payload, err := json.Marshal(msg)
 	if err != nil {
 		return "", nil, fmt.Errorf("mail channel: failed to marshal payload for %T: %w", n, err)
 	}
 
-	return to, payload, nil
+	return strings.Join(addresses, ","), payload, nil
+}
+
+// resolveAddresses prefers MailRoutable (multiple addresses) when the
+// notifiable implements it, falling back to the single
+// RouteNotificationFor("mail") address otherwise.
+func (c *MailChannel) resolveAddresses(
+	notifiable contractsnotification.Notifiable,
+	n contractsnotification.Notification,
+) ([]string, error) {
+	if mr, ok := notifiable.(contractsnotification.MailRoutable); ok {
+		if addresses := mr.RouteNotificationForMail(n); len(addresses) > 0 {
+			return addresses, nil
+		}
+	}
+
+	to := notifiable.RouteNotificationFor("mail")
+	if to == "" {
+		return nil, fmt.Errorf("mail channel: %T.RouteNotificationFor(\"mail\") returned empty address", notifiable)
+	}
+	return []string{to}, nil
 }
 
 // Deliver unmarshals payload and sends via facades.Mail(), same
@@ -82,9 +110,9 @@ func (c *MailChannel) Deliver(route string, payload []byte) error {
 		return fmt.Errorf("mail channel: failed to unmarshal payload: %w", err)
 	}
 
-	recipients := []string{route}
-	if msg.To != "" {
-		recipients = []string{msg.To}
+	recipients := msg.To
+	if len(recipients) == 0 {
+		recipients = strings.Split(route, ",")
 	}
 
 	subject := msg.Subject

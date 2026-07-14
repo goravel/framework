@@ -34,6 +34,16 @@ func (c *SlackChannel) Send(
 	notifiable contractsnotification.Notifiable,
 	n contractsnotification.Notification,
 ) error {
+	return c.SendNow(notifiable, n)
+}
+
+// SendNow is identical to Send — SlackChannel has no queued mode of its
+// own, only Manager does. Exists so callers can bypass Manager's queue
+// routing entirely: facades.Notification().Channel("slack").SendNow(u, n).
+func (c *SlackChannel) SendNow(
+	notifiable contractsnotification.Notifiable,
+	n contractsnotification.Notification,
+) error {
 	route, payload, err := c.Resolve(notifiable, n)
 	if err != nil {
 		return err

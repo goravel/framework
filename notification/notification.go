@@ -1,7 +1,7 @@
 // Package notification provides the Manager implementation for Goravel's
-// notification module. Ported from codedsultan/goravel-notification;
-// dispatchSync is unchanged (and keeps all of that package's passing
-// tests valid as-is). dispatchQueued is rewritten — see job.go for why.
+// notification module: dispatching to registered channels synchronously
+// or via the queue. See job.go for how queued dispatch stays safe across
+// a real queue round-trip.
 package notification
 
 import (
@@ -40,15 +40,16 @@ func (m *Manager) Extend(ch contractsnotification.Channel) {
 	m.channels[ch.Name()] = ch
 }
 
-func (m *Manager) Channel(name string) (contractsnotification.Channel, error) {
+func (m *Manager) Channel(name string) contractsnotification.Channel {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
 	ch, ok := m.channels[name]
 	if !ok {
-		return nil, errors.NotificationChannelNotFound.Args(name)
+		m.log.Errorf("notifications: %v", errors.NotificationChannelNotFound.Args(name))
+		return nil
 	}
-	return ch, nil
+	return ch
 }
 
 func (m *Manager) Send(
@@ -84,9 +85,9 @@ func (m *Manager) dispatchSync(
 
 	var firstErr error
 	for _, name := range channels {
-		ch, err := m.Channel(name)
-		if err != nil {
-			m.log.Errorf("notifications: skipping unregistered channel %q: %v", name, err)
+		ch := m.Channel(name)
+		if ch == nil {
+			err := errors.NotificationChannelNotFound.Args(name)
 			if firstErr == nil {
 				firstErr = err
 			}
@@ -116,9 +117,9 @@ func (m *Manager) dispatchQueued(
 	var firstErr error
 
 	for _, name := range n.Via(notifiable) {
-		ch, err := m.Channel(name)
-		if err != nil {
-			m.log.Errorf("notifications: skipping unregistered channel %q: %v", name, err)
+		ch := m.Channel(name)
+		if ch == nil {
+			err := errors.NotificationChannelNotFound.Args(name)
 			if firstErr == nil {
 				firstErr = err
 			}

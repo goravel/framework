@@ -21,7 +21,7 @@ func (_m *Manager) EXPECT() *Manager_Expecter {
 }
 
 // Channel provides a mock function with given fields: name
-func (_m *Manager) Channel(name string) (notification.Channel, error) {
+func (_m *Manager) Channel(name string) notification.Channel {
 	ret := _m.Called(name)
 
 	if len(ret) == 0 {
@@ -29,10 +29,6 @@ func (_m *Manager) Channel(name string) (notification.Channel, error) {
 	}
 
 	var r0 notification.Channel
-	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (notification.Channel, error)); ok {
-		return rf(name)
-	}
 	if rf, ok := ret.Get(0).(func(string) notification.Channel); ok {
 		r0 = rf(name)
 	} else {
@@ -41,13 +37,7 @@ func (_m *Manager) Channel(name string) (notification.Channel, error) {
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(name)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // Manager_Channel_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Channel'
@@ -68,12 +58,12 @@ func (_c *Manager_Channel_Call) Run(run func(name string)) *Manager_Channel_Call
 	return _c
 }
 
-func (_c *Manager_Channel_Call) Return(_a0 notification.Channel, _a1 error) *Manager_Channel_Call {
-	_c.Call.Return(_a0, _a1)
+func (_c *Manager_Channel_Call) Return(_a0 notification.Channel) *Manager_Channel_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Manager_Channel_Call) RunAndReturn(run func(string) (notification.Channel, error)) *Manager_Channel_Call {
+func (_c *Manager_Channel_Call) RunAndReturn(run func(string) notification.Channel) *Manager_Channel_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -108,6 +98,55 @@ func (_c *Manager_Extend_Call) Return() *Manager_Extend_Call {
 
 func (_c *Manager_Extend_Call) RunAndReturn(run func(notification.Channel)) *Manager_Extend_Call {
 	_c.Run(run)
+	return _c
+}
+
+// Route provides a mock function with given fields: channel, route
+func (_m *Manager) Route(channel string, route string) notification.OnDemandNotifiable {
+	ret := _m.Called(channel, route)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Route")
+	}
+
+	var r0 notification.OnDemandNotifiable
+	if rf, ok := ret.Get(0).(func(string, string) notification.OnDemandNotifiable); ok {
+		r0 = rf(channel, route)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(notification.OnDemandNotifiable)
+		}
+	}
+
+	return r0
+}
+
+// Manager_Route_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Route'
+type Manager_Route_Call struct {
+	*mock.Call
+}
+
+// Route is a helper method to define mock.On call
+//   - channel string
+//   - route string
+func (_e *Manager_Expecter) Route(channel interface{}, route interface{}) *Manager_Route_Call {
+	return &Manager_Route_Call{Call: _e.mock.On("Route", channel, route)}
+}
+
+func (_c *Manager_Route_Call) Run(run func(channel string, route string)) *Manager_Route_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *Manager_Route_Call) Return(_a0 notification.OnDemandNotifiable) *Manager_Route_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Manager_Route_Call) RunAndReturn(run func(string, string) notification.OnDemandNotifiable) *Manager_Route_Call {
+	_c.Call.Return(run)
 	return _c
 }
 

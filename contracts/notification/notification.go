@@ -1,34 +1,32 @@
 // Package notification defines the public contracts for Goravel's
-// notification module. Ported from codedsultan/goravel-notification with
-// one addition: ResolvableChannel (see below), which fixes a queue-safety
-// issue in the original standalone package's dispatch job — see
-// notification/job.go for the full explanation.
+// notification module: what a notification is, what can receive one, the
+// channel driver interface, and the Manager service bound into the
+// container as facades.Notification().
 package notification
 
-// Notification must be implemented by every notification struct in the application.
-// A notification describes what should be sent and via which channels.
-//
-// Example:
+// Notification is implemented by every notification struct.
 //
 //	type InvoicePaid struct{ Invoice *models.Invoice }
-//
 //	func (n *InvoicePaid) Via(_ notification.Notifiable) []string { return []string{"mail", "database"} }
-//	func (n *InvoicePaid) ID() string                            { return "" } // auto UUID
 type Notification interface {
-	// Via returns the channel names this notification should be delivered on
-	// for the given notifiable recipient.
-	// Channel names: "mail", "database", "slack".
+	// Via returns the channel names ("mail", "database", "slack") this
+	// notification should be delivered on for the given notifiable.
 	Via(notifiable Notifiable) []string
+}
 
-	// ID returns a unique identifier used for deduplication and database storage.
-	// Return an empty string to have the package generate a UUID automatically.
+// NotificationWithID is an optional extension of Notification for
+// notifications that need a stable, caller-assigned ID — e.g. to
+// deduplicate retries or correlate a persisted database record with an
+// external one. When not implemented, the database channel generates a
+// UUID.
+type NotificationWithID interface {
+	Notification
+	// ID returns a caller-assigned identifier. An empty string is treated
+	// the same as not implementing this interface.
 	ID() string
 }
 
-// Notifiable must be implemented by any model that can receive notifications.
-// Embed this in your User (or any other) model.
-//
-// Example:
+// Notifiable is implemented by any model that can receive notifications.
 //
 //	func (u *User) RouteNotificationFor(channel string) string {
 //	    switch channel {
@@ -39,104 +37,142 @@ type Notification interface {
 //	    return ""
 //	}
 type Notifiable interface {
-	// RouteNotificationFor returns the delivery address for the given channel.
-	// For "mail" this is an email address; for "slack" a webhook URL;
-	// for "database" the model's string primary key.
+	// RouteNotificationFor returns the delivery address for channel: an
+	// email address for "mail", a webhook URL for "slack", the model's
+	// string primary key for "database".
 	RouteNotificationFor(channel string) string
 }
 
-// Channel is the interface every delivery driver must satisfy.
-// Register custom channels via Manager.Extend.
+// MailRoutable is an optional extension of Notifiable for notifiables
+// that should receive mail at more than one address. The mail channel
+// prefers this over RouteNotificationFor("mail") when both are
+// implemented.
+//
+//	func (u *User) RouteNotificationForMail(_ notification.Notification) []string {
+//	    return []string{u.Email, u.SecondaryEmail}
+//	}
+type MailRoutable interface {
+	// RouteNotificationForMail returns every address this notifiable
+	// should receive the given notification at.
+	RouteNotificationForMail(notification Notification) []string
+}
+
+// Channel is the interface every delivery driver must satisfy. Register
+// custom channels via Manager.Extend.
 type Channel interface {
 	// Name returns the unique identifier for this channel, e.g. "mail", "database", "slack".
 	Name() string
 
 	// Send delivers the notification to the notifiable target.
-	// Implementations should return a descriptive error on failure.
 	Send(notifiable Notifiable, notification Notification) error
+
+	// SendNow delivers the notification to the notifiable target,
+	// bypassing Manager.Send()'s queue routing entirely — even if the
+	// notification implements ShouldQueue. Used for channel-scoped
+	// direct dispatch: facades.Notification().Channel("mail").SendNow(u, n).
+	//
+	// For every built-in channel this is identical to Send — none of
+	// them have a queued mode of their own, only Manager does. The
+	// distinction exists for custom channels that might internally
+	// defer work (e.g. batching); implementations should treat SendNow
+	// as a hard synchronous guarantee regardless.
+	SendNow(notifiable Notifiable, notification Notification) error
 }
 
-// ResolvableChannel is an optional extension of Channel. A channel that
-// implements it can be dispatched via a queue safely — Resolve is called
-// on the calling goroutine (with live Notifiable/Notification values
-// still in scope) to produce plain, serializable data, and Deliver is
-// called later, potentially on a different goroutine or after a
-// queue round-trip, using only that plain data.
-//
-// This mirrors how contracts/mail's Mailable is handled: Envelope/
-// Content/Attachments are resolved eagerly before anything is queued,
-// so the queue never needs to carry a live interface value across a
-// serialization boundary. All three built-in channels (mail, database,
-// slack) implement this. A custom channel that only implements Channel
-// still works for synchronous Send(); Manager.Send() falls back to a
-// clear error if a ShouldQueue notification targets a channel that
-// doesn't implement ResolvableChannel, rather than silently losing data.
+// ResolvableChannel is an optional extension of Channel that makes a
+// channel safe to dispatch via the queue. Resolve runs synchronously,
+// while the live Notifiable/Notification are still in scope, and
+// produces plain, serializable data; Deliver later sends using only that
+// data, possibly on a different goroutine or after a queue round-trip.
+// All three built-in channels implement this. A channel that only
+// implements Channel still works for synchronous Send(), but
+// Manager.Send() returns a clear error if a ShouldQueue notification
+// targets it.
 type ResolvableChannel interface {
 	Channel
 
-	// Resolve computes what Deliver will need, using the live notifiable
-	// and notification. route is whatever RouteNotificationFor returned
-	// for this channel; payload is this channel's message type
-	// (MailMessage/a map/SlackMessage), JSON-marshaled.
+	// Resolve computes what Deliver will need. route is whatever
+	// RouteNotificationFor returned for this channel; payload is this
+	// channel's message type, JSON-marshaled.
 	Resolve(notifiable Notifiable, notification Notification) (route string, payload []byte, err error)
 
-	// Deliver sends using only the plain data Resolve produced — no
-	// access to the original Notifiable/Notification.
+	// Deliver sends using only the plain data Resolve produced.
 	Deliver(route string, payload []byte) error
 }
 
 // Manager is the top-level service bound in the container and exposed via
 // facades.Notification(). It dispatches notifications to the appropriate channels.
 type Manager interface {
-	// Send dispatches the notification to all channels returned by notification.Via().
-	// If the notification also implements ShouldQueue, it is dispatched via
-	// Goravel's queue; otherwise it is delivered synchronously.
+	// Send dispatches to all channels returned by notification.Via(). If
+	// the notification also implements ShouldQueue, it's dispatched via
+	// Goravel's queue; otherwise delivered synchronously.
 	Send(notifiable Notifiable, notification Notification) error
 
 	// SendNow always delivers synchronously, even if the notification
-	// implements ShouldQueue. Useful in tests or time-critical paths.
+	// implements ShouldQueue.
 	SendNow(notifiable Notifiable, notification Notification) error
 
-	// Extend registers a custom channel driver. Call this in your
-	// ServiceProvider.Boot() to add community or application-specific channels.
+	// Extend registers a custom channel driver, typically from
+	// ServiceProvider.Boot().
 	Extend(channel Channel)
 
-	// Channel returns the registered driver for name, or an error if not found.
-	Channel(name string) (Channel, error)
+	// Channel returns the registered driver for name, or nil (logging the
+	// lookup error) if no driver is registered under that name.
+	Channel(name string) Channel
+
+	// Route begins an on-demand notification: send to a raw address
+	// without a Notifiable model.
+	//
+	//	facades.Notification().Route("mail", "taylor@example.com").Notify(notification)
+	Route(channel, route string) OnDemandNotifiable
+}
+
+// OnDemandNotifiable is a Notifiable built on the fly by Manager.Route,
+// with no backing model. Chain Route to target more than one channel.
+type OnDemandNotifiable interface {
+	Notifiable
+
+	// Route adds another channel/address pair to this on-demand target.
+	Route(channel, route string) OnDemandNotifiable
+
+	// Notify sends to this target, respecting ShouldQueue.
+	Notify(notification Notification) error
+
+	// NotifyNow always delivers synchronously.
+	NotifyNow(notification Notification) error
 }
 
 // ---- Optional per-channel representation interfaces ----
-// A notification may implement any of these to control its per-channel payload.
-// If a notification does NOT implement the typed interface for a given channel,
-// the channel driver falls back to a sensible default representation.
+// A notification may implement any of these to control its per-channel
+// payload. If not implemented, the channel driver falls back to a
+// sensible default.
 
-// MailableNotification is optionally implemented by notifications that want to
-// control their mail representation explicitly.
+// MailableNotification lets a notification control its mail representation.
 type MailableNotification interface {
 	Notification
 	// ToMail returns the MailMessage used to build the outgoing email.
 	ToMail(notifiable Notifiable) MailMessage
 }
 
-// DatabaseNotification is optionally implemented by notifications that want to
-// control what data is persisted in the notifications table.
+// DatabaseNotification lets a notification control what's persisted in
+// the notifications table.
 type DatabaseNotification interface {
 	Notification
 	// ToDatabase returns the map that will be JSON-encoded into the data column.
 	ToDatabase(notifiable Notifiable) map[string]any
 }
 
-// SlackNotification is optionally implemented by notifications that want full
-// control over the Slack incoming-webhook payload.
+// SlackNotification lets a notification control the outgoing Slack
+// incoming-webhook payload.
 type SlackNotification interface {
 	Notification
 	// ToSlack returns the SlackMessage to POST to the webhook URL.
 	ToSlack(notifiable Notifiable) SlackMessage
 }
 
-// ShouldQueue is an optional marker interface. Notifications that implement it
-// are dispatched via Goravel's queue system instead of being sent inline.
-// The Manager respects this interface in Send() but ignores it in SendNow().
+// ShouldQueue is an optional marker interface. Notifications that
+// implement it are dispatched via Goravel's queue instead of inline.
+// Manager respects this in Send() but ignores it in SendNow().
 type ShouldQueue interface {
 	// OnQueue returns the queue name to use. Return "" for the default queue.
 	OnQueue() string
@@ -151,14 +187,14 @@ type ShouldQueue interface {
 type MailMessage struct {
 	// Subject is the email subject line. Defaults to the notification type name.
 	Subject string
-	// To overrides the recipient address. Leave empty to use RouteNotificationFor("mail").
-	To string
+	// To overrides the recipient address(es). Leave empty to use
+	// RouteNotificationFor("mail") / MailRoutable.
+	To []string
 	// From overrides the sender address. Leave empty to use the global mail.from config.
 	From string
 	// ReplyTo sets the Reply-To header.
 	ReplyTo string
 	// Content holds the plain-text and/or Html bodies.
-	// Mirrors the goravel/framework contracts/mail.Content struct.
 	Content MailContent
 	// Attachments is a list of absolute file paths to attach.
 	Attachments []string
@@ -166,23 +202,16 @@ type MailMessage struct {
 	Headers map[string]string
 }
 
-// MailContent mirrors contracts/mail.Content exactly so callers do not need to
-// import the framework mail package directly.
-//
-// CONFIRMED against real contracts/mail.Content this pass: it does NOT
-// have a single View field — it splits into HtmlView and TextView. The
-// original standalone package's MailContent (a single View string) was
-// built against an incorrect assumption about that shape; fixed here.
+// MailContent mirrors contracts/mail.Content so callers don't need to
+// import the mail package directly.
 type MailContent struct {
 	// Html is the HTML body.
 	Html string `json:"html"` //nolint:revive,stylecheck
 	// Text is the plain-text body.
 	Text string `json:"text"`
-	// HtmlView is a Goravel view template name rendered as the HTML body
-	// (alternative to Html).
+	// HtmlView is a Goravel view template rendered as the HTML body (alternative to Html).
 	HtmlView string `json:"html_view"`
-	// TextView is a Goravel view template name rendered as the
-	// plain-text body (alternative to Text).
+	// TextView is a Goravel view template rendered as the plain-text body (alternative to Text).
 	TextView string `json:"text_view"`
 	// With is the data passed to HtmlView/TextView.
 	With map[string]any `json:"with"`
