@@ -19,17 +19,6 @@ func init() {
 		"default": config.Env("NOTIFICATION_CHANNEL", "mail"),
 
 		"channels": map[string]any{
-			// slack contains settings for the Slack incoming-webhook channel.
-			"slack": map[string]any{
-				// webhook is the default Slack webhook URL, used when a
-				// notifiable does not implement RouteNotificationFor("slack").
-				"webhook": config.Env("SLACK_WEBHOOK_URL", ""),
-				// username overrides the bot name in Slack messages.
-				"username": config.Env("SLACK_USERNAME", "Goravel"),
-				// icon_emoji overrides the bot icon.
-				"icon_emoji": config.Env("SLACK_ICON_EMOJI", ":bell:"),
-			},
-
 			// database contains settings for the database channel.
 			"database": map[string]any{
 				// connection is the DB connection name (empty = default connection).

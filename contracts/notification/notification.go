@@ -1,24 +1,12 @@
-// Package notification defines the public contracts for Goravel's
-// notification module: what a notification is, what can receive one, the
-// channel driver interface, and the Manager service bound into the
-// container as facades.Notification().
 package notification
 
-// Notification is implemented by every notification struct.
-//
-//	type InvoicePaid struct{ Invoice *models.Invoice }
-//	func (n *InvoicePaid) Via(_ notification.Notifiable) []string { return []string{"mail", "database"} }
 type Notification interface {
-	// Via returns the channel names ("mail", "database", "slack") this
-	// notification should be delivered on for the given notifiable.
+	// Via returns the channel names this notification should be delivered on
+	// for the given notifiable recipient.
+	// Channel names: "mail", "database", "slack", etc.
 	Via(notifiable Notifiable) []string
 }
 
-// NotificationWithID is an optional extension of Notification for
-// notifications that need a stable, caller-assigned ID — e.g. to
-// deduplicate retries or correlate a persisted database record with an
-// external one. When not implemented, the database channel generates a
-// UUID.
 type NotificationWithID interface {
 	Notification
 	// ID returns a caller-assigned identifier. An empty string is treated
@@ -26,31 +14,13 @@ type NotificationWithID interface {
 	ID() string
 }
 
-// Notifiable is implemented by any model that can receive notifications.
-//
-//	func (u *User) RouteNotificationFor(channel string) string {
-//	    switch channel {
-//	    case "mail":     return u.Email
-//	    case "slack":    return u.SlackWebhookURL
-//	    case "database": return fmt.Sprintf("%d", u.ID)
-//	    }
-//	    return ""
-//	}
 type Notifiable interface {
 	// RouteNotificationFor returns the delivery address for channel: an
-	// email address for "mail", a webhook URL for "slack", the model's
-	// string primary key for "database".
+	// email address for "mail", the model's string primary key for
+	// "database".
 	RouteNotificationFor(channel string) string
 }
 
-// MailRoutable is an optional extension of Notifiable for notifiables
-// that should receive mail at more than one address. The mail channel
-// prefers this over RouteNotificationFor("mail") when both are
-// implemented.
-//
-//	func (u *User) RouteNotificationForMail(_ notification.Notification) []string {
-//	    return []string{u.Email, u.SecondaryEmail}
-//	}
 type MailRoutable interface {
 	// RouteNotificationForMail returns every address this notifiable
 	// should receive the given notification at.
@@ -60,7 +30,7 @@ type MailRoutable interface {
 // Channel is the interface every delivery driver must satisfy. Register
 // custom channels via Manager.Extend.
 type Channel interface {
-	// Name returns the unique identifier for this channel, e.g. "mail", "database", "slack".
+	// Name returns the unique identifier for this channel, e.g. "mail", "database".
 	Name() string
 
 	// Send delivers the notification to the notifiable target.
@@ -70,12 +40,6 @@ type Channel interface {
 	// bypassing Manager.Send()'s queue routing entirely — even if the
 	// notification implements ShouldQueue. Used for channel-scoped
 	// direct dispatch: facades.Notification().Channel("mail").SendNow(u, n).
-	//
-	// For every built-in channel this is identical to Send — none of
-	// them have a queued mode of their own, only Manager does. The
-	// distinction exists for custom channels that might internally
-	// defer work (e.g. batching); implementations should treat SendNow
-	// as a hard synchronous guarantee regardless.
 	SendNow(notifiable Notifiable, notification Notification) error
 }
 
@@ -84,7 +48,7 @@ type Channel interface {
 // while the live Notifiable/Notification are still in scope, and
 // produces plain, serializable data; Deliver later sends using only that
 // data, possibly on a different goroutine or after a queue round-trip.
-// All three built-in channels implement this. A channel that only
+// Both built-in channels implement this. A channel that only
 // implements Channel still works for synchronous Send(), but
 // Manager.Send() returns a clear error if a ShouldQueue notification
 // targets it.
@@ -143,31 +107,17 @@ type OnDemandNotifiable interface {
 }
 
 // ---- Optional per-channel representation interfaces ----
-// A notification may implement any of these to control its per-channel
-// payload. If not implemented, the channel driver falls back to a
-// sensible default.
 
-// MailableNotification lets a notification control its mail representation.
 type MailableNotification interface {
 	Notification
 	// ToMail returns the MailMessage used to build the outgoing email.
 	ToMail(notifiable Notifiable) MailMessage
 }
 
-// DatabaseNotification lets a notification control what's persisted in
-// the notifications table.
 type DatabaseNotification interface {
 	Notification
 	// ToDatabase returns the map that will be JSON-encoded into the data column.
 	ToDatabase(notifiable Notifiable) map[string]any
-}
-
-// SlackNotification lets a notification control the outgoing Slack
-// incoming-webhook payload.
-type SlackNotification interface {
-	Notification
-	// ToSlack returns the SlackMessage to POST to the webhook URL.
-	ToSlack(notifiable Notifiable) SlackMessage
 }
 
 // ShouldQueue is an optional marker interface. Notifications that
@@ -215,45 +165,4 @@ type MailContent struct {
 	TextView string `json:"text_view"`
 	// With is the data passed to HtmlView/TextView.
 	With map[string]any `json:"with"`
-}
-
-// SlackMessage is a full incoming-webhook payload.
-// See https://api.slack.com/messaging/webhooks for field semantics.
-type SlackMessage struct {
-	// Text is the fallback / primary message text.
-	Text string
-	// Username overrides the bot display name.
-	Username string
-	// IconEmoji overrides the bot icon, e.g. ":robot_face:".
-	IconEmoji string
-	// Channel overrides the target channel, e.g. "#alerts".
-	Channel string
-	// Attachments are legacy Slack attachment blocks.
-	Attachments []SlackAttachment
-}
-
-// SlackAttachment is a single Slack message attachment.
-type SlackAttachment struct {
-	// Title is the bold attachment title.
-	Title string
-	// Text is the attachment body text.
-	Text string
-	// Color is "good", "warning", "danger", or a hex string like "#36a64f".
-	Color string
-	// Fields are key-value pairs displayed in a table inside the attachment.
-	Fields []SlackField
-	// Footer is small text shown at the bottom of the attachment.
-	Footer string
-	// Timestamp is a Unix timestamp shown in the attachment footer.
-	Timestamp int64
-}
-
-// SlackField is a single key-value pair inside a SlackAttachment.
-type SlackField struct {
-	// Title is the field label.
-	Title string
-	// Value is the field content (supports Slack mrkdwn).
-	Value string
-	// Short controls whether the field appears side-by-side with other short fields.
-	Short bool
 }

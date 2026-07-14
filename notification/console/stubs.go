@@ -1,6 +1,5 @@
 package console
 
-// Stubs holds the raw templates used by make: commands in this package.
 type Stubs struct{}
 
 func (r Stubs) Notification() string {

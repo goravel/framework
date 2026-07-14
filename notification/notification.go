@@ -1,7 +1,3 @@
-// Package notification provides the Manager implementation for Goravel's
-// notification module: dispatching to registered channels synchronously
-// or via the queue. See job.go for how queued dispatch stays safe across
-// a real queue round-trip.
 package notification
 
 import (

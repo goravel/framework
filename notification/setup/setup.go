@@ -19,9 +19,6 @@ func main() {
 	facadesPackage := setup.Paths().Facades().Package()
 	env := `
 NOTIFICATION_CHANNEL=mail
-SLACK_WEBHOOK_URL=
-SLACK_USERNAME=Goravel
-SLACK_ICON_EMOJI=:bell:
 NOTIFICATION_DB_CONNECTION=
 `
 

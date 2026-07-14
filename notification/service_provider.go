@@ -53,7 +53,6 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		manager := NewManager(logger, q)
 		manager.Extend(channels.NewMailChannel(mail, logger))
 		manager.Extend(channels.NewDatabaseChannel(orm, logger, config))
-		manager.Extend(channels.NewSlackChannel(logger, config))
 
 		return manager, nil
 	})

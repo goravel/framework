@@ -1,7 +1,3 @@
-// Package channels contains the built-in delivery drivers for Goravel's
-// notification module. Each channel splits into Resolve (live values →
-// plain data) and Deliver (plain data → actual send), with Send as a
-// thin wrapper of the two, so it can be dispatched via the queue safely.
 package channels
 
 import (

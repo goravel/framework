@@ -233,10 +233,10 @@ func TestManager_Route_RouteNotificationForReturnsConfiguredAddress(t *testing.T
 	logger := mocklog.NewLog(t)
 	mgr := notification.NewManager(logger, nil)
 
-	target := mgr.Route("mail", "user@example.com").Route("slack", "https://hooks.slack.com/x")
+	target := mgr.Route("mail", "user@example.com").Route("sms", "+15551234567")
 
 	assert.Equal(t, "user@example.com", target.RouteNotificationFor("mail"))
-	assert.Equal(t, "https://hooks.slack.com/x", target.RouteNotificationFor("slack"))
+	assert.Equal(t, "+15551234567", target.RouteNotificationFor("sms"))
 	assert.Equal(t, "", target.RouteNotificationFor("database"))
 }
 
