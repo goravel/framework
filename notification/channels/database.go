@@ -12,6 +12,7 @@ import (
 	contractsconfig "github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/errors"
 )
 
 // DatabaseNotificationModel is the ORM model written to the notifications
@@ -80,7 +81,7 @@ func (c *DatabaseChannel) Resolve(
 ) (string, []byte, error) {
 	notifiableID := notifiable.RouteNotificationFor("database")
 	if notifiableID == "" {
-		return "", nil, fmt.Errorf("database channel: %T.RouteNotificationFor(\"database\") returned empty ID", notifiable)
+		return "", nil, errors.NotificationDatabaseEmptyRoute.Args(notifiable)
 	}
 
 	var data map[string]any
@@ -92,7 +93,7 @@ func (c *DatabaseChannel) Resolve(
 
 	dataJSON, err := json.Marshal(data)
 	if err != nil {
-		return "", nil, fmt.Errorf("database channel: failed to marshal payload for %T: %w", n, err)
+		return "", nil, errors.NotificationDatabaseMarshalDataFailed.Args(n, err)
 	}
 
 	var id string
@@ -112,7 +113,7 @@ func (c *DatabaseChannel) Resolve(
 
 	payload, err := json.Marshal(record)
 	if err != nil {
-		return "", nil, fmt.Errorf("database channel: failed to marshal record: %w", err)
+		return "", nil, errors.NotificationDatabaseMarshalRecordFailed.Args(err)
 	}
 
 	return notifiableID, payload, nil
@@ -125,7 +126,7 @@ func (c *DatabaseChannel) Deliver(route string, payload []byte) error {
 
 	var record resolvedRecord
 	if err := json.Unmarshal(payload, &record); err != nil {
-		return fmt.Errorf("database channel: failed to unmarshal record: %w", err)
+		return errors.NotificationDatabaseUnmarshalRecordFailed.Args(err)
 	}
 
 	model := &DatabaseNotificationModel{
@@ -146,7 +147,7 @@ func (c *DatabaseChannel) Deliver(route string, payload []byte) error {
 	}
 
 	if err := o.Query().Create(model); err != nil {
-		return fmt.Errorf("database channel: failed to insert notification record: %w", err)
+		return errors.NotificationDatabaseInsertFailed.Args(err)
 	}
 
 	c.log.Debugf("notifications: persisted %s to database (id=%s)", record.Type, record.ID)

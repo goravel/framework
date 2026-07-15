@@ -38,10 +38,6 @@ func (r *NotificationMakeCommand) Extend() command.Extend {
 }
 
 func (r *NotificationMakeCommand) Handle(ctx console.Context) error {
-	// NOTE: support.Config.Paths needs a Notifications field added
-	// (mirroring Mails string `// "app/mails"`) before this compiles —
-	// not part of this draft, add it alongside the Paths struct in
-	// support/support.go (or wherever Mails is declared).
 	m, err := supportconsole.NewMake(ctx, "notification", ctx.Argument(0), support.Config.Paths.Notifications)
 	if err != nil {
 		ctx.Error(err.Error())

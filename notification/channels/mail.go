@@ -1,3 +1,7 @@
+// Package channels contains the built-in delivery drivers for Goravel's
+// notification module. Each channel splits into Resolve (live values →
+// plain data) and Deliver (plain data → actual send), with Send as a
+// thin wrapper of the two, so it can be dispatched via the queue safely.
 package channels
 
 import (
@@ -9,6 +13,7 @@ import (
 
 	"github.com/goravel/framework/contracts/log"
 	contractsmail "github.com/goravel/framework/contracts/mail"
+	"github.com/goravel/framework/errors"
 )
 
 // MailChannel delivers notifications via Goravel's mail facade.
@@ -68,7 +73,7 @@ func (c *MailChannel) Resolve(
 
 	payload, err := json.Marshal(msg)
 	if err != nil {
-		return "", nil, fmt.Errorf("mail channel: failed to marshal payload for %T: %w", n, err)
+		return "", nil, errors.NotificationMailMarshalPayloadFailed.Args(n, err)
 	}
 
 	return strings.Join(addresses, ","), payload, nil
@@ -89,7 +94,7 @@ func (c *MailChannel) resolveAddresses(
 
 	to := notifiable.RouteNotificationFor("mail")
 	if to == "" {
-		return nil, fmt.Errorf("mail channel: %T.RouteNotificationFor(\"mail\") returned empty address", notifiable)
+		return nil, errors.NotificationMailEmptyRoute.Args(notifiable)
 	}
 	return []string{to}, nil
 }
@@ -103,7 +108,7 @@ func (c *MailChannel) Deliver(route string, payload []byte) error {
 
 	var msg contractsnotification.MailMessage
 	if err := json.Unmarshal(payload, &msg); err != nil {
-		return fmt.Errorf("mail channel: failed to unmarshal payload: %w", err)
+		return errors.NotificationMailUnmarshalPayloadFailed.Args(err)
 	}
 
 	recipients := msg.To
@@ -137,7 +142,7 @@ func (c *MailChannel) Deliver(route string, payload []byte) error {
 	}
 
 	if err := c.mail.Send(mailable); err != nil {
-		return fmt.Errorf("mail channel: failed to send: %w", err)
+		return errors.NotificationMailSendFailed.Args(err)
 	}
 	return nil
 }
