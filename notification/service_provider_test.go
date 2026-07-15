@@ -14,6 +14,7 @@ import (
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mockslog "github.com/goravel/framework/mocks/log"
 	mocksmail "github.com/goravel/framework/mocks/mail"
+	mocksnotification "github.com/goravel/framework/mocks/notification"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
 )
 
@@ -192,5 +193,24 @@ func TestServiceProviderBoot(t *testing.T) {
 		assert.NotPanics(t, func() {
 			provider.Boot(app)
 		})
+	})
+
+	t.Run("notification facade is not a *Manager", func(t *testing.T) {
+		app := mocksfoundation.NewApplication(t)
+		q := mocksqueue.NewQueue(t)
+		// Satisfies contractsnotification.Manager but isn't the
+		// concrete *Manager type registerJobs type-asserts against —
+		// exercises the "Notification Facade is not a *Manager" branch,
+		// which nothing else in this file reaches.
+		notAManager := mocksnotification.NewManager(t)
+		app.EXPECT().Commands(mock.Anything).Once()
+		app.EXPECT().MakeQueue().Return(q).Once()
+		app.EXPECT().MakeNotification().Return(notAManager).Once()
+
+		assert.NotPanics(t, func() {
+			provider.Boot(app)
+		})
+		// q.Register should never be reached on this branch.
+		q.AssertNotCalled(t, "Register", mock.Anything)
 	})
 }

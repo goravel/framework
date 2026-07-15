@@ -272,3 +272,41 @@ func TestManager_Route_Notify_RespectsShouldQueue(t *testing.T) {
 	err := mgr.Route("a", "route-a").Notify(n)
 	assert.NoError(t, err)
 }
+
+// TestManager_Send_NonQueueableNotification_UsesDispatchSync exercises
+// Send()'s fallthrough branch directly — every other Send() test in this
+// file uses a ShouldQueue notification, leaving the plain-notification
+// path (which SendNow's own tests reach, but Send() itself never had a
+// direct test for) uncovered.
+func TestManager_Send_NonQueueableNotification_UsesDispatchSync(t *testing.T) {
+	logger := mocklog.NewLog(t)
+	logger.On("Debugf", mock.Anything, mock.Anything).Maybe()
+
+	mgr := notification.NewManager(logger, nil)
+	ch := &fakeChannel{name: "a"}
+	mgr.Extend(ch)
+
+	n := &fakeNotification{channels: []string{"a"}}
+	err := mgr.Send(&fakeNotifiable{}, n)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 1, ch.calls)
+}
+
+func TestManager_Send_QueuedNotification_DispatchError_ReturnsError(t *testing.T) {
+	logger := mocklog.NewLog(t)
+
+	q := mockqueue.NewQueue(t)
+	pending := mockqueue.NewPendingJob(t)
+	q.EXPECT().Job(mock.AnythingOfType("*notification.DispatchJob"), mock.Anything).Return(pending).Once()
+	pending.EXPECT().Dispatch().Return(errors.New("queue connection refused")).Once()
+
+	mgr := notification.NewManager(logger, q)
+	mgr.Extend(&fakeResolvableChannel{name: "a"})
+
+	n := &shouldQueueNotification{channels: []string{"a"}}
+	err := mgr.Send(&fakeNotifiable{}, n)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "queue connection refused")
+}

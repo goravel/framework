@@ -239,3 +239,46 @@ func TestDatabaseChannel_SendNow_BehavesIdenticallyToSend(t *testing.T) {
 	assert.NoError(t, err)
 	query.AssertExpectations(t)
 }
+
+func TestDatabaseNotificationModel_TableName(t *testing.T) {
+	assert.Equal(t, "notifications", channels.DatabaseNotificationModel{}.TableName())
+}
+
+// unmarshalableNotification implements DatabaseNotification but returns
+// data json.Marshal can't encode — deterministically exercises Resolve's
+// otherwise-unreachable marshal-error branch.
+type unmarshalableNotification struct{}
+
+func (unmarshalableNotification) Via(_ contractsnotification.Notifiable) []string {
+	return []string{"database"}
+}
+func (unmarshalableNotification) ToDatabase(_ contractsnotification.Notifiable) map[string]any {
+	return map[string]any{"bad": make(chan int)} // channels aren't JSON-marshalable
+}
+
+func TestDatabaseChannel_Resolve_ReturnsError_WhenDataNotMarshalable(t *testing.T) {
+	ch := channels.NewDatabaseChannel(nil, nil, nil)
+
+	_, _, err := ch.Resolve(&dbNotifiable{id: "1"}, unmarshalableNotification{})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to marshal payload")
+}
+
+// ---- Deliver-specific branch coverage ----
+//
+// Deliver is exported and callable directly (DispatchJob does exactly
+// this on the queued path), so these exercise branches Resolve→Deliver
+// via Send() never reaches.
+
+func TestDatabaseChannel_Deliver_NoOp_WhenEmptyRoute(t *testing.T) {
+	ch := channels.NewDatabaseChannel(nil, nil, nil) // no orm call expected
+	err := ch.Deliver("", []byte(`{}`))
+	assert.NoError(t, err)
+}
+
+func TestDatabaseChannel_Deliver_ReturnsError_WhenMalformedPayload(t *testing.T) {
+	ch := channels.NewDatabaseChannel(nil, nil, nil) // no orm call expected
+	err := ch.Deliver("1", []byte(`{not valid json`))
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to unmarshal")
+}

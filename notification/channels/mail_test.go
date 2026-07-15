@@ -1,6 +1,7 @@
 package channels_test
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -267,4 +268,140 @@ func TestMailChannel_SendNow_BehavesIdenticallyToSend(t *testing.T) {
 	err := ch.SendNow(notifiable, n)
 	assert.NoError(t, err)
 	mailer.AssertExpectations(t)
+}
+
+// TestMailChannel_Send_MailableExposesAllContractFields exercises every
+// accessor on the internal NotificationMailable adapter (Envelope,
+// Content, Attachments, Headers, Queue) directly — mockmail.NewMail's
+// Send expectation intercepts before the real mail package would ever
+// call these itself, so nothing else in this test file reaches them.
+func TestMailChannel_Send_MailableExposesAllContractFields(t *testing.T) {
+	logger := mocklog.NewLog(t)
+	mailer := mockmail.NewMail(t)
+
+	var captured contractsmail.Mailable
+	mailer.On("Send", mock.AnythingOfType("*channels.NotificationMailable")).
+		Run(func(args mock.Arguments) {
+			captured = args.Get(0).(contractsmail.Mailable)
+		}).
+		Return(nil).Once()
+
+	ch := channels.NewMailChannel(mailer, logger)
+	notifiable := &mailNotifiable{addr: "user@example.com"}
+	n := &richNotification{
+		msg: contractsnotification.MailMessage{
+			Subject:     "Invoice Paid",
+			Content:     contractsnotification.MailContent{Text: "paid"},
+			Attachments: []string{"invoice.pdf"},
+			Headers:     map[string]string{"X-Test": "1"},
+		},
+	}
+
+	err := ch.Send(notifiable, n)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, captured.Envelope())
+	assert.Equal(t, "Invoice Paid", captured.Envelope().Subject)
+	assert.NotNil(t, captured.Content())
+	assert.Equal(t, "paid", captured.Content().Text)
+	assert.Equal(t, []string{"invoice.pdf"}, captured.Attachments())
+	assert.Equal(t, map[string]string{"X-Test": "1"}, captured.Headers())
+	assert.Nil(t, captured.Queue())
+}
+
+// ---- Deliver-specific branch coverage ----
+//
+// Deliver is exported and callable directly (DispatchJob does exactly
+// this on the queued path), so these exercise branches Send()/Resolve()
+// never reach: an empty route, malformed payload JSON, the
+// route-as-fallback-recipient path when To is empty AND route contains
+// multiple comma-separated addresses, the default-subject fallback, and
+// an explicit From override.
+
+func TestMailChannel_Deliver_NoOp_WhenEmptyRoute(t *testing.T) {
+	logger := mocklog.NewLog(t)
+	mailer := mockmail.NewMail(t) // no calls expected
+
+	ch := channels.NewMailChannel(mailer, logger)
+	err := ch.Deliver("", []byte(`{}`))
+	assert.NoError(t, err)
+}
+
+func TestMailChannel_Deliver_ReturnsError_WhenMalformedPayload(t *testing.T) {
+	logger := mocklog.NewLog(t)
+	mailer := mockmail.NewMail(t) // no calls expected
+
+	ch := channels.NewMailChannel(mailer, logger)
+	err := ch.Deliver("user@example.com", []byte(`{not valid json`))
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to unmarshal")
+}
+
+func TestMailChannel_Deliver_UsesRouteAsRecipients_WhenToEmpty(t *testing.T) {
+	logger := mocklog.NewLog(t)
+	mailer := mockmail.NewMail(t)
+
+	var captured contractsmail.Mailable
+	mailer.On("Send", mock.AnythingOfType("*channels.NotificationMailable")).
+		Run(func(args mock.Arguments) {
+			captured = args.Get(0).(contractsmail.Mailable)
+		}).
+		Return(nil).Once()
+
+	ch := channels.NewMailChannel(mailer, logger)
+	payload, err := json.Marshal(contractsnotification.MailMessage{
+		Content: contractsnotification.MailContent{Text: "hi"},
+	})
+	assert.NoError(t, err)
+
+	err = ch.Deliver("a@example.com,b@example.com", payload)
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"a@example.com", "b@example.com"}, captured.Envelope().To)
+}
+
+func TestMailChannel_Deliver_DefaultsSubject_WhenEmpty(t *testing.T) {
+	logger := mocklog.NewLog(t)
+	mailer := mockmail.NewMail(t)
+
+	var captured contractsmail.Mailable
+	mailer.On("Send", mock.AnythingOfType("*channels.NotificationMailable")).
+		Run(func(args mock.Arguments) {
+			captured = args.Get(0).(contractsmail.Mailable)
+		}).
+		Return(nil).Once()
+
+	ch := channels.NewMailChannel(mailer, logger)
+	payload, err := json.Marshal(contractsnotification.MailMessage{
+		Content: contractsnotification.MailContent{Text: "hi"},
+		// Subject deliberately left empty.
+	})
+	assert.NoError(t, err)
+
+	err = ch.Deliver("user@example.com", payload)
+	assert.NoError(t, err)
+	assert.Equal(t, "Notification", captured.Envelope().Subject)
+}
+
+func TestMailChannel_Deliver_SetsFrom_WhenSpecified(t *testing.T) {
+	logger := mocklog.NewLog(t)
+	mailer := mockmail.NewMail(t)
+
+	var captured contractsmail.Mailable
+	mailer.On("Send", mock.AnythingOfType("*channels.NotificationMailable")).
+		Run(func(args mock.Arguments) {
+			captured = args.Get(0).(contractsmail.Mailable)
+		}).
+		Return(nil).Once()
+
+	ch := channels.NewMailChannel(mailer, logger)
+	payload, err := json.Marshal(contractsnotification.MailMessage{
+		Subject: "Hi",
+		Content: contractsnotification.MailContent{Text: "hi"},
+		From:    "billing@example.com",
+	})
+	assert.NoError(t, err)
+
+	err = ch.Deliver("user@example.com", payload)
+	assert.NoError(t, err)
+	assert.Equal(t, "billing@example.com", captured.Envelope().From.Address)
 }
