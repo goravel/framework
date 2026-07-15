@@ -1,7 +1,3 @@
-// Package notification provides the Manager implementation for Goravel's
-// notification module: dispatching to registered channels synchronously
-// or via the queue. See job.go for how queued dispatch stays safe across
-// a real queue round-trip.
 package notification
 
 import (
@@ -14,8 +10,6 @@ import (
 )
 
 // Manager is the concrete implementation of contracts/notification.Manager.
-// It is instantiated once by the ServiceProvider and bound into Goravel's
-// service container under binding.Notification.
 type Manager struct {
 	mu       sync.RWMutex
 	channels map[string]contractsnotification.Channel
@@ -23,9 +17,6 @@ type Manager struct {
 	queue    queue.Queue // may be nil when queue is not configured
 }
 
-// NewManager constructs a Manager. The queue argument may be nil;
-// notifications that implement ShouldQueue will fall back to synchronous
-// delivery in that case, same as the original package.
 func NewManager(logger log.Log, q queue.Queue) *Manager {
 	return &Manager{
 		channels: make(map[string]contractsnotification.Channel),
@@ -52,8 +43,6 @@ func (m *Manager) Channel(name string) contractsnotification.Channel {
 	return ch
 }
 
-// Route begins an on-demand notification: send to a raw address without
-// a backing Notifiable model.
 func (m *Manager) Route(channel string, route any) contractsnotification.OnDemandNotifiable {
 	return &onDemandNotifiable{
 		manager: m,
@@ -78,11 +67,6 @@ func (m *Manager) SendNow(
 	return m.dispatchSync(notifiable, n)
 }
 
-// dispatchSync iterates over Via() channels and calls each driver's Send.
-// Errors from individual channels are logged and joined via errors.Join
-// (not discarded after the first) so a caller can inspect every failure,
-// not just whichever channel happened to fail first — while still
-// attempting every channel regardless of earlier failures.
 func (m *Manager) dispatchSync(
 	notifiable contractsnotification.Notifiable,
 	n contractsnotification.Notification,
@@ -125,10 +109,12 @@ func (m *Manager) dispatchSync(
 }
 
 // dispatchQueued resolves each channel's payload eagerly (while notifiable
-// and n are still live values on this goroutine) and queues the resolved,
-// plain data — not the original job design. See job.go for the full
-// rationale; short version: the original sendNotificationJob held
-// unexported live interface fields that don't survive real queue drivers.
+// and n are still live values on this goroutine) and queues only the
+// resulting plain, serializable (channel, route, payload) data — never
+// the live notifiable/notification themselves. See job.go for why:
+// short version, unexported live interface fields don't survive a real
+// queue driver round-trip, since DispatchJob is looked up and re-invoked
+// from a registry rather than passed the original Go values directly.
 //
 // NotificationWithAfterSending is NOT called on this path: by the time
 // DispatchJob.Handle actually delivers (possibly in a different process),

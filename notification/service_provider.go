@@ -46,8 +46,8 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		}
 
 		manager := NewManager(logger, q)
-		manager.Extend(channels.NewMailChannel(mail, logger))
-		manager.Extend(channels.NewDatabaseChannel(orm, logger))
+		manager.Extend(channels.NewMailChannel(mail))
+		manager.Extend(channels.NewDatabaseChannel(orm))
 
 		return manager, nil
 	})

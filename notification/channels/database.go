@@ -10,13 +10,9 @@ import (
 	contractsnotification "github.com/goravel/framework/contracts/notification"
 
 	"github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/errors"
 )
 
-// DatabaseNotificationModel is the ORM model written to the notifications
-// table. Column shape matches the migration in
-// notification/console/table_command.go — keep both in sync.
 type DatabaseNotificationModel struct {
 	ID             string     `gorm:"primaryKey;type:varchar(36);column:id"`
 	Type           string     `gorm:"not null;column:type"`
@@ -30,31 +26,17 @@ type DatabaseNotificationModel struct {
 
 func (DatabaseNotificationModel) TableName() string { return "notifications" }
 
-// DatabaseChannel persists notifications to the database. Connection
-// selection is per-notification (see contracts/notification.DatabaseRoutable),
-// not global config — mirrors ShouldQueue's OnConnection() pattern.
 type DatabaseChannel struct {
 	orm orm.Orm
-	log log.Log
 }
 
-func NewDatabaseChannel(o orm.Orm, logger log.Log) *DatabaseChannel {
-	return &DatabaseChannel{orm: o, log: logger}
+func NewDatabaseChannel(o orm.Orm) *DatabaseChannel {
+	return &DatabaseChannel{orm: o}
 }
 
 func (c *DatabaseChannel) Name() string { return "database" }
 
 func (c *DatabaseChannel) Send(
-	notifiable contractsnotification.Notifiable,
-	n contractsnotification.Notification,
-) error {
-	return c.SendNow(notifiable, n)
-}
-
-// SendNow is identical to Send — DatabaseChannel has no queued mode of
-// its own, only Manager does. Exists so callers can bypass Manager's
-// queue routing entirely: facades.Notification().Channel("database").SendNow(u, n).
-func (c *DatabaseChannel) SendNow(
 	notifiable contractsnotification.Notifiable,
 	n contractsnotification.Notification,
 ) error {

@@ -225,53 +225,6 @@ func (_c *ResolvableChannel_Send_Call) RunAndReturn(run func(notification.Notifi
 	return _c
 }
 
-// SendNow provides a mock function with given fields: notifiable, _a1
-func (_m *ResolvableChannel) SendNow(notifiable notification.Notifiable, _a1 notification.Notification) error {
-	ret := _m.Called(notifiable, _a1)
-
-	if len(ret) == 0 {
-		panic("no return value specified for SendNow")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(notification.Notifiable, notification.Notification) error); ok {
-		r0 = rf(notifiable, _a1)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// ResolvableChannel_SendNow_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SendNow'
-type ResolvableChannel_SendNow_Call struct {
-	*mock.Call
-}
-
-// SendNow is a helper method to define mock.On call
-//   - notifiable notification.Notifiable
-//   - _a1 notification.Notification
-func (_e *ResolvableChannel_Expecter) SendNow(notifiable interface{}, _a1 interface{}) *ResolvableChannel_SendNow_Call {
-	return &ResolvableChannel_SendNow_Call{Call: _e.mock.On("SendNow", notifiable, _a1)}
-}
-
-func (_c *ResolvableChannel_SendNow_Call) Run(run func(notifiable notification.Notifiable, _a1 notification.Notification)) *ResolvableChannel_SendNow_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(notification.Notifiable), args[1].(notification.Notification))
-	})
-	return _c
-}
-
-func (_c *ResolvableChannel_SendNow_Call) Return(_a0 error) *ResolvableChannel_SendNow_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *ResolvableChannel_SendNow_Call) RunAndReturn(run func(notification.Notifiable, notification.Notification) error) *ResolvableChannel_SendNow_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // NewResolvableChannel creates a new instance of ResolvableChannel. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewResolvableChannel(t interface {

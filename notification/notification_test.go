@@ -14,6 +14,7 @@ import (
 	mocksmail "github.com/goravel/framework/mocks/mail"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
 	"github.com/goravel/framework/notification/channels"
+	"github.com/goravel/framework/notification/mailmessage"
 )
 
 // ---- Fakes ----
@@ -44,9 +45,6 @@ func (c *fakeChannel) Send(_ contractsnotification.Notifiable, _ contractsnotifi
 	c.calls++
 	return c.sendErr
 }
-func (c *fakeChannel) SendNow(notifiable contractsnotification.Notifiable, n contractsnotification.Notification) error {
-	return c.Send(notifiable, n)
-}
 
 // shouldQueueNotification implements ShouldQueue with configurable
 // channels, for exercising dispatchQueued's error paths.
@@ -76,9 +74,6 @@ type deliveredCall struct {
 func (c *fakeResolvableChannel) Name() string { return c.name }
 func (c *fakeResolvableChannel) Send(_ contractsnotification.Notifiable, _ contractsnotification.Notification) error {
 	return nil
-}
-func (c *fakeResolvableChannel) SendNow(notifiable contractsnotification.Notifiable, n contractsnotification.Notification) error {
-	return c.Send(notifiable, n)
 }
 func (c *fakeResolvableChannel) Resolve(_ contractsnotification.Notifiable, _ contractsnotification.Notification) (string, []byte, error) {
 	if c.resolveErr != nil {
@@ -152,7 +147,7 @@ func (n *queueableNotification) Via(_ contractsnotification.Notifiable) []string
 	return []string{"mail"}
 }
 func (n *queueableNotification) ToMail(_ contractsnotification.Notifiable) contractsnotification.MailMessage {
-	return contractsnotification.NewMailMessage().
+	return mailmessage.NewMailMessage().
 		Subject("Queued").
 		Html("<p>hi</p>").
 		Build()
@@ -558,19 +553,19 @@ func TestDispatchJob_Handle_PropagatesDeliverError(t *testing.T) {
 
 // ---- Full queue round-trip, using the real mail channel ----
 
-// TestManager_Send_QueuedNotification_SurvivesWorkerRoundTrip is the test
-// the original standalone package's design would have failed. It
-// deliberately does NOT call Handle() on the exact *DispatchJob instance
-// Manager.Send() constructs and passes to queue.Job() — that would prove
-// nothing, since the old buggy design (unexported live
-// manager/notifiable/notification fields) would also "work" if you just
-// reuse the same live Go object. Instead it builds a SEPARATE DispatchJob
-// backed by a SEPARATE Manager (simulating a different process — a real
-// `artisan queue:work` worker booting its own app) and calls Handle on
-// that one, using only the []queue.Arg captured from the Job() call. If
-// delivery still happens, the fix genuinely doesn't depend on object
-// identity surviving a serialization boundary — only on the plain
-// (channel, route, payload) data actually making it through.
+// TestManager_Send_QueuedNotification_SurvivesWorkerRoundTrip guards
+// against a design that only appears to work: it deliberately does NOT
+// call Handle() on the exact *DispatchJob instance Manager.Send()
+// constructs and passes to queue.Job() — that would prove nothing, since
+// a design relying on unexported live manager/notifiable/notification
+// fields would also "work" if you just reuse the same live Go object.
+// Instead it builds a SEPARATE DispatchJob backed by a SEPARATE Manager
+// (simulating a different process — a real `artisan queue:work` worker
+// booting its own app) and calls Handle on that one, using only the
+// []queue.Arg captured from the Job() call. If delivery still happens,
+// the design genuinely doesn't depend on object identity surviving a
+// serialization boundary — only on the plain (channel, route, payload)
+// data actually making it through.
 func TestManager_Send_QueuedNotification_SurvivesWorkerRoundTrip(t *testing.T) {
 	logger := mockslog.NewLog(t)
 
@@ -594,7 +589,7 @@ func TestManager_Send_QueuedNotification_SurvivesWorkerRoundTrip(t *testing.T) {
 	dispatchPending.EXPECT().Dispatch().Return(nil).Once()
 
 	dispatchMgr := NewManager(logger, dispatchQueue)
-	dispatchMgr.Extend(channels.NewMailChannel(dispatchMailer, logger))
+	dispatchMgr.Extend(channels.NewMailChannel(dispatchMailer))
 
 	err := dispatchMgr.Send(queueTestNotifiable{}, &queueableNotification{})
 	assert.NoError(t, err)
@@ -608,7 +603,7 @@ func TestManager_Send_QueuedNotification_SurvivesWorkerRoundTrip(t *testing.T) {
 		Return(nil).Once()
 
 	workerMgr := NewManager(logger, nil)
-	workerMgr.Extend(channels.NewMailChannel(workerMailer, logger))
+	workerMgr.Extend(channels.NewMailChannel(workerMailer))
 
 	workerJob := NewDispatchJob(workerMgr)
 
@@ -639,7 +634,7 @@ func TestManager_Send_QueuedNotification_PassesConnectionAndQueue(t *testing.T) 
 	pending.EXPECT().Dispatch().Return(nil).Once()
 
 	mgr := NewManager(logger, q)
-	mgr.Extend(channels.NewMailChannel(mailer, logger))
+	mgr.Extend(channels.NewMailChannel(mailer))
 
 	err := mgr.Send(queueTestNotifiable{}, &queueableNotificationWithRouting{})
 	assert.NoError(t, err)

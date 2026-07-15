@@ -10,7 +10,6 @@ import (
 
 	contractsnotification "github.com/goravel/framework/contracts/notification"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
-	mockslog "github.com/goravel/framework/mocks/log"
 	"github.com/goravel/framework/notification/channels"
 )
 
@@ -65,7 +64,7 @@ func (unmarshalableNotification) ToDatabase(_ contractsnotification.Notifiable) 
 // ---- Tests ----
 
 func TestDatabaseChannel_Name(t *testing.T) {
-	ch := channels.NewDatabaseChannel(nil, nil)
+	ch := channels.NewDatabaseChannel(nil)
 	assert.Equal(t, "database", ch.Name())
 }
 
@@ -74,7 +73,6 @@ func TestDatabaseNotificationModel_TableName(t *testing.T) {
 }
 
 func TestDatabaseChannel_Send_InsertsRecord_WithDefaultPayload(t *testing.T) {
-	logger := mockslog.NewLog(t)
 
 	query := mocksorm.NewQuery(t)
 	query.EXPECT().Create(mock.AnythingOfType("*channels.DatabaseNotificationModel")).
@@ -83,7 +81,7 @@ func TestDatabaseChannel_Send_InsertsRecord_WithDefaultPayload(t *testing.T) {
 	o := mocksorm.NewOrm(t)
 	o.EXPECT().Query().Return(query).Once()
 
-	ch := channels.NewDatabaseChannel(o, logger)
+	ch := channels.NewDatabaseChannel(o)
 	notifiable := &dbNotifiable{id: "42"}
 	n := &dbNotification{}
 
@@ -92,7 +90,6 @@ func TestDatabaseChannel_Send_InsertsRecord_WithDefaultPayload(t *testing.T) {
 }
 
 func TestDatabaseChannel_Send_InsertsRecord_WithCustomPayload(t *testing.T) {
-	logger := mockslog.NewLog(t)
 
 	query := mocksorm.NewQuery(t)
 	query.EXPECT().Create(mock.MatchedBy(func(r *channels.DatabaseNotificationModel) bool {
@@ -102,7 +99,7 @@ func TestDatabaseChannel_Send_InsertsRecord_WithCustomPayload(t *testing.T) {
 	o := mocksorm.NewOrm(t)
 	o.EXPECT().Query().Return(query).Once()
 
-	ch := channels.NewDatabaseChannel(o, logger)
+	ch := channels.NewDatabaseChannel(o)
 	notifiable := &dbNotifiable{id: "42"}
 	n := &richDbNotification{}
 
@@ -111,7 +108,6 @@ func TestDatabaseChannel_Send_InsertsRecord_WithCustomPayload(t *testing.T) {
 }
 
 func TestDatabaseChannel_Send_UsesCallerAssignedID_WhenNotificationWithID(t *testing.T) {
-	logger := mockslog.NewLog(t)
 
 	query := mocksorm.NewQuery(t)
 	query.EXPECT().Create(mock.MatchedBy(func(r *channels.DatabaseNotificationModel) bool {
@@ -121,7 +117,7 @@ func TestDatabaseChannel_Send_UsesCallerAssignedID_WhenNotificationWithID(t *tes
 	o := mocksorm.NewOrm(t)
 	o.EXPECT().Query().Return(query).Once()
 
-	ch := channels.NewDatabaseChannel(o, logger)
+	ch := channels.NewDatabaseChannel(o)
 	notifiable := &dbNotifiable{id: "42"}
 	n := &dbNotification{}
 
@@ -130,7 +126,6 @@ func TestDatabaseChannel_Send_UsesCallerAssignedID_WhenNotificationWithID(t *tes
 }
 
 func TestDatabaseChannel_Send_GeneratesUUID_WhenNoNotificationWithID(t *testing.T) {
-	logger := mockslog.NewLog(t)
 
 	var capturedID string
 	query := mocksorm.NewQuery(t)
@@ -142,7 +137,7 @@ func TestDatabaseChannel_Send_GeneratesUUID_WhenNoNotificationWithID(t *testing.
 	o := mocksorm.NewOrm(t)
 	o.EXPECT().Query().Return(query).Once()
 
-	ch := channels.NewDatabaseChannel(o, logger)
+	ch := channels.NewDatabaseChannel(o)
 	notifiable := &dbNotifiable{id: "42"}
 	n := &richDbNotification{} // ID() returns "" — no NotificationWithID benefit
 
@@ -153,7 +148,7 @@ func TestDatabaseChannel_Send_GeneratesUUID_WhenNoNotificationWithID(t *testing.
 }
 
 func TestDatabaseChannel_Send_ReturnsError_WhenEmptyID(t *testing.T) {
-	ch := channels.NewDatabaseChannel(nil, nil) // no orm call expected
+	ch := channels.NewDatabaseChannel(nil) // no orm call expected
 
 	err := ch.Send(&dbNotifiable{id: ""}, &dbNotification{})
 	assert.Error(t, err)
@@ -161,7 +156,6 @@ func TestDatabaseChannel_Send_ReturnsError_WhenEmptyID(t *testing.T) {
 }
 
 func TestDatabaseChannel_Send_WrapsOrmError(t *testing.T) {
-	logger := mockslog.NewLog(t)
 
 	query := mocksorm.NewQuery(t)
 	query.EXPECT().Create(mock.Anything).Return(errors.New("unique constraint violation")).Once()
@@ -169,14 +163,13 @@ func TestDatabaseChannel_Send_WrapsOrmError(t *testing.T) {
 	o := mocksorm.NewOrm(t)
 	o.EXPECT().Query().Return(query).Once()
 
-	ch := channels.NewDatabaseChannel(o, logger)
+	ch := channels.NewDatabaseChannel(o)
 	err := ch.Send(&dbNotifiable{id: "42"}, &dbNotification{})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "unique constraint violation")
 }
 
 func TestDatabaseChannel_Send_UsesConfiguredConnection_WhenDatabaseRoutable(t *testing.T) {
-	logger := mockslog.NewLog(t)
 
 	query := mocksorm.NewQuery(t)
 	query.EXPECT().Create(mock.AnythingOfType("*channels.DatabaseNotificationModel")).
@@ -188,7 +181,7 @@ func TestDatabaseChannel_Send_UsesConfiguredConnection_WhenDatabaseRoutable(t *t
 	o := mocksorm.NewOrm(t)
 	o.EXPECT().Connection("reporting").Return(reportingOrm).Once()
 
-	ch := channels.NewDatabaseChannel(o, logger)
+	ch := channels.NewDatabaseChannel(o)
 	notifiable := &dbNotifiable{id: "42"}
 	n := &routedDbNotification{}
 
@@ -197,7 +190,6 @@ func TestDatabaseChannel_Send_UsesConfiguredConnection_WhenDatabaseRoutable(t *t
 }
 
 func TestDatabaseChannel_Send_UsesDefaultConnection_WhenNotDatabaseRoutable(t *testing.T) {
-	logger := mockslog.NewLog(t)
 
 	query := mocksorm.NewQuery(t)
 	query.EXPECT().Create(mock.AnythingOfType("*channels.DatabaseNotificationModel")).
@@ -206,7 +198,7 @@ func TestDatabaseChannel_Send_UsesDefaultConnection_WhenNotDatabaseRoutable(t *t
 	o := mocksorm.NewOrm(t)
 	o.EXPECT().Query().Return(query).Once() // Connection() never called
 
-	ch := channels.NewDatabaseChannel(o, logger)
+	ch := channels.NewDatabaseChannel(o)
 	notifiable := &dbNotifiable{id: "42"}
 	n := &richDbNotification{}
 
@@ -215,29 +207,11 @@ func TestDatabaseChannel_Send_UsesDefaultConnection_WhenNotDatabaseRoutable(t *t
 }
 
 func TestDatabaseChannel_Resolve_ReturnsError_WhenDataNotMarshalable(t *testing.T) {
-	ch := channels.NewDatabaseChannel(nil, nil)
+	ch := channels.NewDatabaseChannel(nil)
 
 	_, _, err := ch.Resolve(&dbNotifiable{id: "1"}, unmarshalableNotification{})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to marshal payload")
-}
-
-func TestDatabaseChannel_SendNow_BehavesIdenticallyToSend(t *testing.T) {
-	logger := mockslog.NewLog(t)
-
-	query := mocksorm.NewQuery(t)
-	query.EXPECT().Create(mock.AnythingOfType("*channels.DatabaseNotificationModel")).
-		Return(nil).Once()
-
-	o := mocksorm.NewOrm(t)
-	o.EXPECT().Query().Return(query).Once()
-
-	ch := channels.NewDatabaseChannel(o, logger)
-	notifiable := &dbNotifiable{id: "42"}
-	n := &dbNotification{}
-
-	err := ch.SendNow(notifiable, n)
-	assert.NoError(t, err)
 }
 
 // ---- Deliver-specific branch coverage ----
@@ -247,13 +221,13 @@ func TestDatabaseChannel_SendNow_BehavesIdenticallyToSend(t *testing.T) {
 // via Send() never reaches.
 
 func TestDatabaseChannel_Deliver_NoOp_WhenEmptyRoute(t *testing.T) {
-	ch := channels.NewDatabaseChannel(nil, nil) // no orm call expected
+	ch := channels.NewDatabaseChannel(nil) // no orm call expected
 	err := ch.Deliver("", []byte(`{}`))
 	assert.NoError(t, err)
 }
 
 func TestDatabaseChannel_Deliver_ReturnsError_WhenMalformedPayload(t *testing.T) {
-	ch := channels.NewDatabaseChannel(nil, nil) // no orm call expected
+	ch := channels.NewDatabaseChannel(nil) // no orm call expected
 	err := ch.Deliver("1", []byte(`{not valid json`))
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to unmarshal")

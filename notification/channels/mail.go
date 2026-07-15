@@ -1,7 +1,3 @@
-// Package channels contains the built-in delivery drivers for Goravel's
-// notification module. Each channel splits into Resolve (live values →
-// plain data) and Deliver (plain data → actual send), with Send as a
-// thin wrapper of the two, so it can be dispatched via the queue safely.
 package channels
 
 import (
@@ -10,35 +6,24 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/goravel/framework/contracts/log"
 	contractsmail "github.com/goravel/framework/contracts/mail"
 	contractsnotification "github.com/goravel/framework/contracts/notification"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/notification/mailmessage"
 )
 
 // MailChannel delivers notifications via Goravel's mail facade.
 type MailChannel struct {
 	mail contractsmail.Mail
-	log  log.Log
 }
 
-func NewMailChannel(mail contractsmail.Mail, logger log.Log) *MailChannel {
-	return &MailChannel{mail: mail, log: logger}
+func NewMailChannel(mail contractsmail.Mail) *MailChannel {
+	return &MailChannel{mail: mail}
 }
 
 func (c *MailChannel) Name() string { return "mail" }
 
 func (c *MailChannel) Send(
-	notifiable contractsnotification.Notifiable,
-	n contractsnotification.Notification,
-) error {
-	return c.SendNow(notifiable, n)
-}
-
-// SendNow is identical to Send — MailChannel has no queued mode of its
-// own, only Manager does. Exists so callers can bypass Manager's queue
-// routing entirely: facades.Notification().Channel("mail").SendNow(u, n).
-func (c *MailChannel) SendNow(
 	notifiable contractsnotification.Notifiable,
 	n contractsnotification.Notification,
 ) error {
@@ -166,7 +151,7 @@ func (c *MailChannel) Deliver(route string, payload []byte) error {
 }
 
 func (c *MailChannel) defaultMessage(n contractsnotification.Notification) contractsnotification.MailMessage {
-	return contractsnotification.NewMailMessage().
+	return mailmessage.NewMailMessage().
 		Subject(fmt.Sprintf("Notification: %T", n)).
 		Text(fmt.Sprintf("You have a new %T notification.", n)).
 		Build()

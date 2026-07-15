@@ -10,9 +10,9 @@ import (
 
 	contractsmail "github.com/goravel/framework/contracts/mail"
 	contractsnotification "github.com/goravel/framework/contracts/notification"
-	mockslog "github.com/goravel/framework/mocks/log"
 	mocksmail "github.com/goravel/framework/mocks/mail"
 	"github.com/goravel/framework/notification/channels"
+	"github.com/goravel/framework/notification/mailmessage"
 )
 
 // ---- Fakes ----
@@ -65,18 +65,17 @@ func (r *richNotification) ToMail(_ contractsnotification.Notifiable) contractsn
 // ---- Tests ----
 
 func TestMailChannel_Name(t *testing.T) {
-	ch := channels.NewMailChannel(nil, nil)
+	ch := channels.NewMailChannel(nil)
 	assert.Equal(t, "mail", ch.Name())
 }
 
 func TestMailChannel_Send_UsesDefaultMessage_WhenNotMailableNotification(t *testing.T) {
-	logger := mockslog.NewLog(t)
 	mailer := mocksmail.NewMail(t)
 
 	mailer.EXPECT().Send(mock.AnythingOfType("*channels.NotificationMailable")).
 		Return(nil).Once()
 
-	ch := channels.NewMailChannel(mailer, logger)
+	ch := channels.NewMailChannel(mailer)
 	notifiable := &mailNotifiable{addr: "user@example.com"}
 	n := &plainNotification{}
 
@@ -85,16 +84,15 @@ func TestMailChannel_Send_UsesDefaultMessage_WhenNotMailableNotification(t *test
 }
 
 func TestMailChannel_Send_UsesToMail_WhenMailableNotification(t *testing.T) {
-	logger := mockslog.NewLog(t)
 	mailer := mocksmail.NewMail(t)
 
 	mailer.EXPECT().Send(mock.AnythingOfType("*channels.NotificationMailable")).
 		Return(nil).Once()
 
-	ch := channels.NewMailChannel(mailer, logger)
+	ch := channels.NewMailChannel(mailer)
 	notifiable := &mailNotifiable{addr: "user@example.com"}
 	n := &richNotification{
-		msg: contractsnotification.NewMailMessage().
+		msg: mailmessage.NewMailMessage().
 			Subject("Invoice Paid").
 			Text("Your invoice was paid.").
 			Build(),
@@ -111,7 +109,6 @@ func TestMailChannel_Send_UsesToMail_WhenMailableNotification(t *testing.T) {
 // field at all. This asserts the mapping explicitly so that mistake
 // can't reappear silently.
 func TestMailChannel_Send_MapsHtmlViewAndTextView(t *testing.T) {
-	logger := mockslog.NewLog(t)
 	mailer := mocksmail.NewMail(t)
 
 	mailer.EXPECT().Send(mock.MatchedBy(func(m contractsmail.Mailable) bool {
@@ -125,10 +122,10 @@ func TestMailChannel_Send_MapsHtmlViewAndTextView(t *testing.T) {
 			with == "99.99"
 	})).Return(nil).Once()
 
-	ch := channels.NewMailChannel(mailer, logger)
+	ch := channels.NewMailChannel(mailer)
 	notifiable := &mailNotifiable{addr: "user@example.com"}
 	n := &richNotification{
-		msg: contractsnotification.NewMailMessage().
+		msg: mailmessage.NewMailMessage().
 			Subject("Invoice Paid").
 			HtmlView("emails.invoice", map[string]any{"amount": "99.99"}).
 			TextView("emails.invoice_text", map[string]any{"amount": "99.99"}).
@@ -140,7 +137,6 @@ func TestMailChannel_Send_MapsHtmlViewAndTextView(t *testing.T) {
 }
 
 func TestMailChannel_Send_UsesMailRoutable_ForMultipleAddresses(t *testing.T) {
-	logger := mockslog.NewLog(t)
 	mailer := mocksmail.NewMail(t)
 
 	mailer.EXPECT().Send(mock.MatchedBy(func(m contractsmail.Mailable) bool {
@@ -153,7 +149,7 @@ func TestMailChannel_Send_UsesMailRoutable_ForMultipleAddresses(t *testing.T) {
 			env.To[1] == "secondary@example.com"
 	})).Return(nil).Once()
 
-	ch := channels.NewMailChannel(mailer, logger)
+	ch := channels.NewMailChannel(mailer)
 	notifiable := &mailRoutableNotifiable{
 		addr: "fallback@example.com", // should be ignored — MailRoutable takes priority
 		routes: map[string]string{
@@ -168,7 +164,6 @@ func TestMailChannel_Send_UsesMailRoutable_ForMultipleAddresses(t *testing.T) {
 }
 
 func TestMailChannel_Send_FallsBackToRouteNotificationFor_WhenMailRoutableReturnsEmpty(t *testing.T) {
-	logger := mockslog.NewLog(t)
 	mailer := mocksmail.NewMail(t)
 
 	mailer.EXPECT().Send(mock.MatchedBy(func(m contractsmail.Mailable) bool {
@@ -176,7 +171,7 @@ func TestMailChannel_Send_FallsBackToRouteNotificationFor_WhenMailRoutableReturn
 		return env != nil && len(env.To) == 1 && env.To[0] == "fallback@example.com"
 	})).Return(nil).Once()
 
-	ch := channels.NewMailChannel(mailer, logger)
+	ch := channels.NewMailChannel(mailer)
 	notifiable := &mailRoutableNotifiable{
 		addr:   "fallback@example.com",
 		routes: nil, // implements MailRoutable but has nothing to say
@@ -188,7 +183,6 @@ func TestMailChannel_Send_FallsBackToRouteNotificationFor_WhenMailRoutableReturn
 }
 
 func TestMailChannel_Send_ToMailOverridesResolvedAddresses_WhenSet(t *testing.T) {
-	logger := mockslog.NewLog(t)
 	mailer := mocksmail.NewMail(t)
 
 	mailer.EXPECT().Send(mock.MatchedBy(func(m contractsmail.Mailable) bool {
@@ -196,7 +190,7 @@ func TestMailChannel_Send_ToMailOverridesResolvedAddresses_WhenSet(t *testing.T)
 		return env != nil && len(env.To) == 1 && env.To[0] == "explicit@example.com"
 	})).Return(nil).Once()
 
-	ch := channels.NewMailChannel(mailer, logger)
+	ch := channels.NewMailChannel(mailer)
 	notifiable := &mailRoutableNotifiable{
 		addr: "fallback@example.com",
 		routes: map[string]string{
@@ -205,7 +199,7 @@ func TestMailChannel_Send_ToMailOverridesResolvedAddresses_WhenSet(t *testing.T)
 		},
 	}
 	n := &richNotification{
-		msg: contractsnotification.NewMailMessage().
+		msg: mailmessage.NewMailMessage().
 			To("explicit@example.com"). // ToMail() explicitly sets To
 			Subject("Invoice Paid").
 			Text("Your invoice was paid.").
@@ -217,10 +211,9 @@ func TestMailChannel_Send_ToMailOverridesResolvedAddresses_WhenSet(t *testing.T)
 }
 
 func TestMailChannel_Send_ReturnsError_WhenEmptyAddress(t *testing.T) {
-	logger := mockslog.NewLog(t)
 	mailer := mocksmail.NewMail(t) // no calls expected
 
-	ch := channels.NewMailChannel(mailer, logger)
+	ch := channels.NewMailChannel(mailer)
 	notifiable := &mailNotifiable{addr: ""} // no address
 	n := &plainNotification{}
 
@@ -230,13 +223,12 @@ func TestMailChannel_Send_ReturnsError_WhenEmptyAddress(t *testing.T) {
 }
 
 func TestMailChannel_Send_WrapsMailerError(t *testing.T) {
-	logger := mockslog.NewLog(t)
 	mailer := mocksmail.NewMail(t)
 
 	mailer.EXPECT().Send(mock.Anything).
 		Return(errors.New("SMTP connection refused")).Once()
 
-	ch := channels.NewMailChannel(mailer, logger)
+	ch := channels.NewMailChannel(mailer)
 	notifiable := &mailNotifiable{addr: "user@example.com"}
 	n := &plainNotification{}
 
@@ -248,31 +240,12 @@ func TestMailChannel_Send_WrapsMailerError(t *testing.T) {
 // Verify the Mailable adapter satisfies the contractsmail.Mailable interface at compile time.
 var _ contractsmail.Mailable = (*channels.NotificationMailable)(nil)
 
-// TestMailChannel_SendNow_BehavesIdenticallyToSend confirms the
-// Send-delegates-to-SendNow relationship: calling SendNow directly
-// (bypassing Manager entirely) produces the same delivery as Send.
-func TestMailChannel_SendNow_BehavesIdenticallyToSend(t *testing.T) {
-	logger := mockslog.NewLog(t)
-	mailer := mocksmail.NewMail(t)
-
-	mailer.EXPECT().Send(mock.AnythingOfType("*channels.NotificationMailable")).
-		Return(nil).Once()
-
-	ch := channels.NewMailChannel(mailer, logger)
-	notifiable := &mailNotifiable{addr: "user@example.com"}
-	n := &plainNotification{}
-
-	err := ch.SendNow(notifiable, n)
-	assert.NoError(t, err)
-}
-
 // TestMailChannel_Send_MailableExposesAllContractFields exercises every
 // accessor on the internal NotificationMailable adapter (Envelope,
 // Content, Attachments, Headers, Queue) directly — mocksmail.NewMail's
 // Send expectation intercepts before the real mail package would ever
 // call these itself, so nothing else in this test file reaches them.
 func TestMailChannel_Send_MailableExposesAllContractFields(t *testing.T) {
-	logger := mockslog.NewLog(t)
 	mailer := mocksmail.NewMail(t)
 
 	var captured contractsmail.Mailable
@@ -282,10 +255,10 @@ func TestMailChannel_Send_MailableExposesAllContractFields(t *testing.T) {
 		}).
 		Return(nil).Once()
 
-	ch := channels.NewMailChannel(mailer, logger)
+	ch := channels.NewMailChannel(mailer)
 	notifiable := &mailNotifiable{addr: "user@example.com"}
 	n := &richNotification{
-		msg: contractsnotification.NewMailMessage().
+		msg: mailmessage.NewMailMessage().
 			Subject("Invoice Paid").
 			Text("paid").
 			Attach("invoice.pdf").
@@ -315,26 +288,23 @@ func TestMailChannel_Send_MailableExposesAllContractFields(t *testing.T) {
 // an explicit From override.
 
 func TestMailChannel_Deliver_NoOp_WhenEmptyRoute(t *testing.T) {
-	logger := mockslog.NewLog(t)
 	mailer := mocksmail.NewMail(t) // no calls expected
 
-	ch := channels.NewMailChannel(mailer, logger)
+	ch := channels.NewMailChannel(mailer)
 	err := ch.Deliver("", []byte(`{}`))
 	assert.NoError(t, err)
 }
 
 func TestMailChannel_Deliver_ReturnsError_WhenMalformedPayload(t *testing.T) {
-	logger := mockslog.NewLog(t)
 	mailer := mocksmail.NewMail(t) // no calls expected
 
-	ch := channels.NewMailChannel(mailer, logger)
+	ch := channels.NewMailChannel(mailer)
 	err := ch.Deliver("user@example.com", []byte(`{not valid json`))
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to unmarshal")
 }
 
 func TestMailChannel_Deliver_UsesRouteAsRecipients_WhenToEmpty(t *testing.T) {
-	logger := mockslog.NewLog(t)
 	mailer := mocksmail.NewMail(t)
 
 	var captured contractsmail.Mailable
@@ -344,8 +314,8 @@ func TestMailChannel_Deliver_UsesRouteAsRecipients_WhenToEmpty(t *testing.T) {
 		}).
 		Return(nil).Once()
 
-	ch := channels.NewMailChannel(mailer, logger)
-	payload, err := json.Marshal(contractsnotification.NewMailMessage().Text("hi").Build())
+	ch := channels.NewMailChannel(mailer)
+	payload, err := json.Marshal(mailmessage.NewMailMessage().Text("hi").Build())
 	assert.NoError(t, err)
 
 	err = ch.Deliver("a@example.com,b@example.com", payload)
@@ -354,7 +324,6 @@ func TestMailChannel_Deliver_UsesRouteAsRecipients_WhenToEmpty(t *testing.T) {
 }
 
 func TestMailChannel_Deliver_DefaultsSubject_WhenEmpty(t *testing.T) {
-	logger := mockslog.NewLog(t)
 	mailer := mocksmail.NewMail(t)
 
 	var captured contractsmail.Mailable
@@ -364,8 +333,8 @@ func TestMailChannel_Deliver_DefaultsSubject_WhenEmpty(t *testing.T) {
 		}).
 		Return(nil).Once()
 
-	ch := channels.NewMailChannel(mailer, logger)
-	payload, err := json.Marshal(contractsnotification.NewMailMessage().Text("hi").Build()) // Subject deliberately left empty
+	ch := channels.NewMailChannel(mailer)
+	payload, err := json.Marshal(mailmessage.NewMailMessage().Text("hi").Build()) // Subject deliberately left empty
 	assert.NoError(t, err)
 
 	err = ch.Deliver("user@example.com", payload)
@@ -374,7 +343,6 @@ func TestMailChannel_Deliver_DefaultsSubject_WhenEmpty(t *testing.T) {
 }
 
 func TestMailChannel_Deliver_SetsFrom_WhenSpecified(t *testing.T) {
-	logger := mockslog.NewLog(t)
 	mailer := mocksmail.NewMail(t)
 
 	var captured contractsmail.Mailable
@@ -384,8 +352,8 @@ func TestMailChannel_Deliver_SetsFrom_WhenSpecified(t *testing.T) {
 		}).
 		Return(nil).Once()
 
-	ch := channels.NewMailChannel(mailer, logger)
-	payload, err := json.Marshal(contractsnotification.NewMailMessage().
+	ch := channels.NewMailChannel(mailer)
+	payload, err := json.Marshal(mailmessage.NewMailMessage().
 		Subject("Hi").
 		Text("hi").
 		From("billing@example.com").

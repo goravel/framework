@@ -22,14 +22,6 @@ func encodeDispatchItem(item dispatchItem) (string, error) {
 	return string(b), nil
 }
 
-// DispatchJob delivers one resolved channel item. It's registered once
-// with the queue at Boot() (see service_provider.go) rather than
-// constructed per-dispatch, since persisting queue drivers (database,
-// Redis) look up a registered Job by Signature() and call Handle() on a
-// freshly constructed instance with the dispatch-time []queue.Arg. That's
-// why Manager.dispatchQueued resolves each channel's payload eagerly via
-// ResolvableChannel.Resolve — while notifiable/notification are still
-// live — and queues only the resulting plain (channel, route, payload).
 type DispatchJob struct {
 	manager *Manager
 }

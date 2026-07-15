@@ -56,10 +56,25 @@ type NotificationWithAfterSending interface {
 // notifications that want to control the delay before a retry after a
 // failed delivery attempt.
 //
-// NOTE: wiring this into actual retry behavior depends on the queue
-// driver's retry mechanism, which DispatchJob does not currently
-// implement — see the PR discussion. The contract is defined now so
-// notifications can declare intent ahead of that wiring landing.
+// NOT CURRENTLY WIRED — implementing this on a notification has no
+// effect today. DispatchJob is registered once as a single shared
+// instance (see service_provider.go) and the queue worker's retry hook,
+// contracts/queue.JobWithShouldRetry.ShouldRetry(err, attempt), is
+// called on that shared instance without the failing task's args. There
+// is currently no race-free way for DispatchJob to know which
+// notification's Backoff() applies to a given retry decision, since
+// concurrent deliveries for different notifications share the same
+// DispatchJob instance. Wiring this safely needs one of:
+//   - a contracts/queue change so ShouldRetry also receives the task's
+//     args (the cleanest fix, but changes the queue package's public
+//     contract — belongs in its own proposal, not silently in this PR), or
+//   - DispatchJob running its own internal retry loop using values
+//     encoded into the dispatch item at resolve time, bypassing the
+//     queue framework's own retry/failed-job tracking entirely.
+//
+// The contract is defined now so notification structs that declare
+// Backoff() today don't need a breaking change once one of the above
+// lands — but until then, this method is read by nothing.
 type NotificationWithBackoff interface {
 	Notification
 	// Backoff returns the number of seconds to wait before retrying
@@ -71,8 +86,11 @@ type NotificationWithBackoff interface {
 // notifications that want to stop retrying after a deadline rather than
 // a fixed attempt count.
 //
-// NOTE: same caveat as NotificationWithBackoff — contract defined ahead
-// of the queue-driver-level wiring.
+// NOT CURRENTLY WIRED — same root cause as NotificationWithBackoff:
+// DispatchJob has no race-free way to associate this value with a
+// specific in-flight retry given the shared-instance, args-less
+// ShouldRetry hook. See NotificationWithBackoff's doc comment for the
+// two real paths to wiring this in.
 type NotificationWithRetryUntil interface {
 	Notification
 	// RetryUntil returns the time after which delivery attempts should
@@ -117,20 +135,12 @@ type Channel interface {
 	// Name returns the unique identifier for this channel, e.g. "mail", "database".
 	Name() string
 
-	// Send delivers the notification to the notifiable target.
+	// Send delivers the notification to the notifiable target. Channel
+	// drivers only need this one method — the facade (Manager) is what
+	// decides whether a send goes through the queue. Manager.SendNow and
+	// OnDemandNotifiable.NotifyNow are the actual bypass points for
+	// callers who want to skip queue routing; they call this same Send.
 	Send(notifiable Notifiable, notification Notification) error
-
-	// SendNow delivers the notification to the notifiable target,
-	// bypassing Manager.Send()'s queue routing entirely — even if the
-	// notification implements ShouldQueue. Used for channel-scoped
-	// direct dispatch: facades.Notification().Channel("mail").SendNow(u, n).
-	//
-	// For every built-in channel this is identical to Send — none of
-	// them have a queued mode of their own, only Manager does. The
-	// distinction exists for custom channels that might internally
-	// defer work (e.g. batching); implementations should treat SendNow
-	// as a hard synchronous guarantee regardless.
-	SendNow(notifiable Notifiable, notification Notification) error
 }
 
 // ResolvableChannel is an optional extension of Channel that makes a
@@ -246,8 +256,15 @@ type ShouldQueue interface {
 // ---- Value types ----
 
 // MailMessage describes the email that should be sent for a notification.
-// Build one inside ToMail() using NewMailMessage()'s fluent builder, or
-// by setting fields directly.
+// Build one inside ToMail() using notification/mailmessage's fluent
+// builder (see mailmessage.NewMailMessage), or by setting fields
+// directly. The builder lives in its own leaf package rather than here
+// because it's concrete implementation, not a contract — contracts/
+// holds public interfaces and plain value types only (see contracts/mail
+// for the same shape), and a builder that both notification/channels and
+// the root notification package need to reach can't live in the root
+// notification package itself without an import cycle (root notification
+// already imports notification/channels).
 type MailMessage struct {
 	// Subject is the email subject line. Defaults to the notification type name.
 	Subject string
@@ -266,83 +283,4 @@ type MailMessage struct {
 	Attachments []string
 	// Headers are arbitrary additional email headers.
 	Headers map[string]string
-}
-
-// NewMailMessage returns a fluent builder for MailMessage. Every method
-// returns the same builder so calls can be chained; call Build() (or use
-// the builder as a MailMessage directly — it IS one, embedded) to finish.
-//
-//	func (n *InvoicePaid) ToMail(_ notification.Notifiable) notification.MailMessage {
-//	    return notification.NewMailMessage().
-//	        Subject("Invoice Paid").
-//	        Html("<p>Thanks!</p>").
-//	        Build()
-//	}
-func NewMailMessage() *MailMessageBuilder {
-	return &MailMessageBuilder{}
-}
-
-// MailMessageBuilder is the fluent builder returned by NewMailMessage.
-type MailMessageBuilder struct {
-	msg MailMessage
-}
-
-func (b *MailMessageBuilder) Subject(subject string) *MailMessageBuilder {
-	b.msg.Subject = subject
-	return b
-}
-
-func (b *MailMessageBuilder) To(addresses ...string) *MailMessageBuilder {
-	b.msg.To = addresses
-	return b
-}
-
-func (b *MailMessageBuilder) From(address string) *MailMessageBuilder {
-	b.msg.From = address
-	return b
-}
-
-func (b *MailMessageBuilder) ReplyTo(address string) *MailMessageBuilder {
-	b.msg.ReplyTo = address
-	return b
-}
-
-func (b *MailMessageBuilder) Html(html string) *MailMessageBuilder {
-	b.msg.Content.Html = html
-	return b
-}
-
-func (b *MailMessageBuilder) Text(text string) *MailMessageBuilder {
-	b.msg.Content.Text = text
-	return b
-}
-
-func (b *MailMessageBuilder) HtmlView(view string, with map[string]any) *MailMessageBuilder {
-	b.msg.Content.HtmlView = view
-	b.msg.Content.With = with
-	return b
-}
-
-func (b *MailMessageBuilder) TextView(view string, with map[string]any) *MailMessageBuilder {
-	b.msg.Content.TextView = view
-	b.msg.Content.With = with
-	return b
-}
-
-func (b *MailMessageBuilder) Attach(paths ...string) *MailMessageBuilder {
-	b.msg.Attachments = append(b.msg.Attachments, paths...)
-	return b
-}
-
-func (b *MailMessageBuilder) Header(key, value string) *MailMessageBuilder {
-	if b.msg.Headers == nil {
-		b.msg.Headers = map[string]string{}
-	}
-	b.msg.Headers[key] = value
-	return b
-}
-
-// Build returns the finished MailMessage.
-func (b *MailMessageBuilder) Build() MailMessage {
-	return b.msg
 }

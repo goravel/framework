@@ -12,11 +12,6 @@ type onDemandNotifiable struct {
 	routes  map[string]any
 }
 
-// RouteNotificationFor satisfies contracts/notification.Notifiable.
-// Non-string routes (stored via Route(channel, someStruct)) return ""
-// here — they're only reachable by a custom channel that knows to look
-// for them some other way; no built-in channel needs anything but a
-// string today.
 func (o *onDemandNotifiable) RouteNotificationFor(channel string) string {
 	if s, ok := o.routes[channel].(string); ok {
 		return s

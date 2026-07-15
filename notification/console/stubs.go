@@ -8,6 +8,7 @@ func (r Stubs) Notification() string {
 
 import (
 	"github.com/goravel/framework/contracts/notification"
+	"github.com/goravel/framework/notification/mailmessage"
 )
 
 type DummyNotification struct {
@@ -26,7 +27,7 @@ func (r *DummyNotification) Via(notifiable notification.Notifiable) []string {
 // contracts/notification.MailableNotification; omit this method entirely
 // to fall back to the channel's default plain-text message.
 func (r *DummyNotification) ToMail(notifiable notification.Notifiable) notification.MailMessage {
-	return notification.NewMailMessage().
+	return mailmessage.NewMailMessage().
 		Subject("DummyNotification").
 		Html("<p>Hello!</p>").
 		Build()
