@@ -9,7 +9,6 @@ import (
 	"github.com/goravel/framework/contracts/binding"
 	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
-	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mockslog "github.com/goravel/framework/mocks/log"
@@ -107,30 +106,11 @@ func TestServiceProviderRegister(t *testing.T) {
 		provider.Register(app)
 	})
 
-	t.Run("config facade not set", func(t *testing.T) {
-		app := mocksfoundation.NewApplication(t)
-		app.EXPECT().Bind(binding.Notification, mock.AnythingOfType("func(foundation.Application) (interface {}, error)")).Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
-			callbackApp := mocksfoundation.NewApplication(t)
-			logger := mockslog.NewLog(t)
-			mailer := mocksmail.NewMail(t)
-			o := mocksorm.NewOrm(t)
-			q := mocksqueue.NewQueue(t)
-			callbackApp.EXPECT().MakeLog().Return(logger).Once()
-			callbackApp.EXPECT().MakeMail().Return(mailer).Once()
-			callbackApp.EXPECT().MakeOrm().Return(o).Once()
-			callbackApp.EXPECT().MakeQueue().Return(q).Once()
-			callbackApp.EXPECT().MakeConfig().Return(nil).Once()
-
-			instance, err := callback(callbackApp)
-
-			assert.Nil(t, instance)
-			assert.Error(t, err)
-			assert.Contains(t, err.Error(), errors.ConfigFacadeNotSet.Error())
-		}).Once()
-
-		provider.Register(app)
-	})
-
+	// NOTE: no "config facade not set" subtest — Register() no longer
+	// calls app.MakeConfig() at all. Config-based database connection
+	// selection was replaced by the per-notification DatabaseRoutable
+	// interface (see channels/database.go), so Config dropped out of
+	// this dependency chain entirely.
 	t.Run("register notification manager", func(t *testing.T) {
 		app := mocksfoundation.NewApplication(t)
 		app.EXPECT().Bind(binding.Notification, mock.AnythingOfType("func(foundation.Application) (interface {}, error)")).Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
@@ -139,12 +119,10 @@ func TestServiceProviderRegister(t *testing.T) {
 			mailer := mocksmail.NewMail(t)
 			o := mocksorm.NewOrm(t)
 			q := mocksqueue.NewQueue(t)
-			config := mocksconfig.NewConfig(t)
 			callbackApp.EXPECT().MakeLog().Return(logger).Once()
 			callbackApp.EXPECT().MakeMail().Return(mailer).Once()
 			callbackApp.EXPECT().MakeOrm().Return(o).Once()
 			callbackApp.EXPECT().MakeQueue().Return(q).Once()
-			callbackApp.EXPECT().MakeConfig().Return(config).Once()
 
 			instance, err := callback(callbackApp)
 

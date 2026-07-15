@@ -21,19 +21,19 @@ func (_m *MailRoutable) EXPECT() *MailRoutable_Expecter {
 }
 
 // RouteNotificationForMail provides a mock function with given fields: _a0
-func (_m *MailRoutable) RouteNotificationForMail(_a0 notification.Notification) []string {
+func (_m *MailRoutable) RouteNotificationForMail(_a0 notification.Notification) map[string]string {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for RouteNotificationForMail")
 	}
 
-	var r0 []string
-	if rf, ok := ret.Get(0).(func(notification.Notification) []string); ok {
+	var r0 map[string]string
+	if rf, ok := ret.Get(0).(func(notification.Notification) map[string]string); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]string)
+			r0 = ret.Get(0).(map[string]string)
 		}
 	}
 
@@ -58,12 +58,12 @@ func (_c *MailRoutable_RouteNotificationForMail_Call) Run(run func(_a0 notificat
 	return _c
 }
 
-func (_c *MailRoutable_RouteNotificationForMail_Call) Return(_a0 []string) *MailRoutable_RouteNotificationForMail_Call {
+func (_c *MailRoutable_RouteNotificationForMail_Call) Return(_a0 map[string]string) *MailRoutable_RouteNotificationForMail_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *MailRoutable_RouteNotificationForMail_Call) RunAndReturn(run func(notification.Notification) []string) *MailRoutable_RouteNotificationForMail_Call {
+func (_c *MailRoutable_RouteNotificationForMail_Call) RunAndReturn(run func(notification.Notification) map[string]string) *MailRoutable_RouteNotificationForMail_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -120,6 +120,12 @@ func (r *Paths) Models(path string) configuration.Paths {
 	return r
 }
 
+func (r *Paths) Notifications(path string) configuration.Paths {
+	support.Config.Paths.Notifications = path
+
+	return r
+}
+
 func (r *Paths) Observers(path string) configuration.Paths {
 	support.Config.Paths.Observers = path
 

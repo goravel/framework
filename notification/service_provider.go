@@ -45,14 +45,9 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.QueueFacadeNotSet.SetModule(errors.ModuleNotification)
 		}
 
-		config := app.MakeConfig()
-		if config == nil {
-			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleNotification)
-		}
-
 		manager := NewManager(logger, q)
 		manager.Extend(channels.NewMailChannel(mail, logger))
-		manager.Extend(channels.NewDatabaseChannel(orm, logger, config))
+		manager.Extend(channels.NewDatabaseChannel(orm, logger))
 
 		return manager, nil
 	})
@@ -61,7 +56,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 func (r *ServiceProvider) Boot(app foundation.Application) {
 	app.Commands([]contractsconsole.Command{
 		console.NewNotificationMakeCommand(),
-		console.NewNotificationTableCommand(),
+		console.NewNotificationsTableCommand(app),
 	})
 
 	r.registerJobs(app)

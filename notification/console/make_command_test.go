@@ -23,9 +23,11 @@ func TestNotificationMakeCommand(t *testing.T) {
 
 	mockContext.EXPECT().Argument(0).Return("InvoicePaid").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
+	mockContext.EXPECT().OptionBool("database").Return(false).Once()
 	mockContext.EXPECT().Success("Notification created successfully").Once()
 	assert.NoError(t, notificationMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/notifications/invoice_paid.go"))
+	assert.True(t, file.Contain("app/notifications/invoice_paid.go", "func (r *InvoicePaid) ToMail"))
 
 	mockContext.EXPECT().Argument(0).Return("InvoicePaid").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
@@ -34,11 +36,28 @@ func TestNotificationMakeCommand(t *testing.T) {
 
 	mockContext.EXPECT().Argument(0).Return("Billing/InvoicePaid").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
+	mockContext.EXPECT().OptionBool("database").Return(false).Once()
 	mockContext.EXPECT().Success("Notification created successfully").Once()
 	assert.NoError(t, notificationMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/notifications/Billing/invoice_paid.go"))
 	assert.True(t, file.Contain("app/notifications/Billing/invoice_paid.go", "package Billing"))
 	assert.True(t, file.Contain("app/notifications/Billing/invoice_paid.go", "type InvoicePaid struct"))
+
+	assert.Nil(t, file.Remove("app"))
+}
+
+func TestNotificationMakeCommand_DatabaseFlag_GeneratesDatabaseTemplate(t *testing.T) {
+	notificationMakeCommand := &NotificationMakeCommand{}
+	mockContext := mocksconsole.NewContext(t)
+	mockContext.EXPECT().Argument(0).Return("InvoicePaid").Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Once()
+	mockContext.EXPECT().OptionBool("database").Return(true).Once()
+	mockContext.EXPECT().Success("Notification created successfully").Once()
+
+	assert.NoError(t, notificationMakeCommand.Handle(mockContext))
+	assert.True(t, file.Exists("app/notifications/invoice_paid.go"))
+	assert.True(t, file.Contain("app/notifications/invoice_paid.go", "func (r *InvoicePaid) ToDatabase"))
+	assert.False(t, file.Contain("app/notifications/invoice_paid.go", "ToMail"))
 
 	assert.Nil(t, file.Remove("app"))
 }
@@ -50,6 +69,7 @@ func TestNotificationMakeCommand_Metadata(t *testing.T) {
 
 	extend := cmd.Extend()
 	assert.Equal(t, "make", extend.Category)
-	assert.Len(t, extend.Flags, 1)
+	assert.Len(t, extend.Flags, 2)
 	assert.Equal(t, "force", extend.Flags[0].(*command.BoolFlag).Name)
+	assert.Equal(t, "database", extend.Flags[1].(*command.BoolFlag).Name)
 }

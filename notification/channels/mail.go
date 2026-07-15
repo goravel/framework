@@ -7,12 +7,12 @@ package channels
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
-
-	contractsnotification "github.com/goravel/framework/contracts/notification"
 
 	"github.com/goravel/framework/contracts/log"
 	contractsmail "github.com/goravel/framework/contracts/mail"
+	contractsnotification "github.com/goravel/framework/contracts/notification"
 	"github.com/goravel/framework/errors"
 )
 
@@ -76,19 +76,21 @@ func (c *MailChannel) Resolve(
 		return "", nil, errors.NotificationMailMarshalPayloadFailed.Args(n, err)
 	}
 
-	return strings.Join(addresses, ","), payload, nil
+	return strings.Join(msg.To, ","), payload, nil
 }
 
-// resolveAddresses prefers MailRoutable (multiple addresses) when the
-// notifiable implements it, falling back to the single
-// RouteNotificationFor("mail") address otherwise.
+// resolveAddresses prefers MailRoutable (multiple addresses, each with an
+// optional display name) when the notifiable implements it, falling back
+// to the single RouteNotificationFor("mail") address otherwise. Named
+// addresses are formatted "Name <address>" per RFC 5322, matching how
+// Laravel's mail routing presents name+address pairs.
 func (c *MailChannel) resolveAddresses(
 	notifiable contractsnotification.Notifiable,
 	n contractsnotification.Notification,
 ) ([]string, error) {
 	if mr, ok := notifiable.(contractsnotification.MailRoutable); ok {
-		if addresses := mr.RouteNotificationForMail(n); len(addresses) > 0 {
-			return addresses, nil
+		if routes := mr.RouteNotificationForMail(n); len(routes) > 0 {
+			return formatAddresses(routes), nil
 		}
 	}
 
@@ -97,6 +99,27 @@ func (c *MailChannel) resolveAddresses(
 		return nil, errors.NotificationMailEmptyRoute.Args(notifiable)
 	}
 	return []string{to}, nil
+}
+
+// formatAddresses turns an address→name map into a deterministically
+// ordered list of "Name <address>" (or bare "address" when name is
+// empty) strings.
+func formatAddresses(routes map[string]string) []string {
+	addresses := make([]string, 0, len(routes))
+	for address := range routes {
+		addresses = append(addresses, address)
+	}
+	sort.Strings(addresses) // deterministic order — map iteration isn't
+
+	formatted := make([]string, 0, len(addresses))
+	for _, address := range addresses {
+		if name := routes[address]; name != "" {
+			formatted = append(formatted, fmt.Sprintf("%s <%s>", name, address))
+		} else {
+			formatted = append(formatted, address)
+		}
+	}
+	return formatted
 }
 
 // Deliver unmarshals payload and sends via facades.Mail(), same
@@ -121,18 +144,13 @@ func (c *MailChannel) Deliver(route string, payload []byte) error {
 		subject = "Notification"
 	}
 
+	content := msg.Content
 	mailable := &NotificationMailable{
 		envelope: &contractsmail.Envelope{
 			To:      recipients,
 			Subject: subject,
 		},
-		content: &contractsmail.Content{
-			Html:     msg.Content.Html,
-			Text:     msg.Content.Text,
-			HtmlView: msg.Content.HtmlView,
-			TextView: msg.Content.TextView,
-			With:     msg.Content.With,
-		},
+		content:     &content,
 		attachments: msg.Attachments,
 		headers:     msg.Headers,
 	}
@@ -148,12 +166,10 @@ func (c *MailChannel) Deliver(route string, payload []byte) error {
 }
 
 func (c *MailChannel) defaultMessage(n contractsnotification.Notification) contractsnotification.MailMessage {
-	return contractsnotification.MailMessage{
-		Subject: fmt.Sprintf("Notification: %T", n),
-		Content: contractsnotification.MailContent{
-			Text: fmt.Sprintf("You have a new %T notification.", n),
-		},
-	}
+	return contractsnotification.NewMailMessage().
+		Subject(fmt.Sprintf("Notification: %T", n)).
+		Text(fmt.Sprintf("You have a new %T notification.", n)).
+		Build()
 }
 
 // NotificationMailable adapts a MailMessage into contractsmail.Mailable.

@@ -33,6 +33,10 @@ func (r *NotificationMakeCommand) Extend() command.Extend {
 				Aliases: []string{"f"},
 				Usage:   "Create the notification even if it already exists",
 			},
+			&command.BoolFlag{
+				Name:  "database",
+				Usage: "Generate a notification template for the database channel instead of mail",
+			},
 		},
 	}
 }
@@ -44,7 +48,7 @@ func (r *NotificationMakeCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	if err := file.PutContent(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
+	if err := file.PutContent(m.GetFilePath(), r.populateStub(r.getStub(ctx), m.GetPackageName(), m.GetStructName())); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
@@ -54,7 +58,10 @@ func (r *NotificationMakeCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func (r *NotificationMakeCommand) getStub() string {
+func (r *NotificationMakeCommand) getStub(ctx console.Context) string {
+	if ctx.OptionBool("database") {
+		return Stubs{}.NotificationDatabase()
+	}
 	return Stubs{}.Notification()
 }
 

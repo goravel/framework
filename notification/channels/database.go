@@ -9,7 +9,6 @@ import (
 
 	contractsnotification "github.com/goravel/framework/contracts/notification"
 
-	contractsconfig "github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/errors"
@@ -31,15 +30,16 @@ type DatabaseNotificationModel struct {
 
 func (DatabaseNotificationModel) TableName() string { return "notifications" }
 
-// DatabaseChannel persists notifications to the database.
+// DatabaseChannel persists notifications to the database. Connection
+// selection is per-notification (see contracts/notification.DatabaseRoutable),
+// not global config — mirrors ShouldQueue's OnConnection() pattern.
 type DatabaseChannel struct {
-	orm    orm.Orm
-	log    log.Log
-	config contractsconfig.Config
+	orm orm.Orm
+	log log.Log
 }
 
-func NewDatabaseChannel(o orm.Orm, logger log.Log, config contractsconfig.Config) *DatabaseChannel {
-	return &DatabaseChannel{orm: o, log: logger, config: config}
+func NewDatabaseChannel(o orm.Orm, logger log.Log) *DatabaseChannel {
+	return &DatabaseChannel{orm: o, log: logger}
 }
 
 func (c *DatabaseChannel) Name() string { return "database" }
@@ -72,6 +72,7 @@ type resolvedRecord struct {
 	ID             string          `json:"id"`
 	Type           string          `json:"type"`
 	NotifiableType string          `json:"notifiable_type"`
+	Connection     string          `json:"connection"`
 	Data           json.RawMessage `json:"data"`
 }
 
@@ -104,10 +105,16 @@ func (c *DatabaseChannel) Resolve(
 		id = uuid.NewString()
 	}
 
+	var connection string
+	if dr, ok := n.(contractsnotification.DatabaseRoutable); ok {
+		connection = dr.DatabaseConnection()
+	}
+
 	record := resolvedRecord{
 		ID:             id,
 		Type:           fmt.Sprintf("%T", n),
 		NotifiableType: fmt.Sprintf("%T", notifiable),
+		Connection:     connection,
 		Data:           dataJSON,
 	}
 
@@ -137,20 +144,15 @@ func (c *DatabaseChannel) Deliver(route string, payload []byte) error {
 		Data:           string(record.Data),
 	}
 
-	// notification.channels.database.connection lets an app store notifications
-	// on a connection other than the default (e.g. a separate read-heavy DB).
 	o := c.orm
-	if c.config != nil {
-		if connection := c.config.GetString("notification.channels.database.connection"); connection != "" {
-			o = o.Connection(connection)
-		}
+	if record.Connection != "" {
+		o = o.Connection(record.Connection)
 	}
 
 	if err := o.Query().Create(model); err != nil {
 		return errors.NotificationDatabaseInsertFailed.Args(err)
 	}
 
-	c.log.Debugf("notifications: persisted %s to database (id=%s)", record.Type, record.ID)
 	return nil
 }
 

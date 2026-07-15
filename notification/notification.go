@@ -1,3 +1,7 @@
+// Package notification provides the Manager implementation for Goravel's
+// notification module: dispatching to registered channels synchronously
+// or via the queue. See job.go for how queued dispatch stays safe across
+// a real queue round-trip.
 package notification
 
 import (
@@ -42,10 +46,19 @@ func (m *Manager) Channel(name string) contractsnotification.Channel {
 
 	ch, ok := m.channels[name]
 	if !ok {
-		m.log.Errorf("notifications: %v", errors.NotificationChannelNotFound.Args(name))
+		m.log.Errorf("%s", errors.NotificationChannelNotFound.Args(name).Error())
 		return nil
 	}
 	return ch
+}
+
+// Route begins an on-demand notification: send to a raw address without
+// a backing Notifiable model.
+func (m *Manager) Route(channel string, route any) contractsnotification.OnDemandNotifiable {
+	return &onDemandNotifiable{
+		manager: m,
+		routes:  map[string]any{channel: route},
+	}
 }
 
 func (m *Manager) Send(
@@ -66,38 +79,49 @@ func (m *Manager) SendNow(
 }
 
 // dispatchSync iterates over Via() channels and calls each driver's Send.
-// Unchanged from the original — errors from individual channels are
-// logged but do not abort other channels; behavior verified by the
-// ported notification_test.go.
+// Errors from individual channels are logged and joined via errors.Join
+// (not discarded after the first) so a caller can inspect every failure,
+// not just whichever channel happened to fail first — while still
+// attempting every channel regardless of earlier failures.
 func (m *Manager) dispatchSync(
 	notifiable contractsnotification.Notifiable,
 	n contractsnotification.Notification,
 ) error {
-	channels := n.Via(notifiable)
-	if len(channels) == 0 {
+	viaChannels := n.Via(notifiable)
+	if len(viaChannels) == 0 {
 		m.log.Errorf("notifications: %T.Via() returned no channels for %T — nothing sent", n, notifiable)
 		return nil
 	}
 
-	var firstErr error
-	for _, name := range channels {
+	shouldSend, _ := n.(contractsnotification.NotificationWithShouldSend)
+	afterSending, _ := n.(contractsnotification.NotificationWithAfterSending)
+
+	var errs []error
+	for _, name := range viaChannels {
+		if shouldSend != nil && !shouldSend.ShouldSend(notifiable, name) {
+			continue
+		}
+
 		ch := m.Channel(name)
 		if ch == nil {
-			err := errors.NotificationChannelNotFound.Args(name)
-			if firstErr == nil {
-				firstErr = err
-			}
+			errs = append(errs, errors.NotificationChannelNotFound.Args(name))
 			continue
 		}
 
 		if err := ch.Send(notifiable, n); err != nil {
 			m.log.Errorf("notifications: channel %q failed for %T: %v", name, n, err)
-			if firstErr == nil {
-				firstErr = err
+			errs = append(errs, err)
+			continue
+		}
+
+		if afterSending != nil {
+			if err := afterSending.AfterSending(notifiable, name); err != nil {
+				m.log.Errorf("notifications: AfterSending hook failed for channel %q, %T: %v", name, n, err)
+				errs = append(errs, err)
 			}
 		}
 	}
-	return firstErr
+	return errors.Join(errs...)
 }
 
 // dispatchQueued resolves each channel's payload eagerly (while notifiable
@@ -105,20 +129,30 @@ func (m *Manager) dispatchSync(
 // plain data — not the original job design. See job.go for the full
 // rationale; short version: the original sendNotificationJob held
 // unexported live interface fields that don't survive real queue drivers.
+//
+// NotificationWithAfterSending is NOT called on this path: by the time
+// DispatchJob.Handle actually delivers (possibly in a different process),
+// the live notification n no longer exists — only the resolved
+// (channel, route, payload) does. Calling AfterSending here, before
+// delivery has actually happened, would be a lie. This is a real scope
+// limitation, not an oversight — flagged for discussion rather than
+// worked around with something that would silently misbehave.
 func (m *Manager) dispatchQueued(
 	notifiable contractsnotification.Notifiable,
 	n contractsnotification.Notification,
 	sq contractsnotification.ShouldQueue,
 ) error {
-	var firstErr error
+	shouldSend, _ := n.(contractsnotification.NotificationWithShouldSend)
 
+	var errs []error
 	for _, name := range n.Via(notifiable) {
+		if shouldSend != nil && !shouldSend.ShouldSend(notifiable, name) {
+			continue
+		}
+
 		ch := m.Channel(name)
 		if ch == nil {
-			err := errors.NotificationChannelNotFound.Args(name)
-			if firstErr == nil {
-				firstErr = err
-			}
+			errs = append(errs, errors.NotificationChannelNotFound.Args(name))
 			continue
 		}
 
@@ -129,27 +163,21 @@ func (m *Manager) dispatchQueued(
 			// ResolvableChannel) can't be queued safely.
 			err := errors.NotificationChannelNotQueueable.Args(name)
 			m.log.Errorf("notifications: %v", err)
-			if firstErr == nil {
-				firstErr = err
-			}
+			errs = append(errs, err)
 			continue
 		}
 
 		route, payload, err := resolvable.Resolve(notifiable, n)
 		if err != nil {
 			m.log.Errorf("notifications: failed to resolve channel %q for %T: %v", name, n, err)
-			if firstErr == nil {
-				firstErr = err
-			}
+			errs = append(errs, err)
 			continue
 		}
 
 		item := dispatchItem{Channel: name, Route: route, Payload: payload}
 		encoded, err := encodeDispatchItem(item)
 		if err != nil {
-			if firstErr == nil {
-				firstErr = err
-			}
+			errs = append(errs, err)
 			continue
 		}
 
@@ -160,10 +188,10 @@ func (m *Manager) dispatchQueued(
 		if q := sq.OnQueue(); q != "" {
 			pending = pending.OnQueue(q)
 		}
-		if err := pending.Dispatch(); err != nil && firstErr == nil {
-			firstErr = err
+		if err := pending.Dispatch(); err != nil {
+			errs = append(errs, err)
 		}
 	}
 
-	return firstErr
+	return errors.Join(errs...)
 }

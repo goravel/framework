@@ -1,51 +1,59 @@
 package console
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
+	"runtime/debug"
 	"time"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/packages/match"
+	"github.com/goravel/framework/packages/modify"
+	"github.com/goravel/framework/support/env"
 )
 
-// NotificationTableCommand generates a migration file that creates the
-// notifications table used by the database channel. Ported as-is from
-// the standalone package — proven working — with one change: the two
-// inline fmt.Errorf calls in registerMigration are replaced with named
-// errors per AGENTS.md's "no inline errors" rule.
+// NotificationsTableCommand generates a migration file that creates the
+// notifications table used by the database channel.
+//
+// Unlike make:migration, this writes a pre-filled schema directly rather
+// than delegating to migration.Migrator — mirrors Laravel's
+// notifications:table, which does the same (its own stub-copy, not the
+// generic migration creator), since a pre-filled notifications-table
+// schema isn't something the generic migration creator supports without
+// its own custom stub mechanism this command doesn't have visibility
+// into. Registration, however, now uses the exact same real mechanism
+// make:migration itself uses (confirmed against
+// database/console/migration/migrate_make_command.go) — see
+// registerMigration below.
 //
 // Usage:
 //
-//	./artisan notification:table
+//	./artisan notifications:table
 //	./artisan migrate
-//
-// Open question for maintainers: registerMigration below hand-splices the
-// migration entry into bootstrap/migrations.go as a string. Since v1.16,
-// make:migration has its own auto-registration mechanism — worth
-// confirming whether this command should call into that instead of
-// duplicating the string-splicing logic here.
-type NotificationTableCommand struct{}
-
-func NewNotificationTableCommand() *NotificationTableCommand {
-	return &NotificationTableCommand{}
+type NotificationsTableCommand struct {
+	app foundation.Application
 }
 
-func (c *NotificationTableCommand) Signature() string {
-	return "notification:table"
+func NewNotificationsTableCommand(app foundation.Application) *NotificationsTableCommand {
+	return &NotificationsTableCommand{app: app}
 }
 
-func (c *NotificationTableCommand) Description() string {
+func (c *NotificationsTableCommand) Signature() string {
+	return "notifications:table"
+}
+
+func (c *NotificationsTableCommand) Description() string {
 	return "Create a migration for the notifications table (database channel)"
 }
 
-func (c *NotificationTableCommand) Extend() command.Extend {
+func (c *NotificationsTableCommand) Extend() command.Extend {
 	return command.Extend{}
 }
 
-func (c *NotificationTableCommand) Handle(ctx console.Context) error {
+func (c *NotificationsTableCommand) Handle(ctx console.Context) error {
 	timestamp := time.Now().Format("20060102150405")
 	filename := timestamp + "_create_notifications_table.go"
 	dest := filepath.Join("database", "migrations", filename)
@@ -65,42 +73,59 @@ func (c *NotificationTableCommand) Handle(ctx console.Context) error {
 
 	ctx.Info("Migration created successfully: " + dest)
 
-	if err := registerMigration(timestamp); err != nil {
+	structName := "M" + timestamp + "CreateNotificationsTable"
+	if err := c.registerMigration(structName); err != nil {
 		ctx.Warning("Could not auto-register migration: " + err.Error())
-		ctx.Warning("Add manually to bootstrap/migrations.go:")
-		ctx.Info("  &migrations.M" + timestamp + "CreateNotificationsTable{},")
+		ctx.Warning("Add manually to your migrations registration:")
+		ctx.Info("  &migrations." + structName + "{},")
 	} else {
-		ctx.Info("Migration registered in bootstrap/migrations.go")
+		ctx.Info("Migration registered successfully")
 	}
 
 	ctx.Info("Run `./artisan migrate` to apply it.")
 	return nil
 }
 
-func registerMigration(timestamp string) error {
-	bootstrapFile := filepath.Join("bootstrap", "migrations.go")
+// registerMigration mirrors migration.MigrateMakeCommand.Handle's own
+// registration branch exactly: modify.AddMigration for apps on the
+// v1.16+ bootstrap setup, falling back to the deprecated kernel.go
+// codemod otherwise — replaces the previous hand-rolled
+// bootstrap/migrations.go string-splicing entirely.
+//
+// pkgImportPath is built the same way support/console.Make.GetPackageImportPath
+// does it (confirmed from that file directly) — debug.ReadBuildInfo().Main.Path
+// plus the migrations folder, with the same "goravel" fallback
+// Make.GetModuleName() uses when build info isn't available (e.g. under
+// `go test`, where ReadBuildInfo can return ok=false). This command
+// doesn't call supportconsole.NewMake itself, since it hand-writes the
+// migration file directly for the pre-filled-schema reason explained in
+// the type doc comment above — but the import-path logic is copied
+// exactly rather than reinvented.
+//
+// The kernel.go fallback path uses c.app.DatabasePath("kernel.go") —
+// not a hardcoded "database/kernel.go" string — matching
+// MigrateMakeCommand.registerInKernel exactly, which is why this is now
+// a method (needs c.app) rather than the standalone function it was
+// before this fix.
+func (c *NotificationsTableCommand) registerMigration(structName string) error {
+	modulePath := "goravel"
+	if info, ok := debug.ReadBuildInfo(); ok {
+		modulePath = info.Main.Path
+	}
+	pkgImportPath := modulePath + "/database/migrations"
+	entry := fmt.Sprintf("&migrations.%s{}", structName)
 
-	content, err := os.ReadFile(bootstrapFile)
-	if err != nil {
-		return err
+	if env.IsBootstrapSetup() {
+		return modify.AddMigration(pkgImportPath, entry)
 	}
 
-	entry := "\t\t&migrations.M" + timestamp + "CreateNotificationsTable{},"
-	newLine := "\n" + entry
-
-	src := string(content)
-	insertAt := strings.LastIndex(src, "}")
-	if insertAt == -1 {
-		return errors.NotificationMigrationInsertionPointNotFound
-	}
-
-	sliceClose := strings.LastIndex(src[:insertAt], "}")
-	if sliceClose == -1 {
-		return errors.NotificationMigrationSliceCloseNotFound
-	}
-
-	updated := src[:sliceClose] + newLine + "\n\t" + src[sliceClose:]
-	return os.WriteFile(bootstrapFile, []byte(updated), 0o644)
+	// DEPRECATED path, mirrors migrate_make_command.go's
+	// registerInKernel exactly, targeting database/kernel.go — kept for
+	// apps that haven't migrated to the bootstrap setup yet.
+	return modify.GoFile(c.app.DatabasePath("kernel.go")).
+		Find(match.Imports()).Modify(modify.AddImport(pkgImportPath)).
+		Find(match.Migrations()).Modify(modify.Register(entry)).
+		Apply()
 }
 
 // Column shape here MUST stay in sync with DatabaseNotificationModel in

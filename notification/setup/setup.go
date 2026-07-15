@@ -12,15 +12,10 @@ import (
 func main() {
 	setup := packages.Setup(os.Args)
 	stubs := Stubs{}
-	notificationConfigPath := path.Config("notification.go")
 	notificationFacadePath := path.Facade("notification.go")
 	notificationServiceProvider := "&notification.ServiceProvider{}"
 	moduleImport := setup.Paths().Module().Import()
 	facadesPackage := setup.Paths().Facades().Package()
-	env := `
-NOTIFICATION_CHANNEL=mail
-NOTIFICATION_DB_CONNECTION=
-`
 
 	setup.Install(
 		// Avoid duplicate installation when installing dependent facades
@@ -28,21 +23,11 @@ NOTIFICATION_DB_CONNECTION=
 			// Add the notification service provider to the providers array in bootstrap/providers.go
 			modify.RegisterProvider(moduleImport, notificationServiceProvider),
 
-			// Create config/notification.go
-			modify.File(notificationConfigPath).Overwrite(stubs.Config(setup.Paths().Config().Package(), setup.Paths().Facades().Import(), facadesPackage)),
-
 			// Add the Notification facade
 			modify.File(notificationFacadePath).Overwrite(stubs.NotificationFacade(facadesPackage)),
-
-			// Add configurations to the .env and .env.example files
-			modify.WhenFileNotContains(path.Base(".env"), "NOTIFICATION_CHANNEL", modify.File(path.Base(".env")).Append(env)),
-			modify.WhenFileNotContains(path.Base(".env.example"), "NOTIFICATION_CHANNEL", modify.File(path.Base(".env.example")).Append(env)),
 		),
 	).Uninstall(
 		modify.WhenFacade(facades.Notification,
-			// Remove config/notification.go
-			modify.File(notificationConfigPath).Remove(),
-
 			// Remove the notification service provider from the providers array in bootstrap/providers.go
 			modify.UnregisterProvider(moduleImport, notificationServiceProvider),
 

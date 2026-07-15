@@ -234,7 +234,6 @@ var (
 			Description: "Send notifications across mail, database, and other channels.",
 			PkgPath:     "github.com/goravel/framework/notification",
 			Dependencies: []string{
-				Config,
 				Log,
 				Mail,
 				Orm,

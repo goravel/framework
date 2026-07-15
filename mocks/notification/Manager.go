@@ -102,7 +102,7 @@ func (_c *Manager_Extend_Call) RunAndReturn(run func(notification.Channel)) *Man
 }
 
 // Route provides a mock function with given fields: channel, route
-func (_m *Manager) Route(channel string, route string) notification.OnDemandNotifiable {
+func (_m *Manager) Route(channel string, route interface{}) notification.OnDemandNotifiable {
 	ret := _m.Called(channel, route)
 
 	if len(ret) == 0 {
@@ -110,7 +110,7 @@ func (_m *Manager) Route(channel string, route string) notification.OnDemandNoti
 	}
 
 	var r0 notification.OnDemandNotifiable
-	if rf, ok := ret.Get(0).(func(string, string) notification.OnDemandNotifiable); ok {
+	if rf, ok := ret.Get(0).(func(string, interface{}) notification.OnDemandNotifiable); ok {
 		r0 = rf(channel, route)
 	} else {
 		if ret.Get(0) != nil {
@@ -128,14 +128,14 @@ type Manager_Route_Call struct {
 
 // Route is a helper method to define mock.On call
 //   - channel string
-//   - route string
+//   - route interface{}
 func (_e *Manager_Expecter) Route(channel interface{}, route interface{}) *Manager_Route_Call {
 	return &Manager_Route_Call{Call: _e.mock.On("Route", channel, route)}
 }
 
-func (_c *Manager_Route_Call) Run(run func(channel string, route string)) *Manager_Route_Call {
+func (_c *Manager_Route_Call) Run(run func(channel string, route interface{})) *Manager_Route_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string))
+		run(args[0].(string), args[1].(interface{}))
 	})
 	return _c
 }
@@ -145,7 +145,7 @@ func (_c *Manager_Route_Call) Return(_a0 notification.OnDemandNotifiable) *Manag
 	return _c
 }
 
-func (_c *Manager_Route_Call) RunAndReturn(run func(string, string) notification.OnDemandNotifiable) *Manager_Route_Call {
+func (_c *Manager_Route_Call) RunAndReturn(run func(string, interface{}) notification.OnDemandNotifiable) *Manager_Route_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -113,7 +113,7 @@ func (_c *OnDemandNotifiable_NotifyNow_Call) RunAndReturn(run func(notification.
 }
 
 // Route provides a mock function with given fields: channel, route
-func (_m *OnDemandNotifiable) Route(channel string, route string) notification.OnDemandNotifiable {
+func (_m *OnDemandNotifiable) Route(channel string, route interface{}) notification.OnDemandNotifiable {
 	ret := _m.Called(channel, route)
 
 	if len(ret) == 0 {
@@ -121,7 +121,7 @@ func (_m *OnDemandNotifiable) Route(channel string, route string) notification.O
 	}
 
 	var r0 notification.OnDemandNotifiable
-	if rf, ok := ret.Get(0).(func(string, string) notification.OnDemandNotifiable); ok {
+	if rf, ok := ret.Get(0).(func(string, interface{}) notification.OnDemandNotifiable); ok {
 		r0 = rf(channel, route)
 	} else {
 		if ret.Get(0) != nil {
@@ -139,14 +139,14 @@ type OnDemandNotifiable_Route_Call struct {
 
 // Route is a helper method to define mock.On call
 //   - channel string
-//   - route string
+//   - route interface{}
 func (_e *OnDemandNotifiable_Expecter) Route(channel interface{}, route interface{}) *OnDemandNotifiable_Route_Call {
 	return &OnDemandNotifiable_Route_Call{Call: _e.mock.On("Route", channel, route)}
 }
 
-func (_c *OnDemandNotifiable_Route_Call) Run(run func(channel string, route string)) *OnDemandNotifiable_Route_Call {
+func (_c *OnDemandNotifiable_Route_Call) Run(run func(channel string, route interface{})) *OnDemandNotifiable_Route_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string))
+		run(args[0].(string), args[1].(interface{}))
 	})
 	return _c
 }
@@ -156,7 +156,7 @@ func (_c *OnDemandNotifiable_Route_Call) Return(_a0 notification.OnDemandNotifia
 	return _c
 }
 
-func (_c *OnDemandNotifiable_Route_Call) RunAndReturn(run func(string, string) notification.OnDemandNotifiable) *OnDemandNotifiable_Route_Call {
+func (_c *OnDemandNotifiable_Route_Call) RunAndReturn(run func(string, interface{}) notification.OnDemandNotifiable) *OnDemandNotifiable_Route_Call {
 	_c.Call.Return(run)
 	return _c
 }
