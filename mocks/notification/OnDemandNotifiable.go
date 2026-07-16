@@ -162,18 +162,20 @@ func (_c *OnDemandNotifiable_Route_Call) RunAndReturn(run func(string, interface
 }
 
 // RouteNotificationFor provides a mock function with given fields: channel
-func (_m *OnDemandNotifiable) RouteNotificationFor(channel string) string {
+func (_m *OnDemandNotifiable) RouteNotificationFor(channel string) interface{} {
 	ret := _m.Called(channel)
 
 	if len(ret) == 0 {
 		panic("no return value specified for RouteNotificationFor")
 	}
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func(string) string); ok {
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func(string) interface{}); ok {
 		r0 = rf(channel)
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(interface{})
+		}
 	}
 
 	return r0
@@ -197,12 +199,12 @@ func (_c *OnDemandNotifiable_RouteNotificationFor_Call) Run(run func(channel str
 	return _c
 }
 
-func (_c *OnDemandNotifiable_RouteNotificationFor_Call) Return(_a0 string) *OnDemandNotifiable_RouteNotificationFor_Call {
+func (_c *OnDemandNotifiable_RouteNotificationFor_Call) Return(_a0 interface{}) *OnDemandNotifiable_RouteNotificationFor_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *OnDemandNotifiable_RouteNotificationFor_Call) RunAndReturn(run func(string) string) *OnDemandNotifiable_RouteNotificationFor_Call {
+func (_c *OnDemandNotifiable_RouteNotificationFor_Call) RunAndReturn(run func(string) interface{}) *OnDemandNotifiable_RouteNotificationFor_Call {
 	_c.Call.Return(run)
 	return _c
 }

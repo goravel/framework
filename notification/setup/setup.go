@@ -18,20 +18,13 @@ func main() {
 	facadesPackage := setup.Paths().Facades().Package()
 
 	setup.Install(
-		// Avoid duplicate installation when installing dependent facades
 		modify.WhenFacade(facades.Notification,
-			// Add the notification service provider to the providers array in bootstrap/providers.go
 			modify.RegisterProvider(moduleImport, notificationServiceProvider),
-
-			// Add the Notification facade
 			modify.File(notificationFacadePath).Overwrite(stubs.NotificationFacade(facadesPackage)),
 		),
 	).Uninstall(
 		modify.WhenFacade(facades.Notification,
-			// Remove the notification service provider from the providers array in bootstrap/providers.go
 			modify.UnregisterProvider(moduleImport, notificationServiceProvider),
-
-			// Remove the Notification facade
 			modify.File(notificationFacadePath).Remove(),
 		),
 	).Execute()

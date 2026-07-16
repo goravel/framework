@@ -3,20 +3,13 @@ package notification
 import contractsnotification "github.com/goravel/framework/contracts/notification"
 
 // onDemandNotifiable is a Notifiable built on the fly by Manager.Route.
-// routes is map[string]any (not map[string]string) to match Route's
-// contract — RouteNotificationFor still returns string, type-asserting
-// on read, since the string-based Notifiable interface can't change
-// without breaking every existing channel.
 type onDemandNotifiable struct {
 	manager *Manager
 	routes  map[string]any
 }
 
-func (o *onDemandNotifiable) RouteNotificationFor(channel string) string {
-	if s, ok := o.routes[channel].(string); ok {
-		return s
-	}
-	return ""
+func (o *onDemandNotifiable) RouteNotificationFor(channel string) any {
+	return o.routes[channel]
 }
 
 func (o *onDemandNotifiable) Route(channel string, route any) contractsnotification.OnDemandNotifiable {

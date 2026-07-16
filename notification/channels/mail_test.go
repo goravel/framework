@@ -12,18 +12,26 @@ import (
 	contractsnotification "github.com/goravel/framework/contracts/notification"
 	mocksmail "github.com/goravel/framework/mocks/mail"
 	"github.com/goravel/framework/notification/channels"
-	"github.com/goravel/framework/notification/mailmessage"
+	"github.com/goravel/framework/notification/mail"
 )
 
 // ---- Fakes ----
 
 type mailNotifiable struct{ addr string }
 
-func (m *mailNotifiable) RouteNotificationFor(channel string) string {
+func (m *mailNotifiable) RouteNotificationFor(channel string) any {
 	if channel == "mail" {
 		return m.addr
 	}
 	return ""
+}
+
+// nonStringRouteNotifiable returns a non-string value for every channel,
+// to test that channels treat that as "no route" rather than panicking.
+type nonStringRouteNotifiable struct{}
+
+func (nonStringRouteNotifiable) RouteNotificationFor(_ string) any {
+	return 12345
 }
 
 // mailRoutableNotifiable implements MailRoutable in addition to
@@ -34,7 +42,7 @@ type mailRoutableNotifiable struct {
 	routes map[string]string
 }
 
-func (m *mailRoutableNotifiable) RouteNotificationFor(channel string) string {
+func (m *mailRoutableNotifiable) RouteNotificationFor(channel string) any {
 	if channel == "mail" {
 		return m.addr
 	}
@@ -92,7 +100,7 @@ func TestMailChannel_Send_UsesToMail_WhenMailableNotification(t *testing.T) {
 	ch := channels.NewMailChannel(mailer)
 	notifiable := &mailNotifiable{addr: "user@example.com"}
 	n := &richNotification{
-		msg: mailmessage.NewMailMessage().
+		msg: mail.NewMessage().
 			Subject("Invoice Paid").
 			Text("Your invoice was paid.").
 			Build(),
@@ -125,7 +133,7 @@ func TestMailChannel_Send_MapsHtmlViewAndTextView(t *testing.T) {
 	ch := channels.NewMailChannel(mailer)
 	notifiable := &mailNotifiable{addr: "user@example.com"}
 	n := &richNotification{
-		msg: mailmessage.NewMailMessage().
+		msg: mail.NewMessage().
 			Subject("Invoice Paid").
 			HtmlView("emails.invoice", map[string]any{"amount": "99.99"}).
 			TextView("emails.invoice_text", map[string]any{"amount": "99.99"}).
@@ -199,7 +207,7 @@ func TestMailChannel_Send_ToMailOverridesResolvedAddresses_WhenSet(t *testing.T)
 		},
 	}
 	n := &richNotification{
-		msg: mailmessage.NewMailMessage().
+		msg: mail.NewMessage().
 			To("explicit@example.com"). // ToMail() explicitly sets To
 			Subject("Invoice Paid").
 			Text("Your invoice was paid.").
@@ -215,6 +223,22 @@ func TestMailChannel_Send_ReturnsError_WhenEmptyAddress(t *testing.T) {
 
 	ch := channels.NewMailChannel(mailer)
 	notifiable := &mailNotifiable{addr: ""} // no address
+	n := &plainNotification{}
+
+	err := ch.Send(notifiable, n)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "empty address")
+}
+
+// RouteNotificationFor returns any (see contracts/notification.Notifiable).
+// The mail channel only understands string routes; a non-string route is
+// treated the same as an empty one rather than panicking on a failed
+// type assertion.
+func TestMailChannel_Send_ReturnsError_WhenRouteIsNotAString(t *testing.T) {
+	mailer := mocksmail.NewMail(t) // no calls expected
+
+	ch := channels.NewMailChannel(mailer)
+	notifiable := &nonStringRouteNotifiable{}
 	n := &plainNotification{}
 
 	err := ch.Send(notifiable, n)
@@ -258,7 +282,7 @@ func TestMailChannel_Send_MailableExposesAllContractFields(t *testing.T) {
 	ch := channels.NewMailChannel(mailer)
 	notifiable := &mailNotifiable{addr: "user@example.com"}
 	n := &richNotification{
-		msg: mailmessage.NewMailMessage().
+		msg: mail.NewMessage().
 			Subject("Invoice Paid").
 			Text("paid").
 			Attach("invoice.pdf").
@@ -315,7 +339,7 @@ func TestMailChannel_Deliver_UsesRouteAsRecipients_WhenToEmpty(t *testing.T) {
 		Return(nil).Once()
 
 	ch := channels.NewMailChannel(mailer)
-	payload, err := json.Marshal(mailmessage.NewMailMessage().Text("hi").Build())
+	payload, err := json.Marshal(mail.NewMessage().Text("hi").Build())
 	assert.NoError(t, err)
 
 	err = ch.Deliver("a@example.com,b@example.com", payload)
@@ -334,7 +358,7 @@ func TestMailChannel_Deliver_DefaultsSubject_WhenEmpty(t *testing.T) {
 		Return(nil).Once()
 
 	ch := channels.NewMailChannel(mailer)
-	payload, err := json.Marshal(mailmessage.NewMailMessage().Text("hi").Build()) // Subject deliberately left empty
+	payload, err := json.Marshal(mail.NewMessage().Text("hi").Build()) // Subject deliberately left empty
 	assert.NoError(t, err)
 
 	err = ch.Deliver("user@example.com", payload)
@@ -353,7 +377,7 @@ func TestMailChannel_Deliver_SetsFrom_WhenSpecified(t *testing.T) {
 		Return(nil).Once()
 
 	ch := channels.NewMailChannel(mailer)
-	payload, err := json.Marshal(mailmessage.NewMailMessage().
+	payload, err := json.Marshal(mail.NewMessage().
 		Subject("Hi").
 		Text("hi").
 		From("billing@example.com").

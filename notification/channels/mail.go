@@ -9,16 +9,16 @@ import (
 	contractsmail "github.com/goravel/framework/contracts/mail"
 	contractsnotification "github.com/goravel/framework/contracts/notification"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/notification/mailmessage"
+	"github.com/goravel/framework/notification/mail"
 )
 
 // MailChannel delivers notifications via Goravel's mail facade.
 type MailChannel struct {
-	mail contractsmail.Mail
+	mailer contractsmail.Mail
 }
 
-func NewMailChannel(mail contractsmail.Mail) *MailChannel {
-	return &MailChannel{mail: mail}
+func NewMailChannel(mailer contractsmail.Mail) *MailChannel {
+	return &MailChannel{mailer: mailer}
 }
 
 func (c *MailChannel) Name() string { return "mail" }
@@ -79,7 +79,7 @@ func (c *MailChannel) resolveAddresses(
 		}
 	}
 
-	to := notifiable.RouteNotificationFor("mail")
+	to, _ := notifiable.RouteNotificationFor("mail").(string)
 	if to == "" {
 		return nil, errors.NotificationMailEmptyRoute.Args(notifiable)
 	}
@@ -144,14 +144,14 @@ func (c *MailChannel) Deliver(route string, payload []byte) error {
 		mailable.envelope.From = contractsmail.Address{Address: msg.From}
 	}
 
-	if err := c.mail.Send(mailable); err != nil {
+	if err := c.mailer.Send(mailable); err != nil {
 		return errors.NotificationMailSendFailed.Args(err)
 	}
 	return nil
 }
 
 func (c *MailChannel) defaultMessage(n contractsnotification.Notification) contractsnotification.MailMessage {
-	return mailmessage.NewMailMessage().
+	return mail.NewMessage().
 		Subject(fmt.Sprintf("Notification: %T", n)).
 		Text(fmt.Sprintf("You have a new %T notification.", n)).
 		Build()

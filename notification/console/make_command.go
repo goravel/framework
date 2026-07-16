@@ -60,9 +60,9 @@ func (r *NotificationMakeCommand) Handle(ctx console.Context) error {
 
 func (r *NotificationMakeCommand) getStub(ctx console.Context) string {
 	if ctx.OptionBool("database") {
-		return Stubs{}.NotificationDatabase()
+		return Stubs{}.DatabaseNotification()
 	}
-	return Stubs{}.Notification()
+	return Stubs{}.MailNotification()
 }
 
 func (r *NotificationMakeCommand) populateStub(stub string, packageName, structName string) string {

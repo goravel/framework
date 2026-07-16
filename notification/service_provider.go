@@ -56,7 +56,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 func (r *ServiceProvider) Boot(app foundation.Application) {
 	app.Commands([]contractsconsole.Command{
 		console.NewNotificationMakeCommand(),
-		console.NewNotificationsTableCommand(app),
+		console.NewNotificationsTableCommand(),
 	})
 
 	r.registerJobs(app)

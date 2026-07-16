@@ -14,7 +14,7 @@ type Manager struct {
 	mu       sync.RWMutex
 	channels map[string]contractsnotification.Channel
 	log      log.Log
-	queue    queue.Queue // may be nil when queue is not configured
+	queue    queue.Queue
 }
 
 func NewManager(logger log.Log, q queue.Queue) *Manager {
@@ -108,21 +108,6 @@ func (m *Manager) dispatchSync(
 	return errors.Join(errs...)
 }
 
-// dispatchQueued resolves each channel's payload eagerly (while notifiable
-// and n are still live values on this goroutine) and queues only the
-// resulting plain, serializable (channel, route, payload) data — never
-// the live notifiable/notification themselves. See job.go for why:
-// short version, unexported live interface fields don't survive a real
-// queue driver round-trip, since DispatchJob is looked up and re-invoked
-// from a registry rather than passed the original Go values directly.
-//
-// NotificationWithAfterSending is NOT called on this path: by the time
-// DispatchJob.Handle actually delivers (possibly in a different process),
-// the live notification n no longer exists — only the resolved
-// (channel, route, payload) does. Calling AfterSending here, before
-// delivery has actually happened, would be a lie. This is a real scope
-// limitation, not an oversight — flagged for discussion rather than
-// worked around with something that would silently misbehave.
 func (m *Manager) dispatchQueued(
 	notifiable contractsnotification.Notifiable,
 	n contractsnotification.Notification,
@@ -144,9 +129,6 @@ func (m *Manager) dispatchQueued(
 
 		resolvable, ok := ch.(contractsnotification.ResolvableChannel)
 		if !ok {
-			// Degrade clearly rather than silently drop data — a custom
-			// channel that only implements Channel (not
-			// ResolvableChannel) can't be queued safely.
 			err := errors.NotificationChannelNotQueueable.Args(name)
 			m.log.Errorf("notifications: %v", err)
 			errs = append(errs, err)

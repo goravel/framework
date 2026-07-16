@@ -1,22 +1,22 @@
-package mailmessage
+package mail
 
 import contractsnotification "github.com/goravel/framework/contracts/notification"
 
-// NewMailMessage returns a fluent builder for MailMessage. Every method
+// NewMessage returns a fluent builder for a MailMessage. Every method
 // returns the same builder so calls can be chained; call Build() to
 // finish.
 //
 //	func (n *InvoicePaid) ToMail(_ notification.Notifiable) notification.MailMessage {
-//	    return mailmessage.NewMailMessage().
+//	    return mail.NewMessage().
 //	        Subject("Invoice Paid").
 //	        Html("<p>Thanks!</p>").
 //	        Build()
 //	}
-func NewMailMessage() *Builder {
+func NewMessage() *Builder {
 	return &Builder{}
 }
 
-// Builder is the fluent builder returned by NewMailMessage.
+// Builder is the fluent builder returned by NewMessage.
 type Builder struct {
 	msg contractsnotification.MailMessage
 }

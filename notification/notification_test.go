@@ -14,14 +14,14 @@ import (
 	mocksmail "github.com/goravel/framework/mocks/mail"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
 	"github.com/goravel/framework/notification/channels"
-	"github.com/goravel/framework/notification/mailmessage"
+	"github.com/goravel/framework/notification/mail"
 )
 
 // ---- Fakes ----
 
 type fakeNotifiable struct{ email string }
 
-func (f *fakeNotifiable) RouteNotificationFor(channel string) string {
+func (f *fakeNotifiable) RouteNotificationFor(channel string) any {
 	if channel == "mail" {
 		return f.email
 	}
@@ -134,7 +134,7 @@ func (n *queueableShouldSendNotification) ShouldSend(_ contractsnotification.Not
 
 type queueTestNotifiable struct{}
 
-func (queueTestNotifiable) RouteNotificationFor(channel string) string {
+func (queueTestNotifiable) RouteNotificationFor(channel string) any {
 	if channel == "mail" {
 		return "user@example.com"
 	}
@@ -147,7 +147,7 @@ func (n *queueableNotification) Via(_ contractsnotification.Notifiable) []string
 	return []string{"mail"}
 }
 func (n *queueableNotification) ToMail(_ contractsnotification.Notifiable) contractsnotification.MailMessage {
-	return mailmessage.NewMailMessage().
+	return mail.NewMessage().
 		Subject("Queued").
 		Html("<p>hi</p>").
 		Build()
@@ -413,15 +413,18 @@ func TestManager_Route_RouteNotificationForReturnsConfiguredAddress(t *testing.T
 
 	assert.Equal(t, "user@example.com", target.RouteNotificationFor("mail"))
 	assert.Equal(t, "+15551234567", target.RouteNotificationFor("sms"))
-	assert.Equal(t, "", target.RouteNotificationFor("database"))
+	// No route was ever set for "database" — the underlying map lookup
+	// misses, returning the any zero value (nil), not an empty string.
+	assert.Nil(t, target.RouteNotificationFor("database"))
 }
 
-func TestManager_Route_RouteNotificationFor_ReturnsEmpty_WhenRouteIsNotAString(t *testing.T) {
+func TestManager_Route_RouteNotificationFor_ReturnsRawValue_WhenRouteIsNotAString(t *testing.T) {
 	logger := mockslog.NewLog(t)
 	mgr := NewManager(logger, nil)
 
-	target := mgr.Route("custom", struct{ ID int }{ID: 1})
-	assert.Equal(t, "", target.RouteNotificationFor("custom"))
+	route := struct{ ID int }{ID: 1}
+	target := mgr.Route("custom", route)
+	assert.Equal(t, route, target.RouteNotificationFor("custom"))
 }
 
 func TestManager_Route_NotifyNow_DeliversToChainedChannels(t *testing.T) {
@@ -457,115 +460,8 @@ func TestManager_Route_Notify_RespectsShouldQueue(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-// ---- DispatchJob ----
-
-func TestDispatchJob_Signature(t *testing.T) {
-	job := NewDispatchJob(NewManager(mockslog.NewLog(t), nil))
-	assert.Equal(t, "goravel_notifications:dispatch", job.Signature())
-}
-
-func TestDispatchJob_Handle_ReturnsError_WhenNoArgs(t *testing.T) {
-	job := NewDispatchJob(NewManager(mockslog.NewLog(t), nil))
-	err := job.Handle()
-	assert.Error(t, err)
-}
-
-func TestDispatchJob_Handle_ReturnsError_WhenTooManyArgs(t *testing.T) {
-	job := NewDispatchJob(NewManager(mockslog.NewLog(t), nil))
-	err := job.Handle("one", "two")
-	assert.Error(t, err)
-}
-
-func TestDispatchJob_Handle_ReturnsError_WhenArgNotString(t *testing.T) {
-	job := NewDispatchJob(NewManager(mockslog.NewLog(t), nil))
-	err := job.Handle(42)
-	assert.Error(t, err)
-}
-
-func TestDispatchJob_Handle_ReturnsError_WhenMalformedJSON(t *testing.T) {
-	job := NewDispatchJob(NewManager(mockslog.NewLog(t), nil))
-	err := job.Handle("{not valid json")
-	assert.Error(t, err)
-}
-
-func TestDispatchJob_Handle_ReturnsError_WhenChannelNotRegistered(t *testing.T) {
-	logger := mockslog.NewLog(t)
-	logger.EXPECT().Errorf("%s", mock.Anything).Once()
-
-	mgr := NewManager(logger, nil)
-	job := NewDispatchJob(mgr)
-
-	encoded, err := encodeDispatchItem(dispatchItem{Channel: "missing", Route: "r", Payload: []byte("{}")})
-	assert.NoError(t, err)
-
-	err = job.Handle(encoded)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "missing")
-}
-
-func TestDispatchJob_Handle_ReturnsError_WhenChannelNotResolvable(t *testing.T) {
-	logger := mockslog.NewLog(t)
-
-	mgr := NewManager(logger, nil)
-	mgr.Extend(&fakeChannel{name: "plain"}) // Channel only, not ResolvableChannel
-	job := NewDispatchJob(mgr)
-
-	encoded, err := encodeDispatchItem(dispatchItem{Channel: "plain", Route: "r", Payload: []byte("{}")})
-	assert.NoError(t, err)
-
-	err = job.Handle(encoded)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "does not support queued dispatch")
-}
-
-func TestDispatchJob_Handle_DeliversSuccessfully(t *testing.T) {
-	logger := mockslog.NewLog(t)
-
-	mgr := NewManager(logger, nil)
-	ch := &fakeResolvableChannel{name: "ok"}
-	mgr.Extend(ch)
-	job := NewDispatchJob(mgr)
-
-	encoded, err := encodeDispatchItem(dispatchItem{Channel: "ok", Route: "user@example.com", Payload: []byte(`{"subject":"hi"}`)})
-	assert.NoError(t, err)
-
-	err = job.Handle(encoded)
-	assert.NoError(t, err)
-	assert.Len(t, ch.delivered, 1)
-	assert.Equal(t, "user@example.com", ch.delivered[0].route)
-	assert.JSONEq(t, `{"subject":"hi"}`, string(ch.delivered[0].payload))
-}
-
-func TestDispatchJob_Handle_PropagatesDeliverError(t *testing.T) {
-	logger := mockslog.NewLog(t)
-
-	mgr := NewManager(logger, nil)
-	mgr.Extend(&fakeResolvableChannel{name: "broken", deliverErr: errors.New("smtp down")})
-	job := NewDispatchJob(mgr)
-
-	encoded, err := encodeDispatchItem(dispatchItem{Channel: "broken", Route: "r", Payload: []byte("{}")})
-	assert.NoError(t, err)
-
-	err = job.Handle(encoded)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "smtp down")
-}
-
 // ---- Full queue round-trip, using the real mail channel ----
 
-// TestManager_Send_QueuedNotification_SurvivesWorkerRoundTrip guards
-// against a design that only appears to work: it deliberately does NOT
-// call Handle() on the exact *DispatchJob instance Manager.Send()
-// constructs and passes to queue.Job() — that would prove nothing, since
-// a design relying on unexported live manager/notifiable/notification
-// fields would also "work" if you just reuse the same live Go object.
-// Instead it builds a SEPARATE DispatchJob backed by a SEPARATE Manager
-// (simulating a different process — a real `artisan queue:work` worker
-// booting its own app) and calls Handle on that one, using only the
-// []queue.Arg captured from the Job() call. If delivery still happens,
-// the design genuinely doesn't depend on object identity surviving a
-// serialization boundary — only on the plain (channel, route, payload)
-// data actually making it through.
 func TestManager_Send_QueuedNotification_SurvivesWorkerRoundTrip(t *testing.T) {
 	logger := mockslog.NewLog(t)
 

@@ -1,14 +1,13 @@
 package console
 
-// Stubs holds the raw templates used by make: commands in this package.
 type Stubs struct{}
 
-func (r Stubs) Notification() string {
+func (r Stubs) MailNotification() string {
 	return `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/notification"
-	"github.com/goravel/framework/notification/mailmessage"
+	"github.com/goravel/framework/notification/mail"
 )
 
 type DummyNotification struct {
@@ -27,7 +26,7 @@ func (r *DummyNotification) Via(notifiable notification.Notifiable) []string {
 // contracts/notification.MailableNotification; omit this method entirely
 // to fall back to the channel's default plain-text message.
 func (r *DummyNotification) ToMail(notifiable notification.Notifiable) notification.MailMessage {
-	return mailmessage.NewMailMessage().
+	return mail.NewMessage().
 		Subject("DummyNotification").
 		Html("<p>Hello!</p>").
 		Build()
@@ -35,7 +34,7 @@ func (r *DummyNotification) ToMail(notifiable notification.Notifiable) notificat
 `
 }
 
-func (r Stubs) NotificationDatabase() string {
+func (r Stubs) DatabaseNotification() string {
 	return `package DummyPackage
 
 import (

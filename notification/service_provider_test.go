@@ -106,11 +106,6 @@ func TestServiceProviderRegister(t *testing.T) {
 		provider.Register(app)
 	})
 
-	// NOTE: no "config facade not set" subtest — Register() no longer
-	// calls app.MakeConfig() at all. Config-based database connection
-	// selection was replaced by the per-notification DatabaseRoutable
-	// interface (see channels/database.go), so Config dropped out of
-	// this dependency chain entirely.
 	t.Run("register notification manager", func(t *testing.T) {
 		app := mocksfoundation.NewApplication(t)
 		app.EXPECT().Bind(binding.Notification, mock.AnythingOfType("func(foundation.Application) (interface {}, error)")).Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
@@ -176,10 +171,7 @@ func TestServiceProviderBoot(t *testing.T) {
 	t.Run("notification facade is not a *Manager", func(t *testing.T) {
 		app := mocksfoundation.NewApplication(t)
 		q := mocksqueue.NewQueue(t)
-		// Satisfies contractsnotification.Manager but isn't the
-		// concrete *Manager type registerJobs type-asserts against —
-		// exercises the "Notification Facade is not a *Manager" branch,
-		// which nothing else in this file reaches.
+
 		notAManager := mocksnotification.NewManager(t)
 		app.EXPECT().Commands(mock.Anything).Once()
 		app.EXPECT().MakeQueue().Return(q).Once()

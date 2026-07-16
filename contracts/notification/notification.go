@@ -25,29 +25,8 @@ type NotificationWithAfterSending interface {
 	AfterSending(notifiable Notifiable, channel string) error
 }
 
-// NotificationWithBackoff is an optional extension for queued
-// notifications that want to control the delay before a retry after a
-// failed delivery attempt.
-//
 // NOT CURRENTLY WIRED — implementing this on a notification has no
-// effect today. DispatchJob is registered once as a single shared
-// instance (see service_provider.go) and the queue worker's retry hook,
-// contracts/queue.JobWithShouldRetry.ShouldRetry(err, attempt), is
-// called on that shared instance without the failing task's args. There
-// is currently no race-free way for DispatchJob to know which
-// notification's Backoff() applies to a given retry decision, since
-// concurrent deliveries for different notifications share the same
-// DispatchJob instance. Wiring this safely needs one of:
-//   - a contracts/queue change so ShouldRetry also receives the task's
-//     args (the cleanest fix, but changes the queue package's public
-//     contract — belongs in its own proposal, not silently in this PR), or
-//   - DispatchJob running its own internal retry loop using values
-//     encoded into the dispatch item at resolve time, bypassing the
-//     queue framework's own retry/failed-job tracking entirely.
-//
-// The contract is defined now so notification structs that declare
-// Backoff() today don't need a breaking change once one of the above
-// lands — but until then, this method is read by nothing.
+// effect today.
 type NotificationWithBackoff interface {
 	Notification
 	// Backoff returns the number of seconds to wait before retrying
@@ -55,15 +34,7 @@ type NotificationWithBackoff interface {
 	Backoff(channel string) int
 }
 
-// NotificationWithRetryUntil is an optional extension for queued
-// notifications that want to stop retrying after a deadline rather than
-// a fixed attempt count.
-//
 // NOT CURRENTLY WIRED — same root cause as NotificationWithBackoff:
-// DispatchJob has no race-free way to associate this value with a
-// specific in-flight retry given the shared-instance, args-less
-// ShouldRetry hook. See NotificationWithBackoff's doc comment for the
-// two real paths to wiring this in.
 type NotificationWithRetryUntil interface {
 	Notification
 	// RetryUntil returns the time after which delivery attempts should
@@ -72,16 +43,10 @@ type NotificationWithRetryUntil interface {
 }
 
 type Notifiable interface {
-	// RouteNotificationFor returns the delivery address for channel: an
-	// email address for "mail", the model's string primary key for
-	// "database".
-	RouteNotificationFor(channel string) string
+	RouteNotificationFor(channel string) any
 }
 
 type MailRoutable interface {
-	// RouteNotificationForMail returns every address this notifiable
-	// should receive the given notification at, keyed by address with
-	// an optional display name as the value (empty string for no name).
 	RouteNotificationForMail(notification Notification) map[string]string
 }
 
@@ -91,11 +56,6 @@ type Channel interface {
 	// Name returns the unique identifier for this channel, e.g. "mail", "database".
 	Name() string
 
-	// Send delivers the notification to the notifiable target. Channel
-	// drivers only need this one method — the facade (Manager) is what
-	// decides whether a send goes through the queue. Manager.SendNow and
-	// OnDemandNotifiable.NotifyNow are the actual bypass points for
-	// callers who want to skip queue routing; they call this same Send.
 	Send(notifiable Notifiable, notification Notification) error
 }
 

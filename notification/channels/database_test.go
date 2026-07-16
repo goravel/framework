@@ -17,7 +17,7 @@ import (
 
 type dbNotifiable struct{ id string }
 
-func (d *dbNotifiable) RouteNotificationFor(channel string) string {
+func (d *dbNotifiable) RouteNotificationFor(channel string) any {
 	if channel == "database" {
 		return d.id
 	}
@@ -151,6 +151,18 @@ func TestDatabaseChannel_Send_ReturnsError_WhenEmptyID(t *testing.T) {
 	ch := channels.NewDatabaseChannel(nil) // no orm call expected
 
 	err := ch.Send(&dbNotifiable{id: ""}, &dbNotification{})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "empty ID")
+}
+
+// RouteNotificationFor returns any (see contracts/notification.Notifiable).
+// The database channel only understands string routes; a non-string
+// route is treated the same as an empty one rather than panicking on a
+// failed type assertion.
+func TestDatabaseChannel_Send_ReturnsError_WhenRouteIsNotAString(t *testing.T) {
+	ch := channels.NewDatabaseChannel(nil) // no orm call expected
+
+	err := ch.Send(nonStringRouteNotifiable{}, &dbNotification{})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "empty ID")
 }

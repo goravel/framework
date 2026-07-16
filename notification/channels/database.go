@@ -62,7 +62,7 @@ func (c *DatabaseChannel) Resolve(
 	notifiable contractsnotification.Notifiable,
 	n contractsnotification.Notification,
 ) (string, []byte, error) {
-	notifiableID := notifiable.RouteNotificationFor("database")
+	notifiableID, _ := notifiable.RouteNotificationFor("database").(string)
 	if notifiableID == "" {
 		return "", nil, errors.NotificationDatabaseEmptyRoute.Args(notifiable)
 	}

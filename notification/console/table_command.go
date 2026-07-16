@@ -9,36 +9,19 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/packages/match"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support/env"
 )
 
-// NotificationsTableCommand generates a migration file that creates the
-// notifications table used by the database channel.
-//
-// Unlike make:migration, this writes a pre-filled schema directly rather
-// than delegating to migration.Migrator — mirrors Laravel's
-// notifications:table, which does the same (its own stub-copy, not the
-// generic migration creator), since a pre-filled notifications-table
-// schema isn't something the generic migration creator supports without
-// its own custom stub mechanism this command doesn't have visibility
-// into. Registration, however, now uses the exact same real mechanism
-// make:migration itself uses (confirmed against
-// database/console/migration/migrate_make_command.go) — see
-// registerMigration below.
-//
 // Usage:
 //
 //	./artisan notifications:table
 //	./artisan migrate
-type NotificationsTableCommand struct {
-	app foundation.Application
-}
+type NotificationsTableCommand struct{}
 
-func NewNotificationsTableCommand(app foundation.Application) *NotificationsTableCommand {
-	return &NotificationsTableCommand{app: app}
+func NewNotificationsTableCommand() *NotificationsTableCommand {
+	return &NotificationsTableCommand{}
 }
 
 func (c *NotificationsTableCommand) Signature() string {
@@ -86,28 +69,11 @@ func (c *NotificationsTableCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-// registerMigration mirrors migration.MigrateMakeCommand.Handle's own
-// registration branch exactly: modify.AddMigration for apps on the
-// v1.16+ bootstrap setup, falling back to the deprecated kernel.go
-// codemod otherwise — replaces the previous hand-rolled
-// bootstrap/migrations.go string-splicing entirely.
-//
-// pkgImportPath is built the same way support/console.Make.GetPackageImportPath
-// does it (confirmed from that file directly) — debug.ReadBuildInfo().Main.Path
-// plus the migrations folder, with the same "goravel" fallback
-// Make.GetModuleName() uses when build info isn't available (e.g. under
-// `go test`, where ReadBuildInfo can return ok=false). This command
-// doesn't call supportconsole.NewMake itself, since it hand-writes the
-// migration file directly for the pre-filled-schema reason explained in
-// the type doc comment above — but the import-path logic is copied
-// exactly rather than reinvented.
-//
-// The kernel.go fallback path uses c.app.DatabasePath("kernel.go") —
-// not a hardcoded "database/kernel.go" string — matching
-// MigrateMakeCommand.registerInKernel exactly, which is why this is now
-// a method (needs c.app) rather than the standalone function it was
-// before this fix.
 func (c *NotificationsTableCommand) registerMigration(structName string) error {
+	if !env.IsBootstrapSetup() {
+		return errors.NotificationTableRequiresBootstrapSetup
+	}
+
 	modulePath := "goravel"
 	if info, ok := debug.ReadBuildInfo(); ok {
 		modulePath = info.Main.Path
@@ -115,17 +81,7 @@ func (c *NotificationsTableCommand) registerMigration(structName string) error {
 	pkgImportPath := modulePath + "/database/migrations"
 	entry := fmt.Sprintf("&migrations.%s{}", structName)
 
-	if env.IsBootstrapSetup() {
-		return modify.AddMigration(pkgImportPath, entry)
-	}
-
-	// DEPRECATED path, mirrors migrate_make_command.go's
-	// registerInKernel exactly, targeting database/kernel.go — kept for
-	// apps that haven't migrated to the bootstrap setup yet.
-	return modify.GoFile(c.app.DatabasePath("kernel.go")).
-		Find(match.Imports()).Modify(modify.AddImport(pkgImportPath)).
-		Find(match.Migrations()).Modify(modify.Register(entry)).
-		Apply()
+	return modify.AddMigration(pkgImportPath, entry)
 }
 
 // Column shape here MUST stay in sync with DatabaseNotificationModel in
