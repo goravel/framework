@@ -43,6 +43,13 @@ type NotificationWithRetryUntil interface {
 }
 
 type Notifiable interface {
+	// RouteNotificationFor returns the delivery address for channel.
+	// The concrete type is channel-specific: built-in channels expect a
+	// string (mail: an email address, or []string/map[string]string for
+	// multiple addresses; database: the model's primary key, cast to a
+	// string via cast.ToString so numeric IDs work too). Custom channels
+	// may expect other types entirely — any type not understood by a
+	// given channel is treated the same as no route for that channel.
 	RouteNotificationFor(channel string) any
 }
 

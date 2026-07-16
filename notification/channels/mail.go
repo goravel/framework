@@ -66,9 +66,14 @@ func (c *MailChannel) Resolve(
 
 // resolveAddresses prefers MailRoutable (multiple addresses, each with an
 // optional display name) when the notifiable implements it, falling back
-// to the single RouteNotificationFor("mail") address otherwise. Named
-// addresses are formatted "Name <address>" per RFC 5322, matching how
-// Laravel's mail routing presents name+address pairs.
+// to RouteNotificationFor("mail") otherwise. The mail channel accepts
+// three shapes there: a single address (string), multiple unnamed
+// addresses ([]string), or multiple named addresses (map[string]string,
+// address→name — same shape MailRoutable returns, formatted the same
+// way). Any other type (including nil, from a Notifiable that doesn't
+// route "mail" at all) is treated as no route. Named addresses are
+// formatted "Name <address>" per RFC 5322, matching how Laravel's mail
+// routing presents name+address pairs.
 func (c *MailChannel) resolveAddresses(
 	notifiable contractsnotification.Notifiable,
 	n contractsnotification.Notification,
@@ -79,11 +84,25 @@ func (c *MailChannel) resolveAddresses(
 		}
 	}
 
-	to, _ := notifiable.RouteNotificationFor("mail").(string)
-	if to == "" {
-		return nil, errors.NotificationMailEmptyRoute.Args(notifiable)
+	switch to := notifiable.RouteNotificationFor("mail").(type) {
+	case string:
+		if to == "" {
+			break
+		}
+		return []string{to}, nil
+	case []string:
+		if len(to) == 0 {
+			break
+		}
+		return to, nil
+	case map[string]string:
+		if len(to) == 0 {
+			break
+		}
+		return formatAddresses(to), nil
 	}
-	return []string{to}, nil
+
+	return nil, errors.NotificationMailEmptyRoute.Args(notifiable)
 }
 
 // formatAddresses turns an address→name map into a deterministically

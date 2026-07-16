@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/spf13/cast"
 
 	contractsnotification "github.com/goravel/framework/contracts/notification"
 
@@ -62,7 +63,7 @@ func (c *DatabaseChannel) Resolve(
 	notifiable contractsnotification.Notifiable,
 	n contractsnotification.Notification,
 ) (string, []byte, error) {
-	notifiableID, _ := notifiable.RouteNotificationFor("database").(string)
+	notifiableID := cast.ToString(notifiable.RouteNotificationFor("database"))
 	if notifiableID == "" {
 		return "", nil, errors.NotificationDatabaseEmptyRoute.Args(notifiable)
 	}

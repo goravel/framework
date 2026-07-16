@@ -24,6 +24,17 @@ func (d *dbNotifiable) RouteNotificationFor(channel string) any {
 	return ""
 }
 
+// numericRouteNotifiable returns an int route — tests that the database
+// channel's cast.ToString handles numeric primary keys, not just strings.
+type numericRouteNotifiable struct{ id int }
+
+func (n numericRouteNotifiable) RouteNotificationFor(channel string) any {
+	if channel == "database" {
+		return n.id
+	}
+	return nil
+}
+
 // dbNotification does NOT implement DatabaseNotification — tests the fallback payload.
 type dbNotification struct{}
 
@@ -156,15 +167,32 @@ func TestDatabaseChannel_Send_ReturnsError_WhenEmptyID(t *testing.T) {
 }
 
 // RouteNotificationFor returns any (see contracts/notification.Notifiable).
-// The database channel only understands string routes; a non-string
-// route is treated the same as an empty one rather than panicking on a
-// failed type assertion.
-func TestDatabaseChannel_Send_ReturnsError_WhenRouteIsNotAString(t *testing.T) {
+// cast.ToString handles numbers (see the test below) as well as
+// strings; a genuinely unsupported route type is treated the same as an
+// empty one rather than panicking on a failed type assertion.
+func TestDatabaseChannel_Send_ReturnsError_WhenRouteTypeIsUnsupported(t *testing.T) {
 	ch := channels.NewDatabaseChannel(nil) // no orm call expected
 
-	err := ch.Send(nonStringRouteNotifiable{}, &dbNotification{})
+	err := ch.Send(unsupportedRouteNotifiable{}, &dbNotification{})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "empty ID")
+}
+
+// The database route is cast.ToString'd, not strictly type-asserted, so
+// a numeric primary key (a common case — most notifiable models key on
+// an integer ID) works without the app needing to stringify it itself.
+func TestDatabaseChannel_Send_CastsNumericID_ToString(t *testing.T) {
+	query := mocksorm.NewQuery(t)
+	query.EXPECT().Create(mock.MatchedBy(func(r *channels.DatabaseNotificationModel) bool {
+		return r.NotifiableID == "42"
+	})).Return(nil).Once()
+
+	o := mocksorm.NewOrm(t)
+	o.EXPECT().Query().Return(query).Once()
+
+	ch := channels.NewDatabaseChannel(o)
+	err := ch.Send(numericRouteNotifiable{id: 42}, &dbNotification{})
+	assert.NoError(t, err)
 }
 
 func TestDatabaseChannel_Send_WrapsOrmError(t *testing.T) {

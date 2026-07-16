@@ -26,12 +26,38 @@ func (m *mailNotifiable) RouteNotificationFor(channel string) any {
 	return ""
 }
 
-// nonStringRouteNotifiable returns a non-string value for every channel,
-// to test that channels treat that as "no route" rather than panicking.
-type nonStringRouteNotifiable struct{}
+// unsupportedRouteNotifiable returns a value no built-in channel can
+// interpret as a route (not a string/[]string/map[string]string for
+// mail, not cast.ToString-convertible for database) — used to test that
+// channels treat an unrecognized route type as "no route" rather than
+// panicking or silently misbehaving.
+type unsupportedRouteNotifiable struct{}
 
-func (nonStringRouteNotifiable) RouteNotificationFor(_ string) any {
-	return 12345
+func (unsupportedRouteNotifiable) RouteNotificationFor(_ string) any {
+	return struct{ X int }{X: 1}
+}
+
+// sliceRouteNotifiable returns []string from RouteNotificationFor("mail")
+// directly — multiple unnamed addresses, no MailRoutable needed.
+type sliceRouteNotifiable struct{ addrs []string }
+
+func (s sliceRouteNotifiable) RouteNotificationFor(channel string) any {
+	if channel == "mail" {
+		return s.addrs
+	}
+	return nil
+}
+
+// mapRouteNotifiable returns map[string]string from
+// RouteNotificationFor("mail") directly — address→name pairs, same
+// shape MailRoutable uses, no MailRoutable needed.
+type mapRouteNotifiable struct{ addrs map[string]string }
+
+func (m mapRouteNotifiable) RouteNotificationFor(channel string) any {
+	if channel == "mail" {
+		return m.addrs
+	}
+	return nil
 }
 
 // mailRoutableNotifiable implements MailRoutable in addition to
@@ -231,19 +257,62 @@ func TestMailChannel_Send_ReturnsError_WhenEmptyAddress(t *testing.T) {
 }
 
 // RouteNotificationFor returns any (see contracts/notification.Notifiable).
-// The mail channel only understands string routes; a non-string route is
-// treated the same as an empty one rather than panicking on a failed
-// type assertion.
-func TestMailChannel_Send_ReturnsError_WhenRouteIsNotAString(t *testing.T) {
+// The mail channel only understands string/[]string/map[string]string
+// routes; anything else is treated the same as an empty route rather
+// than panicking on a failed type assertion.
+func TestMailChannel_Send_ReturnsError_WhenRouteTypeIsUnsupported(t *testing.T) {
 	mailer := mocksmail.NewMail(t) // no calls expected
 
 	ch := channels.NewMailChannel(mailer)
-	notifiable := &nonStringRouteNotifiable{}
+	notifiable := unsupportedRouteNotifiable{}
 	n := &plainNotification{}
 
 	err := ch.Send(notifiable, n)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "empty address")
+}
+
+// RouteNotificationFor("mail") may return []string directly — multiple
+// addresses with no display names — without needing the full
+// MailRoutable interface.
+func TestMailChannel_Send_UsesSliceRoute_ForMultipleUnnamedAddresses(t *testing.T) {
+	mailer := mocksmail.NewMail(t)
+
+	var captured contractsmail.Mailable
+	mailer.EXPECT().Send(mock.AnythingOfType("*channels.NotificationMailable")).
+		Run(func(mailable ...contractsmail.Mailable) {
+			captured = mailable[0]
+		}).
+		Return(nil).Once()
+
+	ch := channels.NewMailChannel(mailer)
+	notifiable := sliceRouteNotifiable{addrs: []string{"a@example.com", "b@example.com"}}
+	n := &plainNotification{}
+
+	assert.NoError(t, ch.Send(notifiable, n))
+	assert.Equal(t, []string{"a@example.com", "b@example.com"}, captured.Envelope().To)
+}
+
+// RouteNotificationFor("mail") may return map[string]string directly —
+// address→name pairs, same shape and formatting as MailRoutable — for
+// notifiables that don't want to implement the full MailRoutable
+// interface just for this.
+func TestMailChannel_Send_UsesMapRoute_ForNamedAddresses(t *testing.T) {
+	mailer := mocksmail.NewMail(t)
+
+	var captured contractsmail.Mailable
+	mailer.EXPECT().Send(mock.AnythingOfType("*channels.NotificationMailable")).
+		Run(func(mailable ...contractsmail.Mailable) {
+			captured = mailable[0]
+		}).
+		Return(nil).Once()
+
+	ch := channels.NewMailChannel(mailer)
+	notifiable := mapRouteNotifiable{addrs: map[string]string{"ada@example.com": "Ada Lovelace"}}
+	n := &plainNotification{}
+
+	assert.NoError(t, ch.Send(notifiable, n))
+	assert.Equal(t, []string{"Ada Lovelace <ada@example.com>"}, captured.Envelope().To)
 }
 
 func TestMailChannel_Send_WrapsMailerError(t *testing.T) {
