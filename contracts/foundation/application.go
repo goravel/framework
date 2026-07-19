@@ -22,6 +22,7 @@ import (
 	"github.com/goravel/framework/contracts/http/client"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/mail"
+	"github.com/goravel/framework/contracts/notification"
 	"github.com/goravel/framework/contracts/process"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/route"
@@ -172,6 +173,8 @@ type Application interface {
 	MakeLog() log.Log
 	// MakeMail resolves the mail instance.
 	MakeMail() mail.Mail
+	// MakeNotification resolves the notification instance.
+	MakeNotification() notification.Manager
 	// MakeOrm resolves the orm instance.
 	MakeOrm() orm.Orm
 	// MakeProcess resolves the process instance.

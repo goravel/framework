@@ -23,6 +23,7 @@ import (
 	"github.com/goravel/framework/contracts/http/client"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/mail"
+	"github.com/goravel/framework/contracts/notification"
 	"github.com/goravel/framework/contracts/process"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/route"
@@ -103,6 +104,10 @@ func Log() log.Log {
 
 func Mail() mail.Mail {
 	return App().MakeMail()
+}
+
+func Notification() notification.Manager {
+	return App().MakeNotification()
 }
 
 func Orm() orm.Orm {

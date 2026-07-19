@@ -37,6 +37,8 @@ type Paths interface {
 	Migrations(path string) Paths
 	// Models sets the path for the models directory, default is "app/models".
 	Models(path string) Paths
+	// Notifications sets the path for the notifications directory, default is "app/notifications".
+	Notifications(path string) Paths
 	// Observers sets the path for the observers directory, default is "app/observers".
 	Observers(path string) Paths
 	// Packages sets the path for the packages directory, default is "packages".
