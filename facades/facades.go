@@ -6,6 +6,7 @@ import (
 	"github.com/goravel/framework/contracts/ai"
 	"github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/auth/access"
+	"github.com/goravel/framework/contracts/broadcasting"
 	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
@@ -56,6 +57,10 @@ func Artisan() console.Artisan {
 
 func Auth(ctx ...http.Context) auth.Auth {
 	return App().MakeAuth(ctx...)
+}
+
+func Broadcast() broadcasting.Broadcaster {
+	return App().MakeBroadcast()
 }
 
 func Cache() cache.Cache {

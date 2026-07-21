@@ -160,6 +160,10 @@ var (
 	LogEmptyLogFilePath        = New("empty log file path").SetModule(ModuleLog)
 	LogFormatterNotSupported   = New("invalid formatter: %s, only support text, json").SetModule(ModuleLog)
 
+	BroadcastChannelUnauthorized = New("channel authorization denied for channel %s").SetModule(ModuleBroadcast)
+	BroadcastConnectionNotFound  = New("broadcast connection %q not found").SetModule(ModuleBroadcast)
+	BroadcastDriverNotSupported  = New("unknown broadcast driver: %s, only support pusher, log, null").SetModule(ModuleBroadcast)
+
 	MailTemplateParseFailed         = New("failed to parse template %s: %w").SetModule(ModuleMail)
 	MailTemplateExecutionFailed     = New("failed to execute template %s: %w").SetModule(ModuleMail)
 	MailTemplateEngineNotSupported  = New("template engine driver not supported: %s").SetModule(ModuleMail)
