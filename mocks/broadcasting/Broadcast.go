@@ -4,8 +4,6 @@ package broadcasting
 
 import (
 	broadcasting "github.com/goravel/framework/contracts/broadcasting"
-	http "github.com/goravel/framework/contracts/http"
-
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -20,54 +18,6 @@ type Broadcast_Expecter struct {
 
 func (_m *Broadcast) EXPECT() *Broadcast_Expecter {
 	return &Broadcast_Expecter{mock: &_m.Mock}
-}
-
-// Authenticate provides a mock function with given fields: ctx
-func (_m *Broadcast) Authenticate(ctx http.Context) http.Response {
-	ret := _m.Called(ctx)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Authenticate")
-	}
-
-	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(http.Context) http.Response); ok {
-		r0 = rf(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.Response)
-		}
-	}
-
-	return r0
-}
-
-// Broadcast_Authenticate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Authenticate'
-type Broadcast_Authenticate_Call struct {
-	*mock.Call
-}
-
-// Authenticate is a helper method to define mock.On call
-//   - ctx http.Context
-func (_e *Broadcast_Expecter) Authenticate(ctx interface{}) *Broadcast_Authenticate_Call {
-	return &Broadcast_Authenticate_Call{Call: _e.mock.On("Authenticate", ctx)}
-}
-
-func (_c *Broadcast_Authenticate_Call) Run(run func(ctx http.Context)) *Broadcast_Authenticate_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(http.Context))
-	})
-	return _c
-}
-
-func (_c *Broadcast_Authenticate_Call) Return(_a0 http.Response) *Broadcast_Authenticate_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Broadcast_Authenticate_Call) RunAndReturn(run func(http.Context) http.Response) *Broadcast_Authenticate_Call {
-	_c.Call.Return(run)
-	return _c
 }
 
 // Channel provides a mock function with given fields: pattern, callback
