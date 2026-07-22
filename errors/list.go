@@ -160,8 +160,9 @@ var (
 	LogEmptyLogFilePath        = New("empty log file path").SetModule(ModuleLog)
 	LogFormatterNotSupported   = New("invalid formatter: %s, only support text, json").SetModule(ModuleLog)
 
-	BroadcastAuthMissingParams          = New("broadcasting: socket_id and channel_name are required").SetModule(ModuleBroadcast)
-	BroadcastChannelUnauthorized        = New("channel authorization denied for channel %s").SetModule(ModuleBroadcast)
+	BroadcastAuthMissingParams        = New("broadcasting: socket_id and channel_name are required").SetModule(ModuleBroadcast)
+	BroadcastAuthUnauthenticated      = New("unauthenticated").SetModule(ModuleBroadcast)
+	BroadcastChannelUnauthorized      = New("channel authorization denied for channel %s").SetModule(ModuleBroadcast)
 	BroadcastConnectionInvalidFormat    = New("broadcast connection %q has invalid format").SetModule(ModuleBroadcast)
 	BroadcastConnectionNotFound         = New("broadcast connection %q not found").SetModule(ModuleBroadcast)
 	BroadcastDriverNotSupported         = New("unknown broadcast driver: %s, only support pusher, log, null").SetModule(ModuleBroadcast)

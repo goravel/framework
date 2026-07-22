@@ -127,7 +127,7 @@ func (a *Application) Authenticate(ctx contractshttp.Context) contractshttp.Resp
 
 	auth := facades.Auth(ctx)
 	if !auth.Check() {
-		return ctx.Response().Json(http.StatusForbidden, contractshttp.Json{"error": "Unauthenticated"})
+		return ctx.Response().Json(http.StatusForbidden, contractshttp.Json{"error": errors.BroadcastAuthUnauthenticated.Error()})
 	}
 
 	ch := broadcasting.Channel{Name: channelName}
