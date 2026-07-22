@@ -65,51 +65,6 @@ func (_c *ShouldBroadcast_BroadcastAs_Call) RunAndReturn(run func() string) *Sho
 	return _c
 }
 
-// BroadcastConnection provides a mock function with no fields
-func (_m *ShouldBroadcast) BroadcastConnection() string {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for BroadcastConnection")
-	}
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
-// ShouldBroadcast_BroadcastConnection_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BroadcastConnection'
-type ShouldBroadcast_BroadcastConnection_Call struct {
-	*mock.Call
-}
-
-// BroadcastConnection is a helper method to define mock.On call
-func (_e *ShouldBroadcast_Expecter) BroadcastConnection() *ShouldBroadcast_BroadcastConnection_Call {
-	return &ShouldBroadcast_BroadcastConnection_Call{Call: _e.mock.On("BroadcastConnection")}
-}
-
-func (_c *ShouldBroadcast_BroadcastConnection_Call) Run(run func()) *ShouldBroadcast_BroadcastConnection_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *ShouldBroadcast_BroadcastConnection_Call) Return(_a0 string) *ShouldBroadcast_BroadcastConnection_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *ShouldBroadcast_BroadcastConnection_Call) RunAndReturn(run func() string) *ShouldBroadcast_BroadcastConnection_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // BroadcastOn provides a mock function with no fields
 func (_m *ShouldBroadcast) BroadcastOn() []broadcasting.Channel {
 	ret := _m.Called()
@@ -153,51 +108,6 @@ func (_c *ShouldBroadcast_BroadcastOn_Call) Return(_a0 []broadcasting.Channel) *
 }
 
 func (_c *ShouldBroadcast_BroadcastOn_Call) RunAndReturn(run func() []broadcasting.Channel) *ShouldBroadcast_BroadcastOn_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// BroadcastQueue provides a mock function with no fields
-func (_m *ShouldBroadcast) BroadcastQueue() string {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for BroadcastQueue")
-	}
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
-// ShouldBroadcast_BroadcastQueue_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BroadcastQueue'
-type ShouldBroadcast_BroadcastQueue_Call struct {
-	*mock.Call
-}
-
-// BroadcastQueue is a helper method to define mock.On call
-func (_e *ShouldBroadcast_Expecter) BroadcastQueue() *ShouldBroadcast_BroadcastQueue_Call {
-	return &ShouldBroadcast_BroadcastQueue_Call{Call: _e.mock.On("BroadcastQueue")}
-}
-
-func (_c *ShouldBroadcast_BroadcastQueue_Call) Run(run func()) *ShouldBroadcast_BroadcastQueue_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *ShouldBroadcast_BroadcastQueue_Call) Return(_a0 string) *ShouldBroadcast_BroadcastQueue_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *ShouldBroadcast_BroadcastQueue_Call) RunAndReturn(run func() string) *ShouldBroadcast_BroadcastQueue_Call {
 	_c.Call.Return(run)
 	return _c
 }

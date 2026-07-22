@@ -4,7 +4,8 @@ package broadcasting
 
 import (
 	broadcasting "github.com/goravel/framework/contracts/broadcasting"
-	"github.com/goravel/framework/contracts/http"
+	http "github.com/goravel/framework/contracts/http"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -21,7 +22,7 @@ func (_m *Broadcast) EXPECT() *Broadcast_Expecter {
 	return &Broadcast_Expecter{mock: &_m.Mock}
 }
 
-// Authenticate provides a mock function
+// Authenticate provides a mock function with given fields: ctx
 func (_m *Broadcast) Authenticate(ctx http.Context) http.Response {
 	ret := _m.Called(ctx)
 
@@ -41,10 +42,13 @@ func (_m *Broadcast) Authenticate(ctx http.Context) http.Response {
 	return r0
 }
 
+// Broadcast_Authenticate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Authenticate'
 type Broadcast_Authenticate_Call struct {
 	*mock.Call
 }
 
+// Authenticate is a helper method to define mock.On call
+//   - ctx http.Context
 func (_e *Broadcast_Expecter) Authenticate(ctx interface{}) *Broadcast_Authenticate_Call {
 	return &Broadcast_Authenticate_Call{Call: _e.mock.On("Authenticate", ctx)}
 }
@@ -71,10 +75,14 @@ func (_m *Broadcast) Channel(pattern string, callback broadcasting.ChannelAuthFu
 	_m.Called(pattern, callback)
 }
 
+// Broadcast_Channel_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Channel'
 type Broadcast_Channel_Call struct {
 	*mock.Call
 }
 
+// Channel is a helper method to define mock.On call
+//   - pattern string
+//   - callback broadcasting.ChannelAuthFunc
 func (_e *Broadcast_Expecter) Channel(pattern interface{}, callback interface{}) *Broadcast_Channel_Call {
 	return &Broadcast_Channel_Call{Call: _e.mock.On("Channel", pattern, callback)}
 }
@@ -114,10 +122,13 @@ func (_m *Broadcast) Dispatch(event broadcasting.ShouldBroadcast) error {
 	return r0
 }
 
+// Broadcast_Dispatch_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Dispatch'
 type Broadcast_Dispatch_Call struct {
 	*mock.Call
 }
 
+// Dispatch is a helper method to define mock.On call
+//   - event broadcasting.ShouldBroadcast
 func (_e *Broadcast_Expecter) Dispatch(event interface{}) *Broadcast_Dispatch_Call {
 	return &Broadcast_Dispatch_Call{Call: _e.mock.On("Dispatch", event)}
 }
@@ -139,7 +150,8 @@ func (_c *Broadcast_Dispatch_Call) RunAndReturn(run func(broadcasting.ShouldBroa
 	return _c
 }
 
-// NewBroadcast creates a new instance of Broadcast.
+// NewBroadcast creates a new instance of Broadcast. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
 func NewBroadcast(t interface {
 	mock.TestingT
 	Cleanup(func())
