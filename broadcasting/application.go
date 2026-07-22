@@ -210,6 +210,6 @@ func computeAuthSignature(secret, socketID, channelName, channelData string) str
 		message += ":" + channelData
 	}
 	mac := hmac.New(sha256.New, []byte(secret))
-	mac.Write([]byte(message))
+	_, _ = mac.Write([]byte(message))
 	return hex.EncodeToString(mac.Sum(nil))
 }

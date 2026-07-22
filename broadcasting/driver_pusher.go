@@ -80,7 +80,9 @@ func (d *PusherDriver) Broadcast(channels []broadcasting.Channel, event string, 
 	if err != nil {
 		return errors.BroadcastPusherRequestFailed.Args(err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode >= 400 {
 		return errors.BroadcastPusherHTTPError.Args(resp.StatusCode, url)
@@ -97,7 +99,7 @@ func (d *PusherDriver) signRequest(req *http.Request, body []byte) {
 		req.URL.Path, d.key, timestamp, bodyMD5)
 
 	mac := hmac.New(sha256.New, []byte(d.secret))
-	mac.Write([]byte(stringToSign))
+	_, _ = mac.Write([]byte(stringToSign))
 	signature := hex.EncodeToString(mac.Sum(nil))
 
 	q := url.Values{}

@@ -49,7 +49,8 @@ func TestPusherDriver_SignRequest(t *testing.T) {
 		req.URL.Path, timestamp, bodyMD5)
 
 	mac := hmac.New(sha256.New, []byte("test-secret"))
-	mac.Write([]byte(stringToSign))
+	_, err = mac.Write([]byte(stringToSign))
+	assert.NoError(t, err)
 	expected := hex.EncodeToString(mac.Sum(nil))
 
 	assert.Equal(t, expected, q.Get("auth_signature"))
@@ -140,6 +141,6 @@ func TestPusherDriver_ClusterFallback(t *testing.T) {
 func parsePortFromURL(t *testing.T, urlStr string) int {
 	t.Helper()
 	var port int
-	fmt.Sscanf(urlStr, "http://127.0.0.1:%d", &port)
+	_, _ = fmt.Sscanf(urlStr, "http://127.0.0.1:%d", &port)
 	return port
 }
