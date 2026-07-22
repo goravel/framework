@@ -11,7 +11,7 @@ import (
 	"github.com/goravel/framework/contracts/broadcasting"
 )
 
-func Broadcast() broadcasting.Broadcaster {
+func Broadcast() broadcasting.Broadcast {
 	return App().MakeBroadcast()
 }
 `
@@ -53,9 +53,8 @@ func init() {
 		},
 
 		"auth": map[string]any{
-			"enabled":    config.Env("BROADCAST_AUTH_ENABLED", true),
-			"path":       config.Env("BROADCAST_AUTH_PATH", "/broadcasting/auth"),
-			"middleware": []string{"web"},
+			"enabled": config.Env("BROADCAST_AUTH_ENABLED", true),
+			"path":    config.Env("BROADCAST_AUTH_PATH", "/broadcasting/auth"),
 		},
 	})
 }

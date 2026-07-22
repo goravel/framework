@@ -5,14 +5,14 @@ type Stubs struct{}
 func (r Stubs) Channel() string {
 	return `package DummyPackage
 
-type DummyChannel struct{}
+import (
+	"github.com/goravel/framework/contracts/broadcasting"
+)
 
-func (r *DummyChannel) Name() string {
-	return "channel-name"
-}
-
-func (r *DummyChannel) Join(user any, params map[string]string) bool {
+func DummyChannel(user any, channelName string, params map[string]string) bool {
 	return false
 }
+
+var _ broadcasting.ChannelAuthFunc = DummyChannel
 `
 }

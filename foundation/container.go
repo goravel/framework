@@ -148,14 +148,14 @@ func (r *Container) MakeAuth(ctx ...contractshttp.Context) contractsauth.Auth {
 	return instance.(contractsauth.Auth)
 }
 
-func (r *Container) MakeBroadcast() contractsbroadcast.Broadcaster {
+func (r *Container) MakeBroadcast() contractsbroadcast.Broadcast {
 	instance, err := r.Make(facades.FacadeToBinding[facades.Broadcast])
 	if err != nil {
 		logMakeErrorIfNeeded(err)
 		return nil
 	}
 
-	return instance.(contractsbroadcast.Broadcaster)
+	return instance.(contractsbroadcast.Broadcast)
 }
 
 func (r *Container) MakeCache() contractscache.Cache {

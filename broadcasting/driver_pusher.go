@@ -9,10 +9,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
 	"github.com/goravel/framework/contracts/broadcasting"
+	"github.com/goravel/framework/errors"
 )
 
 type PusherDriver struct {
@@ -21,21 +23,31 @@ type PusherDriver struct {
 	appID   string
 	options broadcasting.PusherOptions
 	client  *http.Client
+	baseURL string
 }
 
 func NewPusherDriver(conn broadcasting.ConnectionConfig) *PusherDriver {
+	opts := conn.Options
+	host := opts.Host
+	if host == "" && opts.Cluster != "" {
+		host = fmt.Sprintf("api-%s.pusher.com", opts.Cluster)
+	}
+
+	baseURL := fmt.Sprintf("%s://%s:%d/apps/%s",
+		opts.Scheme, host, opts.Port, conn.AppID)
+
 	return &PusherDriver{
 		key:     conn.Key,
 		secret:  conn.Secret,
 		appID:   conn.AppID,
-		options: conn.Options,
+		options: opts,
 		client:  &http.Client{Timeout: 30 * time.Second},
+		baseURL: baseURL,
 	}
 }
 
 func (d *PusherDriver) Broadcast(channels []broadcasting.Channel, event string, payload map[string]any) error {
-	url := fmt.Sprintf("%s://%s:%d/apps/%s/events",
-		d.options.Scheme, d.options.Host, d.options.Port, d.appID)
+	url := fmt.Sprintf("%s/events", d.baseURL)
 
 	chanNames := make([]string, len(channels))
 	for i, ch := range channels {
@@ -44,7 +56,7 @@ func (d *PusherDriver) Broadcast(channels []broadcasting.Channel, event string, 
 
 	dataJSON, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Errorf("pusher: failed to marshal payload: %w", err)
+		return errors.BroadcastPusherMarshalPayloadFailed.Args(err)
 	}
 
 	body := map[string]any{
@@ -54,24 +66,24 @@ func (d *PusherDriver) Broadcast(channels []broadcasting.Channel, event string, 
 	}
 	bodyBytes, err := json.Marshal(body)
 	if err != nil {
-		return fmt.Errorf("pusher: failed to marshal body: %w", err)
+		return errors.BroadcastPusherMarshalBodyFailed.Args(err)
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewReader(bodyBytes))
 	if err != nil {
-		return fmt.Errorf("pusher: failed to create request: %w", err)
+		return errors.BroadcastPusherCreateRequestFailed.Args(err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	d.signRequest(req, bodyBytes)
 
 	resp, err := d.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("pusher: request failed: %w", err)
+		return errors.BroadcastPusherRequestFailed.Args(err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		return fmt.Errorf("pusher: HTTP %d: request to %s failed", resp.StatusCode, url)
+		return errors.BroadcastPusherHTTPError.Args(resp.StatusCode, url)
 	}
 
 	return nil
@@ -88,7 +100,11 @@ func (d *PusherDriver) signRequest(req *http.Request, body []byte) {
 	mac.Write([]byte(stringToSign))
 	signature := hex.EncodeToString(mac.Sum(nil))
 
-	req.Header.Set("X-Pusher-Key", d.key)
-	req.Header.Set("X-Pusher-Signature", signature)
-	req.Header.Set("X-Pusher-Timestamp", timestamp)
+	q := url.Values{}
+	q.Set("auth_key", d.key)
+	q.Set("auth_timestamp", timestamp)
+	q.Set("auth_version", "1.0")
+	q.Set("body_md5", bodyMD5)
+	q.Set("auth_signature", signature)
+	req.URL.RawQuery = q.Encode()
 }

@@ -16,18 +16,20 @@ import (
 )
 
 func TestPusherDriver_SignRequest(t *testing.T) {
-	driver := &PusherDriver{
-		key:    "test-key",
-		secret: "test-secret",
-		appID:  "test-app",
-		options: broadcasting.PusherOptions{
+	conn := broadcasting.ConnectionConfig{
+		Driver: "pusher",
+		Key:    "test-key",
+		Secret: "test-secret",
+		AppID:  "test-app",
+		Options: broadcasting.PusherOptions{
 			Cluster: "mt1",
 			Host:    "api-mt1.pusher.com",
 			Port:    443,
 			Scheme:  "https",
 		},
-		client: &http.Client{},
 	}
+
+	driver := NewPusherDriver(conn)
 
 	body := []byte(`{"name":"test","channels":["my-channel"],"data":"{}"}`)
 
@@ -36,11 +38,12 @@ func TestPusherDriver_SignRequest(t *testing.T) {
 
 	driver.signRequest(req, body)
 
-	assert.Equal(t, "test-key", req.Header.Get("X-Pusher-Key"))
-	assert.NotEmpty(t, req.Header.Get("X-Pusher-Signature"))
-	assert.NotEmpty(t, req.Header.Get("X-Pusher-Timestamp"))
+	q := req.URL.Query()
+	assert.Equal(t, "test-key", q.Get("auth_key"))
+	assert.NotEmpty(t, q.Get("auth_signature"))
+	assert.NotEmpty(t, q.Get("auth_timestamp"))
 
-	timestamp := req.Header.Get("X-Pusher-Timestamp")
+	timestamp := q.Get("auth_timestamp")
 	bodyMD5 := fmt.Sprintf("%x", md5.Sum(body))
 	stringToSign := fmt.Sprintf("POST\n%s\nauth_key=test-key&auth_timestamp=%s&auth_version=1.0&body_md5=%s",
 		req.URL.Path, timestamp, bodyMD5)
@@ -49,7 +52,7 @@ func TestPusherDriver_SignRequest(t *testing.T) {
 	mac.Write([]byte(stringToSign))
 	expected := hex.EncodeToString(mac.Sum(nil))
 
-	assert.Equal(t, expected, req.Header.Get("X-Pusher-Signature"))
+	assert.Equal(t, expected, q.Get("auth_signature"))
 }
 
 func TestPusherDriver_Broadcast(t *testing.T) {
@@ -57,26 +60,27 @@ func TestPusherDriver_Broadcast(t *testing.T) {
 		assert.Equal(t, "POST", r.Method)
 		assert.Equal(t, "/apps/test-app/events", r.URL.Path)
 		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
-		assert.NotEmpty(t, r.Header.Get("X-Pusher-Key"))
-		assert.NotEmpty(t, r.Header.Get("X-Pusher-Signature"))
+		assert.NotEmpty(t, r.URL.Query().Get("auth_key"))
+		assert.NotEmpty(t, r.URL.Query().Get("auth_signature"))
 
 		w.WriteHeader(200)
 	}))
 	defer server.Close()
 
-	// Parse the test server URL to get host and port
-	// The URL format is http://127.0.0.1:PORT
-	driver := &PusherDriver{
-		key:    "test-key",
-		secret: "test-secret",
-		appID:  "test-app",
-		options: broadcasting.PusherOptions{
+	conn := broadcasting.ConnectionConfig{
+		Driver: "pusher",
+		Key:    "test-key",
+		Secret: "test-secret",
+		AppID:  "test-app",
+		Options: broadcasting.PusherOptions{
 			Host:   "127.0.0.1",
 			Port:   parsePortFromURL(t, server.URL),
 			Scheme: "http",
 		},
-		client: server.Client(),
 	}
+
+	driver := NewPusherDriver(conn)
+	driver.client = server.Client()
 
 	err := driver.Broadcast(
 		[]broadcasting.Channel{{Name: "my-channel"}},
@@ -92,17 +96,20 @@ func TestPusherDriver_Broadcast_Error(t *testing.T) {
 	}))
 	defer server.Close()
 
-	driver := &PusherDriver{
-		key:    "test-key",
-		secret: "test-secret",
-		appID:  "test-app",
-		options: broadcasting.PusherOptions{
+	conn := broadcasting.ConnectionConfig{
+		Driver: "pusher",
+		Key:    "test-key",
+		Secret: "test-secret",
+		AppID:  "test-app",
+		Options: broadcasting.PusherOptions{
 			Host:   "127.0.0.1",
 			Port:   parsePortFromURL(t, server.URL),
 			Scheme: "http",
 		},
-		client: server.Client(),
 	}
+
+	driver := NewPusherDriver(conn)
+	driver.client = server.Client()
 
 	err := driver.Broadcast(
 		[]broadcasting.Channel{{Name: "my-channel"}},
@@ -110,6 +117,24 @@ func TestPusherDriver_Broadcast_Error(t *testing.T) {
 		map[string]any{"message": "hello"},
 	)
 	assert.Error(t, err)
+}
+
+func TestPusherDriver_ClusterFallback(t *testing.T) {
+	conn := broadcasting.ConnectionConfig{
+		Driver: "pusher",
+		Key:    "key",
+		Secret: "secret",
+		AppID:  "app",
+		Options: broadcasting.PusherOptions{
+			Cluster: "eu",
+			Host:    "",
+			Port:    443,
+			Scheme:  "https",
+		},
+	}
+
+	driver := NewPusherDriver(conn)
+	assert.Contains(t, driver.baseURL, "api-eu.pusher.com")
 }
 
 func parsePortFromURL(t *testing.T, urlStr string) int {

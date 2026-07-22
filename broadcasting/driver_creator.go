@@ -1,10 +1,9 @@
 package broadcasting
 
 import (
-	"fmt"
-
 	"github.com/goravel/framework/contracts/broadcasting"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/errors"
 )
 
 func CreateDriver(conn broadcasting.ConnectionConfig, app foundation.Application) (Driver, error) {
@@ -16,6 +15,6 @@ func CreateDriver(conn broadcasting.ConnectionConfig, app foundation.Application
 	case "null":
 		return NewNullDriver(), nil
 	default:
-		return nil, fmt.Errorf("unknown broadcast driver: %s", conn.Driver)
+		return nil, errors.BroadcastDriverNotSupported.Args(conn.Driver)
 	}
 }

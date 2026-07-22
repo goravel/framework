@@ -59,7 +59,7 @@ func Auth(ctx ...http.Context) auth.Auth {
 	return App().MakeAuth(ctx...)
 }
 
-func Broadcast() broadcasting.Broadcaster {
+func Broadcast() broadcasting.Broadcast {
 	return App().MakeBroadcast()
 }
 

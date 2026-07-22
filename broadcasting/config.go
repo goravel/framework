@@ -5,6 +5,7 @@ import (
 
 	"github.com/goravel/framework/contracts/broadcasting"
 	"github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/errors"
 )
 
 type Config struct {
@@ -22,20 +23,20 @@ func (c *Config) DefaultConnection() string {
 func (c *Config) Connection(name string) (broadcasting.ConnectionConfig, error) {
 	conn := c.app.Get(fmt.Sprintf("broadcasting.connections.%s", name))
 	if conn == nil {
-		return broadcasting.ConnectionConfig{}, fmt.Errorf("broadcast connection %q not found", name)
+		return broadcasting.ConnectionConfig{}, errors.BroadcastConnectionNotFound.Args(name)
 	}
 	raw, ok := conn.(map[string]any)
 	if !ok {
-		return broadcasting.ConnectionConfig{}, fmt.Errorf("broadcast connection %q has invalid format", name)
+		return broadcasting.ConnectionConfig{}, errors.BroadcastConnectionInvalidFormat.Args(name)
 	}
 
 	options, _ := raw["options"].(map[string]any)
 
 	return broadcasting.ConnectionConfig{
-		Driver:  getString(raw, "driver"),
-		Key:     getString(raw, "key"),
-		Secret:  getString(raw, "secret"),
-		AppID:   getString(raw, "app_id"),
+		Driver: getString(raw, "driver"),
+		Key:    getString(raw, "key"),
+		Secret: getString(raw, "secret"),
+		AppID:  getString(raw, "app_id"),
 		Options: broadcasting.PusherOptions{
 			Cluster: getString(options, "cluster"),
 			Host:    getString(options, "host"),
@@ -47,9 +48,8 @@ func (c *Config) Connection(name string) (broadcasting.ConnectionConfig, error) 
 
 func (c *Config) Auth() broadcasting.AuthConfig {
 	return broadcasting.AuthConfig{
-		Enabled:    c.app.GetBool("broadcasting.auth.enabled", true),
-		Path:       c.app.GetString("broadcasting.auth.path", "/broadcasting/auth"),
-		Middleware: c.app.GetStringSlice("broadcasting.auth.middleware", []string{"web"}),
+		Enabled: c.app.GetBool("broadcasting.auth.enabled", true),
+		Path:    c.app.GetString("broadcasting.auth.path", "/broadcasting/auth"),
 	}
 }
 

@@ -1329,19 +1329,19 @@ func (_c *Application_MakeAuth_Call) RunAndReturn(run func(...http.Context) auth
 }
 
 // MakeBroadcast provides a mock function with no fields
-func (_m *Application) MakeBroadcast() broadcasting.Broadcaster {
+func (_m *Application) MakeBroadcast() broadcasting.Broadcast {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for MakeBroadcast")
 	}
 
-	var r0 broadcasting.Broadcaster
-	if rf, ok := ret.Get(0).(func() broadcasting.Broadcaster); ok {
+	var r0 broadcasting.Broadcast
+	if rf, ok := ret.Get(0).(func() broadcasting.Broadcast); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(broadcasting.Broadcaster)
+			r0 = ret.Get(0).(broadcasting.Broadcast)
 		}
 	}
 
@@ -1365,12 +1365,12 @@ func (_c *Application_MakeBroadcast_Call) Run(run func()) *Application_MakeBroad
 	return _c
 }
 
-func (_c *Application_MakeBroadcast_Call) Return(_a0 broadcasting.Broadcaster) *Application_MakeBroadcast_Call {
+func (_c *Application_MakeBroadcast_Call) Return(_a0 broadcasting.Broadcast) *Application_MakeBroadcast_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Application_MakeBroadcast_Call) RunAndReturn(run func() broadcasting.Broadcaster) *Application_MakeBroadcast_Call {
+func (_c *Application_MakeBroadcast_Call) RunAndReturn(run func() broadcasting.Broadcast) *Application_MakeBroadcast_Call {
 	_c.Call.Return(run)
 	return _c
 }

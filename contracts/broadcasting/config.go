@@ -1,11 +1,5 @@
 package broadcasting
 
-type Config interface {
-	DefaultConnection() string
-	Connection(name string) (ConnectionConfig, error)
-	Auth() AuthConfig
-}
-
 type ConnectionConfig struct {
 	Driver  string
 	Key     string
@@ -22,7 +16,6 @@ type PusherOptions struct {
 }
 
 type AuthConfig struct {
-	Enabled    bool
-	Path       string
-	Middleware []string
+	Enabled bool
+	Path    string
 }

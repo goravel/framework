@@ -30,7 +30,10 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 	cfg := NewConfig(app.MakeConfig())
 	auth := cfg.Auth()
 	if auth.Enabled {
-		facades.Route().Post(auth.Path, (&AuthController{}).Authenticate)
+		broadcastInstance := app.MakeBroadcast()
+		if broadcastInstance != nil {
+			facades.Route().Post(auth.Path, broadcastInstance.Authenticate)
+		}
 	}
 
 	facades.Artisan().Register([]contractsconsole.Command{

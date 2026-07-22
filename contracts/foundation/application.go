@@ -151,7 +151,7 @@ type Application interface {
 	// MakeAuth resolves the auth instance.
 	MakeAuth(ctx ...http.Context) auth.Auth
 	// MakeBroadcast resolves the broadcast instance.
-	MakeBroadcast() broadcasting.Broadcaster
+	MakeBroadcast() broadcasting.Broadcast
 	// MakeCache resolves the cache instance.
 	MakeCache() cache.Cache
 	// MakeConfig resolves the config instance.

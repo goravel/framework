@@ -3,13 +3,13 @@ package facades
 import "github.com/goravel/framework/contracts/binding"
 
 const (
-	AI          = "AI"
-	Artisan     = "Artisan"
-	Auth        = "Auth"
-	Broadcast   = "Broadcast"
-	Cache       = "Cache"
-	Config      = "Config"
-	Crypt       = "Crypt"
+	AI           = "AI"
+	Artisan      = "Artisan"
+	Auth         = "Auth"
+	Broadcast    = "Broadcast"
+	Cache        = "Cache"
+	Config       = "Config"
+	Crypt        = "Crypt"
 	DB           = "DB"
 	Event        = "Event"
 	Gate         = "Gate"
@@ -37,11 +37,11 @@ const (
 )
 
 var FacadeToBinding = map[string]string{
-	AI:          binding.AI,
-	Artisan:     binding.Artisan,
-	Auth:        binding.Auth,
-	Broadcast:   binding.Broadcast,
-	Cache:       binding.Cache,
+	AI:           binding.AI,
+	Artisan:      binding.Artisan,
+	Auth:         binding.Auth,
+	Broadcast:    binding.Broadcast,
+	Cache:        binding.Cache,
 	Config:       binding.Config,
 	Crypt:        binding.Crypt,
 	DB:           binding.DB,

@@ -1,9 +1,9 @@
 package errors
 
 var (
-	ModuleAuth       = "auth"
-	ModuleBroadcast  = "broadcast"
-	ModuleCache      = "cache"
+	ModuleAuth         = "auth"
+	ModuleBroadcast    = "broadcast"
+	ModuleCache        = "cache"
 	ModuleConsole      = "console"
 	ModuleCrypt        = "crypt"
 	ModuleDB           = "db"
