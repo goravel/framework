@@ -11,16 +11,17 @@ import (
 	"regexp"
 	"sync"
 
+	"github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/broadcasting"
-	"github.com/goravel/framework/contracts/config"
+	contractsconfig "github.com/goravel/framework/contracts/config"
 	contractshttp "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/facades"
 )
 
 type authEntry struct {
+	pattern  string
 	callback broadcasting.ChannelAuthFunc
 	regex    *regexp.Regexp
 	params   []string
@@ -28,18 +29,25 @@ type authEntry struct {
 
 type Application struct {
 	config      *Config
+	auth        auth.Auth
 	log         log.Log
 	queue       queue.Queue
-	channelAuth map[string]authEntry
+	channelAuth []authEntry
 	mu          sync.RWMutex
 }
 
-func NewApplication(cfg config.Config, log log.Log, queue queue.Queue) *Application {
+func NewApplication(cfg contractsconfig.Config, auth auth.Auth, log log.Log, queue queue.Queue) *Application {
+	bc, err := NewConfig(cfg)
+	if err != nil {
+		bc = &Config{Default: "log"}
+	}
+
 	return &Application{
-		config:      NewConfig(cfg),
+		config:      bc,
+		auth:        auth,
 		log:         log,
 		queue:       queue,
-		channelAuth: make(map[string]authEntry),
+		channelAuth: make([]authEntry, 0),
 	}
 }
 
@@ -48,6 +56,7 @@ func (a *Application) Channel(pattern string, callback broadcasting.ChannelAuthF
 	defer a.mu.Unlock()
 
 	entry := authEntry{
+		pattern:  pattern,
 		callback: callback,
 	}
 
@@ -71,7 +80,7 @@ func (a *Application) Channel(pattern string, callback broadcasting.ChannelAuthF
 		entry.regex = regexp.MustCompile(regexStr)
 	}
 
-	a.channelAuth[pattern] = entry
+	a.channelAuth = append(a.channelAuth, entry)
 }
 
 func (a *Application) Dispatch(event broadcasting.ShouldBroadcast) error {
@@ -86,10 +95,10 @@ func (a *Application) Dispatch(event broadcasting.ShouldBroadcast) error {
 
 	eventName := event.BroadcastAs()
 	if eventName == "" {
-		eventName = reflect.TypeOf(event).Elem().Name()
+		eventName = reflect.Indirect(reflect.ValueOf(event)).Type().Name()
 	}
 
-	conn := a.config.DefaultConnection()
+	conn := a.config.Default
 	if withConn, ok := event.(broadcasting.ShouldBroadcastWithConnection); ok && withConn.BroadcastConnection() != "" {
 		conn = withConn.BroadcastConnection()
 	}
@@ -116,8 +125,8 @@ func (a *Application) Dispatch(event broadcasting.ShouldBroadcast) error {
 }
 
 func (a *Application) Authenticate(ctx contractshttp.Context) contractshttp.Response {
-	socketID := ctx.Request().Query("socket_id")
-	channelName := ctx.Request().Query("channel_name")
+	socketID := ctx.Request().Input("socket_id")
+	channelName := ctx.Request().Input("channel_name")
 
 	if socketID == "" || channelName == "" {
 		return ctx.Response().Json(http.StatusBadRequest, contractshttp.Json{
@@ -125,19 +134,14 @@ func (a *Application) Authenticate(ctx contractshttp.Context) contractshttp.Resp
 		})
 	}
 
-	auth := facades.Auth(ctx)
-	if !auth.Check() {
-		return ctx.Response().Json(http.StatusForbidden, contractshttp.Json{"error": errors.BroadcastAuthUnauthenticated.Error()})
-	}
-
 	ch := broadcasting.Channel{Name: channelName}
 	if !IsPrivateChannel(ch) && !IsPresenceChannel(ch) {
 		return ctx.Response().Json(http.StatusOK, broadcasting.AuthResponse{})
 	}
 
-	userID, err := auth.ID()
+	userID, err := a.auth.ID()
 	if err != nil {
-		return ctx.Response().Json(http.StatusInternalServerError, contractshttp.Json{"error": err.Error()})
+		userID = ""
 	}
 	user := map[string]any{"id": userID}
 
@@ -148,8 +152,7 @@ func (a *Application) Authenticate(ctx contractshttp.Context) contractshttp.Resp
 	}
 
 	channelData := ctx.Request().Input("channel_data")
-	cfg := NewConfig(facades.Config())
-	conn, err := cfg.Connection(cfg.DefaultConnection())
+	conn, err := a.config.Connection(a.config.DefaultConnection())
 	if err != nil {
 		return ctx.Response().Json(http.StatusInternalServerError, contractshttp.Json{"error": err.Error()})
 	}
@@ -168,7 +171,13 @@ func (a *Application) resolveAuth(channelName string, user any) bool {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
-	for pattern, entry := range a.channelAuth {
+	for _, entry := range a.channelAuth {
+		if entry.regex == nil && entry.pattern == channelName {
+			return entry.callback(user, channelName, nil)
+		}
+	}
+
+	for _, entry := range a.channelAuth {
 		if entry.regex != nil {
 			matches := entry.regex.FindStringSubmatch(channelName)
 			if matches == nil {
@@ -179,9 +188,6 @@ func (a *Application) resolveAuth(channelName string, user any) bool {
 				params[name] = matches[i+1]
 			}
 			return entry.callback(user, channelName, params)
-		}
-		if pattern == channelName {
-			return entry.callback(user, channelName, nil)
 		}
 	}
 	return false

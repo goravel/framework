@@ -1,11 +1,15 @@
 package broadcasting
 
+type Driver interface {
+	Broadcast(channels []Channel, event string, payload map[string]any) error
+}
+
 type ConnectionConfig struct {
 	Driver  string
 	Key     string
 	Secret  string
 	AppID   string
-	Options PusherOptions
+	Options map[string]any
 }
 
 type PusherOptions struct {
@@ -16,6 +20,7 @@ type PusherOptions struct {
 }
 
 type AuthConfig struct {
-	Enabled bool
-	Path    string
+	Enabled    bool
+	Path       string
+	Middleware []string
 }

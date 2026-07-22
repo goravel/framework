@@ -1,4 +1,4 @@
-package broadcasting
+package broadcasters
 
 import "github.com/goravel/framework/contracts/broadcasting"
 

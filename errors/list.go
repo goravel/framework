@@ -169,6 +169,7 @@ var (
 	BroadcastInvalidQueuePayload        = New("broadcasting: invalid or missing queue payload").SetModule(ModuleBroadcast)
 	BroadcastPusherCreateRequestFailed  = New("pusher: failed to create request: %w").SetModule(ModuleBroadcast)
 	BroadcastPusherHTTPError            = New("pusher: HTTP %d: request to %s failed").SetModule(ModuleBroadcast)
+	BroadcastPusherHostRequired         = New("pusher: host is required, either configure PUSHER_HOST or PUSHER_APP_CLUSTER").SetModule(ModuleBroadcast)
 	BroadcastPusherMarshalBodyFailed    = New("pusher: failed to marshal body: %w").SetModule(ModuleBroadcast)
 	BroadcastPusherMarshalPayloadFailed = New("pusher: failed to marshal payload: %w").SetModule(ModuleBroadcast)
 	BroadcastPusherRequestFailed        = New("pusher: request failed: %w").SetModule(ModuleBroadcast)

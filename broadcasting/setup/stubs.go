@@ -1,6 +1,8 @@
 package main
 
-import "strings"
+import (
+	"strings"
+)
 
 type Stubs struct{}
 
@@ -53,8 +55,9 @@ func init() {
 		},
 
 		"auth": map[string]any{
-			"enabled": config.Env("BROADCAST_AUTH_ENABLED", true),
-			"path":    config.Env("BROADCAST_AUTH_PATH", "/broadcasting/auth"),
+			"enabled":    config.Env("BROADCAST_AUTH_ENABLED", true),
+			"path":       config.Env("BROADCAST_AUTH_PATH", "/broadcasting/auth"),
+			"middleware": []string{"web"},
 		},
 	})
 }

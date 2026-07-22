@@ -33,11 +33,16 @@ func (j *BroadcastJob) Handle(args ...any) error {
 		return errors.BroadcastInvalidQueuePayload
 	}
 
-	if item.Connection == "" {
-		item.Connection = NewConfig(facades.Config()).DefaultConnection()
+	cfg, err := NewConfig(facades.Config())
+	if err != nil {
+		return err
 	}
 
-	conn, err := NewConfig(facades.Config()).Connection(item.Connection)
+	if item.Connection == "" {
+		item.Connection = cfg.DefaultConnection()
+	}
+
+	conn, err := cfg.Connection(item.Connection)
 	if err != nil {
 		return err
 	}

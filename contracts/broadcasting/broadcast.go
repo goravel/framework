@@ -1,7 +1,5 @@
 package broadcasting
 
-import "github.com/goravel/framework/contracts/http"
-
 const (
 	ChannelPrefixPrivate  = "private-"
 	ChannelPrefixPresence = "presence-"
@@ -21,7 +19,6 @@ type ChannelAuthFunc func(user any, channelName string, params map[string]string
 type Broadcast interface {
 	Channel(pattern string, callback ChannelAuthFunc)
 	Dispatch(event ShouldBroadcast) error
-	Authenticate(ctx http.Context) http.Response
 }
 
 type ShouldBroadcast interface {

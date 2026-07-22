@@ -31,18 +31,31 @@ func (e *mockBroadcastEvent) BroadcastConnection() string         { return e.bro
 
 func setupMockConfig(t *testing.T) *mocksconfig.Config {
 	mockConfig := mocksconfig.NewConfig(t)
-	mockConfig.EXPECT().GetString("broadcasting.default", "log").Return("log").Maybe()
-	mockConfig.EXPECT().GetBool("broadcasting.auth.enabled", true).Return(false).Maybe()
-	mockConfig.EXPECT().GetString("broadcasting.auth.path", "/broadcasting/auth").Return("/broadcasting/auth").Maybe()
+	mockConfig.EXPECT().UnmarshalKey("broadcasting", &Config{}).Return(nil).Once()
 	return mockConfig
 }
 
-func TestApplication_Channel(t *testing.T) {
+func TestApplication_Channel_RegexWildcard(t *testing.T) {
 	mockConfig := setupMockConfig(t)
 	mockLog := mockslog.NewLog(t)
 	mockQueue := mocksqueue.NewQueue(t)
 
-	app := NewApplication(mockConfig, mockLog, mockQueue)
+	app := NewApplication(mockConfig, nil, mockLog, mockQueue)
+	app.Channel("orders.{orderId}", func(user any, channel string, params map[string]string) bool {
+		return true
+	})
+
+	assert.True(t, app.resolveAuth("orders.123", nil))
+	assert.False(t, app.resolveAuth("ordersA123", nil))
+	assert.False(t, app.resolveAuth("unknown", nil))
+}
+
+func TestApplication_Channel_WithAuth(t *testing.T) {
+	mockConfig := setupMockConfig(t)
+	mockLog := mockslog.NewLog(t)
+	mockQueue := mocksqueue.NewQueue(t)
+
+	app := NewApplication(mockConfig, nil, mockLog, mockQueue)
 	app.Channel("orders.{orderId}", func(user any, channel string, params map[string]string) bool {
 		return params["orderId"] == "123"
 	})
@@ -51,27 +64,12 @@ func TestApplication_Channel(t *testing.T) {
 	assert.False(t, app.resolveAuth("orders.456", map[string]any{"id": "1"}))
 }
 
-func TestApplication_Channel_RegexWildcard(t *testing.T) {
-	mockConfig := setupMockConfig(t)
-	mockLog := mockslog.NewLog(t)
-	mockQueue := mocksqueue.NewQueue(t)
-
-	app := NewApplication(mockConfig, mockLog, mockQueue)
-	app.Channel("orders.{orderId}", func(user any, channel string, params map[string]string) bool {
-		return true
-	})
-
-	assert.Equal(t, true, app.resolveAuth("orders.123", nil))
-	assert.Equal(t, false, app.resolveAuth("ordersA123", nil))
-	assert.Equal(t, false, app.resolveAuth("unknown", nil))
-}
-
 func TestApplication_Channel_NoMatch(t *testing.T) {
 	mockConfig := setupMockConfig(t)
 	mockLog := mockslog.NewLog(t)
 	mockQueue := mocksqueue.NewQueue(t)
 
-	app := NewApplication(mockConfig, mockLog, mockQueue)
+	app := NewApplication(mockConfig, nil, mockLog, mockQueue)
 	app.Channel("orders.{orderId}", func(user any, channel string, params map[string]string) bool {
 		return false
 	})
@@ -84,7 +82,7 @@ func TestApplication_Channel_NoParams(t *testing.T) {
 	mockLog := mockslog.NewLog(t)
 	mockQueue := mocksqueue.NewQueue(t)
 
-	app := NewApplication(mockConfig, mockLog, mockQueue)
+	app := NewApplication(mockConfig, nil, mockLog, mockQueue)
 	app.Channel("public-channel", func(user any, channel string, params map[string]string) bool {
 		return true
 	})
@@ -93,114 +91,135 @@ func TestApplication_Channel_NoParams(t *testing.T) {
 	assert.False(t, app.resolveAuth("other-channel", nil))
 }
 
+func TestApplication_Channel_OrderPreserved(t *testing.T) {
+	mockConfig := setupMockConfig(t)
+	mockLog := mockslog.NewLog(t)
+	mockQueue := mocksqueue.NewQueue(t)
+
+	app := NewApplication(mockConfig, nil, mockLog, mockQueue)
+
+	app.Channel("orders.{orderId}", func(user any, channel string, params map[string]string) bool {
+		return false
+	})
+	app.Channel("orders.special", func(user any, channel string, params map[string]string) bool {
+		return true
+	})
+
+	assert.True(t, app.resolveAuth("orders.special", nil))
+}
+
 func TestApplication_Dispatch(t *testing.T) {
-	mockConfig := setupMockConfig(t)
 	mockLog := mockslog.NewLog(t)
-	mockQueue := mocksqueue.NewQueue(t)
-	mockPendingJob := mocksqueue.NewPendingJob(t)
 
-	mockQueue.EXPECT().Job(mock.MatchedBy(func(j *BroadcastJob) bool {
-		return j.Signature() == "goravel_broadcast"
-	}), mock.MatchedBy(func(args []queue.Arg) bool {
-		return len(args) == 1 && args[0].Type == "string"
-	})).Return(mockPendingJob).Once()
-	mockPendingJob.EXPECT().Dispatch().Return(nil).Once()
+	t.Run("dispatch with event name", func(t *testing.T) {
+		mockCf := mocksconfig.NewConfig(t)
+		mockCf.EXPECT().UnmarshalKey("broadcasting", &Config{}).Return(nil).Once()
+		mockQ := mocksqueue.NewQueue(t)
+		mockPJ := mocksqueue.NewPendingJob(t)
 
-	app := NewApplication(mockConfig, mockLog, mockQueue)
+		mockQ.EXPECT().Job(
+			mock.MatchedBy(func(j *BroadcastJob) bool { return j.Signature() == "goravel_broadcast" }),
+			mock.MatchedBy(func(args []queue.Arg) bool { return len(args) == 1 && args[0].Type == "string" }),
+		).Return(mockPJ).Once()
+		mockPJ.EXPECT().Dispatch().Return(nil).Once()
 
-	event := &mockBroadcastEvent{
-		broadcastOn:   []broadcasting.Channel{{Name: "test-channel"}},
-		broadcastAs:   "test.event",
-		broadcastWith: map[string]any{"key": "value"},
-		broadcastWhen: true,
-	}
+		app := NewApplication(mockCf, nil, mockLog, mockQ)
 
-	err := app.Dispatch(event)
-	assert.NoError(t, err)
-}
+		event := &mockBroadcastEvent{
+			broadcastOn:   []broadcasting.Channel{{Name: "test-channel"}},
+			broadcastAs:   "test.event",
+			broadcastWith: map[string]any{"key": "value"},
+			broadcastWhen: true,
+		}
 
-func TestApplication_Dispatch_BroadcastWhen_False(t *testing.T) {
-	mockConfig := setupMockConfig(t)
-	mockLog := mockslog.NewLog(t)
-	mockQueue := mocksqueue.NewQueue(t)
+		err := app.Dispatch(event)
+		assert.NoError(t, err)
+	})
 
-	app := NewApplication(mockConfig, mockLog, mockQueue)
+	t.Run("dispatch with BroadcastWhen false", func(t *testing.T) {
+		mockCf := mocksconfig.NewConfig(t)
+		mockCf.EXPECT().UnmarshalKey("broadcasting", &Config{}).Return(nil).Once()
+		mockQ := mocksqueue.NewQueue(t)
 
-	event := &mockBroadcastEvent{
-		broadcastOn:   []broadcasting.Channel{{Name: "test-channel"}},
-		broadcastWhen: false,
-	}
+		app := NewApplication(mockCf, nil, mockLog, mockQ)
 
-	err := app.Dispatch(event)
-	assert.NoError(t, err)
-}
+		event := &mockBroadcastEvent{
+			broadcastOn:   []broadcasting.Channel{{Name: "test-channel"}},
+			broadcastWhen: false,
+		}
 
-func TestApplication_Dispatch_NoChannels(t *testing.T) {
-	mockConfig := setupMockConfig(t)
-	mockLog := mockslog.NewLog(t)
-	mockQueue := mocksqueue.NewQueue(t)
+		err := app.Dispatch(event)
+		assert.NoError(t, err)
+	})
 
-	app := NewApplication(mockConfig, mockLog, mockQueue)
+	t.Run("dispatch with no channels", func(t *testing.T) {
+		mockCf := mocksconfig.NewConfig(t)
+		mockCf.EXPECT().UnmarshalKey("broadcasting", &Config{}).Return(nil).Once()
+		mockQ := mocksqueue.NewQueue(t)
 
-	event := &mockBroadcastEvent{
-		broadcastOn:   []broadcasting.Channel{},
-		broadcastWhen: true,
-	}
+		app := NewApplication(mockCf, nil, mockLog, mockQ)
 
-	err := app.Dispatch(event)
-	assert.NoError(t, err)
-}
+		event := &mockBroadcastEvent{
+			broadcastOn:   []broadcasting.Channel{},
+			broadcastWhen: true,
+		}
 
-func TestApplication_Dispatch_WithQueueConnection(t *testing.T) {
-	mockConfig := mocksconfig.NewConfig(t)
-	mockConfig.EXPECT().GetString("broadcasting.default", "log").Return("log").Maybe()
-	mockConfig.EXPECT().GetBool("broadcasting.auth.enabled", true).Return(false).Maybe()
-	mockConfig.EXPECT().GetString("broadcasting.auth.path", "/broadcasting/auth").Return("/broadcasting/auth").Maybe()
-	mockLog := mockslog.NewLog(t)
-	mockQueue := mocksqueue.NewQueue(t)
-	mockPendingJob := mocksqueue.NewPendingJob(t)
+		err := app.Dispatch(event)
+		assert.NoError(t, err)
+	})
 
-	mockQueue.EXPECT().Job(mock.Anything, mock.Anything).Return(mockPendingJob).Once()
-	mockPendingJob.EXPECT().OnQueue("high-priority").Return(mockPendingJob).Once()
-	mockPendingJob.EXPECT().Dispatch().Return(nil).Once()
+	t.Run("dispatch with queue and connection", func(t *testing.T) {
+		mockCf := mocksconfig.NewConfig(t)
+		mockCf.EXPECT().UnmarshalKey("broadcasting", &Config{}).Return(nil).Once()
+		mockQ := mocksqueue.NewQueue(t)
+		mockPJ := mocksqueue.NewPendingJob(t)
 
-	app := NewApplication(mockConfig, mockLog, mockQueue)
+		mockQ.EXPECT().Job(
+			mock.MatchedBy(func(j *BroadcastJob) bool { return j.Signature() == "goravel_broadcast" }),
+			mock.MatchedBy(func(args []queue.Arg) bool { return len(args) == 1 && args[0].Type == "string" }),
+		).Return(mockPJ).Once()
+		mockPJ.EXPECT().OnQueue("high-priority").Return(mockPJ).Once()
+		mockPJ.EXPECT().Dispatch().Return(nil).Once()
 
-	event := &mockBroadcastEvent{
-		broadcastOn:         []broadcasting.Channel{{Name: "test-channel"}},
-		broadcastAs:         "test.event",
-		broadcastWith:       map[string]any{"key": "value"},
-		broadcastWhen:       true,
-		broadcastConnection: "pusher",
-		broadcastQueue:      "high-priority",
-	}
+		app := NewApplication(mockCf, nil, mockLog, mockQ)
 
-	err := app.Dispatch(event)
-	assert.NoError(t, err)
-}
+		event := &mockBroadcastEvent{
+			broadcastOn:         []broadcasting.Channel{{Name: "test-channel"}},
+			broadcastAs:         "test.event",
+			broadcastWith:       map[string]any{"key": "value"},
+			broadcastWhen:       true,
+			broadcastConnection: "pusher",
+			broadcastQueue:      "high-priority",
+		}
 
-func TestApplication_Dispatch_EventName_Fallback(t *testing.T) {
-	mockConfig := setupMockConfig(t)
-	mockLog := mockslog.NewLog(t)
-	mockQueue := mocksqueue.NewQueue(t)
-	mockPendingJob := mocksqueue.NewPendingJob(t)
+		err := app.Dispatch(event)
+		assert.NoError(t, err)
+	})
 
-	mockQueue.EXPECT().Job(mock.Anything, mock.MatchedBy(func(args []queue.Arg) bool {
-		return len(args) == 1 && args[0].Type == "string"
-	})).Return(mockPendingJob).Once()
-	mockPendingJob.EXPECT().Dispatch().Return(nil).Once()
+	t.Run("dispatch with fallback event name", func(t *testing.T) {
+		mockCf := mocksconfig.NewConfig(t)
+		mockCf.EXPECT().UnmarshalKey("broadcasting", &Config{}).Return(nil).Once()
+		mockQ := mocksqueue.NewQueue(t)
+		mockPJ := mocksqueue.NewPendingJob(t)
 
-	app := NewApplication(mockConfig, mockLog, mockQueue)
+		mockQ.EXPECT().Job(
+			mock.MatchedBy(func(j *BroadcastJob) bool { return j.Signature() == "goravel_broadcast" }),
+			mock.MatchedBy(func(args []queue.Arg) bool { return len(args) == 1 && args[0].Type == "string" }),
+		).Return(mockPJ).Once()
+		mockPJ.EXPECT().Dispatch().Return(nil).Once()
 
-	event := &mockBroadcastEvent{
-		broadcastOn:   []broadcasting.Channel{{Name: "test-channel"}},
-		broadcastAs:   "",
-		broadcastWith: map[string]any{"key": "value"},
-		broadcastWhen: true,
-	}
+		app := NewApplication(mockCf, nil, mockLog, mockQ)
 
-	err := app.Dispatch(event)
-	assert.NoError(t, err)
+		event := &mockBroadcastEvent{
+			broadcastOn:   []broadcasting.Channel{{Name: "test-channel"}},
+			broadcastAs:   "",
+			broadcastWith: map[string]any{"key": "value"},
+			broadcastWhen: true,
+		}
+
+		err := app.Dispatch(event)
+		assert.NoError(t, err)
+	})
 }
 
 func TestComputeAuthSignature(t *testing.T) {

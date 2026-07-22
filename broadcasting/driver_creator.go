@@ -1,19 +1,20 @@
 package broadcasting
 
 import (
+	"github.com/goravel/framework/broadcasting/broadcasters"
 	"github.com/goravel/framework/contracts/broadcasting"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
 )
 
-func CreateDriver(conn broadcasting.ConnectionConfig, app foundation.Application) (Driver, error) {
+func CreateDriver(conn broadcasting.ConnectionConfig, app foundation.Application) (broadcasting.Driver, error) {
 	switch conn.Driver {
 	case "pusher":
-		return NewPusherDriver(conn), nil
+		return broadcasters.NewPusherDriver(conn, app.MakeHttp()), nil
 	case "log":
-		return NewLogDriver(app.MakeLog()), nil
+		return broadcasters.NewLogDriver(app.MakeLog()), nil
 	case "null":
-		return NewNullDriver(), nil
+		return broadcasters.NewNullDriver(), nil
 	default:
 		return nil, errors.BroadcastDriverNotSupported.Args(conn.Driver)
 	}
