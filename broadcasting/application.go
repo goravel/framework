@@ -34,6 +34,7 @@ type Application struct {
 	queue       queue.Queue
 	channelAuth []authEntry
 	mu          sync.RWMutex
+	defaultConn string
 }
 
 func NewApplication(cfg contractsconfig.Config, auth auth.Auth, log log.Log, queue queue.Queue) *Application {
@@ -83,6 +84,14 @@ func (a *Application) Channel(pattern string, callback broadcasting.ChannelAuthF
 	a.channelAuth = append(a.channelAuth, entry)
 }
 
+func (a *Application) Connection(connection string) broadcasting.Broadcast {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	a.defaultConn = connection
+	return a
+}
+
 func (a *Application) Dispatch(event broadcasting.ShouldBroadcast) error {
 	if !event.BroadcastWhen() {
 		return nil
@@ -99,6 +108,9 @@ func (a *Application) Dispatch(event broadcasting.ShouldBroadcast) error {
 	}
 
 	conn := a.config.Default
+	if a.defaultConn != "" {
+		conn = a.defaultConn
+	}
 	if withConn, ok := event.(broadcasting.ShouldBroadcastWithConnection); ok && withConn.BroadcastConnection() != "" {
 		conn = withConn.BroadcastConnection()
 	}
@@ -141,7 +153,9 @@ func (a *Application) Authenticate(ctx contractshttp.Context) contractshttp.Resp
 
 	userID, err := a.auth.ID()
 	if err != nil {
-		userID = ""
+		return ctx.Response().Json(http.StatusUnauthorized, contractshttp.Json{
+			"error": errors.BroadcastAuthUnauthenticated.Error(),
+		})
 	}
 	user := map[string]any{"id": userID}
 
@@ -151,10 +165,14 @@ func (a *Application) Authenticate(ctx contractshttp.Context) contractshttp.Resp
 		})
 	}
 
-	channelData := ctx.Request().Input("channel_data")
 	conn, err := a.config.Connection(a.config.DefaultConnection())
 	if err != nil {
 		return ctx.Response().Json(http.StatusInternalServerError, contractshttp.Json{"error": err.Error()})
+	}
+
+	channelData := ""
+	if IsPresenceChannel(ch) {
+		channelData = a.buildPresenceChannelData(userID)
 	}
 
 	signature := computeAuthSignature(conn.Secret, socketID, channelName, channelData)
@@ -165,6 +183,14 @@ func (a *Application) Authenticate(ctx contractshttp.Context) contractshttp.Resp
 		resp.ChannelData = channelData
 	}
 	return ctx.Response().Json(http.StatusOK, resp)
+}
+
+func (a *Application) buildPresenceChannelData(userID string) string {
+	channelData, _ := json.Marshal(map[string]any{
+		"user_id":   userID,
+		"user_info": map[string]any{"id": userID},
+	})
+	return string(channelData)
 }
 
 func (a *Application) resolveAuth(channelName string, user any) bool {

@@ -10,7 +10,7 @@ import (
 func CreateDriver(conn broadcasting.ConnectionConfig, app foundation.Application) (broadcasting.Driver, error) {
 	switch conn.Driver {
 	case "pusher":
-		return broadcasters.NewPusherDriver(conn, app.MakeHttp()), nil
+		return broadcasters.NewPusherDriver(conn, app.MakeHttp())
 	case "log":
 		return broadcasters.NewLogDriver(app.MakeLog()), nil
 	case "null":

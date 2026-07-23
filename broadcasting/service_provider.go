@@ -24,7 +24,10 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (r *ServiceProvider) Boot(app foundation.Application) {
-	app.MakeQueue().Register([]queue.Job{&BroadcastJob{}})
+	queueFacade := app.MakeQueue()
+	if queueFacade != nil {
+		queueFacade.Register([]queue.Job{&BroadcastJob{config: app.MakeConfig(), app: app}})
+	}
 
 	cfg, err := NewConfig(app.MakeConfig())
 	if err != nil {
@@ -32,12 +35,18 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 	}
 
 	if cfg.Auth.Enabled {
-		if broadcastApp, ok := app.MakeBroadcast().(*Application); ok {
-			app.MakeRoute().Post(cfg.Auth.Path, broadcastApp.Authenticate)
+		routeFacade := app.MakeRoute()
+		if routeFacade != nil {
+			if broadcastApp, ok := app.MakeBroadcast().(*Application); ok {
+				routeFacade.Post(cfg.Auth.Path, broadcastApp.Authenticate)
+			}
 		}
 	}
 
-	app.MakeArtisan().Register([]contractsconsole.Command{
-		console.NewChannelMakeCommand(),
-	})
+	artisanFacade := app.MakeArtisan()
+	if artisanFacade != nil {
+		artisanFacade.Register([]contractsconsole.Command{
+			console.NewChannelMakeCommand(),
+		})
+	}
 }

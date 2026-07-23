@@ -18,6 +18,7 @@ type ChannelAuthFunc func(user any, channelName string, params map[string]string
 
 type Broadcast interface {
 	Channel(pattern string, callback ChannelAuthFunc)
+	Connection(connection string) Broadcast
 	Dispatch(event ShouldBroadcast) error
 }
 

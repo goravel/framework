@@ -21,7 +21,6 @@ func TestCreateDriver_Pusher(t *testing.T) {
 	}
 
 	mockHttp := mockshttp.NewFactory(t)
-	mockHttp.EXPECT().Client().Return(mockshttp.NewRequest(t)).Maybe()
 
 	app := mocksfoundation.NewApplication(t)
 	app.EXPECT().MakeHttp().Return(mockHttp).Once()

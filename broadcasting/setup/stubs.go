@@ -57,7 +57,7 @@ func init() {
 		"auth": map[string]any{
 			"enabled":    config.Env("BROADCAST_AUTH_ENABLED", true),
 			"path":       config.Env("BROADCAST_AUTH_PATH", "/broadcasting/auth"),
-			"middleware": []string{"web"},
+			"middleware": []string{},
 		},
 	})
 }

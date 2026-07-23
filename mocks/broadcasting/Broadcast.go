@@ -54,6 +54,54 @@ func (_c *Broadcast_Channel_Call) RunAndReturn(run func(string, broadcasting.Cha
 	return _c
 }
 
+// Connection provides a mock function with given fields: connection
+func (_m *Broadcast) Connection(connection string) broadcasting.Broadcast {
+	ret := _m.Called(connection)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Connection")
+	}
+
+	var r0 broadcasting.Broadcast
+	if rf, ok := ret.Get(0).(func(string) broadcasting.Broadcast); ok {
+		r0 = rf(connection)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(broadcasting.Broadcast)
+		}
+	}
+
+	return r0
+}
+
+// Broadcast_Connection_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Connection'
+type Broadcast_Connection_Call struct {
+	*mock.Call
+}
+
+// Connection is a helper method to define mock.On call
+//   - connection string
+func (_e *Broadcast_Expecter) Connection(connection interface{}) *Broadcast_Connection_Call {
+	return &Broadcast_Connection_Call{Call: _e.mock.On("Connection", connection)}
+}
+
+func (_c *Broadcast_Connection_Call) Run(run func(connection string)) *Broadcast_Connection_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Broadcast_Connection_Call) Return(_a0 broadcasting.Broadcast) *Broadcast_Connection_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Broadcast_Connection_Call) RunAndReturn(run func(string) broadcasting.Broadcast) *Broadcast_Connection_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Dispatch provides a mock function with given fields: event
 func (_m *Broadcast) Dispatch(event broadcasting.ShouldBroadcast) error {
 	ret := _m.Called(event)

@@ -25,7 +25,7 @@ type PusherDriver struct {
 	baseURL string
 }
 
-func NewPusherDriver(conn broadcasting.ConnectionConfig, httpClient client.Factory) *PusherDriver {
+func NewPusherDriver(conn broadcasting.ConnectionConfig, httpClient client.Factory) (*PusherDriver, error) {
 	opts := PushOptionsFromConfig(conn.Options)
 
 	host := opts.Host
@@ -33,7 +33,7 @@ func NewPusherDriver(conn broadcasting.ConnectionConfig, httpClient client.Facto
 		host = fmt.Sprintf("api-%s.pusher.com", opts.Cluster)
 	}
 	if host == "" {
-		panic(errors.BroadcastPusherHostRequired.Error())
+		return nil, errors.BroadcastPusherHostRequired
 	}
 
 	baseURL := fmt.Sprintf("%s://%s:%d/apps/%s",
@@ -46,7 +46,7 @@ func NewPusherDriver(conn broadcasting.ConnectionConfig, httpClient client.Facto
 		options: opts,
 		client:  httpClient,
 		baseURL: baseURL,
-	}
+	}, nil
 }
 
 func PushOptionsFromConfig(options map[string]any) broadcasting.PusherOptions {

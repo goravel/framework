@@ -4,15 +4,19 @@ import (
 	"encoding/json"
 
 	"github.com/goravel/framework/contracts/broadcasting"
+	contractsconfig "github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/facades"
 )
 
 // BroadcastJob handles dispatching broadcasts asynchronously.
 // All broadcast events share one job signature because the job data is
 // self-contained in args (serialized to JSON), avoiding the need for
 // separate job types per event.
-type BroadcastJob struct{}
+type BroadcastJob struct {
+	config contractsconfig.Config
+	app    foundation.Application
+}
 
 func (j *BroadcastJob) Signature() string {
 	return "goravel_broadcast"
@@ -33,7 +37,7 @@ func (j *BroadcastJob) Handle(args ...any) error {
 		return errors.BroadcastInvalidQueuePayload
 	}
 
-	cfg, err := NewConfig(facades.Config())
+	cfg, err := NewConfig(j.config)
 	if err != nil {
 		return err
 	}
@@ -47,7 +51,7 @@ func (j *BroadcastJob) Handle(args ...any) error {
 		return err
 	}
 
-	driver, err := CreateDriver(conn, facades.App())
+	driver, err := CreateDriver(conn, j.app)
 	if err != nil {
 		return err
 	}
