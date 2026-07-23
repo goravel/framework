@@ -35,77 +35,66 @@ func setupMockConfig(t *testing.T) *mocksconfig.Config {
 	return mockConfig
 }
 
-func TestApplication_Channel_RegexWildcard(t *testing.T) {
-	mockConfig := setupMockConfig(t)
+func TestApplication_Channel(t *testing.T) {
 	mockLog := mockslog.NewLog(t)
 	mockQueue := mocksqueue.NewQueue(t)
 
-	app := NewApplication(mockConfig, nil, mockLog, mockQueue)
-	app.Channel("orders.{orderId}", func(user any, channel string, params map[string]string) bool {
-		return true
+	newApp := func() *Application {
+		mockConfig := setupMockConfig(t)
+		return NewApplication(mockConfig, nil, mockLog, mockQueue)
+	}
+
+	t.Run("regex wildcard matches parameters", func(t *testing.T) {
+		app := newApp()
+		app.Channel("orders.{orderId}", func(user any, channel string, params map[string]string) bool {
+			return true
+		})
+
+		assert.True(t, app.resolveAuth("orders.123", nil))
+		assert.False(t, app.resolveAuth("ordersA123", nil))
+		assert.False(t, app.resolveAuth("unknown", nil))
 	})
 
-	assert.True(t, app.resolveAuth("orders.123", nil))
-	assert.False(t, app.resolveAuth("ordersA123", nil))
-	assert.False(t, app.resolveAuth("unknown", nil))
-}
+	t.Run("auth callback receives extracted params", func(t *testing.T) {
+		app := newApp()
+		app.Channel("orders.{orderId}", func(user any, channel string, params map[string]string) bool {
+			return params["orderId"] == "123"
+		})
 
-func TestApplication_Channel_WithAuth(t *testing.T) {
-	mockConfig := setupMockConfig(t)
-	mockLog := mockslog.NewLog(t)
-	mockQueue := mocksqueue.NewQueue(t)
-
-	app := NewApplication(mockConfig, nil, mockLog, mockQueue)
-	app.Channel("orders.{orderId}", func(user any, channel string, params map[string]string) bool {
-		return params["orderId"] == "123"
+		assert.True(t, app.resolveAuth("orders.123", map[string]any{"id": "1"}))
+		assert.False(t, app.resolveAuth("orders.456", map[string]any{"id": "1"}))
 	})
 
-	assert.True(t, app.resolveAuth("orders.123", map[string]any{"id": "1"}))
-	assert.False(t, app.resolveAuth("orders.456", map[string]any{"id": "1"}))
-}
+	t.Run("no match returns false", func(t *testing.T) {
+		app := newApp()
+		app.Channel("orders.{orderId}", func(user any, channel string, params map[string]string) bool {
+			return false
+		})
 
-func TestApplication_Channel_NoMatch(t *testing.T) {
-	mockConfig := setupMockConfig(t)
-	mockLog := mockslog.NewLog(t)
-	mockQueue := mocksqueue.NewQueue(t)
-
-	app := NewApplication(mockConfig, nil, mockLog, mockQueue)
-	app.Channel("orders.{orderId}", func(user any, channel string, params map[string]string) bool {
-		return false
+		assert.False(t, app.resolveAuth("unknown-channel", map[string]any{"id": "1"}))
 	})
 
-	assert.False(t, app.resolveAuth("unknown-channel", map[string]any{"id": "1"}))
-}
+	t.Run("exact match without params", func(t *testing.T) {
+		app := newApp()
+		app.Channel("public-channel", func(user any, channel string, params map[string]string) bool {
+			return true
+		})
 
-func TestApplication_Channel_NoParams(t *testing.T) {
-	mockConfig := setupMockConfig(t)
-	mockLog := mockslog.NewLog(t)
-	mockQueue := mocksqueue.NewQueue(t)
-
-	app := NewApplication(mockConfig, nil, mockLog, mockQueue)
-	app.Channel("public-channel", func(user any, channel string, params map[string]string) bool {
-		return true
+		assert.True(t, app.resolveAuth("public-channel", nil))
+		assert.False(t, app.resolveAuth("other-channel", nil))
 	})
 
-	assert.True(t, app.resolveAuth("public-channel", nil))
-	assert.False(t, app.resolveAuth("other-channel", nil))
-}
+	t.Run("exact match takes precedence over regex", func(t *testing.T) {
+		app := newApp()
+		app.Channel("orders.{orderId}", func(user any, channel string, params map[string]string) bool {
+			return false
+		})
+		app.Channel("orders.special", func(user any, channel string, params map[string]string) bool {
+			return true
+		})
 
-func TestApplication_Channel_OrderPreserved(t *testing.T) {
-	mockConfig := setupMockConfig(t)
-	mockLog := mockslog.NewLog(t)
-	mockQueue := mocksqueue.NewQueue(t)
-
-	app := NewApplication(mockConfig, nil, mockLog, mockQueue)
-
-	app.Channel("orders.{orderId}", func(user any, channel string, params map[string]string) bool {
-		return false
+		assert.True(t, app.resolveAuth("orders.special", nil))
 	})
-	app.Channel("orders.special", func(user any, channel string, params map[string]string) bool {
-		return true
-	})
-
-	assert.True(t, app.resolveAuth("orders.special", nil))
 }
 
 func TestApplication_Dispatch(t *testing.T) {

@@ -16,6 +16,10 @@ type AuthResponse struct {
 
 type ChannelAuthFunc func(user any, channelName string, params map[string]string) bool
 
+type Driver interface {
+	Broadcast(channels []Channel, event string, payload map[string]any) error
+}
+
 type Broadcast interface {
 	Channel(pattern string, callback ChannelAuthFunc)
 	Connection(connection string) Broadcast
@@ -35,4 +39,25 @@ type ShouldBroadcastWithQueue interface {
 
 type ShouldBroadcastWithConnection interface {
 	BroadcastConnection() string
+}
+
+type ConnectionConfig struct {
+	Driver  string
+	Key     string
+	Secret  string
+	AppID   string
+	Options map[string]any
+}
+
+type PusherOptions struct {
+	Cluster string
+	Host    string
+	Port    int
+	Scheme  string
+}
+
+type AuthConfig struct {
+	Enabled    bool
+	Path       string
+	Middleware []string
 }
