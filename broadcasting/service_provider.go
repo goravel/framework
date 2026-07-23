@@ -6,6 +6,7 @@ import (
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/errors"
 )
 
 type ServiceProvider struct{}
@@ -19,7 +20,27 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 
 func (r *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(binding.Broadcast, func(app foundation.Application) (any, error) {
-		return NewApplication(app.MakeConfig(), app.MakeAuth(), app.MakeLog(), app.MakeQueue()), nil
+		config := app.MakeConfig()
+		if config == nil {
+			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleBroadcast)
+		}
+
+		auth := app.MakeAuth()
+		if auth == nil {
+			return nil, errors.AuthFacadeNotSet.SetModule(errors.ModuleBroadcast)
+		}
+
+		log := app.MakeLog()
+		if log == nil {
+			return nil, errors.LogFacadeNotSet.SetModule(errors.ModuleBroadcast)
+		}
+
+		queue := app.MakeQueue()
+		if queue == nil {
+			return nil, errors.QueueFacadeNotSet.SetModule(errors.ModuleBroadcast)
+		}
+
+		return NewApplication(config, auth, log, queue), nil
 	})
 }
 

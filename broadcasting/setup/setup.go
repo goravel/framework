@@ -18,6 +18,10 @@ func main() {
 
 	env := `
 BROADCAST_CONNECTION=log
+PUSHER_APP_KEY=
+PUSHER_APP_SECRET=
+PUSHER_APP_ID=
+PUSHER_HOST=
 `
 
 	setup.Install(

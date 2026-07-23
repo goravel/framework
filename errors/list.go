@@ -3,6 +3,7 @@ package errors
 var (
 	ApplicationNotSet                = New("application instance is not initialized")
 	AppInvalidDisabledRunnersPattern = New("invalid app.disabled_runners pattern %q: %v")
+	AuthFacadeNotSet                 = New("auth facade is not initialized")
 	CacheFacadeNotSet                = New("cache facade is not initialized")
 	ConfigFacadeNotSet               = New("config facade is not initialized")
 	ConsoleFacadeNotSet              = New("console facade is not initialized, skipping artisan command execution")
