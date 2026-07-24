@@ -24,7 +24,6 @@ type Driver interface {
 
 type Broadcast interface {
 	Channel(pattern string, callback ChannelAuthFunc)
-	Connection(connection string) Broadcast
 	Dispatch(event ShouldBroadcast) error
 }
 

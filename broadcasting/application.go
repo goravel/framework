@@ -36,7 +36,6 @@ type Application struct {
 	queue       queue.Queue
 	channelAuth []authEntry
 	mu          sync.RWMutex
-	defaultConn string
 }
 
 func NewApplication(cfg contractsconfig.Config, auth auth.Auth, log log.Log, queue queue.Queue, app foundation.Application) *Application {
@@ -87,14 +86,6 @@ func (a *Application) Channel(pattern string, callback broadcasting.ChannelAuthF
 	a.channelAuth = append(a.channelAuth, entry)
 }
 
-func (a *Application) Connection(connection string) broadcasting.Broadcast {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-
-	a.defaultConn = connection
-	return a
-}
-
 func (a *Application) Dispatch(event broadcasting.ShouldBroadcast) error {
 	if !event.BroadcastWhen() {
 		return nil
@@ -128,9 +119,6 @@ func (a *Application) Dispatch(event broadcasting.ShouldBroadcast) error {
 
 func (a *Application) resolveConnections(event broadcasting.ShouldBroadcast) []string {
 	conns := []string{a.config.Default}
-	if a.defaultConn != "" {
-		conns = []string{a.defaultConn}
-	}
 	if withConn, ok := event.(broadcasting.ShouldBroadcastWithConnection); ok && len(withConn.BroadcastConnections()) > 0 {
 		conns = withConn.BroadcastConnections()
 	}
