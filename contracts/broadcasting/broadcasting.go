@@ -38,7 +38,7 @@ type ShouldBroadcastWithQueue interface {
 	BroadcastQueue() string
 }
 
-type ShouldBroadcastWithConnection interface {
+type ShouldBroadcastWithConnections interface {
 	BroadcastConnections() []string
 }
 

@@ -119,7 +119,7 @@ func (a *Application) Dispatch(event broadcasting.ShouldBroadcast) error {
 
 func (a *Application) resolveConnections(event broadcasting.ShouldBroadcast) []string {
 	conns := []string{a.config.Default}
-	if withConn, ok := event.(broadcasting.ShouldBroadcastWithConnection); ok && len(withConn.BroadcastConnections()) > 0 {
+	if withConn, ok := event.(broadcasting.ShouldBroadcastWithConnections); ok && len(withConn.BroadcastConnections()) > 0 {
 		conns = withConn.BroadcastConnections()
 	}
 	return conns
