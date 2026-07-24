@@ -5,6 +5,7 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 )
@@ -37,7 +38,7 @@ func (r *ChannelMakeCommand) Extend() command.Extend {
 }
 
 func (r *ChannelMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "channel", ctx.Argument(0), "app/broadcasting")
+	m, err := supportconsole.NewMake(ctx, "channel", ctx.Argument(0), support.Config.Paths.Broadcasting)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil

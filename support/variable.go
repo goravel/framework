@@ -7,6 +7,8 @@ type Paths struct {
 	Agents string
 	// The bootstrap directory path, default is "bootstrap".
 	Bootstrap string
+	// The broadcasting directory path, default is "app/broadcasting".
+	Broadcasting string
 	// The commands directory path, default is "app/console/commands".
 	Commands string
 	// The config directory path, default is "config".
@@ -91,6 +93,7 @@ var (
 			App:           "app",
 			Agents:        "app/ai/agents",
 			Bootstrap:     "bootstrap",
+			Broadcasting:  "app/broadcasting",
 			Commands:      "app/console/commands",
 			Config:        "config",
 			Controllers:   "app/http/controllers",
