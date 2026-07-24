@@ -14,20 +14,22 @@ import (
 )
 
 type mockBroadcastEvent struct {
-	broadcastOn         []broadcasting.Channel
-	broadcastAs         string
-	broadcastWith       map[string]any
-	broadcastWhen       bool
-	broadcastQueue      string
-	broadcastConnection string
+	broadcastOn               []broadcasting.Channel
+	broadcastAs               string
+	broadcastWith             map[string]any
+	broadcastWhen             bool
+	broadcastQueue            string
+	broadcastConnection       string
+	broadcastQueueConnection string
 }
 
-func (e *mockBroadcastEvent) BroadcastOn() []broadcasting.Channel { return e.broadcastOn }
-func (e *mockBroadcastEvent) BroadcastAs() string                 { return e.broadcastAs }
-func (e *mockBroadcastEvent) BroadcastWith() map[string]any       { return e.broadcastWith }
-func (e *mockBroadcastEvent) BroadcastWhen() bool                 { return e.broadcastWhen }
-func (e *mockBroadcastEvent) BroadcastQueue() string              { return e.broadcastQueue }
-func (e *mockBroadcastEvent) BroadcastConnection() string         { return e.broadcastConnection }
+func (e *mockBroadcastEvent) BroadcastOn() []broadcasting.Channel    { return e.broadcastOn }
+func (e *mockBroadcastEvent) BroadcastAs() string                    { return e.broadcastAs }
+func (e *mockBroadcastEvent) BroadcastWith() map[string]any          { return e.broadcastWith }
+func (e *mockBroadcastEvent) BroadcastWhen() bool                    { return e.broadcastWhen }
+func (e *mockBroadcastEvent) BroadcastQueue() string                 { return e.broadcastQueue }
+func (e *mockBroadcastEvent) BroadcastConnection() string            { return e.broadcastConnection }
+func (e *mockBroadcastEvent) BroadcastQueueConnection() string       { return e.broadcastQueueConnection }
 
 func setupMockConfig(t *testing.T) *mocksconfig.Config {
 	mockConfig := mocksconfig.NewConfig(t)
@@ -167,18 +169,47 @@ func TestApplication_Dispatch(t *testing.T) {
 			mock.MatchedBy(func(j *BroadcastJob) bool { return j.Signature() == "goravel_broadcast" }),
 			mock.MatchedBy(func(args []queue.Arg) bool { return len(args) == 1 && args[0].Type == "string" }),
 		).Return(mockPJ).Once()
+		mockPJ.EXPECT().OnConnection("redis").Return(mockPJ).Once()
 		mockPJ.EXPECT().OnQueue("high-priority").Return(mockPJ).Once()
 		mockPJ.EXPECT().Dispatch().Return(nil).Once()
 
 		app := NewApplication(mockCf, nil, mockLog, mockQ)
 
 		event := &mockBroadcastEvent{
-			broadcastOn:         []broadcasting.Channel{{Name: "test-channel"}},
-			broadcastAs:         "test.event",
-			broadcastWith:       map[string]any{"key": "value"},
-			broadcastWhen:       true,
-			broadcastConnection: "pusher",
-			broadcastQueue:      "high-priority",
+			broadcastOn:               []broadcasting.Channel{{Name: "test-channel"}},
+			broadcastAs:               "test.event",
+			broadcastWith:             map[string]any{"key": "value"},
+			broadcastWhen:             true,
+			broadcastConnection:       "pusher",
+			broadcastQueue:            "high-priority",
+			broadcastQueueConnection: "redis",
+		}
+
+		err := app.Dispatch(event)
+		assert.NoError(t, err)
+	})
+
+	t.Run("dispatch with only queue connection", func(t *testing.T) {
+		mockCf := mocksconfig.NewConfig(t)
+		mockCf.EXPECT().UnmarshalKey("broadcasting", &Config{}).Return(nil).Once()
+		mockQ := mocksqueue.NewQueue(t)
+		mockPJ := mocksqueue.NewPendingJob(t)
+
+		mockQ.EXPECT().Job(
+			mock.MatchedBy(func(j *BroadcastJob) bool { return j.Signature() == "goravel_broadcast" }),
+			mock.MatchedBy(func(args []queue.Arg) bool { return len(args) == 1 && args[0].Type == "string" }),
+		).Return(mockPJ).Once()
+		mockPJ.EXPECT().OnConnection("redis").Return(mockPJ).Once()
+		mockPJ.EXPECT().Dispatch().Return(nil).Once()
+
+		app := NewApplication(mockCf, nil, mockLog, mockQ)
+
+		event := &mockBroadcastEvent{
+			broadcastOn:               []broadcasting.Channel{{Name: "test-channel"}},
+			broadcastAs:               "test.event",
+			broadcastWith:             map[string]any{"key": "value"},
+			broadcastWhen:             true,
+			broadcastQueueConnection: "redis",
 		}
 
 		err := app.Dispatch(event)

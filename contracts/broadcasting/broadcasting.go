@@ -40,3 +40,7 @@ type ShouldBroadcastWithQueue interface {
 type ShouldBroadcastWithConnection interface {
 	BroadcastConnection() string
 }
+
+type ShouldBroadcastWithQueueConnection interface {
+	BroadcastQueueConnection() string
+}

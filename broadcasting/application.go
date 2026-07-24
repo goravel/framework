@@ -129,6 +129,10 @@ func (a *Application) Dispatch(event broadcasting.ShouldBroadcast) error {
 
 	job := a.queue.Job(&BroadcastJob{}, []queue.Arg{{Type: "string", Value: string(encoded)}})
 
+	if withConn, ok := event.(broadcasting.ShouldBroadcastWithQueueConnection); ok && withConn.BroadcastQueueConnection() != "" {
+		job = job.OnConnection(withConn.BroadcastQueueConnection())
+	}
+
 	if withQueue, ok := event.(broadcasting.ShouldBroadcastWithQueue); ok && withQueue.BroadcastQueue() != "" {
 		job = job.OnQueue(withQueue.BroadcastQueue())
 	}
