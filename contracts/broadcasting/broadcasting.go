@@ -1,5 +1,7 @@
 package broadcasting
 
+import "time"
+
 const (
 	ChannelPrefixPrivate  = "private-"
 	ChannelPrefixPresence = "presence-"
@@ -38,9 +40,18 @@ type ShouldBroadcastWithQueue interface {
 }
 
 type ShouldBroadcastWithConnection interface {
-	BroadcastConnection() string
+	BroadcastConnections() []string
+}
+
+type ShouldBroadcastNow interface {
+	ShouldBroadcast
+	BroadcastNow() bool
 }
 
 type ShouldBroadcastWithQueueConnection interface {
 	BroadcastQueueConnection() string
+}
+
+type ShouldBroadcastWithDelay interface {
+	BroadcastDelay() time.Time
 }

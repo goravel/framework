@@ -40,7 +40,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.QueueFacadeNotSet.SetModule(errors.ModuleBroadcast)
 		}
 
-		return NewApplication(config, auth, log, queue), nil
+		return NewApplication(config, auth, log, queue, app), nil
 	})
 }
 

@@ -14,6 +14,7 @@ import (
 	"github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/broadcasting"
 	contractsconfig "github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/contracts/foundation"
 	contractshttp "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/queue"
@@ -28,6 +29,7 @@ type authEntry struct {
 }
 
 type Application struct {
+	app         foundation.Application
 	config      *Config
 	auth        auth.Auth
 	log         log.Log
@@ -37,13 +39,14 @@ type Application struct {
 	defaultConn string
 }
 
-func NewApplication(cfg contractsconfig.Config, auth auth.Auth, log log.Log, queue queue.Queue) *Application {
+func NewApplication(cfg contractsconfig.Config, auth auth.Auth, log log.Log, queue queue.Queue, app foundation.Application) *Application {
 	bc, err := NewConfig(cfg)
 	if err != nil {
 		bc = &Config{Default: "log"}
 	}
 
 	return &Application{
+		app:         app,
 		config:      bc,
 		auth:        auth,
 		log:         log,
@@ -107,21 +110,58 @@ func (a *Application) Dispatch(event broadcasting.ShouldBroadcast) error {
 		eventName = reflect.Indirect(reflect.ValueOf(event)).Type().Name()
 	}
 
-	conn := a.config.Default
-	if a.defaultConn != "" {
-		conn = a.defaultConn
-	}
-	if withConn, ok := event.(broadcasting.ShouldBroadcastWithConnection); ok && withConn.BroadcastConnection() != "" {
-		conn = withConn.BroadcastConnection()
-	}
+	conns := a.resolveConnections(event)
 
 	item := broadcastItem{
-		Channels:   channelNames(channels),
-		Event:      eventName,
-		Payload:    event.BroadcastWith(),
-		Connection: conn,
+		Channels:    channelNames(channels),
+		Event:       eventName,
+		Payload:     event.BroadcastWith(),
+		Connections: conns,
 	}
 
+	if _, ok := event.(broadcasting.ShouldBroadcastNow); ok {
+		return a.dispatchSync(item)
+	}
+
+	return a.dispatchAsync(event, item)
+}
+
+func (a *Application) resolveConnections(event broadcasting.ShouldBroadcast) []string {
+	conns := []string{a.config.Default}
+	if a.defaultConn != "" {
+		conns = []string{a.defaultConn}
+	}
+	if withConn, ok := event.(broadcasting.ShouldBroadcastWithConnection); ok && len(withConn.BroadcastConnections()) > 0 {
+		conns = withConn.BroadcastConnections()
+	}
+	return conns
+}
+
+func (a *Application) dispatchSync(item broadcastItem) error {
+	for _, conn := range item.Connections {
+		cfg, err := a.config.Connection(conn)
+		if err != nil {
+			return err
+		}
+
+		driver, err := CreateDriver(cfg, a.app)
+		if err != nil {
+			return err
+		}
+
+		channels := make([]broadcasting.Channel, len(item.Channels))
+		for i, name := range item.Channels {
+			channels[i] = broadcasting.Channel{Name: name}
+		}
+
+		if err := driver.Broadcast(channels, item.Event, item.Payload); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (a *Application) dispatchAsync(event broadcasting.ShouldBroadcast, item broadcastItem) error {
 	encoded, err := json.Marshal(item)
 	if err != nil {
 		return err
@@ -135,6 +175,10 @@ func (a *Application) Dispatch(event broadcasting.ShouldBroadcast) error {
 
 	if withQueue, ok := event.(broadcasting.ShouldBroadcastWithQueue); ok && withQueue.BroadcastQueue() != "" {
 		job = job.OnQueue(withQueue.BroadcastQueue())
+	}
+
+	if withDelay, ok := event.(broadcasting.ShouldBroadcastWithDelay); ok && !withDelay.BroadcastDelay().IsZero() {
+		job = job.Delay(withDelay.BroadcastDelay())
 	}
 
 	return job.Dispatch()
@@ -226,10 +270,10 @@ func (a *Application) resolveAuth(channelName string, user any) bool {
 var patternRegex = regexp.MustCompile(`\{(\w+)\}`)
 
 type broadcastItem struct {
-	Channels   []string       `json:"channels"`
-	Event      string         `json:"event"`
-	Payload    map[string]any `json:"payload"`
-	Connection string         `json:"connection"`
+	Channels    []string       `json:"channels"`
+	Event       string         `json:"event"`
+	Payload     map[string]any `json:"payload"`
+	Connections []string       `json:"connections"`
 }
 
 func channelNames(channels []broadcasting.Channel) []string {

@@ -17,47 +17,49 @@ func (_m *ShouldBroadcastWithConnection) EXPECT() *ShouldBroadcastWithConnection
 	return &ShouldBroadcastWithConnection_Expecter{mock: &_m.Mock}
 }
 
-// BroadcastConnection provides a mock function with no fields
-func (_m *ShouldBroadcastWithConnection) BroadcastConnection() string {
+// BroadcastConnections provides a mock function with no fields
+func (_m *ShouldBroadcastWithConnection) BroadcastConnections() []string {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for BroadcastConnection")
+		panic("no return value specified for BroadcastConnections")
 	}
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
+	var r0 []string
+	if rf, ok := ret.Get(0).(func() []string); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
 	}
 
 	return r0
 }
 
-// ShouldBroadcastWithConnection_BroadcastConnection_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BroadcastConnection'
-type ShouldBroadcastWithConnection_BroadcastConnection_Call struct {
+// ShouldBroadcastWithConnection_BroadcastConnections_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BroadcastConnections'
+type ShouldBroadcastWithConnection_BroadcastConnections_Call struct {
 	*mock.Call
 }
 
-// BroadcastConnection is a helper method to define mock.On call
-func (_e *ShouldBroadcastWithConnection_Expecter) BroadcastConnection() *ShouldBroadcastWithConnection_BroadcastConnection_Call {
-	return &ShouldBroadcastWithConnection_BroadcastConnection_Call{Call: _e.mock.On("BroadcastConnection")}
+// BroadcastConnections is a helper method to define mock.On call
+func (_e *ShouldBroadcastWithConnection_Expecter) BroadcastConnections() *ShouldBroadcastWithConnection_BroadcastConnections_Call {
+	return &ShouldBroadcastWithConnection_BroadcastConnections_Call{Call: _e.mock.On("BroadcastConnections")}
 }
 
-func (_c *ShouldBroadcastWithConnection_BroadcastConnection_Call) Run(run func()) *ShouldBroadcastWithConnection_BroadcastConnection_Call {
+func (_c *ShouldBroadcastWithConnection_BroadcastConnections_Call) Run(run func()) *ShouldBroadcastWithConnection_BroadcastConnections_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *ShouldBroadcastWithConnection_BroadcastConnection_Call) Return(_a0 string) *ShouldBroadcastWithConnection_BroadcastConnection_Call {
+func (_c *ShouldBroadcastWithConnection_BroadcastConnections_Call) Return(_a0 []string) *ShouldBroadcastWithConnection_BroadcastConnections_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ShouldBroadcastWithConnection_BroadcastConnection_Call) RunAndReturn(run func() string) *ShouldBroadcastWithConnection_BroadcastConnection_Call {
+func (_c *ShouldBroadcastWithConnection_BroadcastConnections_Call) RunAndReturn(run func() []string) *ShouldBroadcastWithConnection_BroadcastConnections_Call {
 	_c.Call.Return(run)
 	return _c
 }

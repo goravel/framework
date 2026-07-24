@@ -42,24 +42,31 @@ func (j *BroadcastJob) Handle(args ...any) error {
 		return err
 	}
 
-	if item.Connection == "" {
-		item.Connection = cfg.DefaultConnection()
-	}
-
-	conn, err := cfg.Connection(item.Connection)
-	if err != nil {
-		return err
-	}
-
-	driver, err := CreateDriver(conn, j.app)
-	if err != nil {
-		return err
-	}
-
 	channels := make([]broadcasting.Channel, len(item.Channels))
 	for i, name := range item.Channels {
 		channels[i] = broadcasting.Channel{Name: name}
 	}
 
-	return driver.Broadcast(channels, item.Event, item.Payload)
+	conns := item.Connections
+	if len(conns) == 0 {
+		conns = []string{cfg.DefaultConnection()}
+	}
+
+	for _, conn := range conns {
+		cfgConn, err := cfg.Connection(conn)
+		if err != nil {
+			return err
+		}
+
+		driver, err := CreateDriver(cfgConn, j.app)
+		if err != nil {
+			return err
+		}
+
+		if err := driver.Broadcast(channels, item.Event, item.Payload); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
