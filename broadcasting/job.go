@@ -2,6 +2,7 @@ package broadcasting
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/goravel/framework/contracts/broadcasting"
 	contractsconfig "github.com/goravel/framework/contracts/config"
@@ -9,10 +10,6 @@ import (
 	"github.com/goravel/framework/errors"
 )
 
-// BroadcastJob handles dispatching broadcasts asynchronously.
-// All broadcast events share one job signature because the job data is
-// self-contained in args (serialized to JSON), avoiding the need for
-// separate job types per event.
 type BroadcastJob struct {
 	config contractsconfig.Config
 	app    foundation.Application
@@ -52,6 +49,37 @@ func (j *BroadcastJob) Handle(args ...any) error {
 		conns = []string{cfg.DefaultConnection()}
 	}
 
+	maxTries := item.Tries
+	if maxTries <= 0 {
+		maxTries = 1
+	}
+	backoff := time.Duration(item.Backoff) * time.Millisecond
+	timeout := time.Duration(item.Timeout) * time.Millisecond
+
+	start := time.Now()
+	var lastErr error
+
+	for attempt := 1; attempt <= maxTries; attempt++ {
+		lastErr = j.broadcastToConns(cfg, channels, item.Event, item.Payload, conns)
+		if lastErr == nil {
+			return nil
+		}
+
+		if attempt < maxTries {
+			if timeout > 0 && time.Since(start)+backoff >= timeout {
+				break
+			}
+
+			if backoff > 0 {
+				time.Sleep(backoff)
+			}
+		}
+	}
+
+	return lastErr
+}
+
+func (j *BroadcastJob) broadcastToConns(cfg *Config, channels []broadcasting.Channel, event string, payload map[string]any, conns []string) error {
 	for _, conn := range conns {
 		cfgConn, err := cfg.Connection(conn)
 		if err != nil {
@@ -63,7 +91,7 @@ func (j *BroadcastJob) Handle(args ...any) error {
 			return err
 		}
 
-		if err := driver.Broadcast(channels, item.Event, item.Payload); err != nil {
+		if err := driver.Broadcast(channels, event, payload); err != nil {
 			return err
 		}
 	}

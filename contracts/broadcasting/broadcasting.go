@@ -54,3 +54,15 @@ type ShouldBroadcastWithQueueConnection interface {
 type ShouldBroadcastWithDelay interface {
 	BroadcastDelay() time.Time
 }
+
+type ShouldBroadcastWithTries interface {
+	BroadcastTries() int
+}
+
+type ShouldBroadcastWithBackoff interface {
+	BroadcastBackoff() time.Duration
+}
+
+type ShouldBroadcastWithTimeout interface {
+	BroadcastTimeout() time.Duration
+}

@@ -109,6 +109,7 @@ func (a *Application) Dispatch(event broadcasting.ShouldBroadcast) error {
 		Payload:     event.BroadcastWith(),
 		Connections: conns,
 	}
+	a.broadcastItemWithRetryConfig(event, &item)
 
 	if _, ok := event.(broadcasting.ShouldBroadcastNow); ok {
 		return a.dispatchSync(item)
@@ -170,6 +171,18 @@ func (a *Application) dispatchAsync(event broadcasting.ShouldBroadcast, item bro
 	}
 
 	return job.Dispatch()
+}
+
+func (a *Application) broadcastItemWithRetryConfig(event broadcasting.ShouldBroadcast, item *broadcastItem) {
+	if withTries, ok := event.(broadcasting.ShouldBroadcastWithTries); ok && withTries.BroadcastTries() > 0 {
+		item.Tries = withTries.BroadcastTries()
+	}
+	if withBackoff, ok := event.(broadcasting.ShouldBroadcastWithBackoff); ok && withBackoff.BroadcastBackoff() > 0 {
+		item.Backoff = withBackoff.BroadcastBackoff().Milliseconds()
+	}
+	if withTimeout, ok := event.(broadcasting.ShouldBroadcastWithTimeout); ok && withTimeout.BroadcastTimeout() > 0 {
+		item.Timeout = withTimeout.BroadcastTimeout().Milliseconds()
+	}
 }
 
 func (a *Application) Authenticate(ctx contractshttp.Context) contractshttp.Response {
@@ -262,6 +275,9 @@ type broadcastItem struct {
 	Event       string         `json:"event"`
 	Payload     map[string]any `json:"payload"`
 	Connections []string       `json:"connections"`
+	Tries       int            `json:"tries,omitempty"`
+	Backoff     int64          `json:"backoff,omitempty"`
+	Timeout     int64          `json:"timeout,omitempty"`
 }
 
 func channelNames(channels []broadcasting.Channel) []string {

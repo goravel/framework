@@ -1,6 +1,7 @@
 package broadcasting
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -23,6 +24,9 @@ type mockBroadcastEvent struct {
 	broadcastConnections      []string
 	broadcastQueueConnection  string
 	broadcastDelay            time.Time
+	broadcastTries            int
+	broadcastBackoff          time.Duration
+	broadcastTimeout          time.Duration
 }
 
 func (e *mockBroadcastEvent) BroadcastOn() []broadcasting.Channel     { return e.broadcastOn }
@@ -33,6 +37,9 @@ func (e *mockBroadcastEvent) BroadcastQueue() string                  { return e
 func (e *mockBroadcastEvent) BroadcastConnections() []string          { return e.broadcastConnections }
 func (e *mockBroadcastEvent) BroadcastQueueConnection() string        { return e.broadcastQueueConnection }
 func (e *mockBroadcastEvent) BroadcastDelay() time.Time               { return e.broadcastDelay }
+func (e *mockBroadcastEvent) BroadcastTries() int                     { return e.broadcastTries }
+func (e *mockBroadcastEvent) BroadcastBackoff() time.Duration         { return e.broadcastBackoff }
+func (e *mockBroadcastEvent) BroadcastTimeout() time.Duration         { return e.broadcastTimeout }
 
 type mockBroadcastNowEvent struct {
 	*broadcasting.Channel
@@ -261,6 +268,42 @@ func TestApplication_Dispatch(t *testing.T) {
 			broadcastWith:  map[string]any{"key": "value"},
 			broadcastWhen:  true,
 			broadcastDelay: delay,
+		}
+
+		err := app.Dispatch(event)
+		assert.NoError(t, err)
+	})
+
+	t.Run("dispatch with tries, backoff, and timeout", func(t *testing.T) {
+		mockCf := setupMockConfig(t, "")
+		mockQ := mocksqueue.NewQueue(t)
+		mockPJ := mocksqueue.NewPendingJob(t)
+
+		mockQ.EXPECT().Job(
+			mock.MatchedBy(func(j *BroadcastJob) bool { return j.Signature() == "goravel_broadcast" }),
+			mock.MatchedBy(func(args []queue.Arg) bool {
+				if len(args) != 1 || args[0].Type != "string" {
+					return false
+				}
+				var item broadcastItem
+				if err := json.Unmarshal([]byte(args[0].Value.(string)), &item); err != nil {
+					return false
+				}
+				return item.Tries == 3 && item.Backoff == 5000 && item.Timeout == 30000
+			}),
+		).Return(mockPJ).Once()
+		mockPJ.EXPECT().Dispatch().Return(nil).Once()
+
+		app := NewApplication(mockCf, nil, mockLog, mockQ, nil)
+
+		event := &mockBroadcastEvent{
+			broadcastOn:      []broadcasting.Channel{{Name: "test-channel"}},
+			broadcastAs:      "test.event",
+			broadcastWith:    map[string]any{"key": "value"},
+			broadcastWhen:    true,
+			broadcastTries:   3,
+			broadcastBackoff: 5 * time.Second,
+			broadcastTimeout: 30 * time.Second,
 		}
 
 		err := app.Dispatch(event)
