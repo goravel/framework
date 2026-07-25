@@ -11,7 +11,6 @@ import (
 	"regexp"
 	"sync"
 
-	"github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/broadcasting"
 	contractsconfig "github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
@@ -29,16 +28,15 @@ type authEntry struct {
 }
 
 type Application struct {
-	app         foundation.Application
-	config      *Config
-	auth        auth.Auth
-	log         log.Log
-	queue       queue.Queue
+	app    foundation.Application
+	config *Config
+	log    log.Log
+	queue  queue.Queue
 	channelAuth []authEntry
-	mu          sync.RWMutex
+	mu     sync.RWMutex
 }
 
-func NewApplication(cfg contractsconfig.Config, auth auth.Auth, log log.Log, queue queue.Queue, app foundation.Application) *Application {
+func NewApplication(cfg contractsconfig.Config, log log.Log, queue queue.Queue, app foundation.Application) *Application {
 	bc, err := NewConfig(cfg)
 	if err != nil {
 		bc = &Config{Default: "log"}
@@ -47,7 +45,6 @@ func NewApplication(cfg contractsconfig.Config, auth auth.Auth, log log.Log, que
 	return &Application{
 		app:         app,
 		config:      bc,
-		auth:        auth,
 		log:         log,
 		queue:       queue,
 		channelAuth: make([]authEntry, 0),
@@ -200,7 +197,14 @@ func (a *Application) Authenticate(ctx contractshttp.Context) contractshttp.Resp
 		return ctx.Response().Json(http.StatusOK, broadcasting.AuthResponse{})
 	}
 
-	userID, err := a.auth.ID()
+	auth := a.app.MakeAuth(ctx)
+	if auth == nil {
+		return ctx.Response().Json(http.StatusUnauthorized, contractshttp.Json{
+			"error": errors.BroadcastAuthUnauthenticated.Error(),
+		})
+	}
+
+	userID, err := auth.ID()
 	if err != nil {
 		return ctx.Response().Json(http.StatusUnauthorized, contractshttp.Json{
 			"error": errors.BroadcastAuthUnauthenticated.Error(),

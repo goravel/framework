@@ -25,11 +25,6 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleBroadcast)
 		}
 
-		auth := app.MakeAuth()
-		if auth == nil {
-			return nil, errors.AuthFacadeNotSet.SetModule(errors.ModuleBroadcast)
-		}
-
 		log := app.MakeLog()
 		if log == nil {
 			return nil, errors.LogFacadeNotSet.SetModule(errors.ModuleBroadcast)
@@ -40,7 +35,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.QueueFacadeNotSet.SetModule(errors.ModuleBroadcast)
 		}
 
-		return NewApplication(config, auth, log, queue, app), nil
+		return NewApplication(config, log, queue, app), nil
 	})
 }
 

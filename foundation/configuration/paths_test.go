@@ -51,6 +51,12 @@ func (s *PathsTestSuite) TestBootstrap() {
 	s.Equal(s.paths, result)
 }
 
+func (s *PathsTestSuite) TestBroadcasting() {
+	result := s.paths.Broadcasting("custom/broadcasting")
+	s.Equal("custom/broadcasting", support.Config.Paths.Broadcasting)
+	s.Equal(s.paths, result)
+}
+
 func (s *PathsTestSuite) TestCommands() {
 	result := s.paths.Commands("custom/commands")
 	s.Equal("custom/commands", support.Config.Paths.Commands)

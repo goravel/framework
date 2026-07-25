@@ -2,6 +2,7 @@ package broadcasting
 
 import (
 	"encoding/json"
+	"net/http"
 	"testing"
 	"time"
 
@@ -9,8 +10,13 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/goravel/framework/contracts/broadcasting"
+	contractshttp "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/errors"
+	mocksauth "github.com/goravel/framework/mocks/auth"
 	mocksconfig "github.com/goravel/framework/mocks/config"
+	mocksfoundation "github.com/goravel/framework/mocks/foundation"
+	mockshttp "github.com/goravel/framework/mocks/http"
 	mockslog "github.com/goravel/framework/mocks/log"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
 )
@@ -79,7 +85,7 @@ func TestApplication_Channel(t *testing.T) {
 
 	newApp := func() *Application {
 		mockConfig := setupMockConfig(t, "")
-		return NewApplication(mockConfig, nil, mockLog, mockQueue, nil)
+		return NewApplication(mockConfig, mockLog, mockQueue, nil)
 	}
 
 	t.Run("regex wildcard matches parameters", func(t *testing.T) {
@@ -149,7 +155,7 @@ func TestApplication_Dispatch(t *testing.T) {
 		).Return(mockPJ).Once()
 		mockPJ.EXPECT().Dispatch().Return(nil).Once()
 
-		app := NewApplication(mockCf, nil, mockLog, mockQ, nil)
+		app := NewApplication(mockCf, mockLog, mockQ, nil)
 
 		event := &mockBroadcastEvent{
 			broadcastOn:   []broadcasting.Channel{{Name: "test-channel"}},
@@ -166,7 +172,7 @@ func TestApplication_Dispatch(t *testing.T) {
 		mockCf := setupMockConfig(t, "")
 		mockQ := mocksqueue.NewQueue(t)
 
-		app := NewApplication(mockCf, nil, mockLog, mockQ, nil)
+		app := NewApplication(mockCf, mockLog, mockQ, nil)
 
 		event := &mockBroadcastEvent{
 			broadcastOn:   []broadcasting.Channel{{Name: "test-channel"}},
@@ -181,7 +187,7 @@ func TestApplication_Dispatch(t *testing.T) {
 		mockCf := setupMockConfig(t, "")
 		mockQ := mocksqueue.NewQueue(t)
 
-		app := NewApplication(mockCf, nil, mockLog, mockQ, nil)
+		app := NewApplication(mockCf, mockLog, mockQ, nil)
 
 		event := &mockBroadcastEvent{
 			broadcastOn:   []broadcasting.Channel{},
@@ -205,7 +211,7 @@ func TestApplication_Dispatch(t *testing.T) {
 		mockPJ.EXPECT().OnQueue("high-priority").Return(mockPJ).Once()
 		mockPJ.EXPECT().Dispatch().Return(nil).Once()
 
-		app := NewApplication(mockCf, nil, mockLog, mockQ, nil)
+		app := NewApplication(mockCf, mockLog, mockQ, nil)
 
 		event := &mockBroadcastEvent{
 			broadcastOn:              []broadcasting.Channel{{Name: "test-channel"}},
@@ -233,7 +239,7 @@ func TestApplication_Dispatch(t *testing.T) {
 		mockPJ.EXPECT().OnConnection("redis").Return(mockPJ).Once()
 		mockPJ.EXPECT().Dispatch().Return(nil).Once()
 
-		app := NewApplication(mockCf, nil, mockLog, mockQ, nil)
+		app := NewApplication(mockCf, mockLog, mockQ, nil)
 
 		event := &mockBroadcastEvent{
 			broadcastOn:              []broadcasting.Channel{{Name: "test-channel"}},
@@ -260,7 +266,7 @@ func TestApplication_Dispatch(t *testing.T) {
 		mockPJ.EXPECT().Delay(delay).Return(mockPJ).Once()
 		mockPJ.EXPECT().Dispatch().Return(nil).Once()
 
-		app := NewApplication(mockCf, nil, mockLog, mockQ, nil)
+		app := NewApplication(mockCf, mockLog, mockQ, nil)
 
 		event := &mockBroadcastEvent{
 			broadcastOn:    []broadcasting.Channel{{Name: "test-channel"}},
@@ -294,7 +300,7 @@ func TestApplication_Dispatch(t *testing.T) {
 		).Return(mockPJ).Once()
 		mockPJ.EXPECT().Dispatch().Return(nil).Once()
 
-		app := NewApplication(mockCf, nil, mockLog, mockQ, nil)
+		app := NewApplication(mockCf, mockLog, mockQ, nil)
 
 		event := &mockBroadcastEvent{
 			broadcastOn:      []broadcasting.Channel{{Name: "test-channel"}},
@@ -321,7 +327,7 @@ func TestApplication_Dispatch(t *testing.T) {
 		).Return(mockPJ).Once()
 		mockPJ.EXPECT().Dispatch().Return(nil).Once()
 
-		app := NewApplication(mockCf, nil, mockLog, mockQ, nil)
+		app := NewApplication(mockCf, mockLog, mockQ, nil)
 
 		event := &mockBroadcastEvent{
 			broadcastOn:   []broadcasting.Channel{{Name: "test-channel"}},
@@ -338,7 +344,7 @@ func TestApplication_Dispatch(t *testing.T) {
 		mockCf := setupMockConfig(t, "null")
 		mockQ := mocksqueue.NewQueue(t)
 
-		app := NewApplication(mockCf, nil, mockLog, mockQ, nil)
+		app := NewApplication(mockCf, mockLog, mockQ, nil)
 
 		event := &mockBroadcastNowEvent{
 			broadcastOn:          []broadcasting.Channel{{Name: "test-channel"}},
@@ -356,7 +362,7 @@ func TestApplication_Dispatch(t *testing.T) {
 		mockCf := setupMockConfig(t, "null")
 		mockQ := mocksqueue.NewQueue(t)
 
-		app := NewApplication(mockCf, nil, mockLog, mockQ, nil)
+		app := NewApplication(mockCf, mockLog, mockQ, nil)
 
 		event := &mockBroadcastNowEvent{
 			broadcastOn:          []broadcasting.Channel{{Name: "test-channel"}},
@@ -374,7 +380,7 @@ func TestApplication_Dispatch(t *testing.T) {
 		mockCf := setupMockConfig(t, "null")
 		mockQ := mocksqueue.NewQueue(t)
 
-		app := NewApplication(mockCf, nil, mockLog, mockQ, nil)
+		app := NewApplication(mockCf, mockLog, mockQ, nil)
 
 		event := &mockBroadcastNowEvent{
 			broadcastOn:          []broadcasting.Channel{{Name: "test-channel"}},
@@ -416,4 +422,228 @@ func TestChannelHelpers(t *testing.T) {
 	assert.False(t, IsPrivateChannel(presence))
 	assert.True(t, IsPresenceChannel(presence))
 	assert.Equal(t, "chat", ChannelBaseName(presence))
+}
+
+func TestApplication_Authenticate(t *testing.T) {
+	newDefaultConfig := func() *Config {
+		return &Config{
+			Default: "pusher",
+			Connections: map[string]broadcasting.ConnectionConfig{
+				"pusher": {Driver: "pusher", Key: "app-key", Secret: "app-secret"},
+			},
+		}
+	}
+
+	setupMocks := func(t *testing.T, socketID, channelName string) (*mockshttp.Context, *mockshttp.ContextRequest, *mockshttp.ContextResponse, *mockshttp.AbortableResponse) {
+		mockReq := mockshttp.NewContextRequest(t)
+		mockReq.EXPECT().Input("socket_id").Return(socketID).Once()
+		mockReq.EXPECT().Input("channel_name").Return(channelName).Once()
+
+		mockAbortResp := mockshttp.NewAbortableResponse(t)
+
+		mockCtxResp := mockshttp.NewContextResponse(t)
+
+		mockCtx := mockshttp.NewContext(t)
+		mockCtx.EXPECT().Request().Return(mockReq).Times(2)
+		mockCtx.EXPECT().Response().Return(mockCtxResp).Once()
+
+		return mockCtx, mockReq, mockCtxResp, mockAbortResp
+	}
+
+	t.Run("missing socket_id", func(t *testing.T) {
+		mockReq := mockshttp.NewContextRequest(t)
+		mockReq.EXPECT().Input("socket_id").Return("").Once()
+		mockReq.EXPECT().Input("channel_name").Return("channel.1").Once()
+
+		mockAbortResp := mockshttp.NewAbortableResponse(t)
+
+		mockCtxResp := mockshttp.NewContextResponse(t)
+		mockCtxResp.EXPECT().Json(http.StatusBadRequest, mock.MatchedBy(func(v any) bool {
+			j, ok := v.(contractshttp.Json)
+			return ok && j["error"] == errors.BroadcastAuthMissingParams.Error()
+		})).Return(mockAbortResp).Once()
+
+		mockCtx := mockshttp.NewContext(t)
+		mockCtx.EXPECT().Request().Return(mockReq).Times(2)
+		mockCtx.EXPECT().Response().Return(mockCtxResp).Once()
+
+		app := &Application{config: newDefaultConfig()}
+		resp := app.Authenticate(mockCtx)
+		assert.NotNil(t, resp)
+	})
+
+	t.Run("missing channel_name", func(t *testing.T) {
+		mockReq := mockshttp.NewContextRequest(t)
+		mockReq.EXPECT().Input("socket_id").Return("1234.5678").Once()
+		mockReq.EXPECT().Input("channel_name").Return("").Once()
+
+		mockAbortResp := mockshttp.NewAbortableResponse(t)
+
+		mockCtxResp := mockshttp.NewContextResponse(t)
+		mockCtxResp.EXPECT().Json(http.StatusBadRequest, mock.MatchedBy(func(v any) bool {
+			j, ok := v.(contractshttp.Json)
+			return ok && j["error"] == errors.BroadcastAuthMissingParams.Error()
+		})).Return(mockAbortResp).Once()
+
+		mockCtx := mockshttp.NewContext(t)
+		mockCtx.EXPECT().Request().Return(mockReq).Times(2)
+		mockCtx.EXPECT().Response().Return(mockCtxResp).Once()
+
+		app := &Application{config: newDefaultConfig()}
+		resp := app.Authenticate(mockCtx)
+		assert.NotNil(t, resp)
+	})
+
+	t.Run("public channel returns empty auth", func(t *testing.T) {
+		mockCtx, _, mockCtxResp, mockAbortResp := setupMocks(t, "1234.5678", "public-channel")
+
+		mockCtxResp.EXPECT().Json(http.StatusOK, broadcasting.AuthResponse{}).Return(mockAbortResp).Once()
+
+		app := &Application{config: newDefaultConfig()}
+		resp := app.Authenticate(mockCtx)
+		assert.NotNil(t, resp)
+	})
+
+	t.Run("private channel with nil auth returns 401", func(t *testing.T) {
+		mockCtx, _, mockCtxResp, mockAbortResp := setupMocks(t, "1234.5678", "private-orders.123")
+
+		mockFoundApp := mocksfoundation.NewApplication(t)
+		mockFoundApp.EXPECT().MakeAuth(mockCtx).Return(nil).Once()
+
+		mockCtxResp.EXPECT().Json(http.StatusUnauthorized, mock.MatchedBy(func(v any) bool {
+			j, ok := v.(contractshttp.Json)
+			return ok && j["error"] == errors.BroadcastAuthUnauthenticated.Error()
+		})).Return(mockAbortResp).Once()
+
+		app := &Application{app: mockFoundApp, config: newDefaultConfig()}
+		resp := app.Authenticate(mockCtx)
+		assert.NotNil(t, resp)
+	})
+
+	t.Run("private channel with auth ID error returns 401", func(t *testing.T) {
+		mockCtx, _, mockCtxResp, mockAbortResp := setupMocks(t, "1234.5678", "private-orders.123")
+
+		mockAuth := mocksauth.NewAuth(t)
+		mockAuth.EXPECT().ID().Return("", errors.BroadcastAuthUnauthenticated).Once()
+
+		mockFoundApp := mocksfoundation.NewApplication(t)
+		mockFoundApp.EXPECT().MakeAuth(mockCtx).Return(mockAuth).Once()
+
+		mockCtxResp.EXPECT().Json(http.StatusUnauthorized, mock.MatchedBy(func(v any) bool {
+			j, ok := v.(contractshttp.Json)
+			return ok && j["error"] == errors.BroadcastAuthUnauthenticated.Error()
+		})).Return(mockAbortResp).Once()
+
+		app := &Application{app: mockFoundApp, config: newDefaultConfig()}
+		resp := app.Authenticate(mockCtx)
+		assert.NotNil(t, resp)
+	})
+
+	t.Run("private channel with auth denied returns 403", func(t *testing.T) {
+		mockCtx, _, mockCtxResp, mockAbortResp := setupMocks(t, "1234.5678", "private-orders.123")
+
+		mockAuth := mocksauth.NewAuth(t)
+		mockAuth.EXPECT().ID().Return("user-1", nil).Once()
+
+		mockFoundApp := mocksfoundation.NewApplication(t)
+		mockFoundApp.EXPECT().MakeAuth(mockCtx).Return(mockAuth).Once()
+
+		app := &Application{app: mockFoundApp, config: newDefaultConfig()}
+		app.Channel("orders.123", func(user any, channel string, params map[string]string) bool {
+			return false
+		})
+
+		mockCtxResp.EXPECT().Json(http.StatusForbidden, mock.MatchedBy(func(v any) bool {
+			j, ok := v.(contractshttp.Json)
+			return ok && j["error"] == errors.BroadcastChannelUnauthorized.Args("private-orders.123").Error()
+		})).Return(mockAbortResp).Once()
+
+		resp := app.Authenticate(mockCtx)
+		assert.NotNil(t, resp)
+	})
+
+	t.Run("private channel with auth granted returns signature", func(t *testing.T) {
+		mockCtx, _, mockCtxResp, mockAbortResp := setupMocks(t, "1234.5678", "private-orders.123")
+
+		mockAuth := mocksauth.NewAuth(t)
+		mockAuth.EXPECT().ID().Return("user-1", nil).Once()
+
+		mockFoundApp := mocksfoundation.NewApplication(t)
+		mockFoundApp.EXPECT().MakeAuth(mockCtx).Return(mockAuth).Once()
+
+		app := &Application{app: mockFoundApp, config: newDefaultConfig()}
+		app.Channel("orders.123", func(user any, channel string, params map[string]string) bool {
+			return true
+		})
+
+		mockCtxResp.EXPECT().Json(http.StatusOK, mock.MatchedBy(func(v any) bool {
+			resp, ok := v.(broadcasting.AuthResponse)
+			if !ok {
+				return false
+			}
+			assert.NotEmpty(t, resp.Auth)
+			sig := computeAuthSignature("app-secret", "1234.5678", "private-orders.123", "")
+			assert.Equal(t, "app-key:"+sig, resp.Auth)
+			assert.Empty(t, resp.ChannelData)
+			return true
+		})).Return(mockAbortResp).Once()
+
+		resp := app.Authenticate(mockCtx)
+		assert.NotNil(t, resp)
+	})
+
+	t.Run("presence channel with auth granted returns signature and channel_data", func(t *testing.T) {
+		mockCtx, _, mockCtxResp, mockAbortResp := setupMocks(t, "1234.5678", "presence-chat")
+
+		mockAuth := mocksauth.NewAuth(t)
+		mockAuth.EXPECT().ID().Return("user-1", nil).Once()
+
+		mockFoundApp := mocksfoundation.NewApplication(t)
+		mockFoundApp.EXPECT().MakeAuth(mockCtx).Return(mockAuth).Once()
+
+		app := &Application{app: mockFoundApp, config: newDefaultConfig()}
+		app.Channel("chat", func(user any, channel string, params map[string]string) bool {
+			return true
+		})
+
+		mockCtxResp.EXPECT().Json(http.StatusOK, mock.MatchedBy(func(v any) bool {
+			resp, ok := v.(broadcasting.AuthResponse)
+			if !ok {
+				return false
+			}
+			assert.NotEmpty(t, resp.Auth)
+			assert.NotEmpty(t, resp.ChannelData)
+
+			sig := computeAuthSignature("app-secret", "1234.5678", "presence-chat", resp.ChannelData)
+			assert.Equal(t, "app-key:"+sig, resp.Auth)
+			return true
+		})).Return(mockAbortResp).Once()
+
+		resp := app.Authenticate(mockCtx)
+		assert.NotNil(t, resp)
+	})
+
+	t.Run("config connection error returns 500", func(t *testing.T) {
+		mockCtx, _, mockCtxResp, mockAbortResp := setupMocks(t, "1234.5678", "private-orders.123")
+
+		mockAuth := mocksauth.NewAuth(t)
+		mockAuth.EXPECT().ID().Return("user-1", nil).Once()
+
+		mockFoundApp := mocksfoundation.NewApplication(t)
+		mockFoundApp.EXPECT().MakeAuth(mockCtx).Return(mockAuth).Once()
+
+		badCfg := &Config{Default: "nonexistent", Connections: map[string]broadcasting.ConnectionConfig{}}
+		app := &Application{app: mockFoundApp, config: badCfg}
+		app.Channel("orders.123", func(user any, channel string, params map[string]string) bool {
+			return true
+		})
+
+		mockCtxResp.EXPECT().Json(http.StatusInternalServerError, mock.MatchedBy(func(v any) bool {
+			j, ok := v.(contractshttp.Json)
+			return ok && j["error"] != ""
+		})).Return(mockAbortResp).Once()
+
+		resp := app.Authenticate(mockCtx)
+		assert.NotNil(t, resp)
+	})
 }
