@@ -10,9 +10,17 @@ import (
 func CreateDriver(conn broadcasting.ConnectionConfig, app foundation.Application) (broadcasting.Driver, error) {
 	switch conn.Driver {
 	case "pusher":
-		return broadcasters.NewPusherDriver(conn, app.MakeHttp())
+		httpClient := app.MakeHttp()
+		if httpClient == nil {
+			return nil, errors.HttpFacadeNotSet.SetModule(errors.ModuleBroadcast)
+		}
+		return broadcasters.NewPusherDriver(conn, httpClient)
 	case "log":
-		return broadcasters.NewLogDriver(app.MakeLog()), nil
+		logFacade := app.MakeLog()
+		if logFacade == nil {
+			return nil, errors.LogFacadeNotSet.SetModule(errors.ModuleBroadcast)
+		}
+		return broadcasters.NewLogDriver(logFacade), nil
 	case "null":
 		return broadcasters.NewNullDriver(), nil
 	default:

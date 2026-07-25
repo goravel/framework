@@ -28,12 +28,13 @@ type authEntry struct {
 }
 
 type Application struct {
-	app    foundation.Application
-	config *Config
-	log    log.Log
-	queue  queue.Queue
+	app         foundation.Application
+	config      *Config
+	configRaw   contractsconfig.Config
+	log         log.Log
+	queue       queue.Queue
 	channelAuth []authEntry
-	mu     sync.RWMutex
+	mu          sync.RWMutex
 }
 
 func NewApplication(cfg contractsconfig.Config, log log.Log, queue queue.Queue, app foundation.Application) *Application {
@@ -45,6 +46,7 @@ func NewApplication(cfg contractsconfig.Config, log log.Log, queue queue.Queue, 
 	return &Application{
 		app:         app,
 		config:      bc,
+		configRaw:   cfg,
 		log:         log,
 		queue:       queue,
 		channelAuth: make([]authEntry, 0),
@@ -108,7 +110,7 @@ func (a *Application) Dispatch(event broadcasting.ShouldBroadcast) error {
 	}
 	a.broadcastItemWithRetryConfig(event, &item)
 
-	if _, ok := event.(broadcasting.ShouldBroadcastNow); ok {
+	if now, ok := event.(broadcasting.ShouldBroadcastNow); ok && now.BroadcastNow() {
 		return a.dispatchSync(item)
 	}
 
@@ -153,7 +155,7 @@ func (a *Application) dispatchAsync(event broadcasting.ShouldBroadcast, item bro
 		return err
 	}
 
-	job := a.queue.Job(&BroadcastJob{}, []queue.Arg{{Type: "string", Value: string(encoded)}})
+	job := a.queue.Job(&BroadcastJob{config: a.configRaw, app: a.app}, []queue.Arg{{Type: "string", Value: string(encoded)}})
 
 	if withConn, ok := event.(broadcasting.ShouldBroadcastWithQueueConnection); ok && withConn.BroadcastQueueConnection() != "" {
 		job = job.OnConnection(withConn.BroadcastQueueConnection())

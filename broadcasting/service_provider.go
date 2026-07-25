@@ -40,12 +40,17 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (r *ServiceProvider) Boot(app foundation.Application) {
-	queueFacade := app.MakeQueue()
-	if queueFacade != nil {
-		queueFacade.Register([]queue.Job{&BroadcastJob{config: app.MakeConfig(), app: app}})
+	configFacade := app.MakeConfig()
+	if configFacade == nil {
+		return
 	}
 
-	cfg, err := NewConfig(app.MakeConfig())
+	queueFacade := app.MakeQueue()
+	if queueFacade != nil {
+		queueFacade.Register([]queue.Job{&BroadcastJob{config: configFacade, app: app}})
+	}
+
+	cfg, err := NewConfig(configFacade)
 	if err != nil {
 		cfg = &Config{Default: "log"}
 	}
@@ -53,8 +58,11 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 	if cfg.Auth.Enabled {
 		routeFacade := app.MakeRoute()
 		if routeFacade != nil {
-			if broadcastApp, ok := app.MakeBroadcast().(*Application); ok {
-				routeFacade.Post(cfg.Auth.Path, broadcastApp.Authenticate)
+			broadcastFacade := app.MakeBroadcast()
+			if broadcastFacade != nil {
+				if broadcastApp, ok := broadcastFacade.(*Application); ok {
+					routeFacade.Post(cfg.Auth.Path, broadcastApp.Authenticate)
+				}
 			}
 		}
 	}

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/goravel/framework/contracts/broadcasting"
 	mocksconfig "github.com/goravel/framework/mocks/config"
@@ -11,7 +12,7 @@ import (
 
 func TestNewConfig(t *testing.T) {
 	mockConfig := mocksconfig.NewConfig(t)
-	mockConfig.EXPECT().UnmarshalKey("broadcasting", &Config{}).Return(nil).Once()
+	mockConfig.EXPECT().UnmarshalKey("broadcasting", mock.MatchedBy(func(c *Config) bool { return true })).Return(nil).Once()
 
 	cfg, err := NewConfig(mockConfig)
 	assert.NoError(t, err)
