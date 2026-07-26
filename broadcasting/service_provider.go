@@ -61,7 +61,7 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 			broadcastFacade := app.MakeBroadcast()
 			if broadcastFacade != nil {
 				if broadcastApp, ok := broadcastFacade.(*Application); ok {
-					routeFacade.Post(cfg.Auth.Path, broadcastApp.Authenticate)
+					routeFacade.Middleware(cfg.Auth.Middleware...).Post(cfg.Auth.Path, broadcastApp.Authenticate)
 				}
 			}
 		}

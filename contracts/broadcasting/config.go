@@ -1,5 +1,9 @@
 package broadcasting
 
+import (
+	contractshttp "github.com/goravel/framework/contracts/http"
+)
+
 type ConnectionConfig struct {
 	Driver  string
 	Key     string
@@ -18,5 +22,5 @@ type PusherOptions struct {
 type AuthConfig struct {
 	Enabled    bool
 	Path       string
-	Middleware []string
+	Middleware []contractshttp.Middleware
 }

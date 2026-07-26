@@ -7,7 +7,9 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/goravel/framework/contracts/broadcasting"
+	contractshttp "github.com/goravel/framework/contracts/http"
 	mocksconfig "github.com/goravel/framework/mocks/config"
+	mockshttp "github.com/goravel/framework/mocks/http"
 )
 
 func TestNewConfig(t *testing.T) {
@@ -88,4 +90,18 @@ func TestConfig_DefaultValues(t *testing.T) {
 
 	_, err := cfg.Connection("anything")
 	assert.Error(t, err)
+}
+
+func TestConfig_AuthMiddleware(t *testing.T) {
+	mw := mockshttp.NewMiddleware(t)
+	cfg := &Config{
+		Auth: broadcasting.AuthConfig{
+			Enabled:    true,
+			Path:       "/broadcasting/auth",
+			Middleware: []contractshttp.Middleware{mw},
+		},
+	}
+	assert.True(t, cfg.Auth.Enabled)
+	assert.Len(t, cfg.Auth.Middleware, 1)
+	assert.Same(t, mw, cfg.Auth.Middleware[0])
 }

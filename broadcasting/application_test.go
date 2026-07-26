@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/goravel/framework/contracts/broadcasting"
+	contractsauth "github.com/goravel/framework/contracts/auth"
 	contractshttp "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
@@ -434,7 +435,7 @@ func TestApplication_Authenticate(t *testing.T) {
 		}
 	}
 
-	setupMocks := func(t *testing.T, socketID, channelName string) (*mockshttp.Context, *mockshttp.ContextRequest, *mockshttp.ContextResponse, *mockshttp.AbortableResponse) {
+	setupMocksBase := func(t *testing.T, socketID, channelName string) (*mockshttp.Context, *mockshttp.ContextRequest, *mockshttp.ContextResponse, *mockshttp.AbortableResponse) {
 		mockReq := mockshttp.NewContextRequest(t)
 		mockReq.EXPECT().Input("socket_id").Return(socketID).Once()
 		mockReq.EXPECT().Input("channel_name").Return(channelName).Once()
@@ -444,9 +445,20 @@ func TestApplication_Authenticate(t *testing.T) {
 		mockCtxResp := mockshttp.NewContextResponse(t)
 
 		mockCtx := mockshttp.NewContext(t)
-		mockCtx.EXPECT().Request().Return(mockReq).Times(2)
 		mockCtx.EXPECT().Response().Return(mockCtxResp).Once()
 
+		return mockCtx, mockReq, mockCtxResp, mockAbortResp
+	}
+
+	setupMocksPublic := func(t *testing.T, socketID, channelName string) (*mockshttp.Context, *mockshttp.ContextRequest, *mockshttp.ContextResponse, *mockshttp.AbortableResponse) {
+		mockCtx, mockReq, mockCtxResp, mockAbortResp := setupMocksBase(t, socketID, channelName)
+		mockCtx.EXPECT().Request().Return(mockReq).Times(2)
+		return mockCtx, mockReq, mockCtxResp, mockAbortResp
+	}
+
+	setupMocksAuth := func(t *testing.T, socketID, channelName string) (*mockshttp.Context, *mockshttp.ContextRequest, *mockshttp.ContextResponse, *mockshttp.AbortableResponse) {
+		mockCtx, mockReq, mockCtxResp, mockAbortResp := setupMocksBase(t, socketID, channelName)
+		mockCtx.EXPECT().Request().Return(mockReq).Times(3)
 		return mockCtx, mockReq, mockCtxResp, mockAbortResp
 	}
 
@@ -495,7 +507,7 @@ func TestApplication_Authenticate(t *testing.T) {
 	})
 
 	t.Run("public channel returns empty auth", func(t *testing.T) {
-		mockCtx, _, mockCtxResp, mockAbortResp := setupMocks(t, "1234.5678", "public-channel")
+		mockCtx, _, mockCtxResp, mockAbortResp := setupMocksPublic(t, "1234.5678", "public-channel")
 
 		mockCtxResp.EXPECT().Json(http.StatusOK, broadcasting.AuthResponse{}).Return(mockAbortResp).Once()
 
@@ -505,7 +517,7 @@ func TestApplication_Authenticate(t *testing.T) {
 	})
 
 	t.Run("private channel with nil auth returns 401", func(t *testing.T) {
-		mockCtx, _, mockCtxResp, mockAbortResp := setupMocks(t, "1234.5678", "private-orders.123")
+		mockCtx, _, mockCtxResp, mockAbortResp := setupMocksPublic(t, "1234.5678", "private-orders.123")
 
 		mockFoundApp := mocksfoundation.NewApplication(t)
 		mockFoundApp.EXPECT().MakeAuth(mockCtx).Return(nil).Once()
@@ -521,7 +533,8 @@ func TestApplication_Authenticate(t *testing.T) {
 	})
 
 	t.Run("private channel with auth ID error returns 401", func(t *testing.T) {
-		mockCtx, _, mockCtxResp, mockAbortResp := setupMocks(t, "1234.5678", "private-orders.123")
+		mockCtx, mockReq, mockCtxResp, mockAbortResp := setupMocksAuth(t, "1234.5678", "private-orders.123")
+		mockReq.EXPECT().Header("Authorization", "").Return("").Once()
 
 		mockAuth := mocksauth.NewAuth(t)
 		mockAuth.EXPECT().ID().Return("", errors.BroadcastAuthUnauthenticated).Once()
@@ -540,7 +553,8 @@ func TestApplication_Authenticate(t *testing.T) {
 	})
 
 	t.Run("private channel with auth denied returns 403", func(t *testing.T) {
-		mockCtx, _, mockCtxResp, mockAbortResp := setupMocks(t, "1234.5678", "private-orders.123")
+		mockCtx, mockReq, mockCtxResp, mockAbortResp := setupMocksAuth(t, "1234.5678", "private-orders.123")
+		mockReq.EXPECT().Header("Authorization", "").Return("").Once()
 
 		mockAuth := mocksauth.NewAuth(t)
 		mockAuth.EXPECT().ID().Return("user-1", nil).Once()
@@ -563,7 +577,8 @@ func TestApplication_Authenticate(t *testing.T) {
 	})
 
 	t.Run("private channel with auth granted returns signature", func(t *testing.T) {
-		mockCtx, _, mockCtxResp, mockAbortResp := setupMocks(t, "1234.5678", "private-orders.123")
+		mockCtx, mockReq, mockCtxResp, mockAbortResp := setupMocksAuth(t, "1234.5678", "private-orders.123")
+		mockReq.EXPECT().Header("Authorization", "").Return("").Once()
 
 		mockAuth := mocksauth.NewAuth(t)
 		mockAuth.EXPECT().ID().Return("user-1", nil).Once()
@@ -593,7 +608,8 @@ func TestApplication_Authenticate(t *testing.T) {
 	})
 
 	t.Run("presence channel with auth granted returns signature and channel_data", func(t *testing.T) {
-		mockCtx, _, mockCtxResp, mockAbortResp := setupMocks(t, "1234.5678", "presence-chat")
+		mockCtx, mockReq, mockCtxResp, mockAbortResp := setupMocksAuth(t, "1234.5678", "presence-chat")
+		mockReq.EXPECT().Header("Authorization", "").Return("").Once()
 
 		mockAuth := mocksauth.NewAuth(t)
 		mockAuth.EXPECT().ID().Return("user-1", nil).Once()
@@ -624,7 +640,8 @@ func TestApplication_Authenticate(t *testing.T) {
 	})
 
 	t.Run("config connection error returns 500", func(t *testing.T) {
-		mockCtx, _, mockCtxResp, mockAbortResp := setupMocks(t, "1234.5678", "private-orders.123")
+		mockCtx, mockReq, mockCtxResp, mockAbortResp := setupMocksAuth(t, "1234.5678", "private-orders.123")
+		mockReq.EXPECT().Header("Authorization", "").Return("").Once()
 
 		mockAuth := mocksauth.NewAuth(t)
 		mockAuth.EXPECT().ID().Return("user-1", nil).Once()
@@ -643,6 +660,96 @@ func TestApplication_Authenticate(t *testing.T) {
 			return ok && j["error"] != ""
 		})).Return(mockAbortResp).Once()
 
+		resp := app.Authenticate(mockCtx)
+		assert.NotNil(t, resp)
+	})
+
+	t.Run("private channel with JWT parse success then ID success returns 200", func(t *testing.T) {
+		mockCtx, mockReq, mockCtxResp, mockAbortResp := setupMocksAuth(t, "1234.5678", "private-orders.123")
+		mockReq.EXPECT().Header("Authorization", "").Return("Bearer valid.token").Once()
+
+		mockAuth := mocksauth.NewAuth(t)
+		mockAuth.EXPECT().Parse("Bearer valid.token").Return(&contractsauth.Payload{Key: "user-1"}, nil).Once()
+		mockAuth.EXPECT().ID().Return("user-1", nil).Once()
+
+		mockFoundApp := mocksfoundation.NewApplication(t)
+		mockFoundApp.EXPECT().MakeAuth(mockCtx).Return(mockAuth).Once()
+
+		app := &Application{app: mockFoundApp, config: newDefaultConfig()}
+		app.Channel("orders.123", func(user any, channel string, params map[string]string) bool {
+			return true
+		})
+
+		mockCtxResp.EXPECT().Json(http.StatusOK, mock.MatchedBy(func(v any) bool {
+			resp, ok := v.(broadcasting.AuthResponse)
+			return ok && resp.Auth != "" && resp.ChannelData == ""
+		})).Return(mockAbortResp).Once()
+
+		resp := app.Authenticate(mockCtx)
+		assert.NotNil(t, resp)
+	})
+
+	t.Run("private channel with JWT parse failure returns 401", func(t *testing.T) {
+		mockCtx, mockReq, mockCtxResp, mockAbortResp := setupMocksAuth(t, "1234.5678", "private-orders.123")
+		mockReq.EXPECT().Header("Authorization", "").Return("Bearer bad.token").Once()
+
+		mockAuth := mocksauth.NewAuth(t)
+		mockAuth.EXPECT().Parse("Bearer bad.token").Return(nil, errors.AuthInvalidToken).Once()
+
+		mockFoundApp := mocksfoundation.NewApplication(t)
+		mockFoundApp.EXPECT().MakeAuth(mockCtx).Return(mockAuth).Once()
+
+		mockCtxResp.EXPECT().Json(http.StatusUnauthorized, mock.MatchedBy(func(v any) bool {
+			j, ok := v.(contractshttp.Json)
+			return ok && j["error"] == errors.BroadcastAuthUnauthenticated.Error()
+		})).Return(mockAbortResp).Once()
+
+		app := &Application{app: mockFoundApp, config: newDefaultConfig()}
+		resp := app.Authenticate(mockCtx)
+		assert.NotNil(t, resp)
+	})
+
+	t.Run("private channel with session guard Parse error ignored then ID success returns 200", func(t *testing.T) {
+		mockCtx, mockReq, mockCtxResp, mockAbortResp := setupMocksAuth(t, "1234.5678", "private-orders.123")
+		mockReq.EXPECT().Header("Authorization", "").Return("Bearer anything").Once()
+
+		mockAuth := mocksauth.NewAuth(t)
+		mockAuth.EXPECT().Parse("Bearer anything").Return(nil, errors.AuthUnsupportedDriverMethod.Args("session")).Once()
+		mockAuth.EXPECT().ID().Return("user-1", nil).Once()
+
+		mockFoundApp := mocksfoundation.NewApplication(t)
+		mockFoundApp.EXPECT().MakeAuth(mockCtx).Return(mockAuth).Once()
+
+		app := &Application{app: mockFoundApp, config: newDefaultConfig()}
+		app.Channel("orders.123", func(user any, channel string, params map[string]string) bool {
+			return true
+		})
+
+		mockCtxResp.EXPECT().Json(http.StatusOK, mock.MatchedBy(func(v any) bool {
+			resp, ok := v.(broadcasting.AuthResponse)
+			return ok && resp.Auth != "" && resp.ChannelData == ""
+		})).Return(mockAbortResp).Once()
+
+		resp := app.Authenticate(mockCtx)
+		assert.NotNil(t, resp)
+	})
+
+	t.Run("private channel with no token and JWT guard ID failure returns 401", func(t *testing.T) {
+		mockCtx, mockReq, mockCtxResp, mockAbortResp := setupMocksAuth(t, "1234.5678", "private-orders.123")
+		mockReq.EXPECT().Header("Authorization", "").Return("").Once()
+
+		mockAuth := mocksauth.NewAuth(t)
+		mockAuth.EXPECT().ID().Return("", errors.AuthParseTokenFirst).Once()
+
+		mockFoundApp := mocksfoundation.NewApplication(t)
+		mockFoundApp.EXPECT().MakeAuth(mockCtx).Return(mockAuth).Once()
+
+		mockCtxResp.EXPECT().Json(http.StatusUnauthorized, mock.MatchedBy(func(v any) bool {
+			j, ok := v.(contractshttp.Json)
+			return ok && j["error"] == errors.BroadcastAuthUnauthenticated.Error()
+		})).Return(mockAbortResp).Once()
+
+		app := &Application{app: mockFoundApp, config: newDefaultConfig()}
 		resp := app.Authenticate(mockCtx)
 		assert.NotNil(t, resp)
 	})

@@ -206,6 +206,17 @@ func (a *Application) Authenticate(ctx contractshttp.Context) contractshttp.Resp
 		})
 	}
 
+	token := ctx.Request().Header("Authorization", "")
+	if token != "" {
+		if _, parseErr := auth.Parse(token); parseErr != nil {
+			if !errors.Is(parseErr, errors.AuthUnsupportedDriverMethod) {
+				return ctx.Response().Json(http.StatusUnauthorized, contractshttp.Json{
+					"error": errors.BroadcastAuthUnauthenticated.Error(),
+				})
+			}
+		}
+	}
+
 	userID, err := auth.ID()
 	if err != nil {
 		return ctx.Response().Json(http.StatusUnauthorized, contractshttp.Json{

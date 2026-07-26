@@ -25,6 +25,7 @@ func (s Stubs) Config() string {
 	return `package config
 
 import (
+	contractshttp "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/facades"
 )
 
@@ -57,7 +58,7 @@ func init() {
 		"auth": map[string]any{
 			"enabled":    config.Env("BROADCAST_AUTH_ENABLED", true),
 			"path":       config.Env("BROADCAST_AUTH_PATH", "/broadcasting/auth"),
-			"middleware": []string{},
+			"middleware": []contractshttp.Middleware{},
 		},
 	})
 }
