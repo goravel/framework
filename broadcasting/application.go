@@ -212,9 +212,8 @@ func (a *Application) Authenticate(ctx contractshttp.Context) contractshttp.Resp
 			"error": errors.BroadcastAuthUnauthenticated.Error(),
 		})
 	}
-	user := map[string]any{"id": userID}
 
-	if !a.resolveAuth(ChannelBaseName(ch), user) {
+	if !a.resolveAuth(ChannelBaseName(ch), userID) {
 		return ctx.Response().Json(http.StatusForbidden, contractshttp.Json{
 			"error": errors.BroadcastChannelUnauthorized.Args(channelName).Error(),
 		})
