@@ -17,22 +17,34 @@ func (_m *ChannelAuthFunc) EXPECT() *ChannelAuthFunc_Expecter {
 	return &ChannelAuthFunc_Expecter{mock: &_m.Mock}
 }
 
-// Execute provides a mock function with given fields: user, channelName, params
-func (_m *ChannelAuthFunc) Execute(user interface{}, channelName string, params map[string]string) bool {
-	ret := _m.Called(user, channelName, params)
+// Execute provides a mock function with given fields: userID, channelName, params
+func (_m *ChannelAuthFunc) Execute(userID interface{}, channelName string, params map[string]string) (bool, interface{}) {
+	ret := _m.Called(userID, channelName, params)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Execute")
 	}
 
 	var r0 bool
+	var r1 interface{}
+	if rf, ok := ret.Get(0).(func(interface{}, string, map[string]string) (bool, interface{})); ok {
+		return rf(userID, channelName, params)
+	}
 	if rf, ok := ret.Get(0).(func(interface{}, string, map[string]string) bool); ok {
-		r0 = rf(user, channelName, params)
+		r0 = rf(userID, channelName, params)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(interface{}, string, map[string]string) interface{}); ok {
+		r1 = rf(userID, channelName, params)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(interface{})
+		}
+	}
+
+	return r0, r1
 }
 
 // ChannelAuthFunc_Execute_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Execute'
@@ -41,26 +53,26 @@ type ChannelAuthFunc_Execute_Call struct {
 }
 
 // Execute is a helper method to define mock.On call
-//   - user interface{}
+//   - userID interface{}
 //   - channelName string
 //   - params map[string]string
-func (_e *ChannelAuthFunc_Expecter) Execute(user interface{}, channelName interface{}, params interface{}) *ChannelAuthFunc_Execute_Call {
-	return &ChannelAuthFunc_Execute_Call{Call: _e.mock.On("Execute", user, channelName, params)}
+func (_e *ChannelAuthFunc_Expecter) Execute(userID interface{}, channelName interface{}, params interface{}) *ChannelAuthFunc_Execute_Call {
+	return &ChannelAuthFunc_Execute_Call{Call: _e.mock.On("Execute", userID, channelName, params)}
 }
 
-func (_c *ChannelAuthFunc_Execute_Call) Run(run func(user interface{}, channelName string, params map[string]string)) *ChannelAuthFunc_Execute_Call {
+func (_c *ChannelAuthFunc_Execute_Call) Run(run func(userID interface{}, channelName string, params map[string]string)) *ChannelAuthFunc_Execute_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(interface{}), args[1].(string), args[2].(map[string]string))
 	})
 	return _c
 }
 
-func (_c *ChannelAuthFunc_Execute_Call) Return(_a0 bool) *ChannelAuthFunc_Execute_Call {
-	_c.Call.Return(_a0)
+func (_c *ChannelAuthFunc_Execute_Call) Return(_a0 bool, _a1 interface{}) *ChannelAuthFunc_Execute_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *ChannelAuthFunc_Execute_Call) RunAndReturn(run func(interface{}, string, map[string]string) bool) *ChannelAuthFunc_Execute_Call {
+func (_c *ChannelAuthFunc_Execute_Call) RunAndReturn(run func(interface{}, string, map[string]string) (bool, interface{})) *ChannelAuthFunc_Execute_Call {
 	_c.Call.Return(run)
 	return _c
 }

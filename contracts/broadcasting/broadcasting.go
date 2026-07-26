@@ -16,7 +16,7 @@ type AuthResponse struct {
 	ChannelData string `json:"channel_data,omitempty"`
 }
 
-type ChannelAuthFunc func(user any, channelName string, params map[string]string) bool
+type ChannelAuthFunc func(userID any, channelName string, params map[string]string) (bool, any)
 
 type Driver interface {
 	Broadcast(channels []Channel, event string, payload map[string]any) error

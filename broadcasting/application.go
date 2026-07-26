@@ -224,7 +224,8 @@ func (a *Application) Authenticate(ctx contractshttp.Context) contractshttp.Resp
 		})
 	}
 
-	if !a.resolveAuth(ChannelBaseName(ch), userID) {
+	authorized, userInfo := a.resolveAuth(ChannelBaseName(ch), userID)
+	if !authorized {
 		return ctx.Response().Json(http.StatusForbidden, contractshttp.Json{
 			"error": errors.BroadcastChannelUnauthorized.Args(channelName).Error(),
 		})
@@ -237,7 +238,7 @@ func (a *Application) Authenticate(ctx contractshttp.Context) contractshttp.Resp
 
 	channelData := ""
 	if IsPresenceChannel(ch) {
-		channelData = a.buildPresenceChannelData(userID)
+		channelData = a.buildPresenceChannelData(userID, userInfo)
 	}
 
 	signature := computeAuthSignature(conn.Secret, socketID, channelName, channelData)
@@ -250,21 +251,24 @@ func (a *Application) Authenticate(ctx contractshttp.Context) contractshttp.Resp
 	return ctx.Response().Json(http.StatusOK, resp)
 }
 
-func (a *Application) buildPresenceChannelData(userID string) string {
+func (a *Application) buildPresenceChannelData(userID string, userInfo any) string {
+	if userInfo == nil {
+		userInfo = userID
+	}
 	channelData, _ := json.Marshal(map[string]any{
 		"user_id":   userID,
-		"user_info": map[string]any{"id": userID},
+		"user_info": userInfo,
 	})
 	return string(channelData)
 }
 
-func (a *Application) resolveAuth(channelName string, user any) bool {
+func (a *Application) resolveAuth(channelName string, userID any) (bool, any) {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
 	for _, entry := range a.channelAuth {
 		if entry.regex == nil && entry.pattern == channelName {
-			return entry.callback(user, channelName, nil)
+			return entry.callback(userID, channelName, nil)
 		}
 	}
 
@@ -278,10 +282,10 @@ func (a *Application) resolveAuth(channelName string, user any) bool {
 			for i, name := range entry.params {
 				params[name] = matches[i+1]
 			}
-			return entry.callback(user, channelName, params)
+			return entry.callback(userID, channelName, params)
 		}
 	}
-	return false
+	return false, nil
 }
 
 var patternRegex = regexp.MustCompile(`\{(\w+)\}`)
