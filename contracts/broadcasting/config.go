@@ -4,7 +4,7 @@ type ConnectionConfig struct {
 	Driver  string
 	Key     string
 	Secret  string
-	AppID   string
+	AppID   string `json:"app_id"`
 	Options map[string]any
 }
 

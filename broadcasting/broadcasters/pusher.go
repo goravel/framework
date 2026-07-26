@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/spf13/cast"
+
 	"github.com/goravel/framework/contracts/broadcasting"
 	"github.com/goravel/framework/contracts/http/client"
 	"github.com/goravel/framework/errors"
@@ -61,8 +63,8 @@ func PushOptionsFromConfig(options map[string]any) broadcasting.PusherOptions {
 	if v, ok := options["host"].(string); ok {
 		opts.Host = v
 	}
-	if v, ok := options["port"].(float64); ok {
-		opts.Port = int(v)
+	if v, ok := options["port"]; ok {
+		opts.Port = cast.ToInt(v)
 	}
 	if v, ok := options["scheme"].(string); ok {
 		opts.Scheme = v
