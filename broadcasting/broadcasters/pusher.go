@@ -28,6 +28,16 @@ type PusherDriver struct {
 }
 
 func NewPusherDriver(conn broadcasting.ConnectionConfig, httpClient client.Factory) (*PusherDriver, error) {
+	if conn.AppID == "" {
+		return nil, errors.BroadcastPusherAppIDRequired
+	}
+	if conn.Key == "" {
+		return nil, errors.BroadcastPusherKeyRequired
+	}
+	if conn.Secret == "" {
+		return nil, errors.BroadcastPusherSecretRequired
+	}
+
 	opts := PushOptionsFromConfig(conn.Options)
 
 	host := opts.Host

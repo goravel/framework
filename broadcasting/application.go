@@ -256,6 +256,12 @@ func (a *Application) Authenticate(ctx contractshttp.Context) contractshttp.Resp
 		return ctx.Response().Json(http.StatusInternalServerError, contractshttp.Json{"error": err.Error()})
 	}
 
+	if conn.Key == "" || conn.Secret == "" {
+		return ctx.Response().Json(http.StatusInternalServerError, contractshttp.Json{
+			"error": errors.BroadcastAuthConfigMissing.Error(),
+		})
+	}
+
 	var resp broadcasting.AuthResponse
 	if IsPresenceChannel(ch) {
 		channelData, err := a.buildPresenceChannelData(userID, userInfo)

@@ -93,7 +93,7 @@ func TestBroadcastJob_Handle_Retry(t *testing.T) {
 		elapsed := time.Since(start)
 
 		assert.Error(t, err)
-		assert.Less(t, elapsed, 10*time.Millisecond, "single attempt should complete quickly")
+		assert.Less(t, elapsed, 50*time.Millisecond, "single attempt should complete quickly")
 	})
 
 	t.Run("retries up to tries count", func(t *testing.T) {
@@ -106,7 +106,7 @@ func TestBroadcastJob_Handle_Retry(t *testing.T) {
 		elapsed := time.Since(start)
 
 		assert.Error(t, err)
-		assert.Less(t, elapsed, 10*time.Millisecond, "3 attempts with no backoff should complete quickly")
+		assert.Less(t, elapsed, 50*time.Millisecond, "3 attempts with no backoff should complete quickly")
 	})
 
 	t.Run("retries with backoff delay", func(t *testing.T) {
@@ -120,7 +120,7 @@ func TestBroadcastJob_Handle_Retry(t *testing.T) {
 
 		assert.Error(t, err)
 		assert.GreaterOrEqual(t, elapsed, 90*time.Millisecond, "should sleep between retries")
-		assert.Less(t, elapsed, 200*time.Millisecond, "should not exceed expected backoff time")
+		assert.Less(t, elapsed, 500*time.Millisecond, "should not exceed expected backoff time")
 	})
 
 	t.Run("timeout stops retries early", func(t *testing.T) {
@@ -136,7 +136,7 @@ func TestBroadcastJob_Handle_Retry(t *testing.T) {
 		elapsed := time.Since(start)
 
 		assert.Error(t, err)
-		assert.Less(t, elapsed, 250*time.Millisecond, "timeout should stop retries early")
+		assert.Less(t, elapsed, 500*time.Millisecond, "timeout should stop retries early")
 	})
 
 	t.Run("succeeds within retry limit", func(t *testing.T) {

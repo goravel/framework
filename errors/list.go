@@ -174,6 +174,10 @@ var (
 	BroadcastPusherMarshalBodyFailed    = New("pusher: failed to marshal body: %v").SetModule(ModuleBroadcast)
 	BroadcastPusherMarshalPayloadFailed = New("pusher: failed to marshal payload: %v").SetModule(ModuleBroadcast)
 	BroadcastPusherRequestFailed        = New("pusher: request failed: %v").SetModule(ModuleBroadcast)
+	BroadcastPusherAppIDRequired        = New("pusher: app_id is required").SetModule(ModuleBroadcast)
+	BroadcastPusherKeyRequired          = New("pusher: key is required").SetModule(ModuleBroadcast)
+	BroadcastPusherSecretRequired       = New("pusher: secret is required").SetModule(ModuleBroadcast)
+	BroadcastAuthConfigMissing          = New("broadcasting: auth endpoint requires key and secret in the default broadcast connection").SetModule(ModuleBroadcast)
 
 	MailTemplateParseFailed         = New("failed to parse template %s: %w").SetModule(ModuleMail)
 	MailTemplateExecutionFailed     = New("failed to execute template %s: %w").SetModule(ModuleMail)
