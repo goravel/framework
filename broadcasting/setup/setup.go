@@ -27,7 +27,7 @@ PUSHER_HOST=
 	setup.Install(
 		modify.RegisterProvider(moduleImport, broadcastServiceProvider),
 
-		modify.File(broadcastConfigPath).Overwrite(stubs.Config()),
+		modify.File(broadcastConfigPath).Overwrite(stubs.Config(setup.Paths().Facades().Import(), setup.Paths().Facades().Package())),
 
 		modify.File(broadcastFacadePath).Overwrite(stubs.BroadcastFacade(setup.Paths().Facades().Package())),
 

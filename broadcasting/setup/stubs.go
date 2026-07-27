@@ -21,16 +21,16 @@ func Broadcast() broadcasting.Broadcast {
 	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }
 
-func (s Stubs) Config() string {
-	return `package config
+func (s Stubs) Config(facadesImport, facadesPackage string) string {
+	content := `package config
 
 import (
 	contractshttp "github.com/goravel/framework/contracts/http"
-	"github.com/goravel/framework/facades"
+	"DummyFacadesImport"
 )
 
 func init() {
-	config := facades.Config()
+	config := DummyFacadesPackage.Config()
 	config.Add("broadcasting", map[string]any{
 		"default": config.Env("BROADCAST_CONNECTION", "log"),
 
@@ -63,4 +63,9 @@ func init() {
 	})
 }
 `
+
+	content = strings.ReplaceAll(content, "DummyFacadesImport", facadesImport)
+	content = strings.ReplaceAll(content, "DummyFacadesPackage", facadesPackage)
+
+	return content
 }
