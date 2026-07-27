@@ -40,8 +40,8 @@ func TestBroadcastServiceProviderBoot_Middleware(t *testing.T) {
 	mockApp.EXPECT().MakeArtisan().Return(mockArtisan).Once()
 	mockArtisan.EXPECT().Register(mock.Anything).Once()
 
-	mockRoute.On("Middleware", testMiddleware).Return(mockRoute).Once()
-	mockRoute.On("Post", "/broadcasting/auth", mock.AnythingOfType("http.HandlerFunc")).Return(nil).Once()
+	mockRoute.EXPECT().Middleware(testMiddleware).Return(mockRoute).Once()
+	mockRoute.EXPECT().Post("/broadcasting/auth", mock.Anything).Return(mocksroute.NewAction(t)).Once()
 
 	provider := &ServiceProvider{}
 	provider.Boot(mockApp)
@@ -63,8 +63,6 @@ func TestBroadcastServiceProviderBoot_AuthDisabled(t *testing.T) {
 		return true
 	})).Return(nil).Once()
 
-	mockApp.EXPECT().MakeRoute().Return(nil).Maybe()
-	mockApp.EXPECT().MakeBroadcast().Return(nil).Maybe()
 	mockApp.EXPECT().MakeArtisan().Return(mockArtisan).Once()
 	mockArtisan.EXPECT().Register(mock.Anything).Once()
 

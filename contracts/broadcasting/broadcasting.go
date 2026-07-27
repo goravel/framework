@@ -43,7 +43,6 @@ type ShouldBroadcastWithConnections interface {
 }
 
 type ShouldBroadcastNow interface {
-	ShouldBroadcast
 	BroadcastNow() bool
 }
 
