@@ -139,11 +139,11 @@ func TestApplication_Channel(t *testing.T) {
 
 	t.Run("exact match takes precedence over regex", func(t *testing.T) {
 		app := newApp()
-		app.Channel("orders.{orderId}", func(userID any, channelName string, params map[string]string) (bool, any) {
-			return false, nil
-		})
 		app.Channel("orders.special", func(userID any, channelName string, params map[string]string) (bool, any) {
 			return true, nil
+		})
+		app.Channel("orders.{orderId}", func(userID any, channelName string, params map[string]string) (bool, any) {
+			return false, nil
 		})
 
 		authorized, _ := app.resolveAuth("orders.special", nil)

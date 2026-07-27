@@ -287,23 +287,22 @@ func (a *Application) resolveAuth(channelName string, userID any) (bool, any) {
 	defer a.mu.RUnlock()
 
 	for _, entry := range a.channelAuth {
-		if entry.regex == nil && entry.pattern == channelName {
-			return entry.callback(userID, channelName, nil)
+		if entry.regex == nil {
+			if entry.pattern == channelName {
+				return entry.callback(userID, channelName, nil)
+			}
+			continue
 		}
-	}
 
-	for _, entry := range a.channelAuth {
-		if entry.regex != nil {
-			matches := entry.regex.FindStringSubmatch(channelName)
-			if matches == nil {
-				continue
-			}
-			params := make(map[string]string)
-			for i, name := range entry.params {
-				params[name] = matches[i+1]
-			}
-			return entry.callback(userID, channelName, params)
+		matches := entry.regex.FindStringSubmatch(channelName)
+		if matches == nil {
+			continue
 		}
+		params := make(map[string]string)
+		for i, name := range entry.params {
+			params[name] = matches[i+1]
+		}
+		return entry.callback(userID, channelName, params)
 	}
 	return false, nil
 }
