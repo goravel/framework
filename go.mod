@@ -12,7 +12,7 @@ require (
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/dave/dst v0.27.4
 	github.com/dromara/carbon/v2 v2.6.11
-	github.com/gabriel-vasile/mimetype v1.4.13
+	github.com/gabriel-vasile/mimetype v1.4.15
 	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/goforj/godump v1.9.1
 	github.com/golang-jwt/jwt/v5 v5.3.1
@@ -48,8 +48,8 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.44.0
 	go.opentelemetry.io/otel/trace v1.44.0
 	golang.org/x/crypto v0.54.0
-	golang.org/x/exp v0.0.0-20260709172345-9ea1abe57597
-	google.golang.org/grpc v1.82.0
+	golang.org/x/exp v0.0.0-20260718201538-764159d718ef
+	google.golang.org/grpc v1.82.1
 	google.golang.org/protobuf v1.36.11
 	gorm.io/gorm v1.31.2
 	gorm.io/plugin/dbresolver v1.6.2
@@ -115,7 +115,7 @@ require (
 	github.com/lucasb-eyer/go-colorful v1.3.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect
-	github.com/mattn/go-runewidth v0.0.24
+	github.com/mattn/go-runewidth v0.0.27
 	github.com/mitchellh/hashstructure/v2 v2.0.2 // indirect
 	github.com/muesli/ansi v0.0.0-20230316100256-276c6243b2f6 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
@@ -143,8 +143,8 @@ require (
 )
 
 replace (
-	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260706201446-f0a921348800
-	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20260706201446-f0a921348800
+	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260724162435-b2f20204f0df
+	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20260724162435-b2f20204f0df
 )
 
 tool github.com/vektra/mockery/v2
