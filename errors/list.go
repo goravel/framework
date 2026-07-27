@@ -163,7 +163,8 @@ var (
 
 	BroadcastAuthMissingParams        = New("broadcasting: socket_id and channel_name are required").SetModule(ModuleBroadcast)
 	BroadcastAuthUnauthenticated      = New("unauthenticated").SetModule(ModuleBroadcast)
-	BroadcastChannelUnauthorized      = New("channel authorization denied for channel %s").SetModule(ModuleBroadcast)
+	BroadcastChannelUnauthorized         = New("channel authorization denied for channel %s").SetModule(ModuleBroadcast)
+	BroadcastChannelDataMarshalFailed    = New("broadcasting: failed to marshal channel_data").SetModule(ModuleBroadcast)
 	BroadcastConnectionInvalidFormat    = New("broadcast connection %q has invalid format").SetModule(ModuleBroadcast)
 	BroadcastConnectionNotFound         = New("broadcast connection %q not found").SetModule(ModuleBroadcast)
 	BroadcastDriverNotSupported         = New("unknown broadcast driver: %s, only support pusher, log, null").SetModule(ModuleBroadcast)

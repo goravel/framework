@@ -138,7 +138,7 @@ func (a *Application) Dispatch(event broadcasting.ShouldBroadcast) error {
 }
 
 func (a *Application) resolveConnections(event broadcasting.ShouldBroadcast) []string {
-	conns := []string{a.config.Default}
+	conns := []string{a.config.DefaultConnection()}
 	if withConn, ok := event.(broadcasting.ShouldBroadcastWithConnections); ok && len(withConn.BroadcastConnections()) > 0 {
 		conns = withConn.BroadcastConnections()
 	}
@@ -256,30 +256,38 @@ func (a *Application) Authenticate(ctx contractshttp.Context) contractshttp.Resp
 		return ctx.Response().Json(http.StatusInternalServerError, contractshttp.Json{"error": err.Error()})
 	}
 
-	channelData := ""
+	var resp broadcasting.AuthResponse
 	if IsPresenceChannel(ch) {
-		channelData = a.buildPresenceChannelData(userID, userInfo)
-	}
-
-	signature := computeAuthSignature(conn.Secret, socketID, channelName, channelData)
-	resp := broadcasting.AuthResponse{
-		Auth: fmt.Sprintf("%s:%s", conn.Key, signature),
-	}
-	if IsPresenceChannel(ch) && channelData != "" {
-		resp.ChannelData = channelData
+		channelData, err := a.buildPresenceChannelData(userID, userInfo)
+		if err != nil {
+			return ctx.Response().Json(http.StatusInternalServerError, contractshttp.Json{"error": errors.BroadcastChannelDataMarshalFailed.Error()})
+		}
+		signature := computeAuthSignature(conn.Secret, socketID, channelName, channelData)
+		resp = broadcasting.AuthResponse{
+			Auth:        fmt.Sprintf("%s:%s", conn.Key, signature),
+			ChannelData: channelData,
+		}
+	} else {
+		signature := computeAuthSignature(conn.Secret, socketID, channelName, "")
+		resp = broadcasting.AuthResponse{
+			Auth: fmt.Sprintf("%s:%s", conn.Key, signature),
+		}
 	}
 	return ctx.Response().Json(http.StatusOK, resp)
 }
 
-func (a *Application) buildPresenceChannelData(userID string, userInfo any) string {
+func (a *Application) buildPresenceChannelData(userID string, userInfo any) (string, error) {
 	if userInfo == nil {
 		userInfo = userID
 	}
-	channelData, _ := json.Marshal(map[string]any{
+	channelData, err := json.Marshal(map[string]any{
 		"user_id":   userID,
 		"user_info": userInfo,
 	})
-	return string(channelData)
+	if err != nil {
+		return "", err
+	}
+	return string(channelData), nil
 }
 
 func (a *Application) resolveAuth(channelName string, userID any) (bool, any) {
@@ -287,10 +295,13 @@ func (a *Application) resolveAuth(channelName string, userID any) (bool, any) {
 	defer a.mu.RUnlock()
 
 	for _, entry := range a.channelAuth {
+		if entry.regex == nil && entry.pattern == channelName {
+			return entry.callback(userID, channelName, map[string]string{})
+		}
+	}
+
+	for _, entry := range a.channelAuth {
 		if entry.regex == nil {
-			if entry.pattern == channelName {
-				return entry.callback(userID, channelName, nil)
-			}
 			continue
 		}
 
