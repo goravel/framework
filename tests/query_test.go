@@ -2538,7 +2538,7 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
 			s.Run("Count", func() {
-				s.SetupTest()
+				query.CreateTable(TestTableGlobalScopes)
 				prepareData(query.Query())
 
 				count, err := query.Query().Model(&GlobalScope{}).Count()
@@ -2547,7 +2547,7 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 			})
 
 			s.Run("Cursor", func() {
-				s.SetupTest()
+				query.CreateTable(TestTableGlobalScopes)
 				prepareData(query.Query())
 
 				count := 0
@@ -2562,7 +2562,7 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 			})
 
 			s.Run("Delete", func() {
-				s.SetupTest()
+				query.CreateTable(TestTableGlobalScopes)
 				prepareData(query.Query())
 
 				res, err := query.Query().Model(&GlobalScope{}).Delete()
@@ -2575,7 +2575,7 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 			})
 
 			s.Run("Exec", func() {
-				s.SetupTest()
+				query.CreateTable(TestTableGlobalScopes)
 				prepareData(query.Query())
 
 				res, err := query.Query().Exec("delete from global_scopes")
@@ -2588,7 +2588,7 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 			})
 
 			s.Run("Exists", func() {
-				s.SetupTest()
+				query.CreateTable(TestTableGlobalScopes)
 				prepareData(query.Query())
 
 				exists, err := query.Query().Model(&GlobalScope{}).Exists()
@@ -2605,7 +2605,7 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 			})
 
 			s.Run("Find", func() {
-				s.SetupTest()
+				query.CreateTable(TestTableGlobalScopes)
 				prepareData(query.Query())
 
 				var globalScope GlobalScope
@@ -2615,7 +2615,7 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 			})
 
 			s.Run("FindOrFail", func() {
-				s.SetupTest()
+				query.CreateTable(TestTableGlobalScopes)
 				prepareData(query.Query())
 
 				var globalScope GlobalScope
@@ -2629,7 +2629,7 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 			})
 
 			s.Run("First", func() {
-				s.SetupTest()
+				query.CreateTable(TestTableGlobalScopes)
 				prepareData(query.Query())
 
 				var globalScope GlobalScope
@@ -2639,7 +2639,7 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 			})
 
 			s.Run("FirstOr", func() {
-				s.SetupTest()
+				query.CreateTable(TestTableGlobalScopes)
 				prepareData(query.Query())
 
 				var globalScope GlobalScope
@@ -2651,7 +2651,7 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 			})
 
 			s.Run("FirstOrCreate", func() {
-				s.SetupTest()
+				query.CreateTable(TestTableGlobalScopes)
 				prepareData(query.Query())
 
 				var globalScope GlobalScope
@@ -2661,7 +2661,7 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 			})
 
 			s.Run("FirstOrFail", func() {
-				s.SetupTest()
+				query.CreateTable(TestTableGlobalScopes)
 				prepareData(query.Query())
 
 				var globalScope GlobalScope
@@ -2671,7 +2671,7 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 			})
 
 			s.Run("FirstOrNew", func() {
-				s.SetupTest()
+				query.CreateTable(TestTableGlobalScopes)
 				prepareData(query.Query())
 
 				var globalScope GlobalScope
@@ -2681,7 +2681,7 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 			})
 
 			s.Run("ForceDelete", func() {
-				s.SetupTest()
+				query.CreateTable(TestTableGlobalScopes)
 				prepareData(query.Query())
 
 				res, err := query.Query().Model(&GlobalScope{}).ForceDelete()
@@ -2694,7 +2694,7 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 			})
 
 			s.Run("Get", func() {
-				s.SetupTest()
+				query.CreateTable(TestTableGlobalScopes)
 				prepareData(query.Query())
 
 				var globalScopes []GlobalScope
@@ -2705,7 +2705,7 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 			})
 
 			s.Run("Paginate", func() {
-				s.SetupTest()
+				query.CreateTable(TestTableGlobalScopes)
 				prepareData(query.Query())
 
 				var (
@@ -2720,7 +2720,7 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 			})
 
 			s.Run("Pluck", func() {
-				s.SetupTest()
+				query.CreateTable(TestTableGlobalScopes)
 				prepareData(query.Query())
 
 				var names []string
@@ -2730,7 +2730,7 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 			})
 
 			s.Run("Restore", func() {
-				s.SetupTest()
+				query.CreateTable(TestTableGlobalScopes)
 				prepareData(query.Query())
 
 				res, err := query.Query().Model(&GlobalScope{}).Delete()
@@ -2752,7 +2752,7 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 			})
 
 			s.Run("Save", func() {
-				s.SetupTest()
+				query.CreateTable(TestTableGlobalScopes)
 				prepareData(query.Query())
 
 				globalScope := GlobalScope{Name: "name_scope", Avatar: "avatar_scope"}
@@ -2784,7 +2784,7 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 			})
 
 			s.Run("Scan", func() {
-				s.SetupTest()
+				query.CreateTable(TestTableGlobalScopes)
 				prepareData(query.Query())
 
 				var globalScopes []GlobalScope
@@ -2799,7 +2799,7 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 			})
 
 			s.Run("Sum", func() {
-				s.SetupTest()
+				query.CreateTable(TestTableGlobalScopes)
 				prepareData(query.Query())
 
 				var globalScope GlobalScope
@@ -2814,7 +2814,7 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 			})
 
 			s.Run("Update", func() {
-				s.SetupTest()
+				query.CreateTable(TestTableGlobalScopes)
 				prepareData(query.Query())
 
 				res, err := query.Query().Model(&GlobalScope{}).Update("avatar", "avatar_scope1")
@@ -2827,7 +2827,7 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 			})
 
 			s.Run("UpdateOrCreate", func() {
-				s.SetupTest()
+				query.CreateTable(TestTableGlobalScopes)
 				prepareData(query.Query())
 
 				var globalScope GlobalScope
@@ -4577,7 +4577,7 @@ func (s *QueryTestSuite) TestWithoutGlobalScopes() {
 
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			s.SetupTest()
+			query.CreateTable(TestTableGlobalScopes)
 			prepareData(query.Query())
 
 			var globalScopes []GlobalScope
