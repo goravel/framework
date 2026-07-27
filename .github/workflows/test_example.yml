@@ -30,7 +30,7 @@ jobs:
           path: example
 
       - name: Set up Go ${{ matrix.go }}
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version: ${{ matrix.go }}
 
@@ -75,7 +75,7 @@ jobs:
           path: example
 
       - name: Set up Go ${{ matrix.go }}
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version: ${{ matrix.go }}
 
