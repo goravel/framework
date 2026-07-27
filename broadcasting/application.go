@@ -53,6 +53,26 @@ func NewApplication(configFacade contractsconfig.Config, log log.Log, queue queu
 	}
 }
 
+// Channel registers an authorization callback for a channel pattern.
+//
+// Example:
+//
+//	// Simple channel
+//	facades.Broadcast().Channel("orders", func(userID any, channelName string, params map[string]string) (bool, any) {
+//		return true, nil
+//	})
+//
+//	// Channel with route params
+//	facades.Broadcast().Channel("orders.{orderId}", func(userID any, channelName string, params map[string]string) (bool, any) {
+//		// params["orderId"] contains the matched value
+//		order := findOrder(params["orderId"])
+//		return order.UserID == userID, nil
+//	})
+//
+//	// Presence channel returning custom user info
+//	facades.Broadcast().Channel("chat", func(userID any, channelName string, params map[string]string) (bool, any) {
+//		return true, map[string]any{"id": userID, "name": "Alice"}
+//	})
 func (a *Application) Channel(pattern string, callback broadcasting.ChannelAuthFunc) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
