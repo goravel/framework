@@ -26,6 +26,7 @@ func (s Stubs) Config(facadesImport, facadesPackage string) string {
 
 import (
 	contractshttp "github.com/goravel/framework/contracts/http"
+
 	"DummyFacadesImport"
 )
 
