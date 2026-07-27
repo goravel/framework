@@ -294,6 +294,8 @@ func (a *Application) resolveAuth(channelName string, userID any) (bool, any) {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
+	// Exact matches take precedence over regex patterns regardless of
+	// registration order, so exact matches are resolved in a first pass.
 	for _, entry := range a.channelAuth {
 		if entry.regex == nil && entry.pattern == channelName {
 			return entry.callback(userID, channelName, map[string]string{})
