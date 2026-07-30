@@ -1,6 +1,9 @@
 package broadcasting
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 const (
 	ChannelPrefixPrivate  = "private-"
@@ -19,12 +22,12 @@ type AuthResponse struct {
 type ChannelAuthFunc func(userID any, channelName string, params map[string]string) (bool, any)
 
 type Driver interface {
-	Broadcast(channels []Channel, event string, payload map[string]any) error
+	Broadcast(ctx context.Context, channels []Channel, event string, payload map[string]any) error
 }
 
 type Broadcast interface {
 	Channel(pattern string, callback ChannelAuthFunc)
-	Dispatch(event ShouldBroadcast) error
+	Dispatch(ctx context.Context, event ShouldBroadcast) error
 }
 
 type ShouldBroadcast interface {
@@ -52,14 +55,6 @@ type ShouldBroadcastWithQueueConnection interface {
 
 type ShouldBroadcastWithDelay interface {
 	BroadcastDelay() time.Time
-}
-
-type ShouldBroadcastWithTries interface {
-	BroadcastTries() int
-}
-
-type ShouldBroadcastWithBackoff interface {
-	BroadcastBackoff() time.Duration
 }
 
 type ShouldBroadcastWithTimeout interface {

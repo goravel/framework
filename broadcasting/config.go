@@ -7,9 +7,9 @@ import (
 )
 
 type Config struct {
-	Default     string                              `json:"default"`
+	Default     string                                   `json:"default"`
 	Connections map[string]broadcasting.ConnectionConfig `json:"connections"`
-	Auth        broadcasting.AuthConfig             `json:"auth"`
+	Auth        broadcasting.AuthConfig                  `json:"auth"`
 }
 
 func NewConfig(cfg contractsconfig.Config) (*Config, error) {

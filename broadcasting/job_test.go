@@ -1,6 +1,7 @@
 package broadcasting
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 	"time"
@@ -53,7 +54,7 @@ func TestBroadcastJob_Handle_InvalidArgs(t *testing.T) {
 	}
 }
 
-func TestBroadcastJob_Handle_Retry(t *testing.T) {
+func TestBroadcastJob_Handle(t *testing.T) {
 	setupConfig := func(t *testing.T) *mocksconfig.Config {
 		mockConfig := mocksconfig.NewConfig(t)
 		c := &Config{
@@ -69,24 +70,22 @@ func TestBroadcastJob_Handle_Retry(t *testing.T) {
 		return mockConfig
 	}
 
-	marshalItem := func(conns []string, tries int, backoff, timeout int64) string {
+	marshalItem := func(conns []string, timeout int64) string {
 		item := broadcastItem{
 			Channels:    []string{"test-channel"},
 			Event:       "test.event",
 			Payload:     map[string]any{},
 			Connections: conns,
-			Tries:       tries,
-			Backoff:     backoff,
 			Timeout:     timeout,
 		}
 		data, _ := json.Marshal(item)
 		return string(data)
 	}
 
-	t.Run("single attempt with no retry config", func(t *testing.T) {
+	t.Run("single attempt with no timeout", func(t *testing.T) {
 		job := &BroadcastJob{config: setupConfig(t)}
-		// "broken" connection doesn't exist → always fails
-		payload := marshalItem([]string{"broken"}, 0, 0, 0)
+		// "broken" connection doesn't exist → always fails (single attempt).
+		payload := marshalItem([]string{"broken"}, 0)
 
 		start := time.Now()
 		err := job.Handle(payload)
@@ -96,55 +95,70 @@ func TestBroadcastJob_Handle_Retry(t *testing.T) {
 		assert.Less(t, elapsed, 50*time.Millisecond, "single attempt should complete quickly")
 	})
 
-	t.Run("retries up to tries count", func(t *testing.T) {
+	t.Run("single attempt fails on broken connection regardless of timeout", func(t *testing.T) {
 		job := &BroadcastJob{config: setupConfig(t)}
-		// 3 tries, no backoff → 3 fast attempts
-		payload := marshalItem([]string{"broken"}, 3, 0, 0)
+		payload := marshalItem([]string{"broken"}, 100)
 
-		start := time.Now()
 		err := job.Handle(payload)
-		elapsed := time.Since(start)
-
 		assert.Error(t, err)
-		assert.Less(t, elapsed, 50*time.Millisecond, "3 attempts with no backoff should complete quickly")
 	})
 
-	t.Run("retries with backoff delay", func(t *testing.T) {
+	t.Run("succeeds with null connection", func(t *testing.T) {
 		job := &BroadcastJob{config: setupConfig(t)}
-		// 3 tries, 50ms backoff → 2 sleeps of 50ms each = at least 100ms
-		payload := marshalItem([]string{"broken"}, 3, 50, 0)
-
-		start := time.Now()
-		err := job.Handle(payload)
-		elapsed := time.Since(start)
-
-		assert.Error(t, err)
-		assert.GreaterOrEqual(t, elapsed, 90*time.Millisecond, "should sleep between retries")
-		assert.Less(t, elapsed, 500*time.Millisecond, "should not exceed expected backoff time")
-	})
-
-	t.Run("timeout stops retries early", func(t *testing.T) {
-		job := &BroadcastJob{config: setupConfig(t)}
-		// 10 tries, 100ms backoff, 150ms timeout
-		// After 1st attempt + 100ms sleep ≈ 100ms elapsed
-		// 100ms + next 100ms backoff >= 150ms → break after 2 attempts
-		// Total elapsed ≈ 100ms (far less than 1000ms for 10*100ms)
-		payload := marshalItem([]string{"broken"}, 10, 100, 150)
-
-		start := time.Now()
-		err := job.Handle(payload)
-		elapsed := time.Since(start)
-
-		assert.Error(t, err)
-		assert.Less(t, elapsed, 500*time.Millisecond, "timeout should stop retries early")
-	})
-
-	t.Run("succeeds within retry limit", func(t *testing.T) {
-		job := &BroadcastJob{config: setupConfig(t)}
-		// Use an existing "null" connection → never fails (no app dependency)
-		payload := marshalItem([]string{"null"}, 3, 0, 0)
+		payload := marshalItem([]string{"null"}, 0)
 
 		err := job.Handle(payload)
 		assert.NoError(t, err)
+	})
+
+	t.Run("uses broadcast default connection when none specified", func(t *testing.T) {
+		job := &BroadcastJob{config: setupConfig(t)}
+		payload := marshalItem(nil, 0)
+
+		err := job.Handle(payload)
+		assert.NoError(t, err)
+	})
+
+	t.Run("timeout is honored by driver via ctx", func(t *testing.T) {
+		// The null driver ignores ctx, so a small timeout still succeeds.
+		// This asserts the job synthesizes a bounded context without panicking.
+		job := &BroadcastJob{config: setupConfig(t)}
+		payload := marshalItem([]string{"null"}, 50)
+
+		err := job.Handle(payload)
+		assert.NoError(t, err)
+	})
+}
+
+func TestWithTimeout(t *testing.T) {
+	t.Run("returns parent unchanged when timeoutMs <= 0", func(t *testing.T) {
+		parent := context.Background()
+		ctx, cancel := withTimeout(parent, 0)
+		defer cancel()
+		assert.Equal(t, parent, ctx)
+
+		ctx2, cancel2 := withTimeout(parent, -1)
+		defer cancel2()
+		assert.Equal(t, parent, ctx2)
+	})
+
+	t.Run("derives bounded child when timeoutMs > 0", func(t *testing.T) {
+		ctx, cancel := withTimeout(context.Background(), 50)
+		defer cancel()
+		_, ok := ctx.Deadline()
+		assert.True(t, ok, "ctx should have a deadline")
+	})
+
+	t.Run("nil parent falls back to Background", func(t *testing.T) {
+		ctx, cancel := withTimeout(nil, 0)
+		defer cancel()
+		assert.NotNil(t, ctx)
+	})
+
+	t.Run("nil parent with timeout derives from Background", func(t *testing.T) {
+		ctx, cancel := withTimeout(nil, 100)
+		defer cancel()
+		_, ok := ctx.Deadline()
+		assert.True(t, ok, "ctx should have a deadline even with nil parent")
 	})
 }

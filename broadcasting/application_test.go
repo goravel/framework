@@ -1,6 +1,7 @@
 package broadcasting
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -9,8 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/goravel/framework/contracts/broadcasting"
 	contractsauth "github.com/goravel/framework/contracts/auth"
+	"github.com/goravel/framework/contracts/broadcasting"
 	contractshttp "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
@@ -23,30 +24,26 @@ import (
 )
 
 type mockBroadcastEvent struct {
-	broadcastOn               []broadcasting.Channel
-	broadcastAs               string
-	broadcastWith             map[string]any
-	broadcastWhen             bool
-	broadcastQueue            string
-	broadcastConnections      []string
-	broadcastQueueConnection  string
-	broadcastDelay            time.Time
-	broadcastTries            int
-	broadcastBackoff          time.Duration
-	broadcastTimeout          time.Duration
+	broadcastOn              []broadcasting.Channel
+	broadcastAs              string
+	broadcastWith            map[string]any
+	broadcastWhen            bool
+	broadcastQueue           string
+	broadcastConnections     []string
+	broadcastQueueConnection string
+	broadcastDelay           time.Time
+	broadcastTimeout         time.Duration
 }
 
-func (e *mockBroadcastEvent) BroadcastOn() []broadcasting.Channel     { return e.broadcastOn }
-func (e *mockBroadcastEvent) BroadcastAs() string                     { return e.broadcastAs }
-func (e *mockBroadcastEvent) BroadcastWith() map[string]any           { return e.broadcastWith }
-func (e *mockBroadcastEvent) BroadcastWhen() bool                     { return e.broadcastWhen }
-func (e *mockBroadcastEvent) BroadcastQueue() string                  { return e.broadcastQueue }
-func (e *mockBroadcastEvent) BroadcastConnections() []string          { return e.broadcastConnections }
-func (e *mockBroadcastEvent) BroadcastQueueConnection() string        { return e.broadcastQueueConnection }
-func (e *mockBroadcastEvent) BroadcastDelay() time.Time               { return e.broadcastDelay }
-func (e *mockBroadcastEvent) BroadcastTries() int                     { return e.broadcastTries }
-func (e *mockBroadcastEvent) BroadcastBackoff() time.Duration         { return e.broadcastBackoff }
-func (e *mockBroadcastEvent) BroadcastTimeout() time.Duration         { return e.broadcastTimeout }
+func (e *mockBroadcastEvent) BroadcastOn() []broadcasting.Channel { return e.broadcastOn }
+func (e *mockBroadcastEvent) BroadcastAs() string                 { return e.broadcastAs }
+func (e *mockBroadcastEvent) BroadcastWith() map[string]any       { return e.broadcastWith }
+func (e *mockBroadcastEvent) BroadcastWhen() bool                 { return e.broadcastWhen }
+func (e *mockBroadcastEvent) BroadcastQueue() string              { return e.broadcastQueue }
+func (e *mockBroadcastEvent) BroadcastConnections() []string      { return e.broadcastConnections }
+func (e *mockBroadcastEvent) BroadcastQueueConnection() string    { return e.broadcastQueueConnection }
+func (e *mockBroadcastEvent) BroadcastDelay() time.Time           { return e.broadcastDelay }
+func (e *mockBroadcastEvent) BroadcastTimeout() time.Duration     { return e.broadcastTimeout }
 
 type mockBroadcastNowEvent struct {
 	*broadcasting.Channel
@@ -57,12 +54,12 @@ type mockBroadcastNowEvent struct {
 	broadcastConnections []string
 }
 
-func (e *mockBroadcastNowEvent) BroadcastOn() []broadcasting.Channel    { return e.broadcastOn }
-func (e *mockBroadcastNowEvent) BroadcastAs() string                    { return e.broadcastAs }
-func (e *mockBroadcastNowEvent) BroadcastWith() map[string]any          { return e.broadcastWith }
-func (e *mockBroadcastNowEvent) BroadcastWhen() bool                    { return e.broadcastWhen }
-func (e *mockBroadcastNowEvent) BroadcastConnections() []string         { return e.broadcastConnections }
-func (e *mockBroadcastNowEvent) BroadcastNow() bool                     { return true }
+func (e *mockBroadcastNowEvent) BroadcastOn() []broadcasting.Channel { return e.broadcastOn }
+func (e *mockBroadcastNowEvent) BroadcastAs() string                 { return e.broadcastAs }
+func (e *mockBroadcastNowEvent) BroadcastWith() map[string]any       { return e.broadcastWith }
+func (e *mockBroadcastNowEvent) BroadcastWhen() bool                 { return e.broadcastWhen }
+func (e *mockBroadcastNowEvent) BroadcastConnections() []string      { return e.broadcastConnections }
+func (e *mockBroadcastNowEvent) BroadcastNow() bool                  { return true }
 
 func setupMockConfig(t *testing.T, defaultConn string) *mocksconfig.Config {
 	mockConfig := mocksconfig.NewConfig(t)
@@ -174,7 +171,7 @@ func TestApplication_Dispatch(t *testing.T) {
 			broadcastWhen: true,
 		}
 
-		err := app.Dispatch(event)
+		err := app.Dispatch(context.Background(), event)
 		assert.NoError(t, err)
 	})
 
@@ -189,7 +186,7 @@ func TestApplication_Dispatch(t *testing.T) {
 			broadcastWhen: false,
 		}
 
-		err := app.Dispatch(event)
+		err := app.Dispatch(context.Background(), event)
 		assert.NoError(t, err)
 	})
 
@@ -204,7 +201,7 @@ func TestApplication_Dispatch(t *testing.T) {
 			broadcastWhen: true,
 		}
 
-		err := app.Dispatch(event)
+		err := app.Dispatch(context.Background(), event)
 		assert.NoError(t, err)
 	})
 
@@ -233,7 +230,7 @@ func TestApplication_Dispatch(t *testing.T) {
 			broadcastQueueConnection: "redis",
 		}
 
-		err := app.Dispatch(event)
+		err := app.Dispatch(context.Background(), event)
 		assert.NoError(t, err)
 	})
 
@@ -259,7 +256,7 @@ func TestApplication_Dispatch(t *testing.T) {
 			broadcastQueueConnection: "redis",
 		}
 
-		err := app.Dispatch(event)
+		err := app.Dispatch(context.Background(), event)
 		assert.NoError(t, err)
 	})
 
@@ -286,11 +283,11 @@ func TestApplication_Dispatch(t *testing.T) {
 			broadcastDelay: delay,
 		}
 
-		err := app.Dispatch(event)
+		err := app.Dispatch(context.Background(), event)
 		assert.NoError(t, err)
 	})
 
-	t.Run("dispatch with tries, backoff, and timeout", func(t *testing.T) {
+	t.Run("dispatch with timeout", func(t *testing.T) {
 		mockCf := setupMockConfig(t, "")
 		mockQ := mocksqueue.NewQueue(t)
 		mockPJ := mocksqueue.NewPendingJob(t)
@@ -305,7 +302,7 @@ func TestApplication_Dispatch(t *testing.T) {
 				if err := json.Unmarshal([]byte(args[0].Value.(string)), &item); err != nil {
 					return false
 				}
-				return item.Tries == 3 && item.Backoff == 5000 && item.Timeout == 30000
+				return item.Timeout == 30000
 			}),
 		).Return(mockPJ).Once()
 		mockPJ.EXPECT().Dispatch().Return(nil).Once()
@@ -317,12 +314,10 @@ func TestApplication_Dispatch(t *testing.T) {
 			broadcastAs:      "test.event",
 			broadcastWith:    map[string]any{"key": "value"},
 			broadcastWhen:    true,
-			broadcastTries:   3,
-			broadcastBackoff: 5 * time.Second,
 			broadcastTimeout: 30 * time.Second,
 		}
 
-		err := app.Dispatch(event)
+		err := app.Dispatch(context.Background(), event)
 		assert.NoError(t, err)
 	})
 
@@ -346,7 +341,7 @@ func TestApplication_Dispatch(t *testing.T) {
 			broadcastWhen: true,
 		}
 
-		err := app.Dispatch(event)
+		err := app.Dispatch(context.Background(), event)
 		assert.NoError(t, err)
 	})
 
@@ -364,7 +359,7 @@ func TestApplication_Dispatch(t *testing.T) {
 			broadcastConnections: []string{"null"},
 		}
 
-		err := app.Dispatch(event)
+		err := app.Dispatch(context.Background(), event)
 		assert.NoError(t, err)
 	})
 
@@ -382,7 +377,7 @@ func TestApplication_Dispatch(t *testing.T) {
 			broadcastConnections: []string{"null", "null"},
 		}
 
-		err := app.Dispatch(event)
+		err := app.Dispatch(context.Background(), event)
 		assert.NoError(t, err)
 	})
 
@@ -400,7 +395,7 @@ func TestApplication_Dispatch(t *testing.T) {
 			broadcastConnections: []string{"null"},
 		}
 
-		err := app.Dispatch(event)
+		err := app.Dispatch(context.Background(), event)
 		assert.NoError(t, err)
 	})
 }

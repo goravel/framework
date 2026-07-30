@@ -2,13 +2,17 @@ package broadcasters
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
 	"crypto/md5"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/spf13/cast"
@@ -48,6 +52,8 @@ func NewPusherDriver(conn broadcasting.ConnectionConfig, httpClient client.Facto
 		return nil, errors.BroadcastPusherHostRequired
 	}
 
+	host = normalizePusherHost(host, opts.Port)
+
 	baseURL := fmt.Sprintf("%s://%s:%d/apps/%s",
 		opts.Scheme, host, opts.Port, conn.AppID)
 
@@ -71,7 +77,7 @@ func PushOptionsFromConfig(options map[string]any) broadcasting.PusherOptions {
 		opts.Cluster = v
 	}
 	if v, ok := options["host"].(string); ok {
-		opts.Host = v
+		opts.Host = normalizePusherHost(v, opts.Port)
 	}
 	if v, ok := options["port"]; ok {
 		opts.Port = cast.ToInt(v)
@@ -83,7 +89,28 @@ func PushOptionsFromConfig(options map[string]any) broadcasting.PusherOptions {
 	return opts
 }
 
-func (d *PusherDriver) Broadcast(channels []broadcasting.Channel, event string, payload map[string]any) error {
+// normalizePusherHost strips any scheme and explicit port from host so the
+// caller can safely compose "scheme://host:port/...". Accepts forms like
+// "https://api.pusher.com", "api.pusher.com:443", "api.pusher.com".
+func normalizePusherHost(host string, port int) string {
+	host = strings.TrimSpace(host)
+	if host == "" {
+		return host
+	}
+	// Strip a scheme if present (e.g. "https://api.pusher.com").
+	if strings.Contains(host, "://") {
+		if u, err := url.Parse(host); err == nil && u.Host != "" {
+			host = u.Host
+		}
+	}
+	// Strip an explicit port suffix so it is not doubled up with opts.Port.
+	if h, _, err := net.SplitHostPort(host); err == nil {
+		host = h
+	}
+	return host
+}
+
+func (d *PusherDriver) Broadcast(ctx context.Context, channels []broadcasting.Channel, event string, payload map[string]any) error {
 	urlStr := fmt.Sprintf("%s/events", d.baseURL)
 
 	chanNames := make([]string, len(channels))
@@ -108,7 +135,8 @@ func (d *PusherDriver) Broadcast(channels []broadcasting.Channel, event string, 
 
 	req := d.client.Client().
 		WithHeader("Content-Type", "application/json").
-		WithQueryParameters(d.signParams(bodyBytes))
+		WithQueryParameters(d.signParams(bodyBytes)).
+		WithContext(ctx)
 
 	resp, err := req.Post(urlStr, bytes.NewReader(bodyBytes))
 	if err != nil {
@@ -135,10 +163,10 @@ func (d *PusherDriver) signParams(body []byte) map[string]string {
 	signature := hex.EncodeToString(mac.Sum(nil))
 
 	return map[string]string{
-		"auth_key":        d.key,
-		"auth_timestamp":  timestamp,
-		"auth_version":    "1.0",
-		"body_md5":        bodyMD5,
-		"auth_signature":  signature,
+		"auth_key":       d.key,
+		"auth_timestamp": timestamp,
+		"auth_version":   "1.0",
+		"body_md5":       bodyMD5,
+		"auth_signature": signature,
 	}
 }

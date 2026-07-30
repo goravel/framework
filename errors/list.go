@@ -3,7 +3,6 @@ package errors
 var (
 	ApplicationNotSet                = New("application instance is not initialized")
 	AppInvalidDisabledRunnersPattern = New("invalid app.disabled_runners pattern %q: %v")
-	AuthFacadeNotSet                 = New("auth facade is not initialized")
 	CacheFacadeNotSet                = New("cache facade is not initialized")
 	ConfigFacadeNotSet               = New("config facade is not initialized")
 	ConsoleFacadeNotSet              = New("console facade is not initialized, skipping artisan command execution")
@@ -161,11 +160,10 @@ var (
 	LogEmptyLogFilePath        = New("empty log file path").SetModule(ModuleLog)
 	LogFormatterNotSupported   = New("invalid formatter: %s, only support text, json").SetModule(ModuleLog)
 
-	BroadcastAuthMissingParams        = New("broadcasting: socket_id and channel_name are required").SetModule(ModuleBroadcast)
-	BroadcastAuthUnauthenticated      = New("unauthenticated").SetModule(ModuleBroadcast)
-	BroadcastChannelUnauthorized         = New("channel authorization denied for channel %s").SetModule(ModuleBroadcast)
-	BroadcastChannelDataMarshalFailed    = New("broadcasting: failed to marshal channel_data").SetModule(ModuleBroadcast)
-	BroadcastConnectionInvalidFormat    = New("broadcast connection %q has invalid format").SetModule(ModuleBroadcast)
+	BroadcastAuthMissingParams          = New("broadcasting: socket_id and channel_name are required").SetModule(ModuleBroadcast)
+	BroadcastAuthUnauthenticated        = New("unauthenticated").SetModule(ModuleBroadcast)
+	BroadcastChannelUnauthorized        = New("channel authorization denied for channel %s").SetModule(ModuleBroadcast)
+	BroadcastChannelDataMarshalFailed   = New("broadcasting: failed to marshal channel_data").SetModule(ModuleBroadcast)
 	BroadcastConnectionNotFound         = New("broadcast connection %q not found").SetModule(ModuleBroadcast)
 	BroadcastDriverNotSupported         = New("unknown broadcast driver: %s, only support pusher, log, null").SetModule(ModuleBroadcast)
 	BroadcastInvalidQueuePayload        = New("broadcasting: invalid or missing queue payload").SetModule(ModuleBroadcast)

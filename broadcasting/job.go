@@ -1,8 +1,8 @@
 package broadcasting
 
 import (
+	"context"
 	"encoding/json"
-	"time"
 
 	"github.com/goravel/framework/contracts/broadcasting"
 	contractsconfig "github.com/goravel/framework/contracts/config"
@@ -19,6 +19,12 @@ func (j *BroadcastJob) Signature() string {
 	return "goravel_broadcast"
 }
 
+// Handle executes the queued broadcast. It is single-shot: retries are
+// governed by the queue worker's Args.Tries, not by this job. A fresh context
+// is synthesized (the dispatch-time ctx cannot cross the queue boundary); if
+// the originating event implemented ShouldBroadcastWithTimeout the worker
+// context is bounded accordingly, which the Pusher driver honours via
+// WithContext.
 func (j *BroadcastJob) Handle(args ...any) error {
 	if len(args) != 1 {
 		return errors.BroadcastInvalidQueuePayload
@@ -49,37 +55,13 @@ func (j *BroadcastJob) Handle(args ...any) error {
 		conns = []string{cfg.DefaultConnection()}
 	}
 
-	maxTries := item.Tries
-	if maxTries <= 0 {
-		maxTries = 1
-	}
-	backoff := time.Duration(item.Backoff) * time.Millisecond
-	timeout := time.Duration(item.Timeout) * time.Millisecond
+	ctx, cancel := withTimeout(context.Background(), item.Timeout)
+	defer cancel()
 
-	start := time.Now()
-	var lastErr error
-
-	for attempt := 1; attempt <= maxTries; attempt++ {
-		lastErr = j.broadcastToConns(cfg, channels, item.Event, item.Payload, conns)
-		if lastErr == nil {
-			return nil
-		}
-
-		if attempt < maxTries {
-			if timeout > 0 && time.Since(start)+backoff >= timeout {
-				break
-			}
-
-			if backoff > 0 {
-				time.Sleep(backoff)
-			}
-		}
-	}
-
-	return lastErr
+	return j.broadcastToConns(ctx, cfg, channels, item.Event, item.Payload, conns)
 }
 
-func (j *BroadcastJob) broadcastToConns(cfg *Config, channels []broadcasting.Channel, event string, payload map[string]any, conns []string) error {
+func (j *BroadcastJob) broadcastToConns(ctx context.Context, cfg *Config, channels []broadcasting.Channel, event string, payload map[string]any, conns []string) error {
 	for _, conn := range conns {
 		cfgConn, err := cfg.Connection(conn)
 		if err != nil {
@@ -91,7 +73,7 @@ func (j *BroadcastJob) broadcastToConns(cfg *Config, channels []broadcasting.Cha
 			return err
 		}
 
-		if err := driver.Broadcast(channels, event, payload); err != nil {
+		if err := driver.Broadcast(ctx, channels, event, payload); err != nil {
 			return err
 		}
 	}

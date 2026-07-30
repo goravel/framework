@@ -3,7 +3,10 @@
 package broadcasting
 
 import (
+	context "context"
+
 	broadcasting "github.com/goravel/framework/contracts/broadcasting"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -20,17 +23,17 @@ func (_m *Driver) EXPECT() *Driver_Expecter {
 	return &Driver_Expecter{mock: &_m.Mock}
 }
 
-// Broadcast provides a mock function with given fields: channels, event, payload
-func (_m *Driver) Broadcast(channels []broadcasting.Channel, event string, payload map[string]interface{}) error {
-	ret := _m.Called(channels, event, payload)
+// Broadcast provides a mock function with given fields: ctx, channels, event, payload
+func (_m *Driver) Broadcast(ctx context.Context, channels []broadcasting.Channel, event string, payload map[string]interface{}) error {
+	ret := _m.Called(ctx, channels, event, payload)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Broadcast")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func([]broadcasting.Channel, string, map[string]interface{}) error); ok {
-		r0 = rf(channels, event, payload)
+	if rf, ok := ret.Get(0).(func(context.Context, []broadcasting.Channel, string, map[string]interface{}) error); ok {
+		r0 = rf(ctx, channels, event, payload)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -44,16 +47,17 @@ type Driver_Broadcast_Call struct {
 }
 
 // Broadcast is a helper method to define mock.On call
+//   - ctx context.Context
 //   - channels []broadcasting.Channel
 //   - event string
 //   - payload map[string]interface{}
-func (_e *Driver_Expecter) Broadcast(channels interface{}, event interface{}, payload interface{}) *Driver_Broadcast_Call {
-	return &Driver_Broadcast_Call{Call: _e.mock.On("Broadcast", channels, event, payload)}
+func (_e *Driver_Expecter) Broadcast(ctx interface{}, channels interface{}, event interface{}, payload interface{}) *Driver_Broadcast_Call {
+	return &Driver_Broadcast_Call{Call: _e.mock.On("Broadcast", ctx, channels, event, payload)}
 }
 
-func (_c *Driver_Broadcast_Call) Run(run func(channels []broadcasting.Channel, event string, payload map[string]interface{})) *Driver_Broadcast_Call {
+func (_c *Driver_Broadcast_Call) Run(run func(ctx context.Context, channels []broadcasting.Channel, event string, payload map[string]interface{})) *Driver_Broadcast_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]broadcasting.Channel), args[1].(string), args[2].(map[string]interface{}))
+		run(args[0].(context.Context), args[1].([]broadcasting.Channel), args[2].(string), args[3].(map[string]interface{}))
 	})
 	return _c
 }
@@ -63,7 +67,7 @@ func (_c *Driver_Broadcast_Call) Return(_a0 error) *Driver_Broadcast_Call {
 	return _c
 }
 
-func (_c *Driver_Broadcast_Call) RunAndReturn(run func([]broadcasting.Channel, string, map[string]interface{}) error) *Driver_Broadcast_Call {
+func (_c *Driver_Broadcast_Call) RunAndReturn(run func(context.Context, []broadcasting.Channel, string, map[string]interface{}) error) *Driver_Broadcast_Call {
 	_c.Call.Return(run)
 	return _c
 }

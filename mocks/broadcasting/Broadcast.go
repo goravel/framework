@@ -3,7 +3,10 @@
 package broadcasting
 
 import (
+	context "context"
+
 	broadcasting "github.com/goravel/framework/contracts/broadcasting"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -54,17 +57,17 @@ func (_c *Broadcast_Channel_Call) RunAndReturn(run func(string, broadcasting.Cha
 	return _c
 }
 
-// Dispatch provides a mock function with given fields: event
-func (_m *Broadcast) Dispatch(event broadcasting.ShouldBroadcast) error {
-	ret := _m.Called(event)
+// Dispatch provides a mock function with given fields: ctx, event
+func (_m *Broadcast) Dispatch(ctx context.Context, event broadcasting.ShouldBroadcast) error {
+	ret := _m.Called(ctx, event)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Dispatch")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(broadcasting.ShouldBroadcast) error); ok {
-		r0 = rf(event)
+	if rf, ok := ret.Get(0).(func(context.Context, broadcasting.ShouldBroadcast) error); ok {
+		r0 = rf(ctx, event)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -78,14 +81,15 @@ type Broadcast_Dispatch_Call struct {
 }
 
 // Dispatch is a helper method to define mock.On call
+//   - ctx context.Context
 //   - event broadcasting.ShouldBroadcast
-func (_e *Broadcast_Expecter) Dispatch(event interface{}) *Broadcast_Dispatch_Call {
-	return &Broadcast_Dispatch_Call{Call: _e.mock.On("Dispatch", event)}
+func (_e *Broadcast_Expecter) Dispatch(ctx interface{}, event interface{}) *Broadcast_Dispatch_Call {
+	return &Broadcast_Dispatch_Call{Call: _e.mock.On("Dispatch", ctx, event)}
 }
 
-func (_c *Broadcast_Dispatch_Call) Run(run func(event broadcasting.ShouldBroadcast)) *Broadcast_Dispatch_Call {
+func (_c *Broadcast_Dispatch_Call) Run(run func(ctx context.Context, event broadcasting.ShouldBroadcast)) *Broadcast_Dispatch_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(broadcasting.ShouldBroadcast))
+		run(args[0].(context.Context), args[1].(broadcasting.ShouldBroadcast))
 	})
 	return _c
 }
@@ -95,7 +99,7 @@ func (_c *Broadcast_Dispatch_Call) Return(_a0 error) *Broadcast_Dispatch_Call {
 	return _c
 }
 
-func (_c *Broadcast_Dispatch_Call) RunAndReturn(run func(broadcasting.ShouldBroadcast) error) *Broadcast_Dispatch_Call {
+func (_c *Broadcast_Dispatch_Call) RunAndReturn(run func(context.Context, broadcasting.ShouldBroadcast) error) *Broadcast_Dispatch_Call {
 	_c.Call.Return(run)
 	return _c
 }

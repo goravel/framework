@@ -1,6 +1,7 @@
 package broadcasters
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/md5"
 	"crypto/sha256"
@@ -37,6 +38,26 @@ func TestPushOptionsFromConfig_Defaults(t *testing.T) {
 	assert.Equal(t, 443, opts.Port)
 	assert.Equal(t, "https", opts.Scheme)
 	assert.Equal(t, "", opts.Host)
+}
+
+func TestPushOptionsFromConfig_HostNormalization(t *testing.T) {
+	tests := []struct {
+		name string
+		host string
+		want string
+	}{
+		{name: "bare host", host: "api.pusher.com", want: "api.pusher.com"},
+		{name: "scheme stripped", host: "https://api.pusher.com", want: "api.pusher.com"},
+		{name: "scheme + port stripped", host: "https://api.pusher.com:443", want: "api.pusher.com"},
+		{name: "explicit port stripped", host: "api.pusher.com:8080", want: "api.pusher.com"},
+		{name: "whitespace trimmed", host: "  api.pusher.com  ", want: "api.pusher.com"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			opts := PushOptionsFromConfig(map[string]any{"host": tt.host, "port": float64(443)})
+			assert.Equal(t, tt.want, opts.Host)
+		})
+	}
 }
 
 func TestPusherDriver_ClusterFallback(t *testing.T) {
@@ -116,6 +137,7 @@ func TestPusherDriver_Broadcast_Success(t *testing.T) {
 	mockRequest.EXPECT().WithQueryParameters(mock.MatchedBy(func(p map[string]string) bool {
 		return p["auth_key"] == "test-key" && p["auth_version"] == "1.0"
 	})).Return(mockRequest).Once()
+	mockRequest.EXPECT().WithContext(context.Background()).Return(mockRequest).Once()
 	mockRequest.EXPECT().Post("https://api.example.com:443/apps/test-app/events", mock.MatchedBy(func(r any) bool { return r != nil })).Return(mockResponse, nil).Once()
 
 	mockClient := mockshttp.NewFactory(t)
@@ -125,6 +147,7 @@ func TestPusherDriver_Broadcast_Success(t *testing.T) {
 	assert.NoError(t, err)
 
 	err = driver.Broadcast(
+		context.Background(),
 		[]broadcasting.Channel{{Name: "my-channel"}},
 		"test-event",
 		map[string]any{"message": "hello"},
@@ -154,6 +177,7 @@ func TestPusherDriver_Broadcast_Error(t *testing.T) {
 	mockRequest.EXPECT().WithQueryParameters(mock.MatchedBy(func(p map[string]string) bool {
 		return p["auth_key"] == "test-key" && p["auth_version"] == "1.0"
 	})).Return(mockRequest).Once()
+	mockRequest.EXPECT().WithContext(context.Background()).Return(mockRequest).Once()
 	mockRequest.EXPECT().Post("https://api.example.com:443/apps/test-app/events", mock.MatchedBy(func(r any) bool { return r != nil })).Return(mockResponse, nil).Once()
 
 	mockClient := mockshttp.NewFactory(t)
@@ -163,6 +187,7 @@ func TestPusherDriver_Broadcast_Error(t *testing.T) {
 	assert.NoError(t, err)
 
 	err = driver.Broadcast(
+		context.Background(),
 		[]broadcasting.Channel{{Name: "my-channel"}},
 		"test-event",
 		map[string]any{"message": "hello"},
@@ -219,6 +244,6 @@ func TestBroadcasterNewLogDriver(t *testing.T) {
 func TestBroadcasterNewNullDriver(t *testing.T) {
 	driver := NewNullDriver()
 	assert.NotNil(t, driver)
-	err := driver.Broadcast(nil, "", nil)
+	err := driver.Broadcast(context.Background(), nil, "", nil)
 	assert.NoError(t, err)
 }

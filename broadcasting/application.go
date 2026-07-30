@@ -1,6 +1,7 @@
 package broadcasting
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -10,6 +11,7 @@ import (
 	"reflect"
 	"regexp"
 	"sync"
+	"time"
 
 	"github.com/goravel/framework/contracts/broadcasting"
 	contractsconfig "github.com/goravel/framework/contracts/config"
@@ -28,13 +30,13 @@ type authEntry struct {
 }
 
 type Application struct {
-	app         foundation.Application
-	config      *Config
+	app          foundation.Application
+	config       *Config
 	configFacade contractsconfig.Config
-	log         log.Log
-	queue       queue.Queue
-	channelAuth []authEntry
-	mu          sync.RWMutex
+	log          log.Log
+	queue        queue.Queue
+	channelAuth  []authEntry
+	mu           sync.RWMutex
 }
 
 func NewApplication(configFacade contractsconfig.Config, log log.Log, queue queue.Queue, app foundation.Application) *Application {
@@ -47,9 +49,9 @@ func NewApplication(configFacade contractsconfig.Config, log log.Log, queue queu
 		app:          app,
 		config:       cfg,
 		configFacade: configFacade,
-		log:         log,
-		queue:       queue,
-		channelAuth: make([]authEntry, 0),
+		log:          log,
+		queue:        queue,
+		channelAuth:  make([]authEntry, 0),
 	}
 }
 
@@ -105,7 +107,12 @@ func (a *Application) Channel(pattern string, callback broadcasting.ChannelAuthF
 	a.channelAuth = append(a.channelAuth, entry)
 }
 
-func (a *Application) Dispatch(event broadcasting.ShouldBroadcast) error {
+// Dispatch broadcasts an event. In the synchronous path (events implementing
+// ShouldBroadcastNow with BroadcastNow()==true, or when no queue is
+// available) ctx bounds the driver call. In the asynchronous path ctx is not
+// propagated across the queue boundary; the worker synthesizes a new context,
+// optionally bounded by ShouldBroadcastWithTimeout.
+func (a *Application) Dispatch(ctx context.Context, event broadcasting.ShouldBroadcast) error {
 	if !event.BroadcastWhen() {
 		return nil
 	}
@@ -128,13 +135,15 @@ func (a *Application) Dispatch(event broadcasting.ShouldBroadcast) error {
 		Payload:     event.BroadcastWith(),
 		Connections: conns,
 	}
-	a.broadcastItemWithRetryConfig(event, &item)
-
-	if now, ok := event.(broadcasting.ShouldBroadcastNow); ok && now.BroadcastNow() {
-		return a.dispatchSync(item)
+	if withTimeout, ok := event.(broadcasting.ShouldBroadcastWithTimeout); ok && withTimeout.BroadcastTimeout() > 0 {
+		item.Timeout = withTimeout.BroadcastTimeout().Milliseconds()
 	}
 
-	return a.dispatchAsync(event, item)
+	if now, ok := event.(broadcasting.ShouldBroadcastNow); ok && now.BroadcastNow() {
+		return a.dispatchSync(ctx, item)
+	}
+
+	return a.dispatchAsync(ctx, event, item)
 }
 
 func (a *Application) resolveConnections(event broadcasting.ShouldBroadcast) []string {
@@ -145,7 +154,14 @@ func (a *Application) resolveConnections(event broadcasting.ShouldBroadcast) []s
 	return conns
 }
 
-func (a *Application) dispatchSync(item broadcastItem) error {
+// dispatchSync broadcasts immediately. Synchronous broadcasts never retry;
+// ctx bounds the driver call (honoured by the Pusher HTTP client via
+// WithContext). When item.Timeout > 0 (event implements ShouldBroadcastWithTimeout)
+// the deadline is tightened further.
+func (a *Application) dispatchSync(ctx context.Context, item broadcastItem) error {
+	ctx, cancel := withTimeout(ctx, item.Timeout)
+	defer cancel()
+
 	for _, conn := range item.Connections {
 		cfg, err := a.config.Connection(conn)
 		if err != nil {
@@ -162,14 +178,18 @@ func (a *Application) dispatchSync(item broadcastItem) error {
 			channels[i] = broadcasting.Channel{Name: name}
 		}
 
-		if err := driver.Broadcast(channels, item.Event, item.Payload); err != nil {
+		if err := driver.Broadcast(ctx, channels, item.Event, item.Payload); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (a *Application) dispatchAsync(event broadcasting.ShouldBroadcast, item broadcastItem) error {
+// dispatchAsync enqueues the broadcast for worker delivery. The provided ctx
+// is not propagated: queue jobs are serialized and dispatched later, possibly
+// in a different process, so the worker synthesizes a fresh context
+// (optionally bounded by ShouldBroadcastWithTimeout).
+func (a *Application) dispatchAsync(_ context.Context, event broadcasting.ShouldBroadcast, item broadcastItem) error {
 	encoded, err := json.Marshal(item)
 	if err != nil {
 		return err
@@ -192,18 +212,6 @@ func (a *Application) dispatchAsync(event broadcasting.ShouldBroadcast, item bro
 	return job.Dispatch()
 }
 
-func (a *Application) broadcastItemWithRetryConfig(event broadcasting.ShouldBroadcast, item *broadcastItem) {
-	if withTries, ok := event.(broadcasting.ShouldBroadcastWithTries); ok && withTries.BroadcastTries() > 0 {
-		item.Tries = withTries.BroadcastTries()
-	}
-	if withBackoff, ok := event.(broadcasting.ShouldBroadcastWithBackoff); ok && withBackoff.BroadcastBackoff() > 0 {
-		item.Backoff = withBackoff.BroadcastBackoff().Milliseconds()
-	}
-	if withTimeout, ok := event.(broadcasting.ShouldBroadcastWithTimeout); ok && withTimeout.BroadcastTimeout() > 0 {
-		item.Timeout = withTimeout.BroadcastTimeout().Milliseconds()
-	}
-}
-
 func (a *Application) Authenticate(ctx contractshttp.Context) contractshttp.Response {
 	socketID := ctx.Request().Input("socket_id")
 	channelName := ctx.Request().Input("channel_name")
@@ -217,6 +225,12 @@ func (a *Application) Authenticate(ctx contractshttp.Context) contractshttp.Resp
 	ch := broadcasting.Channel{Name: channelName}
 	if !IsPrivateChannel(ch) && !IsPresenceChannel(ch) {
 		return ctx.Response().Json(http.StatusOK, broadcasting.AuthResponse{})
+	}
+
+	if a.app == nil {
+		return ctx.Response().Json(http.StatusUnauthorized, contractshttp.Json{
+			"error": errors.BroadcastAuthUnauthenticated.Error(),
+		})
 	}
 
 	auth := a.app.MakeAuth(ctx)
@@ -333,8 +347,6 @@ type broadcastItem struct {
 	Event       string         `json:"event"`
 	Payload     map[string]any `json:"payload"`
 	Connections []string       `json:"connections"`
-	Tries       int            `json:"tries,omitempty"`
-	Backoff     int64          `json:"backoff,omitempty"`
 	Timeout     int64          `json:"timeout,omitempty"`
 }
 
@@ -354,4 +366,17 @@ func computeAuthSignature(secret, socketID, channelName, channelData string) str
 	mac := hmac.New(sha256.New, []byte(secret))
 	_, _ = mac.Write([]byte(message))
 	return hex.EncodeToString(mac.Sum(nil))
+}
+
+// withTimeout returns parent unchanged when timeoutMs <= 0, otherwise it
+// derives a child context bounded by timeoutMs. A nil parent falls back to
+// context.Background. The caller MUST defer cancel().
+func withTimeout(parent context.Context, timeoutMs int64) (context.Context, context.CancelFunc) {
+	if parent == nil {
+		parent = context.Background()
+	}
+	if timeoutMs <= 0 {
+		return parent, func() {}
+	}
+	return context.WithTimeout(parent, time.Duration(timeoutMs)*time.Millisecond)
 }
