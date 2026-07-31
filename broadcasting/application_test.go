@@ -88,62 +88,62 @@ func TestApplication_Channel(t *testing.T) {
 
 	t.Run("regex wildcard matches parameters", func(t *testing.T) {
 		app := newApp()
-		app.Channel("orders.{orderId}", func(userID any, channelName string, params map[string]string) (bool, any) {
+		app.Channel("orders.{orderId}", func(ctx context.Context, userID any, channelName string, params map[string]string) (bool, any) {
 			return true, nil
 		})
 
-		authorized, _ := app.resolveAuth("orders.123", nil)
+		authorized, _ := app.resolveAuth(context.Background(),"orders.123", nil)
 		assert.True(t, authorized)
-		authorized, _ = app.resolveAuth("ordersA123", nil)
+		authorized, _ = app.resolveAuth(context.Background(),"ordersA123", nil)
 		assert.False(t, authorized)
-		authorized, _ = app.resolveAuth("unknown", nil)
+		authorized, _ = app.resolveAuth(context.Background(),"unknown", nil)
 		assert.False(t, authorized)
 	})
 
 	t.Run("auth callback receives extracted params", func(t *testing.T) {
 		app := newApp()
-		app.Channel("orders.{orderId}", func(userID any, channelName string, params map[string]string) (bool, any) {
+		app.Channel("orders.{orderId}", func(ctx context.Context, userID any, channelName string, params map[string]string) (bool, any) {
 			return params["orderId"] == "123", nil
 		})
 
-		authorized, _ := app.resolveAuth("orders.123", map[string]any{"id": "1"})
+		authorized, _ := app.resolveAuth(context.Background(),"orders.123", map[string]any{"id": "1"})
 		assert.True(t, authorized)
-		authorized, _ = app.resolveAuth("orders.456", map[string]any{"id": "1"})
+		authorized, _ = app.resolveAuth(context.Background(),"orders.456", map[string]any{"id": "1"})
 		assert.False(t, authorized)
 	})
 
 	t.Run("no match returns false", func(t *testing.T) {
 		app := newApp()
-		app.Channel("orders.{orderId}", func(userID any, channelName string, params map[string]string) (bool, any) {
+		app.Channel("orders.{orderId}", func(ctx context.Context, userID any, channelName string, params map[string]string) (bool, any) {
 			return false, nil
 		})
 
-		authorized, _ := app.resolveAuth("unknown-channel", map[string]any{"id": "1"})
+		authorized, _ := app.resolveAuth(context.Background(),"unknown-channel", map[string]any{"id": "1"})
 		assert.False(t, authorized)
 	})
 
 	t.Run("exact match without params", func(t *testing.T) {
 		app := newApp()
-		app.Channel("public-channel", func(userID any, channelName string, params map[string]string) (bool, any) {
+		app.Channel("public-channel", func(ctx context.Context, userID any, channelName string, params map[string]string) (bool, any) {
 			return true, nil
 		})
 
-		authorized, _ := app.resolveAuth("public-channel", nil)
+		authorized, _ := app.resolveAuth(context.Background(),"public-channel", nil)
 		assert.True(t, authorized)
-		authorized, _ = app.resolveAuth("other-channel", nil)
+		authorized, _ = app.resolveAuth(context.Background(),"other-channel", nil)
 		assert.False(t, authorized)
 	})
 
 	t.Run("exact match takes precedence over regex", func(t *testing.T) {
 		app := newApp()
-		app.Channel("orders.special", func(userID any, channelName string, params map[string]string) (bool, any) {
+		app.Channel("orders.special", func(ctx context.Context, userID any, channelName string, params map[string]string) (bool, any) {
 			return true, nil
 		})
-		app.Channel("orders.{orderId}", func(userID any, channelName string, params map[string]string) (bool, any) {
+		app.Channel("orders.{orderId}", func(ctx context.Context, userID any, channelName string, params map[string]string) (bool, any) {
 			return false, nil
 		})
 
-		authorized, _ := app.resolveAuth("orders.special", nil)
+		authorized, _ := app.resolveAuth(context.Background(),"orders.special", nil)
 		assert.True(t, authorized)
 	})
 }
@@ -463,6 +463,7 @@ func TestApplication_Authenticate(t *testing.T) {
 	setupMocksAuth := func(t *testing.T, socketID, channelName string) (*mockshttp.Context, *mockshttp.ContextRequest, *mockshttp.ContextResponse, *mockshttp.AbortableResponse) {
 		mockCtx, mockReq, mockCtxResp, mockAbortResp := setupMocksBase(t, socketID, channelName)
 		mockCtx.EXPECT().Request().Return(mockReq).Times(3)
+		mockCtx.EXPECT().Context().Return(context.Background()).Maybe()
 		return mockCtx, mockReq, mockCtxResp, mockAbortResp
 	}
 
@@ -567,7 +568,7 @@ func TestApplication_Authenticate(t *testing.T) {
 		mockFoundApp.EXPECT().MakeAuth(mockCtx).Return(mockAuth).Once()
 
 		app := &Application{app: mockFoundApp, config: newDefaultConfig()}
-		app.Channel("orders.123", func(userID any, channelName string, params map[string]string) (bool, any) {
+		app.Channel("orders.123", func(ctx context.Context, userID any, channelName string, params map[string]string) (bool, any) {
 			return false, nil
 		})
 
@@ -591,7 +592,7 @@ func TestApplication_Authenticate(t *testing.T) {
 		mockFoundApp.EXPECT().MakeAuth(mockCtx).Return(mockAuth).Once()
 
 		app := &Application{app: mockFoundApp, config: newDefaultConfig()}
-		app.Channel("orders.123", func(userID any, channelName string, params map[string]string) (bool, any) {
+		app.Channel("orders.123", func(ctx context.Context, userID any, channelName string, params map[string]string) (bool, any) {
 			return true, nil
 		})
 
@@ -622,7 +623,7 @@ func TestApplication_Authenticate(t *testing.T) {
 		mockFoundApp.EXPECT().MakeAuth(mockCtx).Return(mockAuth).Once()
 
 		app := &Application{app: mockFoundApp, config: newDefaultConfig()}
-		app.Channel("chat", func(userID any, channelName string, params map[string]string) (bool, any) {
+		app.Channel("chat", func(ctx context.Context, userID any, channelName string, params map[string]string) (bool, any) {
 			return true, nil
 		})
 
@@ -654,7 +655,7 @@ func TestApplication_Authenticate(t *testing.T) {
 		mockFoundApp.EXPECT().MakeAuth(mockCtx).Return(mockAuth).Once()
 
 		app := &Application{app: mockFoundApp, config: newDefaultConfig()}
-		app.Channel("chat", func(userID any, channelName string, params map[string]string) (bool, any) {
+		app.Channel("chat", func(ctx context.Context, userID any, channelName string, params map[string]string) (bool, any) {
 			return true, map[string]any{"id": "user-1", "name": "John"}
 		})
 
@@ -695,7 +696,7 @@ func TestApplication_Authenticate(t *testing.T) {
 
 		badCfg := &Config{Default: "nonexistent", Connections: map[string]broadcasting.ConnectionConfig{}}
 		app := &Application{app: mockFoundApp, config: badCfg}
-		app.Channel("orders.123", func(userID any, channelName string, params map[string]string) (bool, any) {
+		app.Channel("orders.123", func(ctx context.Context, userID any, channelName string, params map[string]string) (bool, any) {
 			return true, nil
 		})
 
@@ -720,7 +721,7 @@ func TestApplication_Authenticate(t *testing.T) {
 		mockFoundApp.EXPECT().MakeAuth(mockCtx).Return(mockAuth).Once()
 
 		app := &Application{app: mockFoundApp, config: newDefaultConfig()}
-		app.Channel("orders.123", func(userID any, channelName string, params map[string]string) (bool, any) {
+		app.Channel("orders.123", func(ctx context.Context, userID any, channelName string, params map[string]string) (bool, any) {
 			return true, nil
 		})
 
@@ -765,7 +766,7 @@ func TestApplication_Authenticate(t *testing.T) {
 		mockFoundApp.EXPECT().MakeAuth(mockCtx).Return(mockAuth).Once()
 
 		app := &Application{app: mockFoundApp, config: newDefaultConfig()}
-		app.Channel("orders.123", func(userID any, channelName string, params map[string]string) (bool, any) {
+		app.Channel("orders.123", func(ctx context.Context, userID any, channelName string, params map[string]string) (bool, any) {
 			return true, nil
 		})
 

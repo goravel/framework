@@ -60,19 +60,19 @@ func NewApplication(configFacade contractsconfig.Config, log log.Log, queue queu
 // Example:
 //
 //	// Simple channel
-//	facades.Broadcast().Channel("orders", func(userID any, channelName string, params map[string]string) (bool, any) {
+//	facades.Broadcast().Channel("orders", func(ctx context.Context, userID any, channelName string, params map[string]string) (bool, any) {
 //		return true, nil
 //	})
 //
 //	// Channel with route params
-//	facades.Broadcast().Channel("orders.{orderId}", func(userID any, channelName string, params map[string]string) (bool, any) {
+//	facades.Broadcast().Channel("orders.{orderId}", func(ctx context.Context, userID any, channelName string, params map[string]string) (bool, any) {
 //		// params["orderId"] contains the matched value
-//		order := findOrder(params["orderId"])
+//		order := findOrder(ctx, params["orderId"])
 //		return order.UserID == userID, nil
 //	})
 //
 //	// Presence channel returning custom user info
-//	facades.Broadcast().Channel("chat", func(userID any, channelName string, params map[string]string) (bool, any) {
+//	facades.Broadcast().Channel("chat", func(ctx context.Context, userID any, channelName string, params map[string]string) (bool, any) {
 //		return true, map[string]any{"id": userID, "name": "Alice"}
 //	})
 func (a *Application) Channel(pattern string, callback broadcasting.ChannelAuthFunc) {
@@ -258,7 +258,7 @@ func (a *Application) Authenticate(ctx contractshttp.Context) contractshttp.Resp
 		})
 	}
 
-	authorized, userInfo := a.resolveAuth(ChannelBaseName(ch), userID)
+	authorized, userInfo := a.resolveAuth(ctx, ChannelBaseName(ch), userID)
 	if !authorized {
 		return ctx.Response().Json(http.StatusForbidden, contractshttp.Json{
 			"error": errors.BroadcastChannelUnauthorized.Args(channelName).Error(),
@@ -310,7 +310,7 @@ func (a *Application) buildPresenceChannelData(userID string, userInfo any) (str
 	return string(channelData), nil
 }
 
-func (a *Application) resolveAuth(channelName string, userID any) (bool, any) {
+func (a *Application) resolveAuth(ctx context.Context, channelName string, userID any) (bool, any) {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
@@ -318,7 +318,7 @@ func (a *Application) resolveAuth(channelName string, userID any) (bool, any) {
 	// registration order, so exact matches are resolved in a first pass.
 	for _, entry := range a.channelAuth {
 		if entry.regex == nil && entry.pattern == channelName {
-			return entry.callback(userID, channelName, map[string]string{})
+			return entry.callback(ctx, userID, channelName, map[string]string{})
 		}
 	}
 
@@ -335,7 +335,7 @@ func (a *Application) resolveAuth(channelName string, userID any) (bool, any) {
 		for i, name := range entry.params {
 			params[name] = matches[i+1]
 		}
-		return entry.callback(userID, channelName, params)
+		return entry.callback(ctx, userID, channelName, params)
 	}
 	return false, nil
 }

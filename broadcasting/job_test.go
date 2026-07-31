@@ -150,13 +150,13 @@ func TestWithTimeout(t *testing.T) {
 	})
 
 	t.Run("nil parent falls back to Background", func(t *testing.T) {
-		ctx, cancel := withTimeout(nil, 0)
+		ctx, cancel := withTimeout(nil, 0) //nolint:staticcheck // Testing nil parent behavior
 		defer cancel()
 		assert.NotNil(t, ctx)
 	})
 
 	t.Run("nil parent with timeout derives from Background", func(t *testing.T) {
-		ctx, cancel := withTimeout(nil, 100)
+		ctx, cancel := withTimeout(nil, 100) //nolint:staticcheck // Testing nil parent behavior
 		defer cancel()
 		_, ok := ctx.Deadline()
 		assert.True(t, ok, "ctx should have a deadline even with nil parent")
