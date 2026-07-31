@@ -114,6 +114,8 @@ func (m *Manager) dispatchQueued(
 	sq contractsnotification.ShouldQueue,
 ) error {
 	shouldSend, _ := n.(contractsnotification.NotificationWithShouldSend)
+	withBackoff, _ := n.(contractsnotification.NotificationWithBackoff)
+	withRetryUntil, _ := n.(contractsnotification.NotificationWithRetryUntil)
 
 	var errs []error
 	for _, name := range n.Via(notifiable) {
@@ -143,6 +145,17 @@ func (m *Manager) dispatchQueued(
 		}
 
 		item := dispatchItem{Channel: name, Route: route, Payload: payload}
+		// Captured now, while n is still live — DispatchJob.ShouldRetry
+		// can't call these itself later, see job.go.
+		if withBackoff != nil {
+			item.BackoffSeconds = withBackoff.Backoff(name)
+		}
+		if withRetryUntil != nil {
+			if ru := withRetryUntil.RetryUntil(); !ru.IsZero() {
+				item.RetryUntilUnix = ru.Unix()
+			}
+		}
+
 		encoded, err := encodeDispatchItem(item)
 		if err != nil {
 			errs = append(errs, err)

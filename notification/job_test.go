@@ -3,6 +3,7 @@ package notification
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -103,4 +104,86 @@ func TestDispatchJob_Handle_PropagatesDeliverError(t *testing.T) {
 	err = job.Handle(encoded)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "smtp down")
+}
+
+func TestDispatchJob_ShouldRetry_NoRetry_WhenPlainError(t *testing.T) {
+	logger := mockslog.NewLog(t)
+	mgr := NewManager(logger, nil)
+	mgr.Extend(&fakeResolvableChannel{name: "a", deliverErr: errors.New("smtp down")})
+	job := NewDispatchJob(mgr)
+
+	encoded, err := encodeDispatchItem(dispatchItem{Channel: "a", Route: "r", Payload: []byte("{}")})
+	assert.NoError(t, err)
+
+	handleErr := job.Handle(encoded)
+	assert.Error(t, handleErr)
+
+	retryable, delay := job.ShouldRetry(handleErr, 1)
+	assert.False(t, retryable)
+	assert.Zero(t, delay)
+}
+
+func TestDispatchJob_ShouldRetry_RetriesWithBackoff(t *testing.T) {
+	logger := mockslog.NewLog(t)
+	mgr := NewManager(logger, nil)
+	mgr.Extend(&fakeResolvableChannel{name: "a", deliverErr: errors.New("smtp down")})
+	job := NewDispatchJob(mgr)
+
+	encoded, err := encodeDispatchItem(dispatchItem{
+		Channel: "a", Route: "r", Payload: []byte("{}"),
+		BackoffSeconds: 45,
+	})
+	assert.NoError(t, err)
+
+	handleErr := job.Handle(encoded)
+	assert.Error(t, handleErr)
+
+	retryable, delay := job.ShouldRetry(handleErr, 1)
+	assert.True(t, retryable)
+	assert.Equal(t, 45*time.Second, delay)
+}
+
+func TestDispatchJob_ShouldRetry_StopsAfterRetryUntilDeadline(t *testing.T) {
+	logger := mockslog.NewLog(t)
+	mgr := NewManager(logger, nil)
+	mgr.Extend(&fakeResolvableChannel{name: "a", deliverErr: errors.New("smtp down")})
+	job := NewDispatchJob(mgr)
+
+	past := time.Now().Add(-1 * time.Hour).Unix()
+	encoded, err := encodeDispatchItem(dispatchItem{
+		Channel: "a", Route: "r", Payload: []byte("{}"),
+		BackoffSeconds: 30, RetryUntilUnix: past,
+	})
+	assert.NoError(t, err)
+
+	handleErr := job.Handle(encoded)
+	assert.Error(t, handleErr)
+
+	retryable, delay := job.ShouldRetry(handleErr, 5)
+	assert.False(t, retryable, "past RetryUntil should stop retries even though Backoff is set")
+	assert.Zero(t, delay)
+}
+
+func TestDispatchJob_ShouldRetry_CapsAttempts_WhenNoRetryUntilSet(t *testing.T) {
+	logger := mockslog.NewLog(t)
+	mgr := NewManager(logger, nil)
+	mgr.Extend(&fakeResolvableChannel{name: "a", deliverErr: errors.New("smtp down")})
+	job := NewDispatchJob(mgr)
+
+	encoded, err := encodeDispatchItem(dispatchItem{
+		Channel: "a", Route: "r", Payload: []byte("{}"),
+		BackoffSeconds: 5, // RetryUntilUnix deliberately left unset
+	})
+	assert.NoError(t, err)
+
+	handleErr := job.Handle(encoded)
+	assert.Error(t, handleErr)
+
+	retryable, delay := job.ShouldRetry(handleErr, DefaultMaxRetryAttempts-1)
+	assert.True(t, retryable, "still below the cap, should retry")
+	assert.Equal(t, 5*time.Second, delay)
+
+	retryable, delay = job.ShouldRetry(handleErr, DefaultMaxRetryAttempts)
+	assert.False(t, retryable, "at the cap, should stop even though Backoff is set")
+	assert.Zero(t, delay)
 }
