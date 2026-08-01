@@ -4,6 +4,7 @@ const (
 	AI           = "goravel.ai"
 	Artisan      = "goravel.artisan"
 	Auth         = "goravel.auth"
+	Broadcast    = "goravel.broadcast"
 	Cache        = "goravel.cache"
 	Config       = "goravel.config"
 	Crypt        = "goravel.crypt"
@@ -116,6 +117,11 @@ var (
 				Log,
 				Orm,
 			},
+		},
+		Broadcast: {
+			Description:  "Real-time event broadcasting with WebSocket support via Pusher protocol.",
+			PkgPath:      "github.com/goravel/framework/broadcasting",
+			Dependencies: []string{Config, Log, Queue, Auth, Http, Route},
 		},
 		Cache: {
 			Description: "Gets and sets cached items.",

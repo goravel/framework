@@ -5,6 +5,7 @@ import (
 	databasesql "database/sql"
 	"fmt"
 	"reflect"
+	"sync"
 
 	"gorm.io/gorm"
 	"gorm.io/plugin/dbresolver"
@@ -21,6 +22,11 @@ import (
 	instrumentationdatabase "github.com/goravel/framework/telemetry/instrumentation/database"
 )
 
+type queriesCache struct {
+	mu sync.RWMutex
+	m  map[string]contractsdb.DB
+}
+
 type DB struct {
 	contractsdb.Tx
 	config            config.Config
@@ -29,7 +35,7 @@ type DB struct {
 	gorm              *gorm.DB
 	instrument        *instrumentationdatabase.Instrument
 	logger            contractslogger.Logger
-	queries           map[string]contractsdb.DB
+	queries           *queriesCache
 	telemetryResolver contractstelemetry.Resolver
 }
 
@@ -42,7 +48,7 @@ func NewDB(ctx context.Context, config config.Config, driver contractsdriver.Dri
 		gorm:              gormDB,
 		instrument:        instrument,
 		logger:            logger,
-		queries:           make(map[string]contractsdb.DB),
+		queries:           &queriesCache{m: make(map[string]contractsdb.DB)},
 		telemetryResolver: telemetryResolver,
 	}, nil
 }
@@ -83,17 +89,29 @@ func (r *DB) Connection(name string) contractsdb.DB {
 		name = r.config.GetString("database.default")
 	}
 
-	if _, ok := r.queries[name]; !ok {
-		db, err := BuildDB(r.ctx, r.config, r.logger.Log(), name, r.telemetryResolver)
-		if err != nil {
-			r.logger.Panicf(r.ctx, err.Error())
-			return nil
-		}
-		r.queries[name] = db
-		db.queries = r.queries
+	r.queries.mu.RLock()
+	if db, ok := r.queries.m[name]; ok {
+		r.queries.mu.RUnlock()
+		return db
+	}
+	r.queries.mu.RUnlock()
+
+	r.queries.mu.Lock()
+	defer r.queries.mu.Unlock()
+	if db, ok := r.queries.m[name]; ok {
+		return db
 	}
 
-	return r.queries[name]
+	db, err := BuildDB(r.ctx, r.config, r.logger.Log(), name, r.telemetryResolver)
+	if err != nil {
+		r.logger.Panicf(r.ctx, err.Error())
+		return nil
+	}
+
+	r.queries.m[name] = db
+	db.queries = r.queries
+
+	return db
 }
 
 func (r *DB) Transaction(callback func(tx contractsdb.Tx) error) (err error) {

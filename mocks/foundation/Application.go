@@ -8,6 +8,8 @@ import (
 
 	auth "github.com/goravel/framework/contracts/auth"
 
+	broadcasting "github.com/goravel/framework/contracts/broadcasting"
+
 	cache "github.com/goravel/framework/contracts/cache"
 
 	client "github.com/goravel/framework/contracts/http/client"
@@ -1322,6 +1324,53 @@ func (_c *Application_MakeAuth_Call) Return(_a0 auth.Auth) *Application_MakeAuth
 }
 
 func (_c *Application_MakeAuth_Call) RunAndReturn(run func(...http.Context) auth.Auth) *Application_MakeAuth_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// MakeBroadcast provides a mock function with no fields
+func (_m *Application) MakeBroadcast() broadcasting.Broadcast {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for MakeBroadcast")
+	}
+
+	var r0 broadcasting.Broadcast
+	if rf, ok := ret.Get(0).(func() broadcasting.Broadcast); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(broadcasting.Broadcast)
+		}
+	}
+
+	return r0
+}
+
+// Application_MakeBroadcast_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MakeBroadcast'
+type Application_MakeBroadcast_Call struct {
+	*mock.Call
+}
+
+// MakeBroadcast is a helper method to define mock.On call
+func (_e *Application_Expecter) MakeBroadcast() *Application_MakeBroadcast_Call {
+	return &Application_MakeBroadcast_Call{Call: _e.mock.On("MakeBroadcast")}
+}
+
+func (_c *Application_MakeBroadcast_Call) Run(run func()) *Application_MakeBroadcast_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Application_MakeBroadcast_Call) Return(_a0 broadcasting.Broadcast) *Application_MakeBroadcast_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Application_MakeBroadcast_Call) RunAndReturn(run func() broadcasting.Broadcast) *Application_MakeBroadcast_Call {
 	_c.Call.Return(run)
 	return _c
 }

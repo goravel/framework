@@ -8,6 +8,7 @@ import (
 	mocksai "github.com/goravel/framework/mocks/ai"
 	mocksauth "github.com/goravel/framework/mocks/auth"
 	mocksaccess "github.com/goravel/framework/mocks/auth/access"
+	mocksbroadcasting "github.com/goravel/framework/mocks/broadcasting"
 	mockscache "github.com/goravel/framework/mocks/cache"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
@@ -24,6 +25,7 @@ import (
 	mockshttp "github.com/goravel/framework/mocks/http"
 	mockshttpclient "github.com/goravel/framework/mocks/http/client"
 	mocksmail "github.com/goravel/framework/mocks/mail"
+	mocksnotification "github.com/goravel/framework/mocks/notification"
 	mocksprocess "github.com/goravel/framework/mocks/process"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
 	mocksroute "github.com/goravel/framework/mocks/route"
@@ -73,6 +75,13 @@ func (r *factory) Auth(ctx contractshttp.Context) *mocksauth.Auth {
 	r.app.EXPECT().MakeAuth(ctx).Return(mockAuth)
 
 	return mockAuth
+}
+
+func (r *factory) Broadcast() *mocksbroadcasting.Broadcast {
+	mockBroadcast := &mocksbroadcasting.Broadcast{}
+	r.app.EXPECT().MakeBroadcast().Return(mockBroadcast)
+
+	return mockBroadcast
 }
 
 func (r *factory) Cache() *mockscache.Cache {
@@ -178,6 +187,13 @@ func (r *factory) Mail() *mocksmail.Mail {
 	r.app.EXPECT().MakeMail().Return(mockMail)
 
 	return mockMail
+}
+
+func (r *factory) Notification() *mocksnotification.Manager {
+	mockNotification := &mocksnotification.Manager{}
+	r.app.EXPECT().MakeNotification().Return(mockNotification)
+
+	return mockNotification
 }
 
 func (r *factory) Orm() *mocksorm.Orm {

@@ -6,6 +6,7 @@ const (
 	AI           = "AI"
 	Artisan      = "Artisan"
 	Auth         = "Auth"
+	Broadcast    = "Broadcast"
 	Cache        = "Cache"
 	Config       = "Config"
 	Crypt        = "Crypt"
@@ -39,6 +40,7 @@ var FacadeToBinding = map[string]string{
 	AI:           binding.AI,
 	Artisan:      binding.Artisan,
 	Auth:         binding.Auth,
+	Broadcast:    binding.Broadcast,
 	Cache:        binding.Cache,
 	Config:       binding.Config,
 	Crypt:        binding.Crypt,

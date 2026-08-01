@@ -2,9 +2,11 @@ package db
 
 import (
 	"context"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 	contractsdb "github.com/goravel/framework/contracts/database/db"
@@ -64,4 +66,35 @@ func TestNewTx_UsesSharedInstrument(t *testing.T) {
 
 	assert.Equal(t, instrument, tx.instrument)
 	assert.NotEqual(t, contractsdb.TxBuilder(mockTxBuilder), tx.txBuilder)
+}
+
+func TestConnection_ConcurrentSafe(t *testing.T) {
+	child := &DB{}
+	cache := &queriesCache{m: map[string]contractsdb.DB{
+		"test": child,
+	}}
+	child.queries = cache
+
+	db := &DB{queries: cache}
+
+	var wg sync.WaitGroup
+	n := 100
+	results := make([]contractsdb.DB, n)
+
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			results[idx] = db.Connection("test")
+		}(i)
+	}
+	wg.Wait()
+
+	for i, result := range results {
+		require.NotNil(t, result, "goroutine %d got nil", i)
+		assert.Same(t, child, result, "goroutine %d got unexpected result", i)
+		resultDB, ok := result.(*DB)
+		require.True(t, ok, "goroutine %d: result is not *DB", i)
+		assert.Same(t, cache, resultDB.queries, "goroutine %d: child queries not aliased", i)
+	}
 }
