@@ -111,7 +111,9 @@ func (a *Application) Channel(pattern string, callback broadcasting.ChannelAuthF
 // ShouldBroadcastNow with BroadcastNow()==true, or when no queue is
 // available) ctx bounds the driver call. In the asynchronous path ctx is not
 // propagated across the queue boundary; the worker synthesizes a new context,
-// optionally bounded by ShouldBroadcastWithTimeout.
+// optionally bounded by ShouldBroadcastWithTimeout. The retry policy
+// (BroadcastTries/BroadcastBackoff) is captured from the event's optional
+// interfaces and enforced by the BroadcastJob's ShouldRetry at execution time.
 func (a *Application) Dispatch(ctx context.Context, event broadcasting.ShouldBroadcast) error {
 	if !event.BroadcastWhen() {
 		return nil
@@ -137,6 +139,22 @@ func (a *Application) Dispatch(ctx context.Context, event broadcasting.ShouldBro
 	}
 	if withTimeout, ok := event.(broadcasting.ShouldBroadcastWithTimeout); ok && withTimeout.BroadcastTimeout() > 0 {
 		item.Timeout = withTimeout.BroadcastTimeout().Milliseconds()
+	}
+	if withTries, ok := event.(broadcasting.ShouldBroadcastWithTries); ok && withTries.BroadcastTries() > 0 {
+		item.Tries = withTries.BroadcastTries()
+	}
+	// Backoff only takes effect when retries exist, so it is serialized only
+	// alongside a positive Tries value.
+	if item.Tries > 0 {
+		if withBackoff, ok := event.(broadcasting.ShouldBroadcastWithBackoff); ok {
+			backoff := withBackoff.BroadcastBackoff()
+			if len(backoff) > 0 {
+				item.Backoff = make([]int64, len(backoff))
+				for i, d := range backoff {
+					item.Backoff[i] = d.Milliseconds()
+				}
+			}
+		}
 	}
 
 	if now, ok := event.(broadcasting.ShouldBroadcastNow); ok && now.BroadcastNow() {
@@ -348,6 +366,8 @@ type broadcastItem struct {
 	Payload     map[string]any `json:"payload"`
 	Connections []string       `json:"connections"`
 	Timeout     int64          `json:"timeout,omitempty"`
+	Tries       int            `json:"tries,omitempty"`
+	Backoff     []int64        `json:"backoff,omitempty"` // per-attempt delay in ms
 }
 
 func channelNames(channels []broadcasting.Channel) []string {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"slices"
 	"testing"
 	"time"
 
@@ -33,6 +34,8 @@ type mockBroadcastEvent struct {
 	broadcastQueueConnection string
 	broadcastDelay           time.Time
 	broadcastTimeout         time.Duration
+	broadcastTries           int
+	broadcastBackoff         []time.Duration
 }
 
 func (e *mockBroadcastEvent) BroadcastOn() []broadcasting.Channel { return e.broadcastOn }
@@ -44,6 +47,8 @@ func (e *mockBroadcastEvent) BroadcastConnections() []string      { return e.bro
 func (e *mockBroadcastEvent) BroadcastQueueConnection() string    { return e.broadcastQueueConnection }
 func (e *mockBroadcastEvent) BroadcastDelay() time.Time           { return e.broadcastDelay }
 func (e *mockBroadcastEvent) BroadcastTimeout() time.Duration     { return e.broadcastTimeout }
+func (e *mockBroadcastEvent) BroadcastTries() int                 { return e.broadcastTries }
+func (e *mockBroadcastEvent) BroadcastBackoff() []time.Duration   { return e.broadcastBackoff }
 
 type mockBroadcastNowEvent struct {
 	*broadcasting.Channel
@@ -60,6 +65,21 @@ func (e *mockBroadcastNowEvent) BroadcastWith() map[string]any       { return e.
 func (e *mockBroadcastNowEvent) BroadcastWhen() bool                 { return e.broadcastWhen }
 func (e *mockBroadcastNowEvent) BroadcastConnections() []string      { return e.broadcastConnections }
 func (e *mockBroadcastNowEvent) BroadcastNow() bool                  { return true }
+
+// plainBroadcastEvent implements only broadcasting.ShouldBroadcast, so the
+// ShouldBroadcastWithTries/ShouldBroadcastWithBackoff type assertions in
+// Dispatch take the ok == false branch.
+type plainBroadcastEvent struct {
+	broadcastOn   []broadcasting.Channel
+	broadcastAs   string
+	broadcastWith map[string]any
+	broadcastWhen bool
+}
+
+func (e *plainBroadcastEvent) BroadcastOn() []broadcasting.Channel { return e.broadcastOn }
+func (e *plainBroadcastEvent) BroadcastAs() string                 { return e.broadcastAs }
+func (e *plainBroadcastEvent) BroadcastWith() map[string]any       { return e.broadcastWith }
+func (e *plainBroadcastEvent) BroadcastWhen() bool                 { return e.broadcastWhen }
 
 func setupMockConfig(t *testing.T, defaultConn string) *mocksconfig.Config {
 	mockConfig := mocksconfig.NewConfig(t)
@@ -315,6 +335,111 @@ func TestApplication_Dispatch(t *testing.T) {
 			broadcastWith:    map[string]any{"key": "value"},
 			broadcastWhen:    true,
 			broadcastTimeout: 30 * time.Second,
+		}
+
+		err := app.Dispatch(context.Background(), event)
+		assert.NoError(t, err)
+	})
+
+	t.Run("dispatch with tries and backoff", func(t *testing.T) {
+		mockCf := setupMockConfig(t, "")
+		mockQ := mocksqueue.NewQueue(t)
+		mockPJ := mocksqueue.NewPendingJob(t)
+
+		mockQ.EXPECT().Job(
+			mock.MatchedBy(func(j *BroadcastJob) bool { return j.Signature() == "goravel_broadcast" }),
+			mock.MatchedBy(func(args []queue.Arg) bool {
+				if len(args) != 1 || args[0].Type != "string" {
+					return false
+				}
+				var item broadcastItem
+				if err := json.Unmarshal([]byte(args[0].Value.(string)), &item); err != nil {
+					return false
+				}
+				return item.Tries == 5 && slices.Equal(item.Backoff, []int64{1000, 2000, 5000})
+			}),
+		).Return(mockPJ).Once()
+		mockPJ.EXPECT().Dispatch().Return(nil).Once()
+
+		app := NewApplication(mockCf, mockLog, mockQ, nil)
+
+		event := &mockBroadcastEvent{
+			broadcastOn:      []broadcasting.Channel{{Name: "test-channel"}},
+			broadcastAs:      "test.event",
+			broadcastWith:    map[string]any{"key": "value"},
+			broadcastWhen:    true,
+			broadcastTries:   5,
+			broadcastBackoff: []time.Duration{1 * time.Second, 2 * time.Second, 5 * time.Second},
+		}
+
+		err := app.Dispatch(context.Background(), event)
+		assert.NoError(t, err)
+	})
+
+	t.Run("dispatch with plain event serializes no retry policy", func(t *testing.T) {
+		mockCf := setupMockConfig(t, "")
+		mockQ := mocksqueue.NewQueue(t)
+		mockPJ := mocksqueue.NewPendingJob(t)
+
+		mockQ.EXPECT().Job(
+			mock.MatchedBy(func(j *BroadcastJob) bool { return j.Signature() == "goravel_broadcast" }),
+			mock.MatchedBy(func(args []queue.Arg) bool {
+				if len(args) != 1 || args[0].Type != "string" {
+					return false
+				}
+				var item broadcastItem
+				if err := json.Unmarshal([]byte(args[0].Value.(string)), &item); err != nil {
+					return false
+				}
+				return item.Tries == 0 && item.Backoff == nil
+			}),
+		).Return(mockPJ).Once()
+		mockPJ.EXPECT().Dispatch().Return(nil).Once()
+
+		app := NewApplication(mockCf, mockLog, mockQ, nil)
+
+		event := &plainBroadcastEvent{
+			broadcastOn:   []broadcasting.Channel{{Name: "test-channel"}},
+			broadcastAs:   "test.event",
+			broadcastWith: map[string]any{"key": "value"},
+			broadcastWhen: true,
+		}
+
+		err := app.Dispatch(context.Background(), event)
+		assert.NoError(t, err)
+	})
+
+	t.Run("dispatch with backoff but no tries suppresses backoff", func(t *testing.T) {
+		mockCf := setupMockConfig(t, "")
+		mockQ := mocksqueue.NewQueue(t)
+		mockPJ := mocksqueue.NewPendingJob(t)
+
+		mockQ.EXPECT().Job(
+			mock.MatchedBy(func(j *BroadcastJob) bool { return j.Signature() == "goravel_broadcast" }),
+			mock.MatchedBy(func(args []queue.Arg) bool {
+				if len(args) != 1 || args[0].Type != "string" {
+					return false
+				}
+				var item broadcastItem
+				if err := json.Unmarshal([]byte(args[0].Value.(string)), &item); err != nil {
+					return false
+				}
+				return item.Tries == 0 && item.Backoff == nil
+			}),
+		).Return(mockPJ).Once()
+		mockPJ.EXPECT().Dispatch().Return(nil).Once()
+
+		app := NewApplication(mockCf, mockLog, mockQ, nil)
+
+		// Implements ShouldBroadcastWithBackoff with a non-empty backoff but
+		// no BroadcastTries: backoff only takes effect with retries, so the
+		// serialized payload must not carry it.
+		event := &mockBroadcastEvent{
+			broadcastOn:      []broadcasting.Channel{{Name: "test-channel"}},
+			broadcastAs:      "test.event",
+			broadcastWith:    map[string]any{"key": "value"},
+			broadcastWhen:    true,
+			broadcastBackoff: []time.Duration{1 * time.Second},
 		}
 
 		err := app.Dispatch(context.Background(), event)
