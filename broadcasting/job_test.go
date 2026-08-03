@@ -225,10 +225,10 @@ func TestBroadcastJob_ShouldRetry(t *testing.T) {
 			wantD:   2 * time.Second,
 		},
 		{
-			name:    "backoff with attempt 0 does not panic",
+			name:    "backoff with attempt 0 is single-shot fallback",
 			payload: marshalItem(4, []int64{1000, 2000}),
 			attempt: 0,
-			want:    true,
+			want:    false,
 			wantD:   0,
 		},
 		{

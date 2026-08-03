@@ -2,6 +2,7 @@ package queue
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -111,6 +112,79 @@ func (s *DatabaseReservedJobTestSuite) TestDelete() {
 			err := databsaeReservedJob.Delete()
 
 			s.Equal(test.expectedError, err)
+		})
+	}
+}
+
+func (s *DatabaseReservedJobTestSuite) TestAttempts() {
+	reservedJob := &DatabaseReservedJob{
+		job: &models.Job{
+			Attempts: 3,
+		},
+	}
+
+	s.Equal(3, reservedJob.Attempts())
+}
+
+func (s *DatabaseReservedJobTestSuite) TestRelease() {
+	now := carbon.Now()
+	carbon.SetTestNow(now)
+	defer carbon.ClearTestNow()
+
+	tests := []struct {
+		name          string
+		delay         time.Duration
+		updateError   error
+		expectedError error
+	}{
+		{
+			name:          "happy path without delay",
+			delay:         0,
+			expectedError: nil,
+		},
+		{
+			name:          "happy path with delay",
+			delay:         5 * time.Second,
+			expectedError: nil,
+		},
+		{
+			name:          "error",
+			delay:         0,
+			updateError:   assert.AnError,
+			expectedError: assert.AnError,
+		},
+	}
+
+	for _, test := range tests {
+		s.Run(test.name, func() {
+			id := uint(1)
+			mockQuery := mocksdb.NewQuery(s.T())
+			s.mockDB.EXPECT().Table(s.jobsTable).Return(mockQuery).Once()
+			mockQuery.EXPECT().Where("id", id).Return(mockQuery).Once()
+
+			availableAt := now
+			if test.delay > 0 {
+				availableAt = now.Copy().AddSeconds(int(test.delay.Seconds()))
+			}
+			mockQuery.EXPECT().Update(map[string]any{
+				"reserved_at":  nil,
+				"available_at": carbon.NewDateTime(availableAt),
+			}).Return(nil, test.updateError).Once()
+
+			reservedJob := &DatabaseReservedJob{
+				db:        s.mockDB,
+				job:       &models.Job{ID: id, ReservedAt: carbon.NewDateTime(now)},
+				jobsTable: s.jobsTable,
+			}
+
+			err := reservedJob.Release(test.delay)
+
+			s.Equal(test.expectedError, err)
+			if test.expectedError == nil {
+				s.Nil(reservedJob.job.ReservedAt)
+			} else {
+				s.NotNil(reservedJob.job.ReservedAt)
+			}
 		})
 	}
 }

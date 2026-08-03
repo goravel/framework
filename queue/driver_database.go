@@ -74,12 +74,9 @@ func (r *Database) Pop(queue string) (contractsqueue.ReservedJob, error) {
 		if err := tx.Table(r.jobsTable).LockForUpdate().Where("queue", queue).Where(func(q contractsdb.Query) contractsdb.Query {
 			return q.Where(func(q1 contractsdb.Query) contractsdb.Query {
 				return r.isAvailable(q1)
+			}).OrWhere(func(q1 contractsdb.Query) contractsdb.Query {
+				return r.isReservedButExpired(q1)
 			})
-
-			// TODO: Add the retry logic in another PR
-			// .OrWhere(func(q1 contractsdb.Query) contractsdb.Query {
-			// 	return r.isReservedButExpired(q1)
-			// })
 		}).OrderBy("id").First(&job); err != nil {
 			return err
 		}
@@ -142,7 +139,10 @@ func (r *Database) isAvailable(query contractsdb.Query) contractsdb.Query {
 	return query.WhereNull("reserved_at").Where("available_at <= ?", carbon.Now())
 }
 
-// TODO: Add the retry logic in another PR
-// func (r *Database) isReservedButExpired(query contractsdb.Query) contractsdb.Query {
-// 	return query.Where("reserved_at", "<=", carbon.Now().AddSeconds(r.retryAfter))
-// }
+// isReservedButExpired matches jobs whose reservation has expired, i.e. the
+// worker that reserved them crashed without releasing or deleting them.
+// retry_after must exceed the maximum job runtime to avoid double-processing
+// long-running jobs (same contract as Laravel).
+func (r *Database) isReservedButExpired(query contractsdb.Query) contractsdb.Query {
+	return query.Where("reserved_at", "<=", carbon.Now().SubSeconds(r.retryAfter))
+}

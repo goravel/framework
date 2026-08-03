@@ -327,3 +327,17 @@ func (s *DatabaseTestSuite) TestIsAvailable() {
 
 	s.Equal(mockQuery, result)
 }
+
+func (s *DatabaseTestSuite) TestIsReservedButExpired() {
+	now := carbon.Now()
+	carbon.SetTestNow(now)
+	defer carbon.ClearTestNow()
+
+	s.database.retryAfter = 60
+	mockQuery := mocksdb.NewQuery(s.T())
+	mockQuery.EXPECT().Where("reserved_at", "<=", carbon.Now().SubSeconds(60)).Return(mockQuery).Once()
+
+	result := s.database.isReservedButExpired(mockQuery)
+
+	s.Equal(mockQuery, result)
+}

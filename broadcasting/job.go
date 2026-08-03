@@ -119,7 +119,10 @@ func (j *BroadcastJob) ShouldRetry(err error, attempt int) (retryable bool, dela
 		return false, 0
 	}
 	if attempt < 1 {
-		return true, 0
+		// Defensive: attempts come from the pop-incremented reservation (or a
+		// chain counter starting at 1), so this is unreachable in practice.
+		// Returning false avoids an accidental infinite retry loop.
+		return false, 0
 	}
 	if attempt >= item.Tries {
 		return false, 0
