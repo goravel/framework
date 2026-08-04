@@ -49,13 +49,12 @@ func (r *DatabaseReservedJob) Delete() error {
 func (r *DatabaseReservedJob) Release(delay time.Duration) error {
 	availableAt := carbon.Now()
 	if delay > 0 {
-		// Sub-second delays are computed correctly: time.Time.Add preserves the
-		// full Duration (e.g. 100ms -> 100ms offset). The old int() cast dropped
-		// sub-second delays entirely (e.g., 100ms -> int(0.1) -> 0), releasing
-		// the job immediately. Note that carbon.NewDateTime formats to seconds
-		// precision, so fractional seconds are still trimmed at the datetime
-		// boundary before they reach the database; column-level precision is a
-		// separate concern.
+		// Sub-second delays are preserved: time.Time.Add keeps the full
+		// Duration (the old int() cast dropped them, releasing the job
+		// immediately), and the value is persisted as a full-precision
+		// time.Time. SQLite/PostgreSQL store that as-is; MySQL truncates at
+		// the column level unless it has fractional precision — the jobs table
+		// now uses `DateTimeTz(column, 3)`; existing tables need `datetime(3)`.
 		availableAt = carbon.FromStdTime(availableAt.StdTime().Add(delay))
 	}
 

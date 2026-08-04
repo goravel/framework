@@ -78,9 +78,9 @@ func (r *M20210101000001CreateJobsTable) Up() error {
 			table.String("queue")
 			table.LongText("payload")
 			table.UnsignedTinyInteger("attempts").Default(0)
-			table.DateTimeTz("reserved_at").Nullable()
-			table.DateTimeTz("available_at")
-			table.DateTimeTz("created_at").UseCurrent()
+			table.DateTimeTz("reserved_at", 3).Nullable()
+			table.DateTimeTz("available_at", 3)
+			table.DateTimeTz("created_at", 3).UseCurrent()
 			table.Index("queue")
 		}); err != nil {
 			return err
