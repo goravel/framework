@@ -127,7 +127,14 @@ func (s *DatabaseReservedJobTestSuite) TestAttempts() {
 }
 
 func (s *DatabaseReservedJobTestSuite) TestRelease() {
-	now := carbon.Now()
+	// Controlled now with a fractional second so sub-second delays are
+	// observable: NewDateTime formats to seconds precision, so a 100ms delay
+	// from a 950ms second rolls into the next second (12:00:01). Under the old
+	// int() cast (100ms -> int(0.1) -> 0) the job was released in the current
+	// second, so these expectations genuinely guard against regression of that
+	// bug. DB-level fractional precision is a separate concern governed by the
+	// column type.
+	now := carbon.FromStdTime(time.Date(2026, 8, 4, 12, 0, 0, 950_000_000, time.UTC))
 	carbon.SetTestNow(now)
 	defer carbon.ClearTestNow()
 
@@ -148,6 +155,16 @@ func (s *DatabaseReservedJobTestSuite) TestRelease() {
 			expectedError: nil,
 		},
 		{
+			name:          "happy path with sub-second delay",
+			delay:         100 * time.Millisecond,
+			expectedError: nil,
+		},
+		{
+			name:          "happy path with mixed second and sub-second delay",
+			delay:         1500 * time.Millisecond,
+			expectedError: nil,
+		},
+		{
 			name:          "error",
 			delay:         0,
 			updateError:   assert.AnError,
@@ -164,7 +181,7 @@ func (s *DatabaseReservedJobTestSuite) TestRelease() {
 
 			availableAt := now
 			if test.delay > 0 {
-				availableAt = now.Copy().AddSeconds(int(test.delay.Seconds()))
+				availableAt = carbon.FromStdTime(now.StdTime().Add(test.delay))
 			}
 			mockQuery.EXPECT().Update(map[string]any{
 				"reserved_at":  nil,

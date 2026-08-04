@@ -49,10 +49,14 @@ func (r *DatabaseReservedJob) Delete() error {
 func (r *DatabaseReservedJob) Release(delay time.Duration) error {
 	availableAt := carbon.Now()
 	if delay > 0 {
-		// Sub-second delays are rounded down to whole seconds: the jobs
-		// table stores available_at as a datetime, so sub-second backoff
-		// granularity is not supported.
-		availableAt = availableAt.AddSeconds(int(delay.Seconds()))
+		// Sub-second delays are computed correctly: time.Time.Add preserves the
+		// full Duration (e.g. 100ms -> 100ms offset). The old int() cast dropped
+		// sub-second delays entirely (e.g., 100ms -> int(0.1) -> 0), releasing
+		// the job immediately. Note that carbon.NewDateTime formats to seconds
+		// precision, so fractional seconds are still trimmed at the datetime
+		// boundary before they reach the database; column-level precision is a
+		// separate concern.
+		availableAt = carbon.FromStdTime(availableAt.StdTime().Add(delay))
 	}
 
 	_, err := r.db.Table(r.jobsTable).Where("id", r.job.ID).Update(map[string]any{
