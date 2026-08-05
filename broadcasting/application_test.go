@@ -25,7 +25,7 @@ import (
 )
 
 type mockBroadcastEvent struct {
-	broadcastOn              []broadcasting.Channel
+	broadcastOn              []string
 	broadcastAs              string
 	broadcastWith            map[string]any
 	broadcastWhen            bool
@@ -38,48 +38,47 @@ type mockBroadcastEvent struct {
 	broadcastBackoff         []time.Duration
 }
 
-func (e *mockBroadcastEvent) BroadcastOn() []broadcasting.Channel { return e.broadcastOn }
-func (e *mockBroadcastEvent) BroadcastAs() string                 { return e.broadcastAs }
-func (e *mockBroadcastEvent) BroadcastWith() map[string]any       { return e.broadcastWith }
-func (e *mockBroadcastEvent) BroadcastWhen() bool                 { return e.broadcastWhen }
-func (e *mockBroadcastEvent) BroadcastQueue() string              { return e.broadcastQueue }
-func (e *mockBroadcastEvent) BroadcastConnections() []string      { return e.broadcastConnections }
-func (e *mockBroadcastEvent) BroadcastQueueConnection() string    { return e.broadcastQueueConnection }
-func (e *mockBroadcastEvent) BroadcastDelay() time.Time           { return e.broadcastDelay }
-func (e *mockBroadcastEvent) BroadcastTimeout() time.Duration     { return e.broadcastTimeout }
-func (e *mockBroadcastEvent) BroadcastTries() int                 { return e.broadcastTries }
-func (e *mockBroadcastEvent) BroadcastBackoff() []time.Duration   { return e.broadcastBackoff }
+func (e *mockBroadcastEvent) BroadcastOn() []string             { return e.broadcastOn }
+func (e *mockBroadcastEvent) BroadcastAs() string               { return e.broadcastAs }
+func (e *mockBroadcastEvent) BroadcastWith() map[string]any     { return e.broadcastWith }
+func (e *mockBroadcastEvent) BroadcastWhen() bool               { return e.broadcastWhen }
+func (e *mockBroadcastEvent) BroadcastQueue() string            { return e.broadcastQueue }
+func (e *mockBroadcastEvent) BroadcastConnections() []string    { return e.broadcastConnections }
+func (e *mockBroadcastEvent) BroadcastQueueConnection() string  { return e.broadcastQueueConnection }
+func (e *mockBroadcastEvent) BroadcastDelay() time.Time         { return e.broadcastDelay }
+func (e *mockBroadcastEvent) BroadcastTimeout() time.Duration   { return e.broadcastTimeout }
+func (e *mockBroadcastEvent) BroadcastTries() int               { return e.broadcastTries }
+func (e *mockBroadcastEvent) BroadcastBackoff() []time.Duration { return e.broadcastBackoff }
 
 type mockBroadcastNowEvent struct {
-	*broadcasting.Channel
-	broadcastOn          []broadcasting.Channel
+	broadcastOn          []string
 	broadcastAs          string
 	broadcastWith        map[string]any
 	broadcastWhen        bool
 	broadcastConnections []string
 }
 
-func (e *mockBroadcastNowEvent) BroadcastOn() []broadcasting.Channel { return e.broadcastOn }
-func (e *mockBroadcastNowEvent) BroadcastAs() string                 { return e.broadcastAs }
-func (e *mockBroadcastNowEvent) BroadcastWith() map[string]any       { return e.broadcastWith }
-func (e *mockBroadcastNowEvent) BroadcastWhen() bool                 { return e.broadcastWhen }
-func (e *mockBroadcastNowEvent) BroadcastConnections() []string      { return e.broadcastConnections }
-func (e *mockBroadcastNowEvent) BroadcastNow() bool                  { return true }
+func (e *mockBroadcastNowEvent) BroadcastOn() []string          { return e.broadcastOn }
+func (e *mockBroadcastNowEvent) BroadcastAs() string            { return e.broadcastAs }
+func (e *mockBroadcastNowEvent) BroadcastWith() map[string]any  { return e.broadcastWith }
+func (e *mockBroadcastNowEvent) BroadcastWhen() bool            { return e.broadcastWhen }
+func (e *mockBroadcastNowEvent) BroadcastConnections() []string { return e.broadcastConnections }
+func (e *mockBroadcastNowEvent) BroadcastNow() bool             { return true }
 
 // plainBroadcastEvent implements only broadcasting.ShouldBroadcast, so the
 // ShouldBroadcastWithTries/ShouldBroadcastWithBackoff type assertions in
 // Dispatch take the ok == false branch.
 type plainBroadcastEvent struct {
-	broadcastOn   []broadcasting.Channel
+	broadcastOn   []string
 	broadcastAs   string
 	broadcastWith map[string]any
 	broadcastWhen bool
 }
 
-func (e *plainBroadcastEvent) BroadcastOn() []broadcasting.Channel { return e.broadcastOn }
-func (e *plainBroadcastEvent) BroadcastAs() string                 { return e.broadcastAs }
-func (e *plainBroadcastEvent) BroadcastWith() map[string]any       { return e.broadcastWith }
-func (e *plainBroadcastEvent) BroadcastWhen() bool                 { return e.broadcastWhen }
+func (e *plainBroadcastEvent) BroadcastOn() []string         { return e.broadcastOn }
+func (e *plainBroadcastEvent) BroadcastAs() string           { return e.broadcastAs }
+func (e *plainBroadcastEvent) BroadcastWith() map[string]any { return e.broadcastWith }
+func (e *plainBroadcastEvent) BroadcastWhen() bool           { return e.broadcastWhen }
 
 func setupMockConfig(t *testing.T, defaultConn string) *mocksconfig.Config {
 	mockConfig := mocksconfig.NewConfig(t)
@@ -112,11 +111,11 @@ func TestApplication_Channel(t *testing.T) {
 			return true, nil
 		})
 
-		authorized, _ := app.resolveAuth(context.Background(),"orders.123", nil)
+		authorized, _ := app.resolveAuth(context.Background(), "orders.123", nil)
 		assert.True(t, authorized)
-		authorized, _ = app.resolveAuth(context.Background(),"ordersA123", nil)
+		authorized, _ = app.resolveAuth(context.Background(), "ordersA123", nil)
 		assert.False(t, authorized)
-		authorized, _ = app.resolveAuth(context.Background(),"unknown", nil)
+		authorized, _ = app.resolveAuth(context.Background(), "unknown", nil)
 		assert.False(t, authorized)
 	})
 
@@ -126,9 +125,9 @@ func TestApplication_Channel(t *testing.T) {
 			return params["orderId"] == "123", nil
 		})
 
-		authorized, _ := app.resolveAuth(context.Background(),"orders.123", map[string]any{"id": "1"})
+		authorized, _ := app.resolveAuth(context.Background(), "orders.123", map[string]any{"id": "1"})
 		assert.True(t, authorized)
-		authorized, _ = app.resolveAuth(context.Background(),"orders.456", map[string]any{"id": "1"})
+		authorized, _ = app.resolveAuth(context.Background(), "orders.456", map[string]any{"id": "1"})
 		assert.False(t, authorized)
 	})
 
@@ -138,7 +137,7 @@ func TestApplication_Channel(t *testing.T) {
 			return false, nil
 		})
 
-		authorized, _ := app.resolveAuth(context.Background(),"unknown-channel", map[string]any{"id": "1"})
+		authorized, _ := app.resolveAuth(context.Background(), "unknown-channel", map[string]any{"id": "1"})
 		assert.False(t, authorized)
 	})
 
@@ -148,9 +147,9 @@ func TestApplication_Channel(t *testing.T) {
 			return true, nil
 		})
 
-		authorized, _ := app.resolveAuth(context.Background(),"public-channel", nil)
+		authorized, _ := app.resolveAuth(context.Background(), "public-channel", nil)
 		assert.True(t, authorized)
-		authorized, _ = app.resolveAuth(context.Background(),"other-channel", nil)
+		authorized, _ = app.resolveAuth(context.Background(), "other-channel", nil)
 		assert.False(t, authorized)
 	})
 
@@ -163,7 +162,7 @@ func TestApplication_Channel(t *testing.T) {
 			return false, nil
 		})
 
-		authorized, _ := app.resolveAuth(context.Background(),"orders.special", nil)
+		authorized, _ := app.resolveAuth(context.Background(), "orders.special", nil)
 		assert.True(t, authorized)
 	})
 }
@@ -185,7 +184,7 @@ func TestApplication_Dispatch(t *testing.T) {
 		app := NewApplication(mockCf, mockLog, mockQ, nil)
 
 		event := &mockBroadcastEvent{
-			broadcastOn:   []broadcasting.Channel{{Name: "test-channel"}},
+			broadcastOn:   []string{"test-channel"},
 			broadcastAs:   "test.event",
 			broadcastWith: map[string]any{"key": "value"},
 			broadcastWhen: true,
@@ -202,7 +201,7 @@ func TestApplication_Dispatch(t *testing.T) {
 		app := NewApplication(mockCf, mockLog, mockQ, nil)
 
 		event := &mockBroadcastEvent{
-			broadcastOn:   []broadcasting.Channel{{Name: "test-channel"}},
+			broadcastOn:   []string{"test-channel"},
 			broadcastWhen: false,
 		}
 
@@ -217,7 +216,7 @@ func TestApplication_Dispatch(t *testing.T) {
 		app := NewApplication(mockCf, mockLog, mockQ, nil)
 
 		event := &mockBroadcastEvent{
-			broadcastOn:   []broadcasting.Channel{},
+			broadcastOn:   []string{},
 			broadcastWhen: true,
 		}
 
@@ -241,7 +240,7 @@ func TestApplication_Dispatch(t *testing.T) {
 		app := NewApplication(mockCf, mockLog, mockQ, nil)
 
 		event := &mockBroadcastEvent{
-			broadcastOn:              []broadcasting.Channel{{Name: "test-channel"}},
+			broadcastOn:              []string{"test-channel"},
 			broadcastAs:              "test.event",
 			broadcastWith:            map[string]any{"key": "value"},
 			broadcastWhen:            true,
@@ -269,7 +268,7 @@ func TestApplication_Dispatch(t *testing.T) {
 		app := NewApplication(mockCf, mockLog, mockQ, nil)
 
 		event := &mockBroadcastEvent{
-			broadcastOn:              []broadcasting.Channel{{Name: "test-channel"}},
+			broadcastOn:              []string{"test-channel"},
 			broadcastAs:              "test.event",
 			broadcastWith:            map[string]any{"key": "value"},
 			broadcastWhen:            true,
@@ -296,7 +295,7 @@ func TestApplication_Dispatch(t *testing.T) {
 		app := NewApplication(mockCf, mockLog, mockQ, nil)
 
 		event := &mockBroadcastEvent{
-			broadcastOn:    []broadcasting.Channel{{Name: "test-channel"}},
+			broadcastOn:    []string{"test-channel"},
 			broadcastAs:    "test.event",
 			broadcastWith:  map[string]any{"key": "value"},
 			broadcastWhen:  true,
@@ -330,7 +329,7 @@ func TestApplication_Dispatch(t *testing.T) {
 		app := NewApplication(mockCf, mockLog, mockQ, nil)
 
 		event := &mockBroadcastEvent{
-			broadcastOn:      []broadcasting.Channel{{Name: "test-channel"}},
+			broadcastOn:      []string{"test-channel"},
 			broadcastAs:      "test.event",
 			broadcastWith:    map[string]any{"key": "value"},
 			broadcastWhen:    true,
@@ -364,7 +363,7 @@ func TestApplication_Dispatch(t *testing.T) {
 		app := NewApplication(mockCf, mockLog, mockQ, nil)
 
 		event := &mockBroadcastEvent{
-			broadcastOn:      []broadcasting.Channel{{Name: "test-channel"}},
+			broadcastOn:      []string{"test-channel"},
 			broadcastAs:      "test.event",
 			broadcastWith:    map[string]any{"key": "value"},
 			broadcastWhen:    true,
@@ -399,7 +398,7 @@ func TestApplication_Dispatch(t *testing.T) {
 		app := NewApplication(mockCf, mockLog, mockQ, nil)
 
 		event := &plainBroadcastEvent{
-			broadcastOn:   []broadcasting.Channel{{Name: "test-channel"}},
+			broadcastOn:   []string{"test-channel"},
 			broadcastAs:   "test.event",
 			broadcastWith: map[string]any{"key": "value"},
 			broadcastWhen: true,
@@ -435,7 +434,7 @@ func TestApplication_Dispatch(t *testing.T) {
 		// no BroadcastTries: backoff only takes effect with retries, so the
 		// serialized payload must not carry it.
 		event := &mockBroadcastEvent{
-			broadcastOn:      []broadcasting.Channel{{Name: "test-channel"}},
+			broadcastOn:      []string{"test-channel"},
 			broadcastAs:      "test.event",
 			broadcastWith:    map[string]any{"key": "value"},
 			broadcastWhen:    true,
@@ -460,7 +459,7 @@ func TestApplication_Dispatch(t *testing.T) {
 		app := NewApplication(mockCf, mockLog, mockQ, nil)
 
 		event := &mockBroadcastEvent{
-			broadcastOn:   []broadcasting.Channel{{Name: "test-channel"}},
+			broadcastOn:   []string{"test-channel"},
 			broadcastAs:   "",
 			broadcastWith: map[string]any{"key": "value"},
 			broadcastWhen: true,
@@ -477,7 +476,7 @@ func TestApplication_Dispatch(t *testing.T) {
 		app := NewApplication(mockCf, mockLog, mockQ, nil)
 
 		event := &mockBroadcastNowEvent{
-			broadcastOn:          []broadcasting.Channel{{Name: "test-channel"}},
+			broadcastOn:          []string{"test-channel"},
 			broadcastAs:          "test.event",
 			broadcastWith:        map[string]any{"key": "value"},
 			broadcastWhen:        true,
@@ -495,7 +494,7 @@ func TestApplication_Dispatch(t *testing.T) {
 		app := NewApplication(mockCf, mockLog, mockQ, nil)
 
 		event := &mockBroadcastNowEvent{
-			broadcastOn:          []broadcasting.Channel{{Name: "test-channel"}},
+			broadcastOn:          []string{"test-channel"},
 			broadcastAs:          "test.event",
 			broadcastWith:        map[string]any{"key": "value"},
 			broadcastWhen:        true,
@@ -513,7 +512,7 @@ func TestApplication_Dispatch(t *testing.T) {
 		app := NewApplication(mockCf, mockLog, mockQ, nil)
 
 		event := &mockBroadcastNowEvent{
-			broadcastOn:          []broadcasting.Channel{{Name: "test-channel"}},
+			broadcastOn:          []string{"test-channel"},
 			broadcastAs:          "",
 			broadcastWith:        map[string]any{},
 			broadcastWhen:        true,
@@ -536,19 +535,19 @@ func TestComputeAuthSignature(t *testing.T) {
 
 func TestChannelHelpers(t *testing.T) {
 	public := PublicChannel("my-channel")
-	assert.Equal(t, "my-channel", public.Name)
+	assert.Equal(t, "my-channel", public)
 	assert.False(t, IsPrivateChannel(public))
 	assert.False(t, IsPresenceChannel(public))
 	assert.Equal(t, "my-channel", ChannelBaseName(public))
 
 	private := PrivateChannel("orders.123")
-	assert.Equal(t, "private-orders.123", private.Name)
+	assert.Equal(t, "private-orders.123", private)
 	assert.True(t, IsPrivateChannel(private))
 	assert.False(t, IsPresenceChannel(private))
 	assert.Equal(t, "orders.123", ChannelBaseName(private))
 
 	presence := PresenceChannel("chat")
-	assert.Equal(t, "presence-chat", presence.Name)
+	assert.Equal(t, "presence-chat", presence)
 	assert.False(t, IsPrivateChannel(presence))
 	assert.True(t, IsPresenceChannel(presence))
 	assert.Equal(t, "chat", ChannelBaseName(presence))

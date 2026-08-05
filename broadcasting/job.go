@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/goravel/framework/contracts/broadcasting"
 	contractsconfig "github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
@@ -78,11 +77,6 @@ func (j *BroadcastJob) Handle(args ...any) error {
 		return err
 	}
 
-	channels := make([]broadcasting.Channel, len(item.Channels))
-	for i, name := range item.Channels {
-		channels[i] = broadcasting.Channel{Name: name}
-	}
-
 	conns := item.Connections
 	if len(conns) == 0 {
 		conns = []string{cfg.DefaultConnection()}
@@ -91,7 +85,7 @@ func (j *BroadcastJob) Handle(args ...any) error {
 	ctx, cancel := withTimeout(context.Background(), item.Timeout)
 	defer cancel()
 
-	if err := j.broadcastToConns(ctx, cfg, channels, item.Event, item.Payload, conns); err != nil {
+	if err := j.broadcastToConns(ctx, cfg, item.Channels, item.Event, item.Payload, conns); err != nil {
 		return err
 	}
 
@@ -135,7 +129,7 @@ func (j *BroadcastJob) ShouldRetry(err error, attempt int) (retryable bool, dela
 	return true, time.Duration(item.Backoff[idx]) * time.Millisecond
 }
 
-func (j *BroadcastJob) broadcastToConns(ctx context.Context, cfg *Config, channels []broadcasting.Channel, event string, payload map[string]any, conns []string) error {
+func (j *BroadcastJob) broadcastToConns(ctx context.Context, cfg *Config, channels []string, event string, payload map[string]any, conns []string) error {
 	for _, conn := range conns {
 		cfgConn, err := cfg.Connection(conn)
 		if err != nil {

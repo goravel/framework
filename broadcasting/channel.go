@@ -6,32 +6,36 @@ import (
 	"github.com/goravel/framework/contracts/broadcasting"
 )
 
-func PublicChannel(name string) broadcasting.Channel {
-	return broadcasting.Channel{Name: name}
+// PublicChannel returns the channel name unchanged. It is kept as a semantic
+// wrapper for readability and API stability, mirroring PrivateChannel and
+// PresenceChannel (and Laravel's channel constructors): callers write
+// broadcasting.PublicChannel("orders") instead of a bare "orders" string.
+func PublicChannel(name string) string {
+	return name
 }
 
-func PrivateChannel(name string) broadcasting.Channel {
-	return broadcasting.Channel{Name: broadcasting.ChannelPrefixPrivate + name}
+func PrivateChannel(name string) string {
+	return broadcasting.ChannelPrefixPrivate + name
 }
 
-func PresenceChannel(name string) broadcasting.Channel {
-	return broadcasting.Channel{Name: broadcasting.ChannelPrefixPresence + name}
+func PresenceChannel(name string) string {
+	return broadcasting.ChannelPrefixPresence + name
 }
 
-func IsPrivateChannel(c broadcasting.Channel) bool {
-	return strings.HasPrefix(c.Name, broadcasting.ChannelPrefixPrivate)
+func IsPrivateChannel(name string) bool {
+	return strings.HasPrefix(name, broadcasting.ChannelPrefixPrivate)
 }
 
-func IsPresenceChannel(c broadcasting.Channel) bool {
-	return strings.HasPrefix(c.Name, broadcasting.ChannelPrefixPresence)
+func IsPresenceChannel(name string) bool {
+	return strings.HasPrefix(name, broadcasting.ChannelPrefixPresence)
 }
 
-func ChannelBaseName(c broadcasting.Channel) string {
-	if IsPresenceChannel(c) {
-		return c.Name[len(broadcasting.ChannelPrefixPresence):]
+func ChannelBaseName(name string) string {
+	if IsPresenceChannel(name) {
+		return name[len(broadcasting.ChannelPrefixPresence):]
 	}
-	if IsPrivateChannel(c) {
-		return c.Name[len(broadcasting.ChannelPrefixPrivate):]
+	if IsPrivateChannel(name) {
+		return name[len(broadcasting.ChannelPrefixPrivate):]
 	}
-	return c.Name
+	return name
 }

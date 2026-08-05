@@ -110,13 +110,8 @@ func normalizePusherHost(host string, port int) string {
 	return host
 }
 
-func (d *PusherDriver) Broadcast(ctx context.Context, channels []broadcasting.Channel, event string, payload map[string]any) error {
+func (d *PusherDriver) Broadcast(ctx context.Context, channels []string, event string, payload map[string]any) error {
 	urlStr := fmt.Sprintf("%s/events", d.baseURL)
-
-	chanNames := make([]string, len(channels))
-	for i, ch := range channels {
-		chanNames[i] = ch.Name
-	}
 
 	dataJSON, err := json.Marshal(payload)
 	if err != nil {
@@ -125,7 +120,7 @@ func (d *PusherDriver) Broadcast(ctx context.Context, channels []broadcasting.Ch
 
 	body := map[string]any{
 		"name":     event,
-		"channels": chanNames,
+		"channels": channels,
 		"data":     string(dataJSON),
 	}
 	bodyBytes, err := json.Marshal(body)

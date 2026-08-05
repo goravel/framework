@@ -10,10 +10,6 @@ const (
 	ChannelPrefixPresence = "presence-"
 )
 
-type Channel struct {
-	Name string
-}
-
 type AuthResponse struct {
 	Auth        string `json:"auth"`
 	ChannelData string `json:"channel_data,omitempty"`
@@ -22,7 +18,7 @@ type AuthResponse struct {
 type ChannelAuthFunc func(ctx context.Context, userID any, channelName string, params map[string]string) (bool, any)
 
 type Driver interface {
-	Broadcast(ctx context.Context, channels []Channel, event string, payload map[string]any) error
+	Broadcast(ctx context.Context, channels []string, event string, payload map[string]any) error
 }
 
 type Broadcast interface {
@@ -31,7 +27,7 @@ type Broadcast interface {
 }
 
 type ShouldBroadcast interface {
-	BroadcastOn() []Channel
+	BroadcastOn() []string
 	BroadcastAs() string
 	BroadcastWith() map[string]any
 	BroadcastWhen() bool

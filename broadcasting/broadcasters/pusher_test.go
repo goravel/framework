@@ -148,7 +148,7 @@ func TestPusherDriver_Broadcast_Success(t *testing.T) {
 
 	err = driver.Broadcast(
 		context.Background(),
-		[]broadcasting.Channel{{Name: "my-channel"}},
+		[]string{"my-channel"},
 		"test-event",
 		map[string]any{"message": "hello"},
 	)
@@ -188,7 +188,7 @@ func TestPusherDriver_Broadcast_Error(t *testing.T) {
 
 	err = driver.Broadcast(
 		context.Background(),
-		[]broadcasting.Channel{{Name: "my-channel"}},
+		[]string{"my-channel"},
 		"test-event",
 		map[string]any{"message": "hello"},
 	)
