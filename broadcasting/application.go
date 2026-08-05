@@ -132,7 +132,7 @@ func (a *Application) Dispatch(ctx context.Context, event broadcasting.ShouldBro
 	conns := a.resolveConnections(event)
 
 	item := broadcastItem{
-		Channels:    channelNames(channels),
+		Channels:    channels,
 		Event:       eventName,
 		Payload:     event.BroadcastWith(),
 		Connections: conns,
@@ -191,12 +191,7 @@ func (a *Application) dispatchSync(ctx context.Context, item broadcastItem) erro
 			return err
 		}
 
-		channels := make([]broadcasting.Channel, len(item.Channels))
-		for i, name := range item.Channels {
-			channels[i] = broadcasting.Channel{Name: name}
-		}
-
-		if err := driver.Broadcast(ctx, channels, item.Event, item.Payload); err != nil {
+		if err := driver.Broadcast(ctx, item.Channels, item.Event, item.Payload); err != nil {
 			return err
 		}
 	}
@@ -240,8 +235,7 @@ func (a *Application) Authenticate(ctx contractshttp.Context) contractshttp.Resp
 		})
 	}
 
-	ch := broadcasting.Channel{Name: channelName}
-	if !IsPrivateChannel(ch) && !IsPresenceChannel(ch) {
+	if !IsPrivateChannel(channelName) && !IsPresenceChannel(channelName) {
 		return ctx.Response().Json(http.StatusOK, broadcasting.AuthResponse{})
 	}
 
@@ -276,7 +270,7 @@ func (a *Application) Authenticate(ctx contractshttp.Context) contractshttp.Resp
 		})
 	}
 
-	authorized, userInfo := a.resolveAuth(ctx, ChannelBaseName(ch), userID)
+	authorized, userInfo := a.resolveAuth(ctx, ChannelBaseName(channelName), userID)
 	if !authorized {
 		return ctx.Response().Json(http.StatusForbidden, contractshttp.Json{
 			"error": errors.BroadcastChannelUnauthorized.Args(channelName).Error(),
@@ -295,7 +289,7 @@ func (a *Application) Authenticate(ctx contractshttp.Context) contractshttp.Resp
 	}
 
 	var resp broadcasting.AuthResponse
-	if IsPresenceChannel(ch) {
+	if IsPresenceChannel(channelName) {
 		channelData, err := a.buildPresenceChannelData(userID, userInfo)
 		if err != nil {
 			return ctx.Response().Json(http.StatusInternalServerError, contractshttp.Json{"error": errors.BroadcastChannelDataMarshalFailed.Error()})
@@ -368,14 +362,6 @@ type broadcastItem struct {
 	Timeout     int64          `json:"timeout,omitempty"`
 	Tries       int            `json:"tries,omitempty"`
 	Backoff     []int64        `json:"backoff,omitempty"` // per-attempt delay in ms
-}
-
-func channelNames(channels []broadcasting.Channel) []string {
-	names := make([]string, len(channels))
-	for i, ch := range channels {
-		names[i] = ch.Name
-	}
-	return names
 }
 
 func computeAuthSignature(secret, socketID, channelName, channelData string) string {

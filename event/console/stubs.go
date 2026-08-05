@@ -22,11 +22,13 @@ func (receiver Stubs) EventBroadcast() string {
 
 import "github.com/goravel/framework/contracts/broadcasting"
 
+var _ broadcasting.ShouldBroadcast = (*DummyEvent)(nil)
+
 type DummyEvent struct {
 }
 
-func (receiver *DummyEvent) BroadcastOn() []broadcasting.Channel {
-	return []broadcasting.Channel{}
+func (receiver *DummyEvent) BroadcastOn() []string {
+	return []string{}
 }
 
 func (receiver *DummyEvent) BroadcastAs() string {
