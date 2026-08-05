@@ -17,6 +17,40 @@ func (receiver *DummyEvent) Handle(args []event.Arg) ([]event.Arg, error) {
 `
 }
 
+func (receiver Stubs) EventBroadcast() string {
+	return `package DummyPackage
+
+import "github.com/goravel/framework/contracts/broadcasting"
+
+type DummyEvent struct {
+}
+
+func (receiver *DummyEvent) BroadcastOn() []broadcasting.Channel {
+	return []broadcasting.Channel{}
+}
+
+func (receiver *DummyEvent) BroadcastAs() string {
+	return ""
+}
+
+func (receiver *DummyEvent) BroadcastWith() map[string]any {
+	return map[string]any{}
+}
+
+func (receiver *DummyEvent) BroadcastWhen() bool {
+	return true
+}
+`
+}
+
+func (receiver Stubs) EventBroadcastNow() string {
+	return receiver.EventBroadcast() + `
+func (receiver *DummyEvent) BroadcastNow() bool {
+	return true
+}
+`
+}
+
 func (receiver Stubs) Listener() string {
 	return `package DummyPackage
 
