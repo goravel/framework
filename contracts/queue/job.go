@@ -25,7 +25,14 @@ type PendingJob interface {
 }
 
 type ReservedJob interface {
+	// Attempts returns the number of times the job has been attempted so far.
+	Attempts() int
+	// Delete removes the job from the queue.
 	Delete() error
+	// Release makes the job available again after the given delay so it can
+	// be retried, incrementing attempts on the next pop.
+	Release(delay time.Duration) error
+	// Task returns the task to execute.
 	Task() Task
 }
 
