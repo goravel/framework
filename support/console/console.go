@@ -22,6 +22,18 @@ type Make struct {
 	root string
 }
 
+// MakeNames returns every name passed to a make:* command. When no positional
+// argument is provided it returns a single empty name so that NewMake falls back
+// to its interactive prompt, preserving the original single-name behavior.
+func MakeNames(ctx console.Context) []string {
+	names := ctx.Arguments()
+	if len(names) == 0 {
+		return []string{""}
+	}
+
+	return names
+}
+
 func NewMake(ctx console.Context, ttype, name, root string) (*Make, error) {
 	if name == "" {
 		var err error
