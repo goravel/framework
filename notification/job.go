@@ -2,6 +2,7 @@ package notification
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/goravel/framework/contracts/notification"
 	"github.com/goravel/framework/errors"
@@ -9,9 +10,11 @@ import (
 
 // dispatchItem is the plain, JSON-serializable unit queued per channel.
 type dispatchItem struct {
-	Channel string `json:"channel"`
-	Route   string `json:"route"`
-	Payload []byte `json:"payload"`
+	Channel        string `json:"channel"`
+	Route          string `json:"route"`
+	Payload        []byte `json:"payload"`
+	BackoffSeconds int    `json:"backoff_seconds,omitempty"`
+	RetryUntilUnix int64  `json:"retry_until_unix,omitempty"`
 }
 
 func encodeDispatchItem(item dispatchItem) (string, error) {
@@ -21,6 +24,19 @@ func encodeDispatchItem(item dispatchItem) (string, error) {
 	}
 	return string(b), nil
 }
+
+var DefaultMaxRetryAttempts = 10
+
+type deliveryError struct {
+	err           error
+	hasBackoff    bool
+	backoff       time.Duration
+	hasRetryUntil bool
+	retryUntil    time.Time
+}
+
+func (e *deliveryError) Error() string { return e.err.Error() }
+func (e *deliveryError) Unwrap() error { return e.err }
 
 type DispatchJob struct {
 	manager *Manager
@@ -59,5 +75,44 @@ func (j *DispatchJob) Handle(args ...any) error {
 		return errors.NotificationChannelNotQueueable.Args(item.Channel)
 	}
 
-	return resolvable.Deliver(item.Route, item.Payload)
+	err := resolvable.Deliver(item.Route, item.Payload)
+	if err == nil {
+		return nil
+	}
+
+	if item.BackoffSeconds == 0 && item.RetryUntilUnix == 0 {
+		return err
+	}
+
+	wrapped := &deliveryError{err: err}
+	if item.BackoffSeconds > 0 {
+		wrapped.hasBackoff = true
+		wrapped.backoff = time.Duration(item.BackoffSeconds) * time.Second
+	}
+	if item.RetryUntilUnix > 0 {
+		wrapped.hasRetryUntil = true
+		wrapped.retryUntil = time.Unix(item.RetryUntilUnix, 0)
+	}
+	return wrapped
+}
+
+func (j *DispatchJob) ShouldRetry(err error, attempt int) (bool, time.Duration) {
+	var de *deliveryError
+	if !errors.As(err, &de) {
+		return false, 0
+	}
+
+	if de.hasRetryUntil {
+		if time.Now().After(de.retryUntil) {
+			return false, 0
+		}
+	} else if attempt >= DefaultMaxRetryAttempts {
+		return false, 0
+	}
+
+	if de.hasBackoff {
+		return true, de.backoff
+	}
+
+	return false, 0
 }
