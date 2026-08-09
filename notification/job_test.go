@@ -1,6 +1,7 @@
 package notification
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 	"time"
@@ -106,84 +107,124 @@ func TestDispatchJob_Handle_PropagatesDeliverError(t *testing.T) {
 	assert.Contains(t, err.Error(), "smtp down")
 }
 
-func TestDispatchJob_ShouldRetry_NoRetry_WhenPlainError(t *testing.T) {
-	logger := mockslog.NewLog(t)
-	mgr := NewManager(logger, nil)
-	mgr.Extend(&fakeResolvableChannel{name: "a", deliverErr: errors.New("smtp down")})
-	job := NewDispatchJob(mgr)
+// TestDispatchJob_ShouldRetry mirrors broadcasting/job_test.go's
+// TestBroadcastJob_ShouldRetry exactly — same case names, same edge
+// cases — since DispatchJob.ShouldRetry now uses the identical
+// Tries/Backoff/mutex-guarded-item design as BroadcastJob, adopted for
+// consistency across the two queued-retry mechanisms in this codebase.
+func TestDispatchJob_ShouldRetry(t *testing.T) {
+	marshalItem := func(tries int, backoff []int64) string {
+		item := dispatchItem{
+			Channel: "a",
+			Route:   "r",
+			Payload: []byte("{}"),
+			Tries:   tries,
+			Backoff: backoff,
+		}
+		data, _ := json.Marshal(item)
+		return string(data)
+	}
 
-	encoded, err := encodeDispatchItem(dispatchItem{Channel: "a", Route: "r", Payload: []byte("{}")})
-	assert.NoError(t, err)
+	newJob := func(t *testing.T) *DispatchJob {
+		logger := mockslog.NewLog(t)
+		mgr := NewManager(logger, nil)
+		mgr.Extend(&fakeResolvableChannel{name: "a", deliverErr: errors.New("smtp down")})
+		return NewDispatchJob(mgr)
+	}
 
-	handleErr := job.Handle(encoded)
-	assert.Error(t, handleErr)
+	tests := []struct {
+		name    string
+		payload string
+		attempt int
+		err     error
+		want    bool
+		wantD   time.Duration
+	}{
+		{
+			name:    "tries zero is single-shot",
+			payload: marshalItem(0, nil),
+			attempt: 1,
+			want:    false,
+			wantD:   0,
+		},
+		{
+			name:    "tries 3 first attempt retries",
+			payload: marshalItem(3, nil),
+			attempt: 1,
+			want:    true,
+			wantD:   0,
+		},
+		{
+			name:    "tries 3 second attempt retries",
+			payload: marshalItem(3, nil),
+			attempt: 2,
+			want:    true,
+			wantD:   0,
+		},
+		{
+			name:    "tries 3 third attempt stops",
+			payload: marshalItem(3, nil),
+			attempt: 3,
+			want:    false,
+			wantD:   0,
+		},
+		{
+			name:    "backoff first attempt",
+			payload: marshalItem(4, []int64{1000, 2000}),
+			attempt: 1,
+			err:     errors.New("test error"), // err is ignored by ShouldRetry
+			want:    true,
+			wantD:   1 * time.Second,
+		},
+		{
+			name:    "backoff second attempt",
+			payload: marshalItem(4, []int64{1000, 2000}),
+			attempt: 2,
+			want:    true,
+			wantD:   2 * time.Second,
+		},
+		{
+			name:    "backoff last value repeats",
+			payload: marshalItem(4, []int64{1000, 2000}),
+			attempt: 3,
+			want:    true,
+			wantD:   2 * time.Second,
+		},
+		{
+			name:    "backoff with attempt 0 is single-shot fallback",
+			payload: marshalItem(4, []int64{1000, 2000}),
+			attempt: 0,
+			want:    false,
+			wantD:   0,
+		},
+		{
+			name:    "backoff stop at final attempt before index",
+			payload: marshalItem(2, []int64{1000, 2000}),
+			attempt: 2,
+			want:    false,
+			wantD:   0,
+		},
+		{
+			name:    "backoff last attempt stops",
+			payload: marshalItem(4, []int64{1000, 2000}),
+			attempt: 4,
+			want:    false,
+			wantD:   0,
+		},
+	}
 
-	retryable, delay := job.ShouldRetry(handleErr, 1)
-	assert.False(t, retryable)
-	assert.Zero(t, delay)
-}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			job := newJob(t)
+			// Handle fails via fakeResolvableChannel's deliverErr, which
+			// retains the parsed item for ShouldRetry to read — the
+			// realistic pre-ShouldRetry state, mirroring
+			// broadcasting/job_test.go's own setup.
+			assert.Error(t, job.Handle(tt.payload))
 
-func TestDispatchJob_ShouldRetry_RetriesWithBackoff(t *testing.T) {
-	logger := mockslog.NewLog(t)
-	mgr := NewManager(logger, nil)
-	mgr.Extend(&fakeResolvableChannel{name: "a", deliverErr: errors.New("smtp down")})
-	job := NewDispatchJob(mgr)
-
-	encoded, err := encodeDispatchItem(dispatchItem{
-		Channel: "a", Route: "r", Payload: []byte("{}"),
-		BackoffSeconds: 45,
-	})
-	assert.NoError(t, err)
-
-	handleErr := job.Handle(encoded)
-	assert.Error(t, handleErr)
-
-	retryable, delay := job.ShouldRetry(handleErr, 1)
-	assert.True(t, retryable)
-	assert.Equal(t, 45*time.Second, delay)
-}
-
-func TestDispatchJob_ShouldRetry_StopsAfterRetryUntilDeadline(t *testing.T) {
-	logger := mockslog.NewLog(t)
-	mgr := NewManager(logger, nil)
-	mgr.Extend(&fakeResolvableChannel{name: "a", deliverErr: errors.New("smtp down")})
-	job := NewDispatchJob(mgr)
-
-	past := time.Now().Add(-1 * time.Hour).Unix()
-	encoded, err := encodeDispatchItem(dispatchItem{
-		Channel: "a", Route: "r", Payload: []byte("{}"),
-		BackoffSeconds: 30, RetryUntilUnix: past,
-	})
-	assert.NoError(t, err)
-
-	handleErr := job.Handle(encoded)
-	assert.Error(t, handleErr)
-
-	retryable, delay := job.ShouldRetry(handleErr, 5)
-	assert.False(t, retryable, "past RetryUntil should stop retries even though Backoff is set")
-	assert.Zero(t, delay)
-}
-
-func TestDispatchJob_ShouldRetry_CapsAttempts_WhenNoRetryUntilSet(t *testing.T) {
-	logger := mockslog.NewLog(t)
-	mgr := NewManager(logger, nil)
-	mgr.Extend(&fakeResolvableChannel{name: "a", deliverErr: errors.New("smtp down")})
-	job := NewDispatchJob(mgr)
-
-	encoded, err := encodeDispatchItem(dispatchItem{
-		Channel: "a", Route: "r", Payload: []byte("{}"),
-		BackoffSeconds: 5, // RetryUntilUnix deliberately left unset
-	})
-	assert.NoError(t, err)
-
-	handleErr := job.Handle(encoded)
-	assert.Error(t, handleErr)
-
-	retryable, delay := job.ShouldRetry(handleErr, DefaultMaxRetryAttempts-1)
-	assert.True(t, retryable, "still below the cap, should retry")
-	assert.Equal(t, 5*time.Second, delay)
-
-	retryable, delay = job.ShouldRetry(handleErr, DefaultMaxRetryAttempts)
-	assert.False(t, retryable, "at the cap, should stop even though Backoff is set")
-	assert.Zero(t, delay)
+			retryable, delay := job.ShouldRetry(tt.err, tt.attempt)
+			assert.Equal(t, tt.want, retryable)
+			assert.Equal(t, tt.wantD, delay)
+		})
+	}
 }

@@ -164,6 +164,23 @@ type queueableNotificationWithRouting struct{ queueableNotification }
 func (n *queueableNotificationWithRouting) OnQueue() string      { return "notifications" }
 func (n *queueableNotificationWithRouting) OnConnection() string { return "redis" }
 
+// triesBackoffNotification implements NotificationWithTries +
+// NotificationWithBackoff, for exercising dispatchQueued's eager
+// Tries/Backoff capture.
+type triesBackoffNotification struct {
+	channels []string
+	tries    int
+	backoff  []time.Duration
+}
+
+func (n *triesBackoffNotification) Via(_ contractsnotification.Notifiable) []string {
+	return n.channels
+}
+func (n *triesBackoffNotification) OnQueue() string                  { return "" }
+func (n *triesBackoffNotification) OnConnection() string             { return "" }
+func (n *triesBackoffNotification) Tries(_ string) int               { return n.tries }
+func (n *triesBackoffNotification) Backoff(_ string) []time.Duration { return n.backoff }
+
 // ---- Manager: SendNow / dispatchSync ----
 
 func TestManager_SendNow_CallsCorrectChannels(t *testing.T) {
@@ -405,6 +422,89 @@ func TestManager_Send_QueuedNotification_SkipsChannel_WhenShouldSendReturnsFalse
 	assert.NoError(t, err)
 }
 
+// TestManager_Send_QueuedNotification_CapturesTriesAndBackoff mirrors
+// broadcasting/application.go's Dispatch capture logic exactly: Tries
+// and Backoff (converted to milliseconds on the wire) are captured
+// eagerly, while n is still live, since DispatchJob.ShouldRetry can't
+// call these itself later — see job.go.
+func TestManager_Send_QueuedNotification_CapturesTriesAndBackoff(t *testing.T) {
+	logger := mockslog.NewLog(t)
+	q := mocksqueue.NewQueue(t)
+	pending := mocksqueue.NewPendingJob(t)
+
+	var captured []contractsqueue.Arg
+	q.EXPECT().
+		Job(mock.AnythingOfType("*notification.DispatchJob"), mock.Anything).
+		Run(func(_ contractsqueue.Job, args ...[]contractsqueue.Arg) {
+			if len(args) > 0 {
+				captured = args[0]
+			}
+		}).
+		Return(pending).Once()
+	pending.EXPECT().Dispatch().Return(nil).Once()
+
+	mgr := NewManager(logger, q)
+	mgr.Extend(&fakeResolvableChannel{name: "a"})
+
+	n := &triesBackoffNotification{
+		channels: []string{"a"},
+		tries:    4,
+		backoff:  []time.Duration{1 * time.Second, 2 * time.Second},
+	}
+
+	err := mgr.Send(&fakeNotifiable{}, n)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, captured)
+
+	var item dispatchItem
+	raw, ok := captured[0].Value.(string)
+	assert.True(t, ok)
+	assert.NoError(t, json.Unmarshal([]byte(raw), &item))
+	assert.Equal(t, 4, item.Tries)
+	assert.Equal(t, []int64{1000, 2000}, item.Backoff) // milliseconds on the wire
+}
+
+// TestManager_Send_QueuedNotification_OmitsBackoff_WhenTriesNotSet
+// confirms Backoff only takes effect alongside a positive Tries,
+// matching broadcasting's exact rule (Backoff has no effect without
+// Tries, so there's no reason to carry it across the queue boundary
+// otherwise).
+func TestManager_Send_QueuedNotification_OmitsBackoff_WhenTriesNotSet(t *testing.T) {
+	logger := mockslog.NewLog(t)
+	q := mocksqueue.NewQueue(t)
+	pending := mocksqueue.NewPendingJob(t)
+
+	var captured []contractsqueue.Arg
+	q.EXPECT().
+		Job(mock.AnythingOfType("*notification.DispatchJob"), mock.Anything).
+		Run(func(_ contractsqueue.Job, args ...[]contractsqueue.Arg) {
+			if len(args) > 0 {
+				captured = args[0]
+			}
+		}).
+		Return(pending).Once()
+	pending.EXPECT().Dispatch().Return(nil).Once()
+
+	mgr := NewManager(logger, q)
+	mgr.Extend(&fakeResolvableChannel{name: "a"})
+
+	n := &triesBackoffNotification{
+		channels: []string{"a"},
+		tries:    0,
+		backoff:  []time.Duration{5 * time.Second},
+	}
+
+	err := mgr.Send(&fakeNotifiable{}, n)
+	assert.NoError(t, err)
+
+	var item dispatchItem
+	raw, ok := captured[0].Value.(string)
+	assert.True(t, ok)
+	assert.NoError(t, json.Unmarshal([]byte(raw), &item))
+	assert.Zero(t, item.Tries)
+	assert.Empty(t, item.Backoff)
+}
+
 // ---- Route (on-demand notifications) ----
 
 func TestManager_Route_RouteNotificationForReturnsConfiguredAddress(t *testing.T) {
@@ -536,50 +636,4 @@ func TestManager_Send_QueuedNotification_PassesConnectionAndQueue(t *testing.T) 
 
 	err := mgr.Send(queueTestNotifiable{}, &queueableNotificationWithRouting{})
 	assert.NoError(t, err)
-}
-
-type backoffNotification struct {
-	channels   []string
-	backoff    int
-	retryUntil time.Time
-}
-
-func (n *backoffNotification) Via(_ contractsnotification.Notifiable) []string { return n.channels }
-func (n *backoffNotification) OnQueue() string                                 { return "" }
-func (n *backoffNotification) OnConnection() string                            { return "" }
-func (n *backoffNotification) Backoff(_ string) int                            { return n.backoff }
-func (n *backoffNotification) RetryUntil() time.Time                           { return n.retryUntil }
-
-func TestManager_Send_QueuedNotification_CapturesBackoffAndRetryUntil(t *testing.T) {
-	logger := mockslog.NewLog(t)
-	q := mocksqueue.NewQueue(t)
-	pending := mocksqueue.NewPendingJob(t)
-
-	var captured []contractsqueue.Arg
-	q.EXPECT().
-		Job(mock.AnythingOfType("*notification.DispatchJob"), mock.Anything).
-		Run(func(_ contractsqueue.Job, args ...[]contractsqueue.Arg) {
-			if len(args) > 0 {
-				captured = args[0]
-			}
-		}).
-		Return(pending).Once()
-	pending.EXPECT().Dispatch().Return(nil).Once()
-
-	mgr := NewManager(logger, q)
-	mgr.Extend(&fakeResolvableChannel{name: "a"})
-
-	retryUntil := time.Now().Add(2 * time.Hour).Truncate(time.Second)
-	n := &backoffNotification{channels: []string{"a"}, backoff: 30, retryUntil: retryUntil}
-
-	err := mgr.Send(&fakeNotifiable{}, n)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, captured)
-
-	var item dispatchItem
-	raw, ok := captured[0].Value.(string)
-	assert.True(t, ok)
-	assert.NoError(t, json.Unmarshal([]byte(raw), &item))
-	assert.Equal(t, 30, item.BackoffSeconds)
-	assert.Equal(t, retryUntil.Unix(), item.RetryUntilUnix)
 }
