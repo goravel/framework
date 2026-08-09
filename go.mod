@@ -48,8 +48,8 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.44.0
 	go.opentelemetry.io/otel/trace v1.44.0
 	golang.org/x/crypto v0.54.0
-	golang.org/x/exp v0.0.0-20260718201538-764159d718ef
-	google.golang.org/grpc v1.82.1
+	golang.org/x/exp v0.0.0-20260727155853-b88d891fe743
+	google.golang.org/grpc v1.83.0
 	google.golang.org/protobuf v1.36.11
 	gorm.io/gorm v1.31.2
 	gorm.io/plugin/dbresolver v1.6.2
@@ -143,8 +143,8 @@ require (
 )
 
 replace (
-	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260724162435-b2f20204f0df
-	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20260724162435-b2f20204f0df
+	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260729162451-8efbd57d26e0
+	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20260729162451-8efbd57d26e0
 )
 
 tool github.com/vektra/mockery/v2

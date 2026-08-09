@@ -33,6 +33,14 @@ func (r *EventMakeCommand) Extend() command.Extend {
 				Aliases: []string{"f"},
 				Usage:   "Create the event even if it already exists",
 			},
+			&command.BoolFlag{
+				Name:  "broadcast",
+				Usage: "Generate an event that implements broadcasting.ShouldBroadcast",
+			},
+			&command.BoolFlag{
+				Name:  "now",
+				Usage: "Generate an event that also implements broadcasting.ShouldBroadcastNow",
+			},
 		},
 	}
 }
@@ -45,7 +53,7 @@ func (r *EventMakeCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	if err := file.PutContent(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
+	if err := file.PutContent(m.GetFilePath(), r.populateStub(r.getStub(ctx), m.GetPackageName(), m.GetStructName())); err != nil {
 		return err
 	}
 
@@ -54,7 +62,14 @@ func (r *EventMakeCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func (r *EventMakeCommand) getStub() string {
+func (r *EventMakeCommand) getStub(ctx console.Context) string {
+	if ctx.OptionBool("broadcast") {
+		if ctx.OptionBool("now") {
+			return Stubs{}.EventBroadcastNow()
+		}
+		return Stubs{}.EventBroadcast()
+	}
+
 	return Stubs{}.Event()
 }
 

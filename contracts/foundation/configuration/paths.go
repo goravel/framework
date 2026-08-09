@@ -7,6 +7,8 @@ type Paths interface {
 	Agents(path string) Paths
 	// Bootstrap sets the path for the bootstrap directory, default is "bootstrap".
 	Bootstrap(path string) Paths
+	// Broadcasting sets the path for the broadcasting directory, default is "app/broadcasting".
+	Broadcasting(path string) Paths
 	// Commands sets the path for the commands directory, default is "app/console/commands".
 	Commands(path string) Paths
 	// Config sets the path for the configuration directory, default is "config".

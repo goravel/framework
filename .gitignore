@@ -3,3 +3,4 @@
 .vscode
 /vendor
 coverage.out
+.opencode

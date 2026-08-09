@@ -99,8 +99,8 @@ func (r *Worker) Shutdown() error {
 	return nil
 }
 
-func (r *Worker) call(task queue.Task) error {
-	tries := 1
+func (r *Worker) call(task queue.Task, reservedJob queue.ReservedJob) (released bool, err error) {
+	attempt := 1
 	r.printRunningLog(task)
 
 	for {
@@ -109,34 +109,51 @@ func (r *Worker) call(task queue.Task) error {
 		}
 
 		now := carbon.Now()
-		err := r.job.Call(task.Job.Signature(), utils.ConvertArgs(task.Args))
+		callErr := r.job.Call(task.Job.Signature(), utils.ConvertArgs(task.Args))
 		duration := now.DiffAbsInDuration().String()
 
-		if err == nil {
+		if callErr == nil {
 			r.printSuccessLog(task, duration)
-			return nil
+			return false, nil
+		}
+
+		// The attempt count comes from the persisted reservation so the
+		// decision survives worker restarts and matches other workers.
+		if reservedJob != nil {
+			attempt = reservedJob.Attempts()
 		}
 
 		shouldRetry := false
 		var delay time.Duration = 0
 
 		if jobWithShouldRetry, ok := task.Job.(queue.JobWithShouldRetry); ok {
-			shouldRetry, delay = jobWithShouldRetry.ShouldRetry(err, tries)
+			shouldRetry, delay = jobWithShouldRetry.ShouldRetry(callErr, attempt)
 		} else {
-			shouldRetry = tries < r.tries /* || r.tries == 0 */ // Currently, we do not support unlimited retries, see https://github.com/goravel/framework/pull/1123#discussion_r2194272829
+			shouldRetry = attempt < r.tries /* || r.tries == 0 */ // Currently, we do not support unlimited retries, see https://github.com/goravel/framework/pull/1123#discussion_r2194272829
 		}
 
 		if shouldRetry {
-			if delay > 0 {
-				time.Sleep(delay)
+			if reservedJob == nil {
+				// Chain jobs have no queue entry to release; retry in-memory.
+				if delay > 0 {
+					time.Sleep(delay)
+				}
+				attempt++
+				continue
 			}
-			tries++
-			continue
+
+			if relErr := reservedJob.Release(delay); relErr != nil {
+				// Laravel 11/13 policy: report the error and leave the row
+				// reserved; isReservedButExpired recovers it after retry_after.
+				r.log.Error(errors.QueueFailedToReleaseReservedJob.Args(reservedJob, relErr))
+			}
+
+			return true, nil
 		}
 
 		payload, jsonErr := utils.TaskToJson(task, r.json)
 		if jsonErr != nil {
-			return errors.QueueFailedToConvertTaskToJson.Args(jsonErr, task)
+			return false, errors.QueueFailedToConvertTaskToJson.Args(jsonErr, task)
 		}
 
 		r.failedJobChan <- models.FailedJob{
@@ -144,13 +161,13 @@ func (r *Worker) call(task queue.Task) error {
 			Connection: r.connection,
 			Queue:      r.queue,
 			Payload:    payload,
-			Exception:  err.Error(),
+			Exception:  callErr.Error(),
 			FailedAt:   carbon.NewDateTime(carbon.Now()),
 		}
 
 		r.printFailedLog(task, duration)
 
-		return errors.QueueFailedToCallJob
+		return false, errors.QueueFailedToCallJob
 	}
 }
 
@@ -341,7 +358,15 @@ func (r *Worker) runWithReceive(receiver queue.DriverWithReceive) error {
 func (r *Worker) processReservedJob(reservedJob queue.ReservedJob) {
 	task := reservedJob.Task()
 
-	if err := r.call(task); err != nil {
+	released, err := r.call(task, reservedJob)
+	if released {
+		// The job is back in the queue for a later retry (or was left
+		// reserved for retry_after expiry recovery); its row must remain
+		// and no failed job is recorded.
+		return
+	}
+
+	if err != nil {
 		if !errors.Is(err, errors.QueueFailedToCallJob) {
 			r.log.Error(err)
 		}
@@ -361,13 +386,29 @@ func (r *Worker) processReservedJob(reservedJob queue.ReservedJob) {
 				Chain:    task.Chain[i+1:],
 			}
 
-			if err := r.call(chainTask); err != nil {
+			// Chain jobs never release: reservedJob is nil, so retries stay
+			// in-memory inside call. If a future change ever breaks that
+			// invariant, stop the chain rather than silently continuing to
+			// the next job — hence the explicit released check (which also
+			// prevents the final Delete below from orphaning chain jobs).
+			released, err = r.call(chainTask, nil)
+			if released {
+				break
+			}
+			if err != nil {
 				if !errors.Is(err, errors.QueueFailedToCallJob) {
 					r.log.Error(err)
 				}
 				break
 			}
 		}
+	}
+
+	// If a chain job was released (defensive path only — chain jobs never
+	// release today), its row is still pending in the queue, so the main
+	// job row must remain too. Deleting it here would orphan the chain job.
+	if released {
+		return
 	}
 
 	if err := reservedJob.Delete(); err != nil {

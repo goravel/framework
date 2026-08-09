@@ -6,19 +6,25 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/db"
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/errors"
+	mocksconfig "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/convert"
+	"github.com/goravel/framework/support/str"
+	"github.com/goravel/framework/testing/utils"
 	"github.com/goravel/postgres"
 	"github.com/goravel/sqlite"
 	"github.com/goravel/sqlserver"
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -2468,6 +2474,63 @@ func TestDbReadWriteSeparate(t *testing.T) {
 			assert.Nil(t, db["write"].DB().Table("products").Where("name", product1.Name).First(&product4))
 			assert.True(t, product4.ID > 0)
 		})
+	}
+}
+
+func TestConnection_ConcurrentRace(t *testing.T) {
+	connection := sqlite.Name + "_racetest_" + str.Random(6)
+	mockConfig := &mocksconfig.Config{}
+	docker := sqlite.NewDocker(fmt.Sprintf("%s_%s", testDatabase, str.Random(6)))
+	err := docker.Build()
+	require.NoError(t, err)
+	defer func() {
+		require.NoError(t, docker.Shutdown())
+	}()
+
+	mockDatabaseConfig(mockConfig, database.Config{
+		Driver:     sqlite.Name,
+		Database:   docker.Config().Database,
+		Connection: connection,
+	})
+
+	ctx := context.WithValue(context.Background(), testContextKey, "goravel")
+	driver := sqlite.NewSqlite(mockConfig, utils.NewTestLog(), connection)
+	rootQuery, err := NewTestQuery(ctx, driver, mockConfig, connection)
+	require.NoError(t, err)
+
+	root := rootQuery.DB()
+
+	n := 20
+	var wg sync.WaitGroup
+	wg.Add(n)
+
+	var mu sync.Mutex
+	var first any
+
+	start := make(chan struct{})
+
+	for i := 0; i < n; i++ {
+		go func() {
+			<-start
+			defer wg.Done()
+			result := root.Connection(connection)
+			if result == nil {
+				t.Error("Connection returned nil")
+				return
+			}
+			mu.Lock()
+			if first == nil {
+				first = result
+			}
+			mu.Unlock()
+		}()
+	}
+
+	close(start)
+	wg.Wait()
+
+	if first == nil {
+		t.Fatal("no goroutine obtained a result from Connection")
 	}
 }
 
