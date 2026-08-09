@@ -3,6 +3,8 @@
 package notification
 
 import (
+	time "time"
+
 	notification "github.com/goravel/framework/contracts/notification"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -21,18 +23,20 @@ func (_m *NotificationWithBackoff) EXPECT() *NotificationWithBackoff_Expecter {
 }
 
 // Backoff provides a mock function with given fields: channel
-func (_m *NotificationWithBackoff) Backoff(channel string) int {
+func (_m *NotificationWithBackoff) Backoff(channel string) []time.Duration {
 	ret := _m.Called(channel)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Backoff")
 	}
 
-	var r0 int
-	if rf, ok := ret.Get(0).(func(string) int); ok {
+	var r0 []time.Duration
+	if rf, ok := ret.Get(0).(func(string) []time.Duration); ok {
 		r0 = rf(channel)
 	} else {
-		r0 = ret.Get(0).(int)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]time.Duration)
+		}
 	}
 
 	return r0
@@ -56,12 +60,12 @@ func (_c *NotificationWithBackoff_Backoff_Call) Run(run func(channel string)) *N
 	return _c
 }
 
-func (_c *NotificationWithBackoff_Backoff_Call) Return(_a0 int) *NotificationWithBackoff_Backoff_Call {
+func (_c *NotificationWithBackoff_Backoff_Call) Return(_a0 []time.Duration) *NotificationWithBackoff_Backoff_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *NotificationWithBackoff_Backoff_Call) RunAndReturn(run func(string) int) *NotificationWithBackoff_Backoff_Call {
+func (_c *NotificationWithBackoff_Backoff_Call) RunAndReturn(run func(string) []time.Duration) *NotificationWithBackoff_Backoff_Call {
 	_c.Call.Return(run)
 	return _c
 }
