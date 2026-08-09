@@ -114,8 +114,6 @@ func (m *Manager) dispatchQueued(
 	sq contractsnotification.ShouldQueue,
 ) error {
 	shouldSend, _ := n.(contractsnotification.NotificationWithShouldSend)
-	withBackoff, _ := n.(contractsnotification.NotificationWithBackoff)
-	withRetryUntil, _ := n.(contractsnotification.NotificationWithRetryUntil)
 
 	var errs []error
 	for _, name := range n.Via(notifiable) {
@@ -146,13 +144,23 @@ func (m *Manager) dispatchQueued(
 
 		item := dispatchItem{Channel: name, Route: route, Payload: payload}
 		// Captured now, while n is still live — DispatchJob.ShouldRetry
-		// can't call these itself later, see job.go.
-		if withBackoff != nil {
-			item.BackoffSeconds = withBackoff.Backoff(name)
+		// can't call these itself later, see job.go. Mirrors
+		// broadcasting/application.go's Dispatch capture logic exactly,
+		// including only serializing Backoff alongside a positive Tries
+		// (Backoff has no effect without Tries, so there's no reason to
+		// carry it across the queue boundary otherwise).
+		if withTries, ok := n.(contractsnotification.NotificationWithTries); ok && withTries.Tries(name) > 0 {
+			item.Tries = withTries.Tries(name)
 		}
-		if withRetryUntil != nil {
-			if ru := withRetryUntil.RetryUntil(); !ru.IsZero() {
-				item.RetryUntilUnix = ru.Unix()
+		if item.Tries > 0 {
+			if withBackoff, ok := n.(contractsnotification.NotificationWithBackoff); ok {
+				backoff := withBackoff.Backoff(name)
+				if len(backoff) > 0 {
+					item.Backoff = make([]int64, len(backoff))
+					for i, d := range backoff {
+						item.Backoff[i] = d.Milliseconds()
+					}
+				}
 			}
 		}
 
