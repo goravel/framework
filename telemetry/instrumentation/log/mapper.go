@@ -38,90 +38,88 @@ func toSeverity(level contractslog.Level) otellog.Severity {
 	}
 }
 
-func toValue(v any) otellog.Value {
+func toValue(v any) attribute.Value {
 	if v == nil {
-		return otellog.Value{}
+		return attribute.Value{}
 	}
 
 	switch val := v.(type) {
-	case otellog.Value:
+	case attribute.Value:
 		return val
 	case string:
-		return otellog.StringValue(val)
+		return attribute.StringValue(val)
 	case bool:
-		return otellog.BoolValue(val)
+		return attribute.BoolValue(val)
 	case int:
-		return otellog.Int64Value(int64(val))
+		return attribute.Int64Value(int64(val))
 	case int64:
-		return otellog.Int64Value(val)
+		return attribute.Int64Value(val)
 	case float64:
-		return otellog.Float64Value(val)
+		return attribute.Float64Value(val)
 	case error:
-		return otellog.StringValue(val.Error())
+		return attribute.StringValue(val.Error())
 	case []byte:
-		return otellog.BytesValue(val)
+		return attribute.ByteSliceValue(val)
 	case time.Time:
-		return otellog.StringValue(val.Format(time.RFC3339Nano))
+		return attribute.StringValue(val.Format(time.RFC3339Nano))
 	case map[string]any:
 		return toMapValue(val)
 	case []string:
 		return toStringSliceValue(val)
 	case int32:
-		return otellog.Int64Value(int64(val))
+		return attribute.Int64Value(int64(val))
 	case int16:
-		return otellog.Int64Value(int64(val))
+		return attribute.Int64Value(int64(val))
 	case int8:
-		return otellog.Int64Value(int64(val))
+		return attribute.Int64Value(int64(val))
 	case uint:
 		return toUintValue(uint64(val))
 	case uint64:
 		return toUintValue(val)
 	case uint32:
-		return otellog.Int64Value(int64(val))
+		return attribute.Int64Value(int64(val))
 	case uint16:
-		return otellog.Int64Value(int64(val))
+		return attribute.Int64Value(int64(val))
 	case uint8:
-		return otellog.Int64Value(int64(val))
+		return attribute.Int64Value(int64(val))
 	case uintptr:
 		return toUintValue(uint64(val))
 	case float32:
-		return otellog.Float64Value(float64(val))
+		return attribute.Float64Value(float64(val))
 	case time.Duration:
-		return otellog.Int64Value(val.Nanoseconds())
+		return attribute.Int64Value(val.Nanoseconds())
 	case complex64:
-		r := otellog.Float64("r", float64(real(val)))
-		i := otellog.Float64("i", float64(imag(val)))
-		return otellog.MapValue(r, i)
+		r := attribute.Float64("r", float64(real(val)))
+		i := attribute.Float64("i", float64(imag(val)))
+		return attribute.MapValue(r, i)
 	case complex128:
-		r := otellog.Float64("r", real(val))
-		i := otellog.Float64("i", imag(val))
-		return otellog.MapValue(r, i)
-	case attribute.Value:
-		return otellog.ValueFromAttribute(val)
+		r := attribute.Float64("r", real(val))
+		i := attribute.Float64("i", imag(val))
+		return attribute.MapValue(r, i)
 	case fmt.Stringer:
-		return otellog.StringValue(val.String())
+		return attribute.StringValue(val.String())
 	}
 
 	return toReflectedValue(v)
 }
 
-func toReflectedValue(v any) otellog.Value {
+func toReflectedValue(v any) attribute.Value {
 	t := reflect.TypeOf(v)
 	if t == nil {
-		return otellog.Value{}
+		return attribute.Value{}
 	}
 	val := reflect.ValueOf(v)
 
 	switch t.Kind() {
 	case reflect.Slice, reflect.Array:
-		items := make([]otellog.Value, val.Len())
+		items := make([]attribute.Value, val.Len())
 		for i := 0; i < val.Len(); i++ {
 			items[i] = toValue(val.Index(i).Interface())
 		}
-		return otellog.SliceValue(items...)
+		return attribute.SliceValue(items...)
 
 	case reflect.Map:
-		kvs := make([]otellog.KeyValue, 0, val.Len())
+		kvs := make([]attribute.KeyValue, 0, val.Len())
 		iter := val.MapRange()
 		for iter.Next() {
 			k := iter.Key()
@@ -131,60 +129,60 @@ func toReflectedValue(v any) otellog.Value {
 			} else {
 				keyStr = fmt.Sprintf("%+v", k.Interface())
 			}
-			kvs = append(kvs, otellog.KeyValue{
-				Key:   keyStr,
+			kvs = append(kvs, attribute.KeyValue{
+				Key:   attribute.Key(keyStr),
 				Value: toValue(iter.Value().Interface()),
 			})
 		}
-		return otellog.MapValue(kvs...)
+		return attribute.MapValue(kvs...)
 
 	case reflect.Struct:
-		return otellog.StringValue(fmt.Sprintf("%+v", v))
+		return attribute.StringValue(fmt.Sprintf("%+v", v))
 
 	case reflect.Pointer, reflect.Interface:
 		if val.IsNil() {
-			return otellog.Value{}
+			return attribute.Value{}
 		}
 		return toValue(val.Elem().Interface())
 
 	case reflect.String:
-		return otellog.StringValue(val.String())
+		return attribute.StringValue(val.String())
 	case reflect.Bool:
-		return otellog.BoolValue(val.Bool())
+		return attribute.BoolValue(val.Bool())
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return otellog.Int64Value(val.Int())
+		return attribute.Int64Value(val.Int())
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
 		return toUintValue(val.Uint())
 	case reflect.Float32, reflect.Float64:
-		return otellog.Float64Value(val.Float())
+		return attribute.Float64Value(val.Float())
 
 	default:
-		return otellog.StringValue(fmt.Sprintf("unhandled: (%s) %+v", t, v))
+		return attribute.StringValue(fmt.Sprintf("unhandled: (%s) %+v", t, v))
 	}
 }
 
-func toMapValue(m map[string]any) otellog.Value {
-	kvs := make([]otellog.KeyValue, 0, len(m))
+func toMapValue(m map[string]any) attribute.Value {
+	kvs := make([]attribute.KeyValue, 0, len(m))
 	for k, v := range m {
-		kvs = append(kvs, otellog.KeyValue{
-			Key:   k,
+		kvs = append(kvs, attribute.KeyValue{
+			Key:   attribute.Key(k),
 			Value: toValue(v),
 		})
 	}
-	return otellog.MapValue(kvs...)
+	return attribute.MapValue(kvs...)
 }
 
-func toStringSliceValue(s []string) otellog.Value {
-	items := make([]otellog.Value, len(s))
+func toStringSliceValue(s []string) attribute.Value {
+	items := make([]attribute.Value, len(s))
 	for i, v := range s {
-		items[i] = otellog.StringValue(v)
+		items[i] = attribute.StringValue(v)
 	}
-	return otellog.SliceValue(items...)
+	return attribute.SliceValue(items...)
 }
 
-func toUintValue(v uint64) otellog.Value {
+func toUintValue(v uint64) attribute.Value {
 	if v > math.MaxInt64 {
-		return otellog.StringValue(strconv.FormatUint(v, 10))
+		return attribute.StringValue(strconv.FormatUint(v, 10))
 	}
-	return otellog.Int64Value(int64(v))
+	return attribute.Int64Value(int64(v))
 }

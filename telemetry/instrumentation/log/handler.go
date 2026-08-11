@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	otellog "go.opentelemetry.io/otel/log"
 
 	contractslog "github.com/goravel/framework/contracts/log"
@@ -69,43 +70,43 @@ func (r *handler) convertEntry(e contractslog.Entry) otellog.Record {
 	var record otellog.Record
 	record.SetTimestamp(e.Time())
 	record.SetObservedTimestamp(time.Now())
-	record.SetBody(otellog.StringValue(e.Message()))
+	record.SetBody(attribute.StringValue(e.Message()))
 	record.SetSeverity(toSeverity(e.Level()))
 	record.SetSeverityText(e.Level().String())
 
 	estimatedSize := 5 + len(e.With()) + len(e.Data())
-	attrs := make([]otellog.KeyValue, 0, estimatedSize)
+	attrs := make([]attribute.KeyValue, 0, estimatedSize)
 
 	if code := e.Code(); code != "" {
-		attrs = append(attrs, otellog.String("code", code))
+		attrs = append(attrs, attribute.String("code", code))
 	}
 	if domain := e.Domain(); domain != "" {
-		attrs = append(attrs, otellog.String("domain", domain))
+		attrs = append(attrs, attribute.String("domain", domain))
 	}
 	if hint := e.Hint(); hint != "" {
-		attrs = append(attrs, otellog.String("hint", hint))
+		attrs = append(attrs, attribute.String("hint", hint))
 	}
 	if owner := e.Owner(); owner != nil {
-		attrs = append(attrs, otellog.KeyValue{Key: "owner", Value: toValue(owner)})
+		attrs = append(attrs, attribute.KeyValue{Key: "owner", Value: toValue(owner)})
 	}
 	if user := e.User(); user != nil {
-		attrs = append(attrs, otellog.KeyValue{Key: "user", Value: toValue(user)})
+		attrs = append(attrs, attribute.KeyValue{Key: "user", Value: toValue(user)})
 	}
 	if tags := e.Tags(); len(tags) > 0 {
-		attrs = append(attrs, otellog.KeyValue{Key: "tags", Value: toValue(tags)})
+		attrs = append(attrs, attribute.KeyValue{Key: "tags", Value: toValue(tags)})
 	}
 	if req := e.Request(); len(req) > 0 {
-		attrs = append(attrs, otellog.KeyValue{Key: "request", Value: toValue(req)})
+		attrs = append(attrs, attribute.KeyValue{Key: "request", Value: toValue(req)})
 	}
 	if res := e.Response(); len(res) > 0 {
-		attrs = append(attrs, otellog.KeyValue{Key: "response", Value: toValue(res)})
+		attrs = append(attrs, attribute.KeyValue{Key: "response", Value: toValue(res)})
 	}
 	if tr := e.Trace(); len(tr) > 0 {
-		attrs = append(attrs, otellog.KeyValue{Key: "trace", Value: toValue(tr)})
+		attrs = append(attrs, attribute.KeyValue{Key: "trace", Value: toValue(tr)})
 	}
 
 	for k, v := range e.With() {
-		attrs = append(attrs, otellog.KeyValue{Key: k, Value: toValue(v)})
+		attrs = append(attrs, attribute.KeyValue{Key: attribute.Key(k), Value: toValue(v)})
 	}
 
 	for k, v := range e.Data() {
@@ -113,7 +114,7 @@ func (r *handler) convertEntry(e contractslog.Entry) otellog.Record {
 		// Since we have already extracted and mapped these fields to top-level OTel attributes above,
 		// we skip "root" here to prevent duplicating the entire context map.
 		if k != "root" {
-			attrs = append(attrs, otellog.KeyValue{Key: k, Value: toValue(v)})
+			attrs = append(attrs, attribute.KeyValue{Key: attribute.Key(k), Value: toValue(v)})
 		}
 	}
 

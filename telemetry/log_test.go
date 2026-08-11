@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"go.opentelemetry.io/otel/attribute"
 	otellog "go.opentelemetry.io/otel/log"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 
@@ -389,7 +390,7 @@ func TestNewLoggerProvider_ProcessorTypes(t *testing.T) {
 
 	emit := func(provider otellog.LoggerProvider) {
 		var record otellog.Record
-		record.SetBody(otellog.StringValue("message"))
+		record.SetBody(attribute.StringValue("message"))
 		provider.Logger("test").Emit(ctx, record)
 	}
 
