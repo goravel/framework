@@ -20,7 +20,7 @@ import (
 type mailNotifiable struct{ addr string }
 
 func (m *mailNotifiable) RouteNotificationFor(channel string) any {
-	if channel == "mail" {
+	if channel == contractsnotification.ChannelMail {
 		return m.addr
 	}
 	return ""
@@ -37,24 +37,24 @@ func (unsupportedRouteNotifiable) RouteNotificationFor(_ string) any {
 	return struct{ X int }{X: 1}
 }
 
-// sliceRouteNotifiable returns []string from RouteNotificationFor("mail")
+// sliceRouteNotifiable returns []string from RouteNotificationFor(ChannelMail)
 // directly — multiple unnamed addresses, no MailRoutable needed.
 type sliceRouteNotifiable struct{ addrs []string }
 
 func (s sliceRouteNotifiable) RouteNotificationFor(channel string) any {
-	if channel == "mail" {
+	if channel == contractsnotification.ChannelMail {
 		return s.addrs
 	}
 	return nil
 }
 
 // mapRouteNotifiable returns map[string]string from
-// RouteNotificationFor("mail") directly — address→name pairs, same
+// RouteNotificationFor(ChannelMail) directly — address→name pairs, same
 // shape MailRoutable uses, no MailRoutable needed.
 type mapRouteNotifiable struct{ addrs map[string]string }
 
 func (m mapRouteNotifiable) RouteNotificationFor(channel string) any {
-	if channel == "mail" {
+	if channel == contractsnotification.ChannelMail {
 		return m.addrs
 	}
 	return nil
@@ -64,12 +64,12 @@ func (m mapRouteNotifiable) RouteNotificationFor(channel string) any {
 // Notifiable, to test multi-address mail routing. routes is
 // address→name, matching RouteNotificationForMail's map[string]string.
 type mailRoutableNotifiable struct {
-	addr   string // used only as the RouteNotificationFor("mail") fallback
+	addr   string // used only as the RouteNotificationFor(ChannelMail) fallback
 	routes map[string]string
 }
 
 func (m *mailRoutableNotifiable) RouteNotificationFor(channel string) any {
-	if channel == "mail" {
+	if channel == contractsnotification.ChannelMail {
 		return m.addr
 	}
 	return ""
@@ -82,16 +82,20 @@ func (m *mailRoutableNotifiable) RouteNotificationForMail(_ contractsnotificatio
 // plainNotification does NOT implement MailableNotification — tests the fallback path.
 type plainNotification struct{}
 
-func (p *plainNotification) Via(_ contractsnotification.Notifiable) []string { return []string{"mail"} }
-func (p *plainNotification) ID() string                                      { return "" }
+func (p *plainNotification) Via(_ contractsnotification.Notifiable) []string {
+	return []string{contractsnotification.ChannelMail}
+}
+func (p *plainNotification) ID() string { return "" }
 
 // richNotification implements MailableNotification — tests the ToMail() path.
 type richNotification struct {
 	msg contractsnotification.MailMessage
 }
 
-func (r *richNotification) Via(_ contractsnotification.Notifiable) []string { return []string{"mail"} }
-func (r *richNotification) ID() string                                      { return "" }
+func (r *richNotification) Via(_ contractsnotification.Notifiable) []string {
+	return []string{contractsnotification.ChannelMail}
+}
+func (r *richNotification) ID() string { return "" }
 func (r *richNotification) ToMail(_ contractsnotification.Notifiable) contractsnotification.MailMessage {
 	return r.msg
 }
@@ -100,7 +104,7 @@ func (r *richNotification) ToMail(_ contractsnotification.Notifiable) contractsn
 
 func TestMailChannel_Name(t *testing.T) {
 	ch := channels.NewMailChannel(nil)
-	assert.Equal(t, "mail", ch.Name())
+	assert.Equal(t, contractsnotification.ChannelMail, ch.Name())
 }
 
 func TestMailChannel_Send_UsesDefaultMessage_WhenNotMailableNotification(t *testing.T) {
@@ -272,7 +276,7 @@ func TestMailChannel_Send_ReturnsError_WhenRouteTypeIsUnsupported(t *testing.T) 
 	assert.Contains(t, err.Error(), "empty address")
 }
 
-// RouteNotificationFor("mail") may return []string directly — multiple
+// RouteNotificationFor(ChannelMail) may return []string directly — multiple
 // addresses with no display names — without needing the full
 // MailRoutable interface.
 func TestMailChannel_Send_UsesSliceRoute_ForMultipleUnnamedAddresses(t *testing.T) {
@@ -293,7 +297,7 @@ func TestMailChannel_Send_UsesSliceRoute_ForMultipleUnnamedAddresses(t *testing.
 	assert.Equal(t, []string{"a@example.com", "b@example.com"}, captured.Envelope().To)
 }
 
-// RouteNotificationFor("mail") may return map[string]string directly —
+// RouteNotificationFor(ChannelMail) may return map[string]string directly —
 // address→name pairs, same shape and formatting as MailRoutable — for
 // notifiables that don't want to implement the full MailRoutable
 // interface just for this.

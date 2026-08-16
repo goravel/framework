@@ -21,7 +21,7 @@ func NewMailChannel(mailer contractsmail.Mail) *MailChannel {
 	return &MailChannel{mailer: mailer}
 }
 
-func (c *MailChannel) Name() string { return "mail" }
+func (c *MailChannel) Name() string { return contractsnotification.ChannelMail }
 
 func (c *MailChannel) Send(
 	notifiable contractsnotification.Notifiable,
@@ -66,14 +66,14 @@ func (c *MailChannel) Resolve(
 
 // resolveAddresses prefers MailRoutable (multiple addresses, each with an
 // optional display name) when the notifiable implements it, falling back
-// to RouteNotificationFor("mail") otherwise. The mail channel accepts
+// to RouteNotificationFor(ChannelMail) otherwise. The mail channel accepts
 // three shapes there: a single address (string), multiple unnamed
 // addresses ([]string), or multiple named addresses (map[string]string,
 // address→name — same shape MailRoutable returns, formatted the same
 // way). Any other type (including nil, from a Notifiable that doesn't
-// route "mail" at all) is treated as no route. Named addresses are
-// formatted "Name <address>" per RFC 5322, matching how Laravel's mail
-// routing presents name+address pairs.
+// route the mail channel at all) is treated as no route. Named addresses
+// are formatted "Name <address>" per RFC 5322, matching how Laravel's
+// mail routing presents name+address pairs.
 func (c *MailChannel) resolveAddresses(
 	notifiable contractsnotification.Notifiable,
 	n contractsnotification.Notification,
@@ -84,7 +84,7 @@ func (c *MailChannel) resolveAddresses(
 		}
 	}
 
-	switch to := notifiable.RouteNotificationFor("mail").(type) {
+	switch to := notifiable.RouteNotificationFor(contractsnotification.ChannelMail).(type) {
 	case string:
 		if to == "" {
 			break
