@@ -35,7 +35,7 @@ func NewDatabaseChannel(o orm.Orm) *DatabaseChannel {
 	return &DatabaseChannel{orm: o}
 }
 
-func (c *DatabaseChannel) Name() string { return "database" }
+func (c *DatabaseChannel) Name() string { return contractsnotification.ChannelDatabase }
 
 func (c *DatabaseChannel) Send(
 	notifiable contractsnotification.Notifiable,
@@ -63,7 +63,18 @@ func (c *DatabaseChannel) Resolve(
 	notifiable contractsnotification.Notifiable,
 	n contractsnotification.Notification,
 ) (string, []byte, error) {
-	notifiableID := cast.ToString(notifiable.RouteNotificationFor("database"))
+	// Prefer the typed DatabaseRoutable route (type-safe, no channel-name
+	// matching). An empty typed route is not an error by itself — mirroring
+	// MailRoutable's empty-result fallback, fall through to
+	// RouteNotificationFor(ChannelDatabase); only an empty result from both
+	// is an error.
+	var notifiableID string
+	if r, ok := notifiable.(contractsnotification.DatabaseRoutable); ok {
+		notifiableID = r.RouteNotificationForDatabase()
+	}
+	if notifiableID == "" {
+		notifiableID = cast.ToString(notifiable.RouteNotificationFor(contractsnotification.ChannelDatabase))
+	}
 	if notifiableID == "" {
 		return "", nil, errors.NotificationDatabaseEmptyRoute.Args(notifiable)
 	}
@@ -89,7 +100,7 @@ func (c *DatabaseChannel) Resolve(
 	}
 
 	var connection string
-	if dr, ok := n.(contractsnotification.DatabaseRoutable); ok {
+	if dr, ok := n.(contractsnotification.NotificationWithDatabaseConnection); ok {
 		connection = dr.DatabaseConnection()
 	}
 
