@@ -43,70 +43,70 @@ func TestToValue(t *testing.T) {
 	tests := []struct {
 		name string
 		arg  any
-		want log.Value
+		want attribute.Value
 	}{
 		{
 			name: "bool true",
 			arg:  true,
-			want: log.BoolValue(true),
+			want: attribute.BoolValue(true),
 		},
 		{
 			name: "string",
 			arg:  "goravel",
-			want: log.StringValue("goravel"),
+			want: attribute.StringValue("goravel"),
 		},
 		{
 			name: "int",
 			arg:  int(42),
-			want: log.Int64Value(42),
+			want: attribute.Int64Value(42),
 		},
 		{
 			name: "int64",
 			arg:  int64(9000),
-			want: log.Int64Value(9000),
+			want: attribute.Int64Value(9000),
 		},
 		{
 			name: "float64",
 			arg:  3.14159,
-			want: log.Float64Value(3.14159),
+			want: attribute.Float64Value(3.14159),
 		},
 		{
 			name: "time.Time (RFC3339Nano)",
 			arg:  fixedTime,
-			want: log.StringValue(fixedTimeStr),
+			want: attribute.StringValue(fixedTimeStr),
 		},
 		{
 			name: "[]byte",
 			arg:  []byte("secret"),
-			want: log.BytesValue([]byte("secret")),
+			want: attribute.ByteSliceValue([]byte("secret")),
 		},
 		{
 			name: "error",
 			arg:  errors.New("database connection failed"),
-			want: log.StringValue("database connection failed"),
+			want: attribute.StringValue("database connection failed"),
 		},
 		{
 			name: "fmt.Stringer",
 			arg:  attribute.Key("custom_key"),
-			want: log.StringValue("custom_key"),
+			want: attribute.StringValue("custom_key"),
 		},
 		{
 			name: "nil interface",
 			arg:  nil,
-			want: log.Value{},
+			want: attribute.Value{},
 		},
 		{
 			name: "nil pointer (typed)",
 			arg:  (*string)(nil),
-			want: log.Value{},
+			want: attribute.Value{},
 		},
 		{
 			name: "map[string]any (Structured Log)",
 			arg: map[string]any{
 				"role": "admin",
 			},
-			want: log.MapValue(
-				log.String("role", "admin"),
+			want: attribute.MapValue(
+				attribute.String("role", "admin"),
 			),
 		},
 		{
@@ -114,33 +114,33 @@ func TestToValue(t *testing.T) {
 			arg: map[string]int{
 				"retries": 3,
 			},
-			want: log.MapValue(
-				log.Int64("retries", 3),
+			want: attribute.MapValue(
+				attribute.Int64("retries", 3),
 			),
 		},
 		{
 			name: "[]string (Tags)",
 			arg:  []string{"api", "v1"},
-			want: log.SliceValue(
-				log.StringValue("api"),
-				log.StringValue("v1"),
+			want: attribute.SliceValue(
+				attribute.StringValue("api"),
+				attribute.StringValue("v1"),
 			),
 		},
 		{
 			name: "[]int",
 			arg:  []int{1, 2, 3},
-			want: log.SliceValue(
-				log.Int64Value(1),
-				log.Int64Value(2),
-				log.Int64Value(3),
+			want: attribute.SliceValue(
+				attribute.Int64Value(1),
+				attribute.Int64Value(2),
+				attribute.Int64Value(3),
 			),
 		},
 		{
 			name: "complex64",
 			arg:  complex(float32(1.5), float32(2.5)),
-			want: log.MapValue(
-				log.Float64("r", 1.5),
-				log.Float64("i", 2.5),
+			want: attribute.MapValue(
+				attribute.Float64("r", 1.5),
+				attribute.Float64("i", 2.5),
 			),
 		},
 		{
@@ -149,29 +149,29 @@ func TestToValue(t *testing.T) {
 				ID   int
 				Name string
 			}{1, "User"},
-			want: log.StringValue("{ID:1 Name:User}"),
+			want: attribute.StringValue("{ID:1 Name:User}"),
 		},
 		{
 			name: "pointer to struct",
 			arg: &struct {
 				Active bool
 			}{true},
-			want: log.StringValue("{Active:true}"),
+			want: attribute.StringValue("{Active:true}"),
 		},
 		{
 			name: "context.Context",
 			arg:  context.Background(),
-			want: log.StringValue("context.Background"),
+			want: attribute.StringValue("context.Background"),
 		},
 		{
-			name: "log.Value Pass-through",
-			arg:  log.BoolValue(false),
-			want: log.BoolValue(false),
+			name: "attribute.Value Pass-through",
+			arg:  attribute.BoolValue(false),
+			want: attribute.BoolValue(false),
 		},
 		{
 			name: "attribute.Value",
 			arg:  attribute.StringValue("from_attribute"),
-			want: log.StringValue("from_attribute"),
+			want: attribute.StringValue("from_attribute"),
 		},
 	}
 
@@ -185,8 +185,8 @@ func TestToValue(t *testing.T) {
 
 func TestToValue_Uint_Overflow(t *testing.T) {
 	val := uint64(100)
-	assert.Equal(t, log.Int64Value(100), toValue(val))
+	assert.Equal(t, attribute.Int64Value(100), toValue(val))
 
 	hugeVal := uint64(18446744073709551615)
-	assert.Equal(t, log.StringValue("18446744073709551615"), toValue(hugeVal))
+	assert.Equal(t, attribute.StringValue("18446744073709551615"), toValue(hugeVal))
 }

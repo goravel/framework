@@ -46,7 +46,7 @@ func TestMakeCommand(t *testing.T) {
 		assert.NoError(t, file.PutContent(kernelPath, kernel))
 
 		mockContext := mocksconsole.NewContext(t)
-		mockContext.EXPECT().Argument(0).Return("").Once()
+		mockContext.EXPECT().Arguments().Return(nil).Once()
 		mockContext.EXPECT().Ask("Enter the command name", mock.Anything).Return("", errors.New("the command name cannot be empty")).Once()
 		mockContext.EXPECT().Error("the command name cannot be empty").Once()
 		assert.Nil(t, makeCommand.Handle(mockContext))
@@ -69,7 +69,7 @@ func (kernel Kernel) Schedule() []schedule.Event {
 `))
 
 		mockContext := mocksconsole.NewContext(t)
-		mockContext.EXPECT().Argument(0).Return("CleanCache").Once()
+		mockContext.EXPECT().Arguments().Return([]string{"CleanCache"}).Once()
 		mockContext.EXPECT().OptionBool("force").Return(false).Once()
 		mockContext.EXPECT().Success("Console command created successfully").Once()
 		mockContext.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
@@ -84,7 +84,7 @@ func (kernel Kernel) Schedule() []schedule.Event {
 
 	t.Run("command already exists", func(t *testing.T) {
 		mockContext := mocksconsole.NewContext(t)
-		mockContext.EXPECT().Argument(0).Return("CleanCache").Once()
+		mockContext.EXPECT().Arguments().Return([]string{"CleanCache"}).Once()
 		mockContext.EXPECT().OptionBool("force").Return(false).Once()
 		mockContext.EXPECT().Error("the command already exists. Use the --force or -f flag to overwrite").Once()
 		assert.Nil(t, makeCommand.Handle(mockContext))
@@ -94,7 +94,7 @@ func (kernel Kernel) Schedule() []schedule.Event {
 		assert.NoError(t, file.PutContent(kernelPath, kernel))
 
 		mockContext := mocksconsole.NewContext(t)
-		mockContext.EXPECT().Argument(0).Return("Goravel/CleanCache").Once()
+		mockContext.EXPECT().Arguments().Return([]string{"Goravel/CleanCache"}).Once()
 		mockContext.EXPECT().OptionBool("force").Return(false).Once()
 		mockContext.EXPECT().Success("Console command created successfully").Once()
 		mockContext.EXPECT().Success("Console command registered successfully").Once()
@@ -109,6 +109,34 @@ func (kernel Kernel) Schedule() []schedule.Event {
 		assert.True(t, file.Contain(kernelPath, "app/console/commands/Goravel"))
 		assert.True(t, file.Contain(kernelPath, "&Goravel.CleanCache{}"))
 	})
+}
+
+func TestMakeCommand_MultipleNames(t *testing.T) {
+	defer func() {
+		assert.Nil(t, file.Remove("app"))
+	}()
+
+	kernelPath := filepath.Join("app", "console", "kernel.go")
+	assert.NoError(t, file.PutContent(kernelPath, kernel))
+
+	makeCommand := &MakeCommand{}
+	mockContext := mocksconsole.NewContext(t)
+
+	mockContext.EXPECT().Arguments().Return([]string{"Goravel/CleanCache", "Bar/SyncUsers"}).Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
+	mockContext.EXPECT().Success("Console command created successfully").Times(2)
+	mockContext.EXPECT().Success("Console command registered successfully").Times(2)
+
+	assert.Nil(t, makeCommand.Handle(mockContext))
+
+	cleanCachePath := filepath.Join("app", "console", "commands", "Goravel", "clean_cache.go")
+	syncUsersPath := filepath.Join("app", "console", "commands", "Bar", "sync_users.go")
+	assert.True(t, file.Exists(cleanCachePath))
+	assert.True(t, file.Exists(syncUsersPath))
+	assert.True(t, file.Contain(cleanCachePath, "app:goravel-clean-cache"))
+	assert.True(t, file.Contain(syncUsersPath, "app:bar-sync-users"))
+	assert.True(t, file.Contain(kernelPath, "&Goravel.CleanCache{}"))
+	assert.True(t, file.Contain(kernelPath, "&Bar.SyncUsers{}"))
 }
 
 func TestMakeCommand_AddCommandToBootstrapSetup(t *testing.T) {
@@ -137,7 +165,7 @@ func Boot() contractsfoundation.Application {
 
 	// Create mock context
 	mockContext := mocksconsole.NewContext(t)
-	mockContext.EXPECT().Argument(0).Return("CleanCache").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"CleanCache"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Console command created successfully").Once()
 	mockContext.EXPECT().Success("Console command registered successfully").Once()

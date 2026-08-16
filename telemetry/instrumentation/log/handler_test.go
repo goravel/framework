@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/suite"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/log"
 	"go.opentelemetry.io/otel/log/logtest"
 
@@ -110,7 +111,7 @@ func (s *HandlerTestSuite) TestHandle() {
 				Timestamp:    s.now,
 				Severity:     log.SeverityInfo,
 				SeverityText: "info",
-				Body:         log.StringValue(""),
+				Body:         attribute.StringValue(""),
 			},
 		},
 		{
@@ -126,7 +127,7 @@ func (s *HandlerTestSuite) TestHandle() {
 				Timestamp:    s.now,
 				Severity:     log.SeverityDebug,
 				SeverityText: "debug",
-				Body:         log.StringValue("debug message"),
+				Body:         attribute.StringValue("debug message"),
 			},
 		},
 		{
@@ -145,11 +146,11 @@ func (s *HandlerTestSuite) TestHandle() {
 				Timestamp:    s.now,
 				Severity:     log.SeverityError,
 				SeverityText: "error",
-				Body:         log.StringValue("something went wrong"),
-				Attributes: []log.KeyValue{
-					log.String("code", "ERR_500"),
-					log.String("domain", "payment"),
-					log.String("hint", "check balance"),
+				Body:         attribute.StringValue("something went wrong"),
+				Attributes: []attribute.KeyValue{
+					attribute.String("code", "ERR_500"),
+					attribute.String("domain", "payment"),
+					attribute.String("hint", "check balance"),
 				},
 			},
 		},
@@ -171,10 +172,10 @@ func (s *HandlerTestSuite) TestHandle() {
 				Timestamp:    s.now,
 				Severity:     log.SeverityInfo,
 				SeverityText: "info",
-				Body:         log.StringValue(""),
-				Attributes: []log.KeyValue{
-					log.String("foo", "bar"),
-					log.Int64("user_id", 42),
+				Body:         attribute.StringValue(""),
+				Attributes: []attribute.KeyValue{
+					attribute.String("foo", "bar"),
+					attribute.Int64("user_id", 42),
 				},
 			},
 		},
@@ -194,14 +195,14 @@ func (s *HandlerTestSuite) TestHandle() {
 				Timestamp:    s.now,
 				Severity:     log.SeverityWarn,
 				SeverityText: "warning",
-				Body:         log.StringValue(""),
-				Attributes: []log.KeyValue{
-					log.Map("user",
-						log.String("role", "admin"),
+				Body:         attribute.StringValue(""),
+				Attributes: []attribute.KeyValue{
+					attribute.Map("user",
+						attribute.String("role", "admin"),
 					),
-					log.Slice("tags",
-						log.StringValue("critical"),
-						log.StringValue("auth"),
+					attribute.Slice("tags",
+						attribute.StringValue("critical"),
+						attribute.StringValue("auth"),
 					),
 				},
 			},
@@ -218,7 +219,7 @@ func (s *HandlerTestSuite) TestHandle() {
 				Timestamp:    s.now,
 				Severity:     log.SeverityFatal4,
 				SeverityText: "panic",
-				Body:         log.StringValue(""),
+				Body:         attribute.StringValue(""),
 			},
 		},
 	}

@@ -18,7 +18,7 @@ import (
 type dbNotifiable struct{ id string }
 
 func (d *dbNotifiable) RouteNotificationFor(channel string) any {
-	if channel == "database" {
+	if channel == contractsnotification.ChannelDatabase {
 		return d.id
 	}
 	return ""
@@ -29,17 +29,31 @@ func (d *dbNotifiable) RouteNotificationFor(channel string) any {
 type numericRouteNotifiable struct{ id int }
 
 func (n numericRouteNotifiable) RouteNotificationFor(channel string) any {
-	if channel == "database" {
+	if channel == contractsnotification.ChannelDatabase {
 		return n.id
 	}
 	return nil
+}
+
+// typedRouteNotifiable implements DatabaseRoutable in addition to
+// Notifiable. typed is what RouteNotificationForDatabase returns and
+// fallback is what RouteNotificationFor returns, so tests can pin which
+// route Resolve prefers and what happens when either is empty.
+type typedRouteNotifiable struct {
+	typed    string
+	fallback any
+}
+
+func (t typedRouteNotifiable) RouteNotificationFor(_ string) any { return t.fallback }
+func (t typedRouteNotifiable) RouteNotificationForDatabase() string {
+	return t.typed
 }
 
 // dbNotification does NOT implement DatabaseNotification — tests the fallback payload.
 type dbNotification struct{}
 
 func (d *dbNotification) Via(_ contractsnotification.Notifiable) []string {
-	return []string{"database"}
+	return []string{contractsnotification.ChannelDatabase}
 }
 func (d *dbNotification) ID() string { return "fixed-uuid-1234" }
 
@@ -47,15 +61,15 @@ func (d *dbNotification) ID() string { return "fixed-uuid-1234" }
 type richDbNotification struct{}
 
 func (r *richDbNotification) Via(_ contractsnotification.Notifiable) []string {
-	return []string{"database"}
+	return []string{contractsnotification.ChannelDatabase}
 }
 func (r *richDbNotification) ID() string { return "" }
 func (r *richDbNotification) ToDatabase(_ contractsnotification.Notifiable) map[string]any {
 	return map[string]any{"invoice_id": 99, "amount": "250.00"}
 }
 
-// routedDbNotification implements DatabaseRoutable, selecting a
-// non-default connection.
+// routedDbNotification implements NotificationWithDatabaseConnection,
+// selecting a non-default connection.
 type routedDbNotification struct{ richDbNotification }
 
 func (r *routedDbNotification) DatabaseConnection() string { return "reporting" }
@@ -66,7 +80,7 @@ func (r *routedDbNotification) DatabaseConnection() string { return "reporting" 
 type unmarshalableNotification struct{}
 
 func (unmarshalableNotification) Via(_ contractsnotification.Notifiable) []string {
-	return []string{"database"}
+	return []string{contractsnotification.ChannelDatabase}
 }
 func (unmarshalableNotification) ToDatabase(_ contractsnotification.Notifiable) map[string]any {
 	return map[string]any{"bad": make(chan int)} // channels aren't JSON-marshalable
@@ -76,7 +90,7 @@ func (unmarshalableNotification) ToDatabase(_ contractsnotification.Notifiable) 
 
 func TestDatabaseChannel_Name(t *testing.T) {
 	ch := channels.NewDatabaseChannel(nil)
-	assert.Equal(t, "database", ch.Name())
+	assert.Equal(t, contractsnotification.ChannelDatabase, ch.Name())
 }
 
 func TestDatabaseNotificationModel_TableName(t *testing.T) {
@@ -195,6 +209,49 @@ func TestDatabaseChannel_Send_CastsNumericID_ToString(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+// The typed DatabaseRoutable route wins over RouteNotificationFor — the
+// channel prefers RouteNotificationForDatabase so notifiables can route
+// the database channel without string-matching channel names.
+func TestDatabaseChannel_Send_PrefersTypedRoute_WhenDatabaseRoutable(t *testing.T) {
+	query := mocksorm.NewQuery(t)
+	query.EXPECT().Create(mock.MatchedBy(func(r *channels.DatabaseNotificationModel) bool {
+		return r.NotifiableID == "42"
+	})).Return(nil).Once()
+
+	o := mocksorm.NewOrm(t)
+	o.EXPECT().Query().Return(query).Once()
+
+	ch := channels.NewDatabaseChannel(o)
+	err := ch.Send(typedRouteNotifiable{typed: "42", fallback: "wrong-route"}, &dbNotification{})
+	assert.NoError(t, err)
+}
+
+// An empty typed route is not an error by itself: like MailRoutable's
+// empty-result fallback, Resolve falls through to RouteNotificationFor.
+func TestDatabaseChannel_Send_FallsBackToGenericRoute_WhenTypedRouteEmpty(t *testing.T) {
+	query := mocksorm.NewQuery(t)
+	query.EXPECT().Create(mock.MatchedBy(func(r *channels.DatabaseNotificationModel) bool {
+		return r.NotifiableID == "42"
+	})).Return(nil).Once()
+
+	o := mocksorm.NewOrm(t)
+	o.EXPECT().Query().Return(query).Once()
+
+	ch := channels.NewDatabaseChannel(o)
+	err := ch.Send(typedRouteNotifiable{typed: "", fallback: "42"}, &dbNotification{})
+	assert.NoError(t, err)
+}
+
+// Only an empty result from both the typed route and RouteNotificationFor
+// is an error.
+func TestDatabaseChannel_Send_ReturnsError_WhenTypedRouteAndGenericRouteEmpty(t *testing.T) {
+	ch := channels.NewDatabaseChannel(nil) // no orm call expected
+
+	err := ch.Send(typedRouteNotifiable{typed: "", fallback: ""}, &dbNotification{})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "empty ID")
+}
+
 func TestDatabaseChannel_Send_WrapsOrmError(t *testing.T) {
 
 	query := mocksorm.NewQuery(t)
@@ -209,7 +266,7 @@ func TestDatabaseChannel_Send_WrapsOrmError(t *testing.T) {
 	assert.Contains(t, err.Error(), "unique constraint violation")
 }
 
-func TestDatabaseChannel_Send_UsesConfiguredConnection_WhenDatabaseRoutable(t *testing.T) {
+func TestDatabaseChannel_Send_UsesConfiguredConnection_WhenNotificationWithDatabaseConnection(t *testing.T) {
 
 	query := mocksorm.NewQuery(t)
 	query.EXPECT().Create(mock.AnythingOfType("*channels.DatabaseNotificationModel")).
@@ -229,7 +286,7 @@ func TestDatabaseChannel_Send_UsesConfiguredConnection_WhenDatabaseRoutable(t *t
 	assert.NoError(t, err)
 }
 
-func TestDatabaseChannel_Send_UsesDefaultConnection_WhenNotDatabaseRoutable(t *testing.T) {
+func TestDatabaseChannel_Send_UsesDefaultConnection_WhenNotNotificationWithDatabaseConnection(t *testing.T) {
 
 	query := mocksorm.NewQuery(t)
 	query.EXPECT().Create(mock.AnythingOfType("*channels.DatabaseNotificationModel")).

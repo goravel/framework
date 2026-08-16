@@ -6,6 +6,17 @@ import (
 	contractsmail "github.com/goravel/framework/contracts/mail"
 )
 
+// Channel name constants. Use these instead of raw string literals in
+// Notification.Via, Notifiable.RouteNotificationFor, and Manager.Route so
+// a typo is caught at compile time rather than silently dropping a route.
+const (
+	// ChannelMail is the name of the built-in mail delivery channel.
+	ChannelMail = "mail"
+
+	// ChannelDatabase is the name of the built-in database delivery channel.
+	ChannelDatabase = "database"
+)
+
 type Notification interface {
 	Via(notifiable Notifiable) []string
 }
@@ -67,17 +78,41 @@ type Notifiable interface {
 	// database:
 	//   string        model primary key (numeric IDs auto converted via cast.ToString)
 	// Custom channels support arbitrary custom types. Unrecognized types for a channel are treated as no valid route.
+	//
+	// Prefer the typed alternatives for the built-in channels instead of
+	// matching on the channel name constants (ChannelMail / ChannelDatabase)
+	// here: implement MailRoutable (mail) or DatabaseRoutable (database)
+	// and the channel uses them directly, so a typo can't silently drop a
+	// route.
 	RouteNotificationFor(channel string) any
 }
 
+// MailRoutable is implemented by a Notifiable to provide multiple mail
+// recipients (address→name mapping). It is preferred over
+// RouteNotificationFor, but an empty result is not an error by itself: the
+// mail channel falls back to RouteNotificationFor(ChannelMail). An empty
+// result from both is an error.
 type MailRoutable interface {
 	RouteNotificationForMail(notification Notification) map[string]string
+}
+
+// DatabaseRoutable is implemented by a Notifiable to provide the database
+// channel's delivery route (the primary key persisted as NotifiableID) in
+// a type-safe way, without matching the channel name in RouteNotificationFor.
+//
+// RouteNotificationForDatabase is preferred over RouteNotificationFor, but
+// returning "" is not an error by itself: like MailRoutable's empty-result
+// fallback, the channel then falls back to
+// RouteNotificationFor(ChannelDatabase). An empty result from both is an
+// error.
+type DatabaseRoutable interface {
+	RouteNotificationForDatabase() string
 }
 
 // Channel is the interface every delivery driver must satisfy. Register
 // custom channels via Manager.Extend.
 type Channel interface {
-	// Name returns the unique identifier for this channel, e.g. "mail", "database".
+	// Name returns the unique identifier for this channel, e.g. ChannelMail, ChannelDatabase.
 	Name() string
 
 	Send(notifiable Notifiable, notification Notification) error
@@ -129,7 +164,13 @@ type DatabaseNotification interface {
 	ToDatabase(notifiable Notifiable) map[string]any
 }
 
-type DatabaseRoutable interface {
+// NotificationWithDatabaseConnection is implemented by a Notification to
+// select a non-default database connection for the database channel.
+//
+// Breaking change: this interface was previously named DatabaseRoutable,
+// which is now the notifiable-side route interface. Any code implementing
+// the old name must be updated to NotificationWithDatabaseConnection.
+type NotificationWithDatabaseConnection interface {
 	Notification
 	// DatabaseConnection returns the connection name to use. Return ""
 	// for the default connection.
@@ -149,7 +190,7 @@ type MailMessage struct {
 	// Subject is the email subject line. Defaults to the notification type name.
 	Subject string
 	// To overrides the recipient address(es). Leave empty to use
-	// RouteNotificationFor("mail") / MailRoutable.
+	// RouteNotificationFor(ChannelMail) / MailRoutable.
 	To []string
 	// From overrides the sender address. Leave empty to use the global mail.from config.
 	From string

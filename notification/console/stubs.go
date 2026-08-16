@@ -19,7 +19,7 @@ func NewDummyNotification() *DummyNotification {
 
 // Via returns the channels this notification should be sent through.
 func (r *DummyNotification) Via(notifiable notification.Notifiable) []string {
-	return []string{"mail"}
+	return []string{notification.ChannelMail}
 }
 
 // ToMail builds the mail channel's payload. Implement
@@ -50,7 +50,7 @@ func NewDummyNotification() *DummyNotification {
 
 // Via returns the channels this notification should be sent through.
 func (r *DummyNotification) Via(notifiable notification.Notifiable) []string {
-	return []string{"database"}
+	return []string{notification.ChannelDatabase}
 }
 
 // ToDatabase builds the data persisted to the notifications table.

@@ -24,7 +24,7 @@ import (
 type fakeNotifiable struct{ email string }
 
 func (f *fakeNotifiable) RouteNotificationFor(channel string) any {
-	if channel == "mail" {
+	if channel == contractsnotification.ChannelMail {
 		return f.email
 	}
 	return ""
@@ -137,7 +137,7 @@ func (n *queueableShouldSendNotification) ShouldSend(_ contractsnotification.Not
 type queueTestNotifiable struct{}
 
 func (queueTestNotifiable) RouteNotificationFor(channel string) any {
-	if channel == "mail" {
+	if channel == contractsnotification.ChannelMail {
 		return "user@example.com"
 	}
 	return ""
@@ -146,7 +146,7 @@ func (queueTestNotifiable) RouteNotificationFor(channel string) any {
 type queueableNotification struct{}
 
 func (n *queueableNotification) Via(_ contractsnotification.Notifiable) []string {
-	return []string{"mail"}
+	return []string{contractsnotification.ChannelMail}
 }
 func (n *queueableNotification) ToMail(_ contractsnotification.Notifiable) contractsnotification.MailMessage {
 	return mail.NewMessage().
@@ -511,13 +511,13 @@ func TestManager_Route_RouteNotificationForReturnsConfiguredAddress(t *testing.T
 	logger := mockslog.NewLog(t)
 	mgr := NewManager(logger, nil)
 
-	target := mgr.Route("mail", "user@example.com").Route("sms", "+15551234567")
+	target := mgr.Route(contractsnotification.ChannelMail, "user@example.com").Route("sms", "+15551234567")
 
-	assert.Equal(t, "user@example.com", target.RouteNotificationFor("mail"))
+	assert.Equal(t, "user@example.com", target.RouteNotificationFor(contractsnotification.ChannelMail))
 	assert.Equal(t, "+15551234567", target.RouteNotificationFor("sms"))
-	// No route was ever set for "database" — the underlying map lookup
-	// misses, returning the any zero value (nil), not an empty string.
-	assert.Nil(t, target.RouteNotificationFor("database"))
+	// No route was ever set for the database channel — the underlying map
+	// lookup misses, returning the any zero value (nil), not an empty string.
+	assert.Nil(t, target.RouteNotificationFor(contractsnotification.ChannelDatabase))
 }
 
 func TestManager_Route_RouteNotificationFor_ReturnsRawValue_WhenRouteIsNotAString(t *testing.T) {
