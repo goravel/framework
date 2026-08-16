@@ -29,33 +29,6 @@ func encodeDispatchItem(item dispatchItem) (string, error) {
 	return string(b), nil
 }
 
-// DispatchJob delivers one resolved channel item. It's registered once
-// with the queue at Boot() (see service_provider.go) rather than
-// constructed per-dispatch, since persisting queue drivers (database,
-// Redis) look up a registered Job by Signature() and call Handle() on a
-// freshly constructed instance with the dispatch-time []queue.Arg. That's
-// why Manager.dispatchQueued resolves each channel's payload eagerly via
-// ResolvableChannel.Resolve — while notifiable/notification are still
-// live — and queues only the resulting plain (channel, route, payload,
-// tries, backoff).
-//
-// Retry state (item) is a shared, mutex-guarded field rather than
-// carried in the error, matching broadcasting.BroadcastJob's exact
-// pattern rather than an independently-derived design — see that type's
-// own doc comment for the full reasoning, copied here:
-//
-// item is the payload of the task being processed, set by Handle and
-// read by ShouldRetry. DispatchJob is a shared singleton, so access is
-// guarded by mu.
-//
-// Limitation: the mutex guarantees memory safety, not logical
-// isolation. ShouldRetry has no access to task args by contract, so a
-// concurrent failed task can still overwrite this payload between
-// another task's Handle returning an error and its ShouldRetry call.
-// Clearing item on Handle's success path converts the common
-// interleaving case into the safe single-shot fallback; a full fix
-// requires per-task state passed by the queue worker, which is out of
-// scope.
 type DispatchJob struct {
 	manager *Manager
 
@@ -92,7 +65,7 @@ func (j *DispatchJob) Handle(args ...any) error {
 		j.mu.Lock()
 		j.item = nil
 		j.mu.Unlock()
-		return errors.NotificationInvalidQueuePayload
+		return errors.NotificationQueuePayloadDecodeFailed.Args(err)
 	}
 
 	j.mu.Lock()
@@ -101,11 +74,17 @@ func (j *DispatchJob) Handle(args ...any) error {
 
 	ch := j.manager.Channel(item.Channel)
 	if ch == nil {
+		j.mu.Lock()
+		j.item = nil
+		j.mu.Unlock()
 		return errors.NotificationChannelNotFound.Args(item.Channel)
 	}
 
 	resolvable, ok := ch.(notification.ResolvableChannel)
 	if !ok {
+		j.mu.Lock()
+		j.item = nil
+		j.mu.Unlock()
 		return errors.NotificationChannelNotQueueable.Args(item.Channel)
 	}
 
@@ -113,10 +92,6 @@ func (j *DispatchJob) Handle(args ...any) error {
 		return err
 	}
 
-	// A successful task is never consulted by ShouldRetry, so release
-	// the payload: an interleaving concurrent failed task then reads
-	// the safe single-shot fallback (item == nil) instead of a wrong
-	// retry policy.
 	j.mu.Lock()
 	j.item = nil
 	j.mu.Unlock()
@@ -124,12 +99,6 @@ func (j *DispatchJob) Handle(args ...any) error {
 	return nil
 }
 
-// ShouldRetry implements the optional queue.Job retry-control interface
-// documented at https://www.goravel.dev/digging-deeper/queues.html#job-retry.
-// Logic mirrors broadcasting.BroadcastJob.ShouldRetry exactly: without
-// Tries the notification is single-shot regardless of the worker's own
-// tries config; with Tries it retries while attempt < Tries using the
-// configured per-attempt Backoff (last value repeats).
 func (j *DispatchJob) ShouldRetry(err error, attempt int) (retryable bool, delay time.Duration) {
 	j.mu.Lock()
 	item := j.item
@@ -139,10 +108,7 @@ func (j *DispatchJob) ShouldRetry(err error, attempt int) (retryable bool, delay
 		return false, 0
 	}
 	if attempt < 1 {
-		// Defensive: attempts come from the pop-incremented reservation
-		// (or a chain counter starting at 1), so this is unreachable in
-		// practice. Returning false avoids an accidental infinite
-		// retry loop.
+
 		return false, 0
 	}
 	if attempt >= item.Tries {

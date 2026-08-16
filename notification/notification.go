@@ -9,7 +9,6 @@ import (
 	"github.com/goravel/framework/errors"
 )
 
-// Manager is the concrete implementation of contracts/notification.Manager.
 type Manager struct {
 	mu       sync.RWMutex
 	channels map[string]contractsnotification.Channel
@@ -143,14 +142,11 @@ func (m *Manager) dispatchQueued(
 		}
 
 		item := dispatchItem{Channel: name, Route: route, Payload: payload}
-		// Captured now, while n is still live — DispatchJob.ShouldRetry
-		// can't call these itself later, see job.go. Mirrors
-		// broadcasting/application.go's Dispatch capture logic exactly,
-		// including only serializing Backoff alongside a positive Tries
-		// (Backoff has no effect without Tries, so there's no reason to
-		// carry it across the queue boundary otherwise).
-		if withTries, ok := n.(contractsnotification.NotificationWithTries); ok && withTries.Tries(name) > 0 {
-			item.Tries = withTries.Tries(name)
+
+		if withTries, ok := n.(contractsnotification.NotificationWithTries); ok {
+			if tries := withTries.Tries(name); tries > 0 {
+				item.Tries = tries
+			}
 		}
 		if item.Tries > 0 {
 			if withBackoff, ok := n.(contractsnotification.NotificationWithBackoff); ok {
