@@ -24,7 +24,7 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 }
 
 func (r *ServiceProvider) Register(app foundation.Application) {
-	app.Bind(binding.Notification, func(app foundation.Application) (any, error) {
+	app.Singleton(binding.Notification, func(app foundation.Application) (any, error) {
 		logger := app.MakeLog()
 		if logger == nil {
 			return nil, errors.LogFacadeNotSet.SetModule(errors.ModuleNotification)
