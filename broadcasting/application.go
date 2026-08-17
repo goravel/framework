@@ -143,16 +143,15 @@ func (a *Application) Dispatch(ctx context.Context, event broadcasting.ShouldBro
 	if withTries, ok := event.(broadcasting.ShouldBroadcastWithTries); ok && withTries.BroadcastTries() > 0 {
 		item.Tries = withTries.BroadcastTries()
 	}
-	// Backoff only takes effect when retries exist, so it is serialized only
-	// alongside a positive Tries value.
-	if item.Tries > 0 {
-		if withBackoff, ok := event.(broadcasting.ShouldBroadcastWithBackoff); ok {
-			backoff := withBackoff.BroadcastBackoff()
-			if len(backoff) > 0 {
-				item.Backoff = make([]int64, len(backoff))
-				for i, d := range backoff {
-					item.Backoff[i] = d.Milliseconds()
-				}
+	// Backoff is serialized unconditionally: it applies to every retry,
+	// whether capped by the event's own BroadcastTries or the queue worker's
+	// tries config (Laravel parity).
+	if withBackoff, ok := event.(broadcasting.ShouldBroadcastWithBackoff); ok {
+		backoff := withBackoff.BroadcastBackoff()
+		if len(backoff) > 0 {
+			item.Backoff = make([]int64, len(backoff))
+			for i, d := range backoff {
+				item.Backoff[i] = d.Milliseconds()
 			}
 		}
 	}

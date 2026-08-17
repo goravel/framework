@@ -21,9 +21,9 @@ func (_m *JobWithShouldRetry) EXPECT() *JobWithShouldRetry_Expecter {
 	return &JobWithShouldRetry_Expecter{mock: &_m.Mock}
 }
 
-// ShouldRetry provides a mock function with given fields: err, attempt
-func (_m *JobWithShouldRetry) ShouldRetry(err error, attempt int) (bool, time.Duration) {
-	ret := _m.Called(err, attempt)
+// ShouldRetry provides a mock function with given fields: err, attempt, maxTries
+func (_m *JobWithShouldRetry) ShouldRetry(err error, attempt int, maxTries int) (bool, time.Duration) {
+	ret := _m.Called(err, attempt, maxTries)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ShouldRetry")
@@ -31,17 +31,17 @@ func (_m *JobWithShouldRetry) ShouldRetry(err error, attempt int) (bool, time.Du
 
 	var r0 bool
 	var r1 time.Duration
-	if rf, ok := ret.Get(0).(func(error, int) (bool, time.Duration)); ok {
-		return rf(err, attempt)
+	if rf, ok := ret.Get(0).(func(error, int, int) (bool, time.Duration)); ok {
+		return rf(err, attempt, maxTries)
 	}
-	if rf, ok := ret.Get(0).(func(error, int) bool); ok {
-		r0 = rf(err, attempt)
+	if rf, ok := ret.Get(0).(func(error, int, int) bool); ok {
+		r0 = rf(err, attempt, maxTries)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	if rf, ok := ret.Get(1).(func(error, int) time.Duration); ok {
-		r1 = rf(err, attempt)
+	if rf, ok := ret.Get(1).(func(error, int, int) time.Duration); ok {
+		r1 = rf(err, attempt, maxTries)
 	} else {
 		r1 = ret.Get(1).(time.Duration)
 	}
@@ -57,13 +57,14 @@ type JobWithShouldRetry_ShouldRetry_Call struct {
 // ShouldRetry is a helper method to define mock.On call
 //   - err error
 //   - attempt int
-func (_e *JobWithShouldRetry_Expecter) ShouldRetry(err interface{}, attempt interface{}) *JobWithShouldRetry_ShouldRetry_Call {
-	return &JobWithShouldRetry_ShouldRetry_Call{Call: _e.mock.On("ShouldRetry", err, attempt)}
+//   - maxTries int
+func (_e *JobWithShouldRetry_Expecter) ShouldRetry(err interface{}, attempt interface{}, maxTries interface{}) *JobWithShouldRetry_ShouldRetry_Call {
+	return &JobWithShouldRetry_ShouldRetry_Call{Call: _e.mock.On("ShouldRetry", err, attempt, maxTries)}
 }
 
-func (_c *JobWithShouldRetry_ShouldRetry_Call) Run(run func(err error, attempt int)) *JobWithShouldRetry_ShouldRetry_Call {
+func (_c *JobWithShouldRetry_ShouldRetry_Call) Run(run func(err error, attempt int, maxTries int)) *JobWithShouldRetry_ShouldRetry_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(error), args[1].(int))
+		run(args[0].(error), args[1].(int), args[2].(int))
 	})
 	return _c
 }
@@ -73,7 +74,7 @@ func (_c *JobWithShouldRetry_ShouldRetry_Call) Return(retryable bool, delay time
 	return _c
 }
 
-func (_c *JobWithShouldRetry_ShouldRetry_Call) RunAndReturn(run func(error, int) (bool, time.Duration)) *JobWithShouldRetry_ShouldRetry_Call {
+func (_c *JobWithShouldRetry_ShouldRetry_Call) RunAndReturn(run func(error, int, int) (bool, time.Duration)) *JobWithShouldRetry_ShouldRetry_Call {
 	_c.Call.Return(run)
 	return _c
 }

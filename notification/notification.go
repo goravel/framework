@@ -148,14 +148,12 @@ func (m *Manager) dispatchQueued(
 				item.Tries = tries
 			}
 		}
-		if item.Tries > 0 {
-			if withBackoff, ok := n.(contractsnotification.NotificationWithBackoff); ok {
-				backoff := withBackoff.Backoff(name)
-				if len(backoff) > 0 {
-					item.Backoff = make([]int64, len(backoff))
-					for i, d := range backoff {
-						item.Backoff[i] = d.Milliseconds()
-					}
+		if withBackoff, ok := n.(contractsnotification.NotificationWithBackoff); ok {
+			backoff := withBackoff.Backoff(name)
+			if len(backoff) > 0 {
+				item.Backoff = make([]int64, len(backoff))
+				for i, d := range backoff {
+					item.Backoff[i] = d.Milliseconds()
 				}
 			}
 		}

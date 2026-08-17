@@ -36,11 +36,11 @@ func (j *BroadcastJob) Signature() string {
 
 // Handle executes the queued broadcast. Retries are governed by ShouldRetry
 // using the event's BroadcastTries/BroadcastBackoff captured at dispatch time.
-// Broadcasts without BroadcastTries are single-shot, regardless of the queue
-// worker's tries config. A fresh context is synthesized (the dispatch-time ctx
-// cannot cross the queue boundary); if the originating event implemented
-// ShouldBroadcastWithTimeout the worker context is bounded accordingly, which
-// the Pusher driver honours via WithContext.
+// Broadcasts without BroadcastTries defer to the queue worker's tries config.
+// A fresh context is synthesized (the dispatch-time ctx cannot cross the queue
+// boundary); if the originating event implemented ShouldBroadcastWithTimeout
+// the worker context is bounded accordingly, which the Pusher driver honours
+// via WithContext.
 func (j *BroadcastJob) Handle(args ...any) error {
 	if len(args) != 1 {
 		j.mu.Lock()
@@ -99,17 +99,24 @@ func (j *BroadcastJob) Handle(args ...any) error {
 	return nil
 }
 
-// ShouldRetry controls retries for the queued broadcast. It is authoritative
-// and replaces the worker's tries: without BroadcastTries the broadcast is
-// single-shot, regardless of the worker's tries config. With BroadcastTries it
-// retries while attempt < Tries using the configured per-attempt Backoff
-// (last value repeats).
-func (j *BroadcastJob) ShouldRetry(err error, attempt int) (retryable bool, delay time.Duration) {
+// ShouldRetry controls retries for the queued broadcast. A
+// BroadcastTries-declaring event wins; without one (Tries <= 0) the queue
+// worker's maxTries governs, mirroring Laravel's
+// Worker::markJobAsFailedIfWillExceedMaxAttempts. With a cap it retries while
+// attempt < Tries using the configured per-attempt Backoff (last value
+// repeats); backoff applies to worker-driven retries too. item == nil (cleared
+// on success/invalid payload) is the safe single-shot fallback — never the
+// worker's tries, so an interleaved concurrent task can't inherit another
+// task's policy.
+func (j *BroadcastJob) ShouldRetry(err error, attempt, maxTries int) (retryable bool, delay time.Duration) {
 	j.mu.Lock()
 	item := j.item
 	j.mu.Unlock()
 
-	if item == nil || item.Tries <= 0 {
+	// item == nil = no task policy (cleared on success/invalid payload): the
+	// safe single-shot fallback — never the worker's tries, so an interleaved
+	// concurrent task can't inherit another task's policy.
+	if item == nil {
 		return false, 0
 	}
 	if attempt < 1 {
@@ -118,7 +125,14 @@ func (j *BroadcastJob) ShouldRetry(err error, attempt int) (retryable bool, dela
 		// Returning false avoids an accidental infinite retry loop.
 		return false, 0
 	}
-	if attempt >= item.Tries {
+
+	// Laravel parity: the event's own BroadcastTries wins; without one the
+	// worker's maxTries governs (Worker::markJobAsFailedIfWillExceedMaxAttempts).
+	effectiveTries := item.Tries
+	if effectiveTries <= 0 {
+		effectiveTries = maxTries
+	}
+	if attempt >= effectiveTries {
 		return false, 0
 	}
 	if len(item.Backoff) == 0 {

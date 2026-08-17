@@ -127,7 +127,7 @@ func (r *Worker) call(task queue.Task, reservedJob queue.ReservedJob) (released 
 		var delay time.Duration = 0
 
 		if jobWithShouldRetry, ok := task.Job.(queue.JobWithShouldRetry); ok {
-			shouldRetry, delay = jobWithShouldRetry.ShouldRetry(callErr, attempt)
+			shouldRetry, delay = jobWithShouldRetry.ShouldRetry(callErr, attempt, r.tries)
 		} else {
 			shouldRetry = attempt < r.tries /* || r.tries == 0 */ // Currently, we do not support unlimited retries, see https://github.com/goravel/framework/pull/1123#discussion_r2194272829
 		}
