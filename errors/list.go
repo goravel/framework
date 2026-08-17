@@ -213,6 +213,7 @@ var (
 	NotificationDatabaseUnmarshalRecordFailed = New("database channel: failed to unmarshal record: %w").SetModule(ModuleNotification)
 	NotificationDatabaseInsertFailed          = New("database channel: failed to insert notification record: %w").SetModule(ModuleNotification)
 	NotificationTableRequiresBootstrapSetup   = New("notifications:table auto-registration requires the bootstrap setup (see env.IsBootstrapSetup); register the migration manually").SetModule(ModuleNotification)
+	NotificationQueuePayloadDecodeFailed      = New("notification queue payload could not be decoded: %v").SetModule(ModuleNotification)
 
 	OrmDriverNotSupported          = New("invalid driver: %s, only support mysql, postgres, sqlite and sqlserver")
 	OrmFailedToGenerateDNS         = New("failed to generate DSN, please check the database configuration")

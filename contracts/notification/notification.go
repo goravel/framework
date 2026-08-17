@@ -36,21 +36,36 @@ type NotificationWithAfterSending interface {
 	AfterSending(notifiable Notifiable, channel string) error
 }
 
-// NOT CURRENTLY WIRED — implementing this on a notification has no
-// effect today.
-type NotificationWithBackoff interface {
+// NotificationWithTries is an optional extension for queued
+// notifications that want to cap retry attempts on delivery failure.
+// Mirrors contracts/broadcasting.ShouldBroadcastWithTries exactly, for
+// consistency across the two queued-retry mechanisms in this codebase.
+type NotificationWithTries interface {
 	Notification
-	// Backoff returns the number of seconds to wait before retrying
-	// after channel is the channel that failed.
-	Backoff(channel string) int
+	// Tries returns the maximum number of attempts for the given
+	// channel. 0 / not implementing this interface means the
+	// notification is single-shot on that channel — no retry at all,
+	// not even once, matching ShouldBroadcastWithTries's semantics.
+	Tries(channel string) int
 }
 
-// NOT CURRENTLY WIRED — same root cause as NotificationWithBackoff:
-type NotificationWithRetryUntil interface {
+// NotificationWithBackoff is an optional extension for queued
+// notifications that want to control the delay before each retry
+// attempt. Mirrors contracts/broadcasting.ShouldBroadcastWithBackoff
+// exactly: Backoff(channel) is called once, while the notification is
+// still live, and returns the FULL per-attempt schedule up front — not
+// re-invoked per retry. ShouldRetry indexes into the captured slice by
+// attempt number, and the last value repeats for any attempt beyond the
+// slice's length (min(attempt-1, len(backoff)-1)), matching Laravel's
+// Worker::calculateBackoff and BroadcastJob.ShouldRetry precisely.
+//
+// Only takes effect together with NotificationWithTries; without Tries
+// the notification is single-shot regardless of Backoff.
+type NotificationWithBackoff interface {
 	Notification
-	// RetryUntil returns the time after which delivery attempts should
-	// stop being retried.
-	RetryUntil() time.Time
+	// Backoff returns the delay before each retry attempt on channel,
+	// in order; the last value repeats for subsequent attempts.
+	Backoff(channel string) []time.Duration
 }
 
 type Notifiable interface {

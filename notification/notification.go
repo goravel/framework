@@ -9,7 +9,6 @@ import (
 	"github.com/goravel/framework/errors"
 )
 
-// Manager is the concrete implementation of contracts/notification.Manager.
 type Manager struct {
 	mu       sync.RWMutex
 	channels map[string]contractsnotification.Channel
@@ -143,6 +142,24 @@ func (m *Manager) dispatchQueued(
 		}
 
 		item := dispatchItem{Channel: name, Route: route, Payload: payload}
+
+		if withTries, ok := n.(contractsnotification.NotificationWithTries); ok {
+			if tries := withTries.Tries(name); tries > 0 {
+				item.Tries = tries
+			}
+		}
+		if item.Tries > 0 {
+			if withBackoff, ok := n.(contractsnotification.NotificationWithBackoff); ok {
+				backoff := withBackoff.Backoff(name)
+				if len(backoff) > 0 {
+					item.Backoff = make([]int64, len(backoff))
+					for i, d := range backoff {
+						item.Backoff[i] = d.Milliseconds()
+					}
+				}
+			}
+		}
+
 		encoded, err := encodeDispatchItem(item)
 		if err != nil {
 			errs = append(errs, err)
