@@ -32,7 +32,7 @@ func TestServiceProviderRegister(t *testing.T) {
 
 	t.Run("log facade not set", func(t *testing.T) {
 		app := mocksfoundation.NewApplication(t)
-		app.EXPECT().Bind(binding.Notification, mock.AnythingOfType("func(foundation.Application) (interface {}, error)")).Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
+		app.EXPECT().Singleton(binding.Notification, mock.AnythingOfType("func(foundation.Application) (interface {}, error)")).Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
 			callbackApp := mocksfoundation.NewApplication(t)
 			callbackApp.EXPECT().MakeLog().Return(nil).Once()
 
@@ -48,7 +48,7 @@ func TestServiceProviderRegister(t *testing.T) {
 
 	t.Run("mail facade not set", func(t *testing.T) {
 		app := mocksfoundation.NewApplication(t)
-		app.EXPECT().Bind(binding.Notification, mock.AnythingOfType("func(foundation.Application) (interface {}, error)")).Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
+		app.EXPECT().Singleton(binding.Notification, mock.AnythingOfType("func(foundation.Application) (interface {}, error)")).Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
 			callbackApp := mocksfoundation.NewApplication(t)
 			logger := mockslog.NewLog(t)
 			callbackApp.EXPECT().MakeLog().Return(logger).Once()
@@ -66,7 +66,7 @@ func TestServiceProviderRegister(t *testing.T) {
 
 	t.Run("orm facade not set", func(t *testing.T) {
 		app := mocksfoundation.NewApplication(t)
-		app.EXPECT().Bind(binding.Notification, mock.AnythingOfType("func(foundation.Application) (interface {}, error)")).Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
+		app.EXPECT().Singleton(binding.Notification, mock.AnythingOfType("func(foundation.Application) (interface {}, error)")).Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
 			callbackApp := mocksfoundation.NewApplication(t)
 			logger := mockslog.NewLog(t)
 			mailer := mocksmail.NewMail(t)
@@ -86,7 +86,7 @@ func TestServiceProviderRegister(t *testing.T) {
 
 	t.Run("queue facade not set", func(t *testing.T) {
 		app := mocksfoundation.NewApplication(t)
-		app.EXPECT().Bind(binding.Notification, mock.AnythingOfType("func(foundation.Application) (interface {}, error)")).Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
+		app.EXPECT().Singleton(binding.Notification, mock.AnythingOfType("func(foundation.Application) (interface {}, error)")).Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
 			callbackApp := mocksfoundation.NewApplication(t)
 			logger := mockslog.NewLog(t)
 			mailer := mocksmail.NewMail(t)
@@ -108,7 +108,7 @@ func TestServiceProviderRegister(t *testing.T) {
 
 	t.Run("register notification manager", func(t *testing.T) {
 		app := mocksfoundation.NewApplication(t)
-		app.EXPECT().Bind(binding.Notification, mock.AnythingOfType("func(foundation.Application) (interface {}, error)")).Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
+		app.EXPECT().Singleton(binding.Notification, mock.AnythingOfType("func(foundation.Application) (interface {}, error)")).Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
 			callbackApp := mocksfoundation.NewApplication(t)
 			logger := mockslog.NewLog(t)
 			mailer := mocksmail.NewMail(t)
