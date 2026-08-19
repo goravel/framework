@@ -327,6 +327,10 @@ func TestBroadcastJob_ShouldRetry(t *testing.T) {
 		})
 	}
 
+	// The following cases exercise stateful behavior — establishing a stale
+	// item, then clearing or overriding it via a second Handle call — rather
+	// than the single-shot decision the table above covers. They need multiple
+	// sequential Handle calls, so they stay as separate t.Run cases.
 	t.Run("invalid payload clears stale item", func(t *testing.T) {
 		job := &BroadcastJob{}
 		err := job.Handle("not-json")

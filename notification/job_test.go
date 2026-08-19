@@ -295,6 +295,10 @@ func TestDispatchJob_ShouldRetry(t *testing.T) {
 		})
 	}
 
+	// This case exercises stateful behavior — establishing a stale item, then
+	// clearing it via a second Handle call — rather than the single-shot
+	// decision the table above covers. It needs multiple sequential Handle
+	// calls, so it stays separate.
 	t.Run("invalid payload clears stale item", func(t *testing.T) {
 		job := newJob(t)
 		// The failed dispatch retains the parsed item (deliver-path failure),
