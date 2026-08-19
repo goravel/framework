@@ -58,8 +58,6 @@ type JobWithShouldRetry interface {
 	// Worker(args), or 1 for the no-argument Worker() (which hardcodes it).
 	// Note that leaving Args.Tries unset passes the zero value 0; both 0 and 1
 	// yield a single-shot fallback for jobs without their own retry policy.
-	// Implementations without their own retry policy fall back to maxTries,
-	// mirroring Laravel's Worker::markJobAsFailedIfWillExceedMaxAttempts
-	// ($job->maxTries() ?? $options->maxTries).
+	// Implementations without their own retry policy fall back to maxTries.
 	ShouldRetry(err error, attempt, maxTries int) (retryable bool, delay time.Duration)
 }

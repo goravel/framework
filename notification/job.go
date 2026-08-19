@@ -101,8 +101,7 @@ func (j *DispatchJob) Handle(args ...any) error {
 
 // ShouldRetry controls retries for the queued notification dispatch. A
 // notification-declared Tries wins; without one (Tries <= 0) the queue
-// worker's maxTries governs, mirroring Laravel's
-// Worker::markJobAsFailedIfWillExceedMaxAttempts. Backoff applies to every
+// worker's maxTries governs. Backoff applies to every
 // retry, whoever supplied the cap, and the last value repeats. item == nil
 // (cleared on success/invalid payload) is the safe single-shot fallback —
 // never the worker's tries, so an interleaved concurrent task can't inherit
@@ -123,8 +122,8 @@ func (j *DispatchJob) ShouldRetry(err error, attempt, maxTries int) (retryable b
 		return false, 0
 	}
 
-	// Laravel parity: the notification's own Tries wins; without one the
-	// worker's maxTries governs (Worker::markJobAsFailedIfWillExceedMaxAttempts).
+	// The notification's own Tries wins; without one the worker's
+	// maxTries governs.
 	effectiveTries := item.Tries
 	if effectiveTries <= 0 {
 		effectiveTries = maxTries

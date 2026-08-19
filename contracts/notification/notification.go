@@ -44,8 +44,7 @@ type NotificationWithTries interface {
 	Notification
 	// Tries returns the maximum number of attempts for the given
 	// channel. 0 / not implementing this interface means no retry policy
-	// is declared and the queue worker's Tries config applies (Laravel
-	// parity, Worker::markJobAsFailedIfWillExceedMaxAttempts).
+	// is declared and the queue worker's Tries config applies.
 	Tries(channel string) int
 }
 

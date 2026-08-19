@@ -101,8 +101,7 @@ func (j *BroadcastJob) Handle(args ...any) error {
 
 // ShouldRetry controls retries for the queued broadcast. A
 // BroadcastTries-declaring event wins; without one (Tries <= 0) the queue
-// worker's maxTries governs, mirroring Laravel's
-// Worker::markJobAsFailedIfWillExceedMaxAttempts. With a cap it retries while
+// worker's maxTries governs. With a cap it retries while
 // attempt < Tries using the configured per-attempt Backoff (last value
 // repeats); backoff applies to worker-driven retries too. item == nil (cleared
 // on success/invalid payload) is the safe single-shot fallback — never the
@@ -126,8 +125,8 @@ func (j *BroadcastJob) ShouldRetry(err error, attempt, maxTries int) (retryable 
 		return false, 0
 	}
 
-	// Laravel parity: the event's own BroadcastTries wins; without one the
-	// worker's maxTries governs (Worker::markJobAsFailedIfWillExceedMaxAttempts).
+	// The event's own BroadcastTries wins; without one the worker's
+	// maxTries governs.
 	effectiveTries := item.Tries
 	if effectiveTries <= 0 {
 		effectiveTries = maxTries

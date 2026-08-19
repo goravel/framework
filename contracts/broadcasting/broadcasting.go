@@ -61,8 +61,7 @@ type ShouldBroadcastWithTries interface {
 	// BroadcastTries returns the maximum number of attempts for the
 	// queued broadcast. 0 / not implementing the interface means no
 	// retry policy is declared and the queue worker's Tries config
-	// applies (Laravel parity,
-	// Worker::markJobAsFailedIfWillExceedMaxAttempts).
+	// applies.
 	BroadcastTries() int
 }
 

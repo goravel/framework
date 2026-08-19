@@ -145,7 +145,7 @@ func (a *Application) Dispatch(ctx context.Context, event broadcasting.ShouldBro
 	}
 	// Backoff is serialized unconditionally: it applies to every retry,
 	// whether capped by the event's own BroadcastTries or the queue worker's
-	// tries config (Laravel parity).
+	// tries config.
 	if withBackoff, ok := event.(broadcasting.ShouldBroadcastWithBackoff); ok {
 		backoff := withBackoff.BroadcastBackoff()
 		if len(backoff) > 0 {
