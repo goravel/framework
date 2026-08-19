@@ -464,12 +464,11 @@ func TestManager_Send_QueuedNotification_CapturesTriesAndBackoff(t *testing.T) {
 	assert.Equal(t, []int64{1000, 2000}, item.Backoff) // milliseconds on the wire
 }
 
-// TestManager_Send_QueuedNotification_OmitsBackoff_WhenTriesNotSet
-// confirms Backoff only takes effect alongside a positive Tries,
-// matching broadcasting's exact rule (Backoff has no effect without
-// Tries, so there's no reason to carry it across the queue boundary
-// otherwise).
-func TestManager_Send_QueuedNotification_OmitsBackoff_WhenTriesNotSet(t *testing.T) {
+// TestManager_Send_QueuedNotification_SerializesBackoff_WhenTriesNotSet
+// confirms Backoff is serialized unconditionally, even without a positive
+// Tries: it applies to worker-driven retries (Laravel parity), so it must
+// travel across the queue boundary regardless of the declared Tries.
+func TestManager_Send_QueuedNotification_SerializesBackoff_WhenTriesNotSet(t *testing.T) {
 	logger := mockslog.NewLog(t)
 	q := mocksqueue.NewQueue(t)
 	pending := mocksqueue.NewPendingJob(t)
@@ -502,7 +501,7 @@ func TestManager_Send_QueuedNotification_OmitsBackoff_WhenTriesNotSet(t *testing
 	assert.True(t, ok)
 	assert.NoError(t, json.Unmarshal([]byte(raw), &item))
 	assert.Zero(t, item.Tries)
-	assert.Empty(t, item.Backoff)
+	assert.Equal(t, []int64{5000}, item.Backoff) // milliseconds on the wire
 }
 
 // ---- Route (on-demand notifications) ----

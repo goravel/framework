@@ -408,7 +408,7 @@ func TestApplication_Dispatch(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("dispatch with backoff but no tries suppresses backoff", func(t *testing.T) {
+	t.Run("dispatch with backoff but no tries serializes backoff", func(t *testing.T) {
 		mockCf := setupMockConfig(t, "")
 		mockQ := mocksqueue.NewQueue(t)
 		mockPJ := mocksqueue.NewPendingJob(t)
@@ -423,7 +423,7 @@ func TestApplication_Dispatch(t *testing.T) {
 				if err := json.Unmarshal([]byte(args[0].Value.(string)), &item); err != nil {
 					return false
 				}
-				return item.Tries == 0 && item.Backoff == nil
+				return item.Tries == 0 && slices.Equal(item.Backoff, []int64{1000})
 			}),
 		).Return(mockPJ).Once()
 		mockPJ.EXPECT().Dispatch().Return(nil).Once()
@@ -431,8 +431,8 @@ func TestApplication_Dispatch(t *testing.T) {
 		app := NewApplication(mockCf, mockLog, mockQ, nil)
 
 		// Implements ShouldBroadcastWithBackoff with a non-empty backoff but
-		// no BroadcastTries: backoff only takes effect with retries, so the
-		// serialized payload must not carry it.
+		// no BroadcastTries: backoff applies to worker-driven retries, so the
+		// serialized payload must carry it (Laravel parity).
 		event := &mockBroadcastEvent{
 			broadcastOn:      []string{"test-channel"},
 			broadcastAs:      "test.event",

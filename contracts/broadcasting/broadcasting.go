@@ -59,15 +59,16 @@ type ShouldBroadcastWithTimeout interface {
 
 type ShouldBroadcastWithTries interface {
 	// BroadcastTries returns the maximum number of attempts for the
-	// queued broadcast. 0 / not implementing the interface means the
-	// broadcast is single-shot.
+	// queued broadcast. 0 / not implementing the interface means no
+	// retry policy is declared and the queue worker's Tries config
+	// applies.
 	BroadcastTries() int
 }
 
 type ShouldBroadcastWithBackoff interface {
 	// BroadcastBackoff returns the delay before each retry attempt, in
-	// order; the last value repeats for subsequent attempts. It only takes
-	// effect together with BroadcastTries; without it the broadcast is
-	// single-shot.
+	// order; the last value repeats for subsequent attempts. It applies
+	// to every retry, whether capped by the event's own BroadcastTries
+	// or the queue worker's Tries config; the last value repeats.
 	BroadcastBackoff() []time.Duration
 }

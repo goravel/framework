@@ -43,9 +43,8 @@ type NotificationWithAfterSending interface {
 type NotificationWithTries interface {
 	Notification
 	// Tries returns the maximum number of attempts for the given
-	// channel. 0 / not implementing this interface means the
-	// notification is single-shot on that channel — no retry at all,
-	// not even once, matching ShouldBroadcastWithTries's semantics.
+	// channel. 0 / not implementing this interface means no retry policy
+	// is declared and the queue worker's Tries config applies.
 	Tries(channel string) int
 }
 
@@ -59,8 +58,8 @@ type NotificationWithTries interface {
 // slice's length (min(attempt-1, len(backoff)-1)), matching Laravel's
 // Worker::calculateBackoff and BroadcastJob.ShouldRetry precisely.
 //
-// Only takes effect together with NotificationWithTries; without Tries
-// the notification is single-shot regardless of Backoff.
+// Backoff applies to every retry, whether capped by the notification's own
+// Tries or the queue worker's Tries config; the last value repeats.
 type NotificationWithBackoff interface {
 	Notification
 	// Backoff returns the delay before each retry attempt on channel,

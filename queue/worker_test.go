@@ -211,6 +211,29 @@ func (s *WorkerTestSuite) Test_call() {
 		s.True(released)
 		s.NoError(err)
 		s.Equal(3, retryTask.Job.(*TestJobRetry).attempt)
+		s.Equal(1, retryTask.Job.(*TestJobRetry).maxTries) // default worker tries
+	})
+
+	s.Run("worker tries reaches ShouldRetry", func() {
+		s.SetupTest()
+		s.worker.tries = 3
+
+		retryTask := contractsqueue.Task{
+			ChainJob: contractsqueue.ChainJob{
+				Job: &TestJobRetry{},
+			},
+			UUID: "test",
+		}
+
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+		s.mockJob.EXPECT().Call(retryTask.Job.Signature(), make([]any, 0)).Return(assert.AnError).Once()
+		mockReservedJob.EXPECT().Attempts().Return(1).Once()
+		mockReservedJob.EXPECT().Release(time.Duration(0)).Return(nil).Once()
+
+		released, err := s.worker.call(retryTask, mockReservedJob)
+		s.True(released)
+		s.NoError(err)
+		s.Equal(3, retryTask.Job.(*TestJobRetry).maxTries) // worker's tries handed to ShouldRetry
 	})
 }
 
@@ -1178,7 +1201,8 @@ func matchFailedJob(uuid string) interface{} {
 }
 
 type TestJobRetry struct {
-	attempt int
+	attempt  int
+	maxTries int
 }
 
 // Signature The name and signature of the job.
@@ -1194,7 +1218,8 @@ func (r *TestJobRetry) Handle(args ...any) error {
 	return assert.AnError
 }
 
-func (r *TestJobRetry) ShouldRetry(err error, attempt int) (bool, time.Duration) {
+func (r *TestJobRetry) ShouldRetry(err error, attempt, maxTries int) (bool, time.Duration) {
 	r.attempt = attempt
+	r.maxTries = maxTries
 	return true, 0
 }

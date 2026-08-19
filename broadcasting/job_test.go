@@ -167,83 +167,150 @@ func TestBroadcastJob_ShouldRetry(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
-		payload string
-		attempt int
-		err     error
-		want    bool
-		wantD   time.Duration
+		name     string
+		payload  string
+		attempt  int
+		maxTries int // the queue worker's tries (ignored when item.Tries > 0)
+		err      error
+		want     bool
+		wantD    time.Duration
 	}{
 		{
-			name:    "tries zero is single-shot",
-			payload: marshalItem(0, nil),
-			attempt: 1,
-			want:    false,
-			wantD:   0,
+			// No retry policy declared and the worker runs with Tries=1
+			// (the default): single-shot.
+			name:     "tries zero is single-shot",
+			payload:  marshalItem(0, nil),
+			attempt:  1,
+			maxTries: 1,
+			want:     false,
+			wantD:    0,
 		},
 		{
-			name:    "tries 3 first attempt retries",
-			payload: marshalItem(3, nil),
-			attempt: 1,
-			want:    true,
-			wantD:   0,
+			// No retry policy declared: the worker's Tries=3 governs.
+			name:     "tries zero defers to worker tries first attempt retries",
+			payload:  marshalItem(0, nil),
+			attempt:  1,
+			maxTries: 3,
+			want:     true,
+			wantD:    0,
 		},
 		{
-			name:    "tries 3 second attempt retries",
-			payload: marshalItem(3, nil),
-			attempt: 2,
-			want:    true,
-			wantD:   0,
+			name:     "tries zero defers to worker tries second attempt retries",
+			payload:  marshalItem(0, nil),
+			attempt:  2,
+			maxTries: 3,
+			want:     true,
+			wantD:    0,
 		},
 		{
-			name:    "tries 3 third attempt stops",
-			payload: marshalItem(3, nil),
-			attempt: 3,
-			want:    false,
-			wantD:   0,
+			name:     "tries zero defers to worker tries third attempt stops",
+			payload:  marshalItem(0, nil),
+			attempt:  3,
+			maxTries: 3,
+			want:     false,
+			wantD:    0,
 		},
 		{
-			name:    "backoff first attempt",
-			payload: marshalItem(4, []int64{1000, 2000}),
-			attempt: 1,
-			err:     errors.New("test error"), // err is ignored by ShouldRetry
-			want:    true,
-			wantD:   1 * time.Second,
+			// Worker Tries=0 keeps the existing single-shot behavior.
+			name:     "tries zero with worker tries zero is single-shot",
+			payload:  marshalItem(0, nil),
+			attempt:  1,
+			maxTries: 0,
+			want:     false,
+			wantD:    0,
 		},
 		{
-			name:    "backoff second attempt",
-			payload: marshalItem(4, []int64{1000, 2000}),
-			attempt: 2,
-			want:    true,
-			wantD:   2 * time.Second,
+			name:     "tries 3 first attempt retries",
+			payload:  marshalItem(3, nil),
+			attempt:  1,
+			maxTries: 1,
+			want:     true,
+			wantD:    0,
 		},
 		{
-			name:    "backoff last value repeats",
-			payload: marshalItem(4, []int64{1000, 2000}),
-			attempt: 3,
-			want:    true,
-			wantD:   2 * time.Second,
+			name:     "tries 3 second attempt retries",
+			payload:  marshalItem(3, nil),
+			attempt:  2,
+			maxTries: 1,
+			want:     true,
+			wantD:    0,
 		},
 		{
-			name:    "backoff with attempt 0 is single-shot fallback",
-			payload: marshalItem(4, []int64{1000, 2000}),
-			attempt: 0,
-			want:    false,
-			wantD:   0,
+			name:     "tries 3 third attempt stops",
+			payload:  marshalItem(3, nil),
+			attempt:  3,
+			maxTries: 1,
+			want:     false,
+			wantD:    0,
 		},
 		{
-			name:    "backoff stop at final attempt before index",
-			payload: marshalItem(2, []int64{1000, 2000}),
-			attempt: 2,
-			want:    false,
-			wantD:   0,
+			// A broadcast-declared Tries always wins over the worker's:
+			// with Tries=3 and worker maxTries=1, attempt 2 must retry.
+			name:     "item tries overrides worker tries",
+			payload:  marshalItem(3, nil),
+			attempt:  2,
+			maxTries: 1,
+			want:     true,
+			wantD:    0,
 		},
 		{
-			name:    "backoff last attempt stops",
-			payload: marshalItem(4, []int64{1000, 2000}),
-			attempt: 4,
-			want:    false,
-			wantD:   0,
+			name:     "backoff first attempt",
+			payload:  marshalItem(4, []int64{1000, 2000}),
+			attempt:  1,
+			maxTries: 1,
+			err:      errors.New("test error"), // err is ignored by ShouldRetry
+			want:     true,
+			wantD:    1 * time.Second,
+		},
+		{
+			name:     "backoff second attempt",
+			payload:  marshalItem(4, []int64{1000, 2000}),
+			attempt:  2,
+			maxTries: 1,
+			want:     true,
+			wantD:    2 * time.Second,
+		},
+		{
+			name:     "backoff last value repeats",
+			payload:  marshalItem(4, []int64{1000, 2000}),
+			attempt:  3,
+			maxTries: 1,
+			want:     true,
+			wantD:    2 * time.Second,
+		},
+		{
+			name:     "backoff with attempt 0 is single-shot fallback",
+			payload:  marshalItem(4, []int64{1000, 2000}),
+			attempt:  0,
+			maxTries: 1,
+			want:     false,
+			wantD:    0,
+		},
+		{
+			name:     "backoff stop at final attempt before index",
+			payload:  marshalItem(2, []int64{1000, 2000}),
+			attempt:  2,
+			maxTries: 1,
+			want:     false,
+			wantD:    0,
+		},
+		{
+			name:     "backoff last attempt stops",
+			payload:  marshalItem(4, []int64{1000, 2000}),
+			attempt:  4,
+			maxTries: 1,
+			want:     false,
+			wantD:    0,
+		},
+		{
+			// Backoff is honored during worker-driven retries too (no
+			// BroadcastTries, worker Tries=3).
+			name:     "backoff applies during worker fallback",
+			payload:  marshalItem(0, []int64{1000, 2000}),
+			attempt:  2,
+			maxTries: 3,
+			want:     true,
+			wantD:    2 * time.Second,
 		},
 	}
 
@@ -254,18 +321,30 @@ func TestBroadcastJob_ShouldRetry(t *testing.T) {
 			// retains the parsed item for ShouldRetry to read.
 			assert.Error(t, job.Handle(tt.payload))
 
-			retryable, delay := job.ShouldRetry(tt.err, tt.attempt)
+			retryable, delay := job.ShouldRetry(tt.err, tt.attempt, tt.maxTries)
 			assert.Equal(t, tt.want, retryable)
 			assert.Equal(t, tt.wantD, delay)
 		})
 	}
 
+	// The following cases exercise stateful behavior — establishing a stale
+	// item, then clearing or overriding it via a second Handle call — rather
+	// than the single-shot decision the table above covers. They need multiple
+	// sequential Handle calls, so they stay as separate t.Run cases.
 	t.Run("invalid payload clears stale item", func(t *testing.T) {
 		job := &BroadcastJob{}
 		err := job.Handle("not-json")
 		assert.Error(t, err)
 
-		retryable, delay := job.ShouldRetry(nil, 1)
+		retryable, delay := job.ShouldRetry(nil, 1, 1)
+		assert.False(t, retryable)
+		assert.Equal(t, time.Duration(0), delay)
+
+		// item == nil must stay the safe single-shot fallback even when the
+		// worker's maxTries would otherwise allow a retry: with maxTries=3
+		// and attempt=1 a worker-tries fallback would return true, so this
+		// locks the "never the worker's tries" invariant.
+		retryable, delay = job.ShouldRetry(nil, 1, 3)
 		assert.False(t, retryable)
 		assert.Equal(t, time.Duration(0), delay)
 	})
@@ -275,18 +354,18 @@ func TestBroadcastJob_ShouldRetry(t *testing.T) {
 		// The failed broadcast retains the parsed item (driver-path failure),
 		// exactly the stale state a concurrent failed task would leave.
 		assert.Error(t, job.Handle(marshalItem(3, nil)))
-		retryable, _ := job.ShouldRetry(nil, 1)
+		retryable, _ := job.ShouldRetry(nil, 1, 1)
 		assert.True(t, retryable) // stale policy present (Tries=3)
 
 		assert.Error(t, job.Handle())
-		retryable, _ = job.ShouldRetry(nil, 1)
+		retryable, _ = job.ShouldRetry(nil, 1, 1)
 		assert.False(t, retryable)
 	})
 
 	t.Run("successful handle clears stale item", func(t *testing.T) {
 		job := newJob(t)
 		assert.Error(t, job.Handle(marshalItem(3, nil)))
-		retryable, _ := job.ShouldRetry(nil, 1)
+		retryable, _ := job.ShouldRetry(nil, 1, 1)
 		assert.True(t, retryable) // stale policy present (Tries=3)
 
 		// A successful task releases the payload, so any concurrent policy
@@ -302,18 +381,18 @@ func TestBroadcastJob_ShouldRetry(t *testing.T) {
 		data, _ := json.Marshal(item)
 		assert.NoError(t, job.Handle(string(data)))
 
-		retryable, _ = job.ShouldRetry(nil, 1)
+		retryable, _ = job.ShouldRetry(nil, 1, 1)
 		assert.False(t, retryable)
 	})
 
 	t.Run("non-string arg clears stale item", func(t *testing.T) {
 		job := newJob(t)
 		assert.Error(t, job.Handle(marshalItem(3, nil)))
-		retryable, _ := job.ShouldRetry(nil, 1)
+		retryable, _ := job.ShouldRetry(nil, 1, 1)
 		assert.True(t, retryable) // stale policy present (Tries=3)
 
 		assert.Error(t, job.Handle(42))
-		retryable, _ = job.ShouldRetry(nil, 1)
+		retryable, _ = job.ShouldRetry(nil, 1, 1)
 		assert.False(t, retryable)
 	})
 }
