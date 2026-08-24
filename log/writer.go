@@ -207,9 +207,6 @@ func (r *Writer) log(level log.Level, msg string) {
 
 func (r *Writer) withStackTrace(message string) {
 	erisNew := eris.New(message)
-	if erisNew == nil {
-		return
-	}
 
 	format := eris.NewDefaultJSONFormat(eris.FormatOptions{
 		InvertOutput: true,
