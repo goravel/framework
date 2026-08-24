@@ -45,7 +45,21 @@ func kill(p *os.Process) error {
 	if p == nil {
 		return errors.ProcessNotStarted
 	}
-	return p.Kill()
+	if err := p.Kill(); err != nil {
+		// TerminateProcess can return ERROR_ACCESS_DENIED as a race artifact when
+		// the target process is already exiting or has just terminated (see the
+		// "Access is denied" notes in running_pool_windows_test.go). Give it a
+		// brief window to fully exit before reporting the error.
+		deadline := time.Now().Add(100 * time.Millisecond)
+		for time.Now().Before(deadline) {
+			if !running(p) {
+				return nil
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+		return err
+	}
+	return nil
 }
 
 func signal(p *os.Process, sig os.Signal) error {

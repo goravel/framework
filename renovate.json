@@ -20,6 +20,10 @@
   ],
   "packageRules": [
     {
+      "matchDatasources": ["golang-version"],
+      "enabled": false
+    },
+    {
       "groupName": "non-major dependencies",
       "matchUpdateTypes": [
         "digest",
