@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts/database"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/orm"
@@ -36,14 +37,16 @@ func (s *OrmSuite) SetupSuite() {
 
 func (s *OrmSuite) SetupTest() {
 	queries := make(map[string]contractsorm.Query)
+	dbConfigs := make(map[string]database.Config)
 
 	for driver, query := range s.queries {
 		query.CreateTable(TestTableRoles)
 		queries[driver] = query.Query()
+		dbConfigs[driver] = query.Driver().Pool().Writers[0]
 	}
 
 	dbConfig := s.queries[s.defaultConnection].Driver().Pool().Writers[0]
-	s.orm = orm.NewOrm(context.Background(), nil, dbConfig.Connection, dbConfig, queries[s.defaultConnection], queries, nil, nil, nil, nil)
+	s.orm = orm.NewOrm(context.Background(), nil, dbConfig.Connection, dbConfig, queries[s.defaultConnection], queries, dbConfigs, nil, nil, nil, nil)
 }
 
 func (s *OrmSuite) TearDownSuite() {
@@ -56,7 +59,10 @@ func (s *OrmSuite) TearDownSuite() {
 
 func (s *OrmSuite) TestConnection() {
 	for connection := range s.queries {
-		s.NotNil(s.orm.Connection(connection))
+		orm := s.orm.Connection(connection)
+		s.NotNil(orm)
+		s.Equal(connection, orm.Name())
+		s.Equal(s.queries[connection].Driver().Pool().Writers[0].Database, orm.DatabaseName())
 	}
 }
 
