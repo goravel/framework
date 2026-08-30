@@ -24,8 +24,8 @@ import (
 // from different instances (e.g. lazily building the same non-default
 // connection from multiple goroutines) are serialized by the internal mutex.
 type QueriesCache struct {
-	mu sync.RWMutex
-	m  map[string]cachedConnection
+	mu          sync.RWMutex
+	connections map[string]cachedConnection
 }
 
 // cachedConnection holds a built connection: the Query handle and the database
@@ -38,9 +38,9 @@ type cachedConnection struct {
 // NewQueriesCache creates a QueriesCache from per-connection queries and
 // configs. queries and dbConfigs must be keyed identically by connection name.
 func NewQueriesCache(queries map[string]contractsorm.Query, dbConfigs map[string]database.Config) *QueriesCache {
-	cache := &QueriesCache{m: make(map[string]cachedConnection, len(queries))}
+	cache := &QueriesCache{connections: make(map[string]cachedConnection, len(queries))}
 	for name, query := range queries {
-		cache.m[name] = cachedConnection{query: query, dbConfig: dbConfigs[name]}
+		cache.connections[name] = cachedConnection{query: query, dbConfig: dbConfigs[name]}
 	}
 
 	return cache
@@ -110,7 +110,7 @@ func (r *Orm) Connection(name string) contractsorm.Orm {
 	}
 
 	r.queries.mu.RLock()
-	instance, exist := r.queries.m[name]
+	instance, exist := r.queries.connections[name]
 	r.queries.mu.RUnlock()
 	if exist {
 		return NewOrm(r.ctx, r.config, name, instance.dbConfig, instance.query, r.queries, r.log, r.modelToObserver, r.fresh, r.telemetryResolver)
@@ -126,11 +126,11 @@ func (r *Orm) Connection(name string) contractsorm.Orm {
 	r.queries.mu.Lock()
 	defer r.queries.mu.Unlock()
 	// Double-check: another goroutine may have built this connection first.
-	if instance, exist := r.queries.m[name]; exist {
+	if instance, exist := r.queries.connections[name]; exist {
 		return NewOrm(r.ctx, r.config, name, instance.dbConfig, instance.query, r.queries, r.log, r.modelToObserver, r.fresh, r.telemetryResolver)
 	}
 
-	r.queries.m[name] = cachedConnection{query: query, dbConfig: dbConfig}
+	r.queries.connections[name] = cachedConnection{query: query, dbConfig: dbConfig}
 
 	return NewOrm(r.ctx, r.config, name, dbConfig, query, r.queries, r.log, r.modelToObserver, r.fresh, r.telemetryResolver)
 }
@@ -161,8 +161,8 @@ func (r *Orm) Observe(model any, observer contractsorm.Observer) {
 	})
 
 	r.queries.mu.RLock()
-	queries := make([]contractsorm.Query, 0, len(r.queries.m))
-	for _, connection := range r.queries.m {
+	queries := make([]contractsorm.Query, 0, len(r.queries.connections))
+	for _, connection := range r.queries.connections {
 		queries = append(queries, connection.query)
 	}
 	r.queries.mu.RUnlock()
