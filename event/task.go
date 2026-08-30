@@ -32,28 +32,13 @@ func (receiver *Task) Dispatch() error {
 		return err
 	}
 
-	var mapArgs []any
-	for _, arg := range handledArgs {
-		mapArgs = append(mapArgs, arg.Value)
-	}
+	var (
+		values    = argValues(handledArgs)
+		queueArgs = eventArgsToQueueArgs(handledArgs)
+	)
 
 	for _, listener := range receiver.listeners {
-		var err error
-		task := receiver.queue.Job(listener, eventArgsToQueueArgs(handledArgs))
-		queue := listener.Queue(mapArgs...)
-		if queue.Connection != "" {
-			task.OnConnection(queue.Connection)
-		}
-		if queue.Queue != "" {
-			task.OnQueue(queue.Queue)
-		}
-		if queue.Enable {
-			err = task.Dispatch()
-		} else {
-			err = task.DispatchSync()
-		}
-
-		if err != nil {
+		if err := dispatchToQueue(receiver.queue, listener, listener.Queue(values...), queueArgs); err != nil {
 			return err
 		}
 	}
@@ -61,6 +46,38 @@ func (receiver *Task) Dispatch() error {
 	return nil
 }
 
+// dispatchToQueue pushes a job onto the queue, or runs it synchronously through
+// the queue facade when the listener doesn't enable queueing.
+func dispatchToQueue(queue contractsqueue.Queue, job contractsqueue.Job, options event.Queue, args []contractsqueue.Arg) error {
+	task := queue.Job(job, args)
+
+	if options.Connection != "" {
+		task.OnConnection(options.Connection)
+	}
+	if options.Queue != "" {
+		task.OnQueue(options.Queue)
+	}
+
+	if options.Enable {
+		return task.Dispatch()
+	}
+
+	return task.DispatchSync()
+}
+
+// argValues extracts the values of event arguments, they are what listeners and
+// queue options receive.
+func argValues(args []event.Arg) []any {
+	values := make([]any, 0, len(args))
+	for _, arg := range args {
+		values = append(values, arg.Value)
+	}
+
+	return values
+}
+
+// eventArgsToQueueArgs converts event arguments to queue arguments, the two
+// systems carry the same Type and Value pair behind different types.
 func eventArgsToQueueArgs(args []event.Arg) []contractsqueue.Arg {
 	var queueArgs []contractsqueue.Arg
 	for _, arg := range args {

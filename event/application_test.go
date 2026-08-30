@@ -74,3 +74,24 @@ func TestApplication_Register(t *testing.T) {
 		})
 	}
 }
+
+func TestApplication_GetEventsReturnsACopy(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	mockQueue.EXPECT().Register(mock.Anything).Once()
+
+	listener := &TestListener{}
+	app := NewApplication(mockQueue)
+	app.Register(map[event.Event][]event.Listener{
+		&userCreated{}: {listener},
+	})
+
+	events := app.GetEvents()
+	for e := range events {
+		events[e] = nil
+	}
+
+	// Mutating the returned map must not affect the registered events.
+	for _, listeners := range app.GetEvents() {
+		assert.Equal(t, []event.Listener{listener}, listeners)
+	}
+}

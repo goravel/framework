@@ -122,7 +122,11 @@ var (
 	DockerDatabaseContainerCountZero     = New("the number of database container must be greater than 0")
 	DockerMissingContainerId             = New("no container id return when creating %s docker")
 
-	EventListenerNotBind = New("event %v doesn't bind listeners")
+	EventInvalidEvent      = New("invalid event: %v")
+	EventInvalidListener   = New("invalid listener for event %s, expect event.QueueListener or func(event any, args ...any) error")
+	EventListenerNotBind   = New("event %v doesn't bind listeners")
+	EventListenerPanic     = New("listener %s panicked: %v")
+	EventQueueMissingEvent = New("queued listener %s received no event")
 
 	FilesystemDefaultDiskNotSet   = New("please set default disk")
 	FilesystemDeleteDirectory     = New("can't delete directory, please use DeleteDirectory")
