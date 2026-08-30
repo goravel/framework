@@ -34,10 +34,11 @@ type Event interface {
 // QueueListener is the listener interface used by Listen and Dispatch.
 // Listeners registered through the deprecated Register keep using Listener.
 type QueueListener interface {
-	// Handle the event. event is the dispatched event itself, or the event name
-	// for wildcard listeners and for listeners executed from the queue, because
-	// only scalar arguments survive the queue boundary.
-	Handle(event any, args ...any) error
+	// Handle the event. eventName is the canonical name of the dispatched event,
+	// never the event itself, so that a listener behaves the same whether it runs
+	// in process or through the queue, where only scalar arguments survive.
+	// The data a queued listener needs must therefore travel in args.
+	Handle(eventName string, args ...any) error
 	// Queue configure the event queue options, the listener is pushed onto the
 	// queue instead of running synchronously when Queue().Enable is true.
 	Queue(args ...any) Queue

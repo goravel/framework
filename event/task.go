@@ -3,44 +3,41 @@ package event
 import (
 	"github.com/goravel/framework/contracts/event"
 	contractsqueue "github.com/goravel/framework/contracts/queue"
-	"github.com/goravel/framework/errors"
 )
 
 type Task struct {
 	event     event.Event
 	queue     contractsqueue.Queue
 	args      []event.Arg
-	listeners []event.Listener
+	listeners []*listener
 }
 
-func NewTask(queue contractsqueue.Queue, args []event.Arg, event event.Event, listeners []event.Listener) *Task {
+func NewTask(queue contractsqueue.Queue, args []event.Arg, evt event.Event, listeners []event.Listener) *Task {
+	normalized := make([]*listener, 0, len(listeners))
+	for _, l := range listeners {
+		normalized = append(normalized, newLegacyListener(l))
+	}
+
 	return &Task{
 		args:      args,
-		event:     event,
-		listeners: listeners,
+		event:     evt,
+		listeners: normalized,
 		queue:     queue,
 	}
 }
 
+// Dispatch runs the event through the same pipeline as Dispatch, in the mode
+// that keeps the deprecated behaviour: an unbound event is an error, and the
+// first failing listener stops the ones behind it.
 func (receiver *Task) Dispatch() error {
-	if len(receiver.listeners) == 0 {
-		return errors.EventListenerNotBind.Args(receiver.event)
-	}
-
-	handledArgs, err := receiver.event.Handle(receiver.args)
+	name, err := getEventName(receiver.event)
 	if err != nil {
 		return err
 	}
 
-	var (
-		values    = argValues(handledArgs)
-		queueArgs = eventArgsToQueueArgs(handledArgs)
-	)
-
-	for _, listener := range receiver.listeners {
-		if err := dispatchToQueue(receiver.queue, listener, listener.Queue(values...), queueArgs); err != nil {
-			return err
-		}
+	errs := dispatch(receiver.queue, receiver.event, name, receiver.listeners, receiver.args, dispatchModeTask)
+	if len(errs) > 0 {
+		return errs[0]
 	}
 
 	return nil
@@ -63,6 +60,22 @@ func dispatchToQueue(queue contractsqueue.Queue, job contractsqueue.Job, options
 	}
 
 	return task.DispatchSync()
+}
+
+// queueArgs builds the arguments of a queued listener, the event name leads the
+// payload for listeners that expect it, since the queue only carries scalars.
+func queueArgs(l *listener, eventName string, args []event.Arg) []contractsqueue.Arg {
+	if !l.withEvent {
+		return eventArgsToQueueArgs(args)
+	}
+
+	queued := make([]contractsqueue.Arg, 0, len(args)+1)
+	queued = append(queued, contractsqueue.Arg{Type: "string", Value: eventName})
+	for _, arg := range args {
+		queued = append(queued, contractsqueue.Arg{Type: arg.Type, Value: arg.Value})
+	}
+
+	return queued
 }
 
 // argValues extracts the values of event arguments, they are what listeners and

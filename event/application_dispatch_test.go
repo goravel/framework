@@ -273,3 +273,118 @@ func TestApplication_DispatchConcurrently(t *testing.T) {
 
 	wg.Wait()
 }
+
+func TestApplication_DispatchAfterRegisterKeepsListenRegistrations(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	mockPendingJob := mocksqueue.NewPendingJob(t)
+	legacy := &TestListener{}
+
+	mockQueue.EXPECT().Register([]queue.Job{legacy}).Twice()
+	mockQueue.EXPECT().Job(legacy, []queue.Arg(nil)).Return(mockPendingJob).Once()
+	mockPendingJob.EXPECT().DispatchSync().Return(nil).Once()
+
+	app := NewApplication(mockQueue)
+
+	var closureCalls int
+	assert.NoError(t, app.Listen(&userCreated{}, func(evt any, args ...any) error {
+		closureCalls++
+
+		return nil
+	}))
+
+	// Register overwrites its own listeners, twice over, but never the ones
+	// registered through Listen.
+	app.Register(map[event.Event][]event.Listener{&userCreated{}: {legacy}})
+	app.Register(map[event.Event][]event.Listener{&userCreated{}: {legacy}})
+
+	assert.False(t, app.Dispatch(&userCreated{}).Failed())
+	assert.Equal(t, 1, closureCalls)
+	assert.Len(t, app.listeners["event.userCreated"], 2)
+}
+
+func TestApplication_DispatchRunsEventHandleOnce(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	app := NewApplication(mockQueue)
+
+	var received []any
+	assert.NoError(t, app.Listen(&transformingEvent{}, func(evt any, args ...any) error {
+		received = args
+
+		return nil
+	}))
+
+	// The event prepares the payload before the listeners see it, exactly as the
+	// deprecated Task has always done.
+	result := app.Dispatch(&transformingEvent{}, []event.Arg{{Type: "string", Value: "goravel"}})
+
+	assert.False(t, result.Failed())
+	assert.Equal(t, []any{"goravel!"}, received)
+}
+
+func TestApplication_DispatchEventHandleErrorShortCircuits(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	app := NewApplication(mockQueue)
+
+	var called bool
+	assert.NoError(t, app.Listen(&TestEventHandleError{}, func(evt any, args ...any) error {
+		called = true
+
+		return nil
+	}))
+
+	result := app.Dispatch(&TestEventHandleError{})
+
+	assert.False(t, called, "listeners must not run on a partial payload")
+	assert.True(t, result.Failed())
+	assert.EqualError(t, result.Error(), "some errors")
+}
+
+func TestApplication_DispatchWithoutListenersSkipsEventHandle(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	app := NewApplication(mockQueue)
+
+	// TestEventHandleError always fails, a no-op dispatch must not run it.
+	assert.False(t, app.Dispatch(&TestEventHandleError{}).Failed())
+}
+
+func TestApplication_DispatchWildcardOrderIsRegistrationOrder(t *testing.T) {
+	app := NewApplication(mocksqueue.NewQueue(t))
+
+	var order []string
+	for _, pattern := range []string{"user.*", "*.created", "*"} {
+		assert.NoError(t, app.Listen(pattern, func(evt any, args ...any) error {
+			order = append(order, evt.(string))
+
+			return nil
+		}))
+	}
+
+	assert.False(t, app.Dispatch("user.created").Failed())
+	assert.Len(t, order, 3, "every overlapping pattern must match")
+
+	// Re-dispatching must not reorder the listeners.
+	order = nil
+	assert.NoError(t, app.Listen("user.cre*", func(evt any, args ...any) error {
+		order = append(order, "last")
+
+		return nil
+	}))
+	assert.False(t, app.Dispatch("user.created").Failed())
+	assert.Equal(t, "last", order[len(order)-1])
+}
+
+func TestQueueJobRecoversFromPanic(t *testing.T) {
+	// A panic in a queue worker must fail the job, not take the process down.
+	job := &queueJob{listener: &recordingListener{signature: "panicking", panics: true}}
+
+	err := job.Handle("user.created")
+
+	assert.EqualError(t, err, errors.EventListenerPanic.Args("panicking", "listener panicked").Error())
+}
+
+func TestQueueJobRejectsANonStringEvent(t *testing.T) {
+	job := &queueJob{listener: &recordingListener{signature: "queued"}}
+
+	assert.EqualError(t, job.Handle(), errors.EventQueueMissingEvent.Args("queued").Error())
+	assert.EqualError(t, job.Handle(42), errors.EventQueueMissingEvent.Args("queued").Error())
+}

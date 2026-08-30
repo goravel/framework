@@ -5,27 +5,25 @@ import (
 	"sync"
 
 	"github.com/goravel/framework/contracts/event"
-	"github.com/goravel/framework/contracts/queue"
+	contractsqueue "github.com/goravel/framework/contracts/queue"
 )
 
 var _ event.Instance = (*Application)(nil)
 
 type Application struct {
-	events         map[event.Event][]event.Listener
-	listeners      map[string][]*listener
-	queue          queue.Queue
-	registered     map[string]bool
-	wildcards      map[string][]*listener
-	wildcardsCache sync.Map
-	mu             sync.RWMutex
+	events     map[event.Event][]event.Listener
+	listeners  map[string][]*listener
+	queue      contractsqueue.Queue
+	registered map[string]any
+	wildcards  []wildcardEntry
+	mu         sync.RWMutex
 }
 
-func NewApplication(queue queue.Queue) *Application {
+func NewApplication(queue contractsqueue.Queue) *Application {
 	return &Application{
 		listeners:  make(map[string][]*listener),
 		queue:      queue,
-		registered: make(map[string]bool),
-		wildcards:  make(map[string][]*listener),
+		registered: make(map[string]any),
 	}
 }
 
@@ -60,7 +58,7 @@ func (app *Application) Job(e event.Event, args []event.Arg) event.Task {
 		listeners = make([]event.Listener, 0)
 	}
 
-	return NewTask(app.queue, args, e, listeners)
+	return NewTask(app.queue, args, e, slices.Clone(listeners))
 }
 
 // Register registers events and their listeners, the listeners are also
@@ -69,7 +67,7 @@ func (app *Application) Job(e event.Event, args []event.Arg) event.Task {
 // Deprecated: Use Listen instead, Register will be removed in a future version.
 func (app *Application) Register(events map[event.Event][]event.Listener) {
 	var (
-		jobs     []queue.Job
+		jobs     []contractsqueue.Job
 		jobNames []string
 	)
 
@@ -80,6 +78,7 @@ func (app *Application) Register(events map[event.Event][]event.Listener) {
 	}
 
 	for e, listeners := range events {
+		listeners = slices.Clone(listeners)
 		app.events[e] = listeners
 		for _, listener := range listeners {
 			if !slices.Contains(jobNames, listener.Signature()) {
@@ -88,10 +87,13 @@ func (app *Application) Register(events map[event.Event][]event.Listener) {
 			}
 		}
 
-		// Mirror the listeners on the Listen flow, replacing any previous
-		// registration for the event to keep Register's overwrite semantics.
+		// Mirror the listeners on the Listen flow. Register overwrites the
+		// listeners of an event, so only the ones it registered before are
+		// dropped, the ones added through Listen are kept.
 		if name, err := getEventName(e); err == nil {
-			mirrored := make([]*listener, 0, len(listeners))
+			mirrored := slices.DeleteFunc(slices.Clone(app.listeners[name]), func(l *listener) bool {
+				return l.legacy
+			})
 			for _, l := range listeners {
 				mirrored = append(mirrored, newLegacyListener(l))
 			}
@@ -101,8 +103,8 @@ func (app *Application) Register(events map[event.Event][]event.Listener) {
 
 	// The queue jobs are already deduplicated within this call, remember them so
 	// that a later Listen doesn't register the same signature twice.
-	for _, name := range jobNames {
-		app.registered[name] = true
+	for i, name := range jobNames {
+		app.registered[name] = listenerIdentity(jobs[i])
 	}
 
 	app.mu.Unlock()

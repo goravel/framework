@@ -20,10 +20,10 @@ func (_m *QueueListener) EXPECT() *QueueListener_Expecter {
 	return &QueueListener_Expecter{mock: &_m.Mock}
 }
 
-// Handle provides a mock function with given fields: _a0, args
-func (_m *QueueListener) Handle(_a0 interface{}, args ...interface{}) error {
+// Handle provides a mock function with given fields: eventName, args
+func (_m *QueueListener) Handle(eventName string, args ...interface{}) error {
 	var _ca []interface{}
-	_ca = append(_ca, _a0)
+	_ca = append(_ca, eventName)
 	_ca = append(_ca, args...)
 	ret := _m.Called(_ca...)
 
@@ -32,8 +32,8 @@ func (_m *QueueListener) Handle(_a0 interface{}, args ...interface{}) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) error); ok {
-		r0 = rf(_a0, args...)
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) error); ok {
+		r0 = rf(eventName, args...)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -47,14 +47,14 @@ type QueueListener_Handle_Call struct {
 }
 
 // Handle is a helper method to define mock.On call
-//   - _a0 interface{}
+//   - eventName string
 //   - args ...interface{}
-func (_e *QueueListener_Expecter) Handle(_a0 interface{}, args ...interface{}) *QueueListener_Handle_Call {
+func (_e *QueueListener_Expecter) Handle(eventName interface{}, args ...interface{}) *QueueListener_Handle_Call {
 	return &QueueListener_Handle_Call{Call: _e.mock.On("Handle",
-		append([]interface{}{_a0}, args...)...)}
+		append([]interface{}{eventName}, args...)...)}
 }
 
-func (_c *QueueListener_Handle_Call) Run(run func(_a0 interface{}, args ...interface{})) *QueueListener_Handle_Call {
+func (_c *QueueListener_Handle_Call) Run(run func(eventName string, args ...interface{})) *QueueListener_Handle_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := make([]interface{}, len(args)-1)
 		for i, a := range args[1:] {
@@ -62,7 +62,7 @@ func (_c *QueueListener_Handle_Call) Run(run func(_a0 interface{}, args ...inter
 				variadicArgs[i] = a.(interface{})
 			}
 		}
-		run(args[0].(interface{}), variadicArgs...)
+		run(args[0].(string), variadicArgs...)
 	})
 	return _c
 }
@@ -72,7 +72,7 @@ func (_c *QueueListener_Handle_Call) Return(_a0 error) *QueueListener_Handle_Cal
 	return _c
 }
 
-func (_c *QueueListener_Handle_Call) RunAndReturn(run func(interface{}, ...interface{}) error) *QueueListener_Handle_Call {
+func (_c *QueueListener_Handle_Call) RunAndReturn(run func(string, ...interface{}) error) *QueueListener_Handle_Call {
 	_c.Call.Return(run)
 	return _c
 }

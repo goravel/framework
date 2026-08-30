@@ -75,7 +75,7 @@ func (receiver *DummyListener) Queue(args ...any) event.Queue {
 	}
 }
 
-func (receiver *DummyListener) Handle(evt any, args ...any) error {
+func (receiver *DummyListener) Handle(eventName string, args ...any) error {
 	return nil
 }
 `
