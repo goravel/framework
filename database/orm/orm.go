@@ -18,13 +18,40 @@ import (
 	"github.com/goravel/framework/database/gorm"
 )
 
+// QueriesCache is the shared, concurrency-safe registry of connections built
+// from the same database config. Every Orm instance created from the same
+// connection pool shares one QueriesCache, so concurrent Connection(name) calls
+// from different instances (e.g. lazily building the same non-default
+// connection from multiple goroutines) are serialized by the internal mutex.
+type QueriesCache struct {
+	mu sync.RWMutex
+	m  map[string]cachedConnection
+}
+
+// cachedConnection holds a built connection: the Query handle and the database
+// config it was built from.
+type cachedConnection struct {
+	query    contractsorm.Query
+	dbConfig database.Config
+}
+
+// NewQueriesCache creates a QueriesCache from per-connection queries and
+// configs. queries and dbConfigs must be keyed identically by connection name.
+func NewQueriesCache(queries map[string]contractsorm.Query, dbConfigs map[string]database.Config) *QueriesCache {
+	cache := &QueriesCache{m: make(map[string]cachedConnection, len(queries))}
+	for name, query := range queries {
+		cache.m[name] = cachedConnection{query: query, dbConfig: dbConfigs[name]}
+	}
+
+	return cache
+}
+
 type Orm struct {
 	ctx               context.Context
 	config            config.Config
 	log               log.Log
 	query             contractsorm.Query
-	queries           map[string]contractsorm.Query
-	dbConfigs         map[string]database.Config
+	queries           *QueriesCache
 	fresh             func(key ...any)
 	connection        string
 	modelToObserver   []contractsorm.ModelToObserver
@@ -35,17 +62,16 @@ type Orm struct {
 
 // NewOrm creates a new Orm instance for the given connection.
 //
-// queries and dbConfigs are the shared per-connection caches and must be keyed
-// identically (by connection name): queries[name] is the Query for the
-// connection and dbConfigs[name] is its database.Config.
+// queries is the shared, concurrency-safe registry of built connections and
+// must be non-nil (construct it via NewQueriesCache). It should contain an
+// entry for the connection (extended lazily by Connection()).
 func NewOrm(
 	ctx context.Context,
 	config config.Config,
 	connection string,
 	dbConfig database.Config,
 	query contractsorm.Query,
-	queries map[string]contractsorm.Query,
-	dbConfigs map[string]database.Config,
+	queries *QueriesCache,
 	log log.Log,
 	modelToObserver []contractsorm.ModelToObserver,
 	fresh func(key ...any),
@@ -60,7 +86,6 @@ func NewOrm(
 		modelToObserver:   modelToObserver,
 		query:             query,
 		queries:           queries,
-		dbConfigs:         dbConfigs,
 		fresh:             fresh,
 		telemetryResolver: telemetryResolver,
 	}
@@ -69,17 +94,10 @@ func NewOrm(
 func BuildOrm(ctx context.Context, config config.Config, connection string, log log.Log, fresh func(key ...any), telemetryResolver contractstelemetry.Resolver) (*Orm, error) {
 	query, dbConfig, err := gorm.BuildQuery(ctx, config, connection, log, nil, telemetryResolver)
 	if err != nil {
-		return NewOrm(ctx, config, connection, dbConfig, nil, nil, nil, log, nil, fresh, telemetryResolver), err
+		return NewOrm(ctx, config, connection, dbConfig, nil, NewQueriesCache(nil, nil), log, nil, fresh, telemetryResolver), err
 	}
 
-	queries := map[string]contractsorm.Query{
-		connection: query,
-	}
-	dbConfigs := map[string]database.Config{
-		connection: dbConfig,
-	}
-
-	return NewOrm(ctx, config, connection, dbConfig, query, queries, dbConfigs, log, nil, fresh, telemetryResolver), nil
+	return NewOrm(ctx, config, connection, dbConfig, query, NewQueriesCache(map[string]contractsorm.Query{connection: query}, map[string]database.Config{connection: dbConfig}), log, nil, fresh, telemetryResolver), nil
 }
 
 func (r *Orm) Config() database.Config {
@@ -90,26 +108,31 @@ func (r *Orm) Connection(name string) contractsorm.Orm {
 	if name == "" {
 		name = r.config.GetString("database.default")
 	}
-	if instance, exist := r.queries[name]; exist {
-		return NewOrm(r.ctx, r.config, name, r.dbConfigs[name], instance, r.queries, r.dbConfigs, r.log, r.modelToObserver, r.fresh, r.telemetryResolver)
+
+	r.queries.mu.RLock()
+	instance, exist := r.queries.m[name]
+	r.queries.mu.RUnlock()
+	if exist {
+		return NewOrm(r.ctx, r.config, name, instance.dbConfig, instance.query, r.queries, r.log, r.modelToObserver, r.fresh, r.telemetryResolver)
 	}
 
 	query, dbConfig, err := gorm.BuildQuery(r.ctx, r.config, name, r.log, r.modelToObserver, r.telemetryResolver)
 	if err != nil || query == nil {
 		r.log.Errorf("[Orm] Init %s connection error: %v", name, err)
 
-		return NewOrm(r.ctx, r.config, name, dbConfig, nil, r.queries, r.dbConfigs, r.log, r.modelToObserver, r.fresh, r.telemetryResolver)
+		return NewOrm(r.ctx, r.config, name, dbConfig, nil, r.queries, r.log, r.modelToObserver, r.fresh, r.telemetryResolver)
 	}
 
-	// TODO: the cached-path read and the cold-path writes below touch the shared
-	// r.queries/r.dbConfigs maps without a lock shared across Orm instances (each
-	// instance owns a value copy of r.mutex). A proper fix needs a connection-pool
-	// mutex shared by all instances built from the same config; out of scope for
-	// the dbConfig poisoning fix (https://github.com/goravel/goravel/issues/987).
-	r.queries[name] = query
-	r.dbConfigs[name] = dbConfig
+	r.queries.mu.Lock()
+	defer r.queries.mu.Unlock()
+	// Double-check: another goroutine may have built this connection first.
+	if instance, exist := r.queries.m[name]; exist {
+		return NewOrm(r.ctx, r.config, name, instance.dbConfig, instance.query, r.queries, r.log, r.modelToObserver, r.fresh, r.telemetryResolver)
+	}
 
-	return NewOrm(r.ctx, r.config, name, dbConfig, query, r.queries, r.dbConfigs, r.log, r.modelToObserver, r.fresh, r.telemetryResolver)
+	r.queries.m[name] = cachedConnection{query: query, dbConfig: dbConfig}
+
+	return NewOrm(r.ctx, r.config, name, dbConfig, query, r.queries, r.log, r.modelToObserver, r.fresh, r.telemetryResolver)
 }
 
 func (r *Orm) DB() (*sql.DB, error) {
@@ -137,7 +160,14 @@ func (r *Orm) Observe(model any, observer contractsorm.Observer) {
 		Observer: observer,
 	})
 
-	for _, query := range r.queries {
+	r.queries.mu.RLock()
+	queries := make([]contractsorm.Query, 0, len(r.queries.m))
+	for _, connection := range r.queries.m {
+		queries = append(queries, connection.query)
+	}
+	r.queries.mu.RUnlock()
+
+	for _, query := range queries {
 		if queryWithObserver, ok := query.(contractsorm.QueryWithObserver); ok {
 			queryWithObserver.Observe(model, observer)
 		}
@@ -196,5 +226,5 @@ func (r *Orm) Transaction(txFunc func(tx contractsorm.Query) error) (err error) 
 }
 
 func (r *Orm) WithContext(ctx context.Context) contractsorm.Orm {
-	return NewOrm(ctx, r.config, r.connection, r.dbConfig, r.query, r.queries, r.dbConfigs, r.log, r.modelToObserver, r.fresh, r.telemetryResolver)
+	return NewOrm(ctx, r.config, r.connection, r.dbConfig, r.query, r.queries, r.log, r.modelToObserver, r.fresh, r.telemetryResolver)
 }

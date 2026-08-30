@@ -27,7 +27,7 @@ func newSchema(testQuery *TestQuery, connectionToTestQuery map[string]*TestQuery
 
 	log := utils.NewTestLog()
 	dbConfig := testQuery.Driver().Pool().Writers[0]
-	orm := databaseorm.NewOrm(context.Background(), testQuery.Config(), dbConfig.Connection, dbConfig, testQuery.Query(), queries, dbConfigs, log, nil, nil, nil)
+	orm := databaseorm.NewOrm(context.Background(), testQuery.Config(), dbConfig.Connection, dbConfig, testQuery.Query(), databaseorm.NewQueriesCache(queries, dbConfigs), log, nil, nil, nil)
 
 	schema, err := schema.NewSchema(testQuery.Config(), log, orm, testQuery.Driver(), nil)
 	if err != nil {

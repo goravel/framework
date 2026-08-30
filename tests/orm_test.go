@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/database"
@@ -46,7 +48,7 @@ func (s *OrmSuite) SetupTest() {
 	}
 
 	dbConfig := s.queries[s.defaultConnection].Driver().Pool().Writers[0]
-	s.orm = orm.NewOrm(context.Background(), nil, dbConfig.Connection, dbConfig, queries[s.defaultConnection], queries, dbConfigs, nil, nil, nil, nil)
+	s.orm = orm.NewOrm(context.Background(), nil, dbConfig.Connection, dbConfig, queries[s.defaultConnection], orm.NewQueriesCache(queries, dbConfigs), nil, nil, nil, nil)
 }
 
 func (s *OrmSuite) TearDownSuite() {
@@ -63,6 +65,56 @@ func (s *OrmSuite) TestConnection() {
 		s.NotNil(orm)
 		s.Equal(connection, orm.Name())
 		s.Equal(s.queries[connection].Driver().Pool().Writers[0].Database, orm.DatabaseName())
+	}
+}
+
+func TestOrmConnectionConcurrentSafe(t *testing.T) {
+	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
+	sqliteTestQuery := NewTestQueryBuilder().Sqlite("", false)
+
+	docker, err := sqliteTestQuery.Driver().Docker()
+	require.NoError(t, err)
+	defer func() {
+		require.NoError(t, docker.Shutdown())
+	}()
+
+	sqliteConfig := sqliteTestQuery.Driver().Pool().Writers[0]
+	sqliteConnection := sqliteConfig.Connection
+	postgresConnection := postgresTestQuery.Driver().Pool().Writers[0].Connection
+
+	mockDatabaseConfig(postgresTestQuery.MockConfig(), sqliteConfig)
+
+	schema := newSchema(postgresTestQuery, map[string]*TestQuery{
+		postgresConnection: postgresTestQuery,
+	})
+
+	n := 20
+	var wg sync.WaitGroup
+	wg.Add(n)
+
+	var mu sync.Mutex
+	results := make([]contractsorm.Orm, 0, n)
+
+	start := make(chan struct{})
+	for i := 0; i < n; i++ {
+		go func() {
+			<-start
+			defer wg.Done()
+			orm := schema.Orm().Connection(sqliteConnection)
+			mu.Lock()
+			results = append(results, orm)
+			mu.Unlock()
+		}()
+	}
+
+	close(start)
+	wg.Wait()
+
+	require.Len(t, results, n)
+	for _, orm := range results {
+		require.NotNil(t, orm)
+		require.Equal(t, sqliteConnection, orm.Name())
+		require.Equal(t, sqliteConfig.Database, orm.DatabaseName())
 	}
 }
 
