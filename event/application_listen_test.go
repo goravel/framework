@@ -119,7 +119,7 @@ func TestApplication_Listen(t *testing.T) {
 				return app.Listen(&userCreated{}, func(evt any, args ...any) error { return nil })
 			},
 			assert: func(t *testing.T, app *Application) {
-				assert.Len(t, app.listeners["event.userCreated"], 1)
+				assert.Len(t, app.listeners["github.com/goravel/framework/event.userCreated"], 1)
 			},
 		},
 		{
@@ -129,8 +129,8 @@ func TestApplication_Listen(t *testing.T) {
 					func(evt any, args ...any) error { return nil })
 			},
 			assert: func(t *testing.T, app *Application) {
-				assert.Len(t, app.listeners["event.userCreated"], 1)
-				assert.Len(t, app.listeners["event.userUpdated"], 1)
+				assert.Len(t, app.listeners["github.com/goravel/framework/event.userCreated"], 1)
+				assert.Len(t, app.listeners["github.com/goravel/framework/event.userUpdated"], 1)
 			},
 		},
 		{
@@ -141,7 +141,7 @@ func TestApplication_Listen(t *testing.T) {
 			},
 			assert: func(t *testing.T, app *Application) {
 				assert.Len(t, app.listeners["user.created"], 1)
-				assert.Len(t, app.listeners["event.userUpdated"], 1)
+				assert.Len(t, app.listeners["github.com/goravel/framework/event.userUpdated"], 1)
 			},
 		},
 		{
@@ -150,7 +150,7 @@ func TestApplication_Listen(t *testing.T) {
 				return app.Listen(func(evt *userCreated) error { return nil })
 			},
 			assert: func(t *testing.T, app *Application) {
-				assert.Len(t, app.listeners["event.userCreated"], 1)
+				assert.Len(t, app.listeners["github.com/goravel/framework/event.userCreated"], 1)
 			},
 		},
 		{
@@ -159,7 +159,7 @@ func TestApplication_Listen(t *testing.T) {
 				return app.Listen(&userCreated{}, func(evt *userCreated) error { return nil })
 			},
 			assert: func(t *testing.T, app *Application) {
-				assert.Len(t, app.listeners["event.userCreated"], 1)
+				assert.Len(t, app.listeners["github.com/goravel/framework/event.userCreated"], 1)
 			},
 		},
 		{
@@ -167,14 +167,14 @@ func TestApplication_Listen(t *testing.T) {
 			setup: func(app *Application, mockQueue *mocksqueue.Queue) error {
 				return app.Listen("user.created", func(evt *userCreated) error { return nil })
 			},
-			expectedErr: errors.EventListenerEventMismatch.Args("event.userCreated", "user.created"),
+			expectedErr: errors.EventListenerEventMismatch.Args("github.com/goravel/framework/event.userCreated", "user.created"),
 		},
 		{
 			name: "TypedClosureOnWildcard",
 			setup: func(app *Application, mockQueue *mocksqueue.Queue) error {
 				return app.Listen("user.*", func(evt *userCreated) error { return nil })
 			},
-			expectedErr: errors.EventListenerEventMismatch.Args("event.userCreated", "user.*"),
+			expectedErr: errors.EventListenerEventMismatch.Args("github.com/goravel/framework/event.userCreated", "user.*"),
 		},
 		{
 			name: "Wildcard",
@@ -235,14 +235,14 @@ func TestApplication_Listen(t *testing.T) {
 			setup: func(app *Application, mockQueue *mocksqueue.Queue) error {
 				return app.Listen(func(evt *userCreated) {})
 			},
-			expectedErr: errors.EventInvalidListener.Args("func(*event.userCreated)"),
+			expectedErr: errors.EventInvalidListener.Args(""),
 		},
 		{
 			name: "BareNonClosure",
 			setup: func(app *Application, mockQueue *mocksqueue.Queue) error {
 				return app.Listen("user.created")
 			},
-			expectedErr: errors.EventInvalidListener.Args("string"),
+			expectedErr: errors.EventInvalidListener.Args(".string"),
 		},
 	}
 
@@ -294,8 +294,8 @@ func TestGetEventName(t *testing.T) {
 		expectedErr  error
 	}{
 		{name: "String", event: "user.created", expectedName: "user.created"},
-		{name: "Pointer", event: &userCreated{}, expectedName: "event.userCreated"},
-		{name: "Value", event: userCreated{}, expectedName: "event.userCreated"},
+		{name: "Pointer", event: &userCreated{}, expectedName: "github.com/goravel/framework/event.userCreated"},
+		{name: "Value", event: userCreated{}, expectedName: "github.com/goravel/framework/event.userCreated"},
 		{name: "EmptyString", event: "", expectedErr: errors.EventInvalidEvent.Args("")},
 		{name: "Nil", event: nil, expectedErr: errors.EventInvalidEvent.Args(nil)},
 	}

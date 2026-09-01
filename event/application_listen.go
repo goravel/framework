@@ -372,18 +372,19 @@ func getEventName(evt any) (string, error) {
 	return name, nil
 }
 
-// typeName returns the package qualified name of a type, pointers are followed
-// so that *events.UserCreated and events.UserCreated share a name.
+// typeName returns the fully qualified name of a type, pointers are followed so
+// that *events.UserCreated and events.UserCreated share a name. Event names use
+// the full import path so two packages named events do not collide.
 func typeName(t reflect.Type) string {
 	for t != nil && t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 
-	if t == nil {
+	if t == nil || t.Name() == "" {
 		return ""
 	}
 
-	return t.String()
+	return t.PkgPath() + "." + t.Name()
 }
 
 // matchWildcard reports whether a name matches a pattern in which "*" stands for
