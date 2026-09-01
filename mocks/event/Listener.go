@@ -20,9 +20,10 @@ func (_m *Listener) EXPECT() *Listener_Expecter {
 	return &Listener_Expecter{mock: &_m.Mock}
 }
 
-// Handle provides a mock function with given fields: args
-func (_m *Listener) Handle(args ...interface{}) error {
+// Handle provides a mock function with given fields: eventName, args
+func (_m *Listener) Handle(eventName string, args ...interface{}) error {
 	var _ca []interface{}
+	_ca = append(_ca, eventName)
 	_ca = append(_ca, args...)
 	ret := _m.Called(_ca...)
 
@@ -31,8 +32,8 @@ func (_m *Listener) Handle(args ...interface{}) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(...interface{}) error); ok {
-		r0 = rf(args...)
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) error); ok {
+		r0 = rf(eventName, args...)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -46,21 +47,22 @@ type Listener_Handle_Call struct {
 }
 
 // Handle is a helper method to define mock.On call
+//   - eventName string
 //   - args ...interface{}
-func (_e *Listener_Expecter) Handle(args ...interface{}) *Listener_Handle_Call {
+func (_e *Listener_Expecter) Handle(eventName interface{}, args ...interface{}) *Listener_Handle_Call {
 	return &Listener_Handle_Call{Call: _e.mock.On("Handle",
-		append([]interface{}{}, args...)...)}
+		append([]interface{}{eventName}, args...)...)}
 }
 
-func (_c *Listener_Handle_Call) Run(run func(args ...interface{})) *Listener_Handle_Call {
+func (_c *Listener_Handle_Call) Run(run func(eventName string, args ...interface{})) *Listener_Handle_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-0)
-		for i, a := range args[0:] {
+		variadicArgs := make([]interface{}, len(args)-1)
+		for i, a := range args[1:] {
 			if a != nil {
 				variadicArgs[i] = a.(interface{})
 			}
 		}
-		run(variadicArgs...)
+		run(args[0].(string), variadicArgs...)
 	})
 	return _c
 }
@@ -70,7 +72,7 @@ func (_c *Listener_Handle_Call) Return(_a0 error) *Listener_Handle_Call {
 	return _c
 }
 
-func (_c *Listener_Handle_Call) RunAndReturn(run func(...interface{}) error) *Listener_Handle_Call {
+func (_c *Listener_Handle_Call) RunAndReturn(run func(string, ...interface{}) error) *Listener_Handle_Call {
 	_c.Call.Return(run)
 	return _c
 }

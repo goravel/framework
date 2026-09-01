@@ -93,10 +93,8 @@ func callListener(queue contractsqueue.Queue, l *listener, eventName string, evt
 		options = l.queueOptions(argValues(args)...)
 	}
 
-	// Listeners registered through the deprecated Register have no in process
-	// handler, they always go through the queue facade.
-	if l.job != nil && (options.Enable || l.handle == nil) {
-		return dispatchToQueue(queue, l.job, options, queueArgs(l, eventName, args))
+	if l.job != nil && options.Enable {
+		return dispatchToQueue(queue, l.job, options, queueArgs(eventName, args))
 	}
 
 	// Wildcard listeners are registered on a pattern rather than on an event, so

@@ -123,7 +123,7 @@ var (
 	DockerMissingContainerId             = New("no container id return when creating %s docker")
 
 	EventInvalidEvent            = New("invalid event: %v")
-	EventInvalidListener         = New("invalid listener for event %s, expect event.QueueListener or func(event any, args ...any) error")
+	EventInvalidListener         = New("invalid listener for event %s, expect event.Listener or func(event any, args ...any) error")
 	EventListenerNotBind         = New("event %v doesn't bind listeners")
 	EventListenerNotPointer      = New("listener %s must be a non-nil pointer, a value listener can not be told apart from another of the same type")
 	EventListenerEventMismatch   = New("listener of event %s can not be registered on event %s")

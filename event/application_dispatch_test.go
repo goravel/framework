@@ -235,21 +235,20 @@ func TestApplication_DispatchSyncListenerSkipsTheQueue(t *testing.T) {
 
 func TestApplication_DispatchListenerRegisteredThroughRegister(t *testing.T) {
 	mockQueue := mocksqueue.NewQueue(t)
-	mockPendingJob := mocksqueue.NewPendingJob(t)
-	listener := &TestListener{}
+	listener := &recordingListener{signature: "registered"}
 
-	mockQueue.EXPECT().Register([]queue.Job{listener}).Once()
-	// Deprecated listeners keep going through the queue facade, synchronously
-	// because their Queue().Enable is false.
-	mockQueue.EXPECT().Job(listener, []queue.Arg{{Type: "string", Value: "goravel"}}).Return(mockPendingJob).Once()
-	mockPendingJob.EXPECT().DispatchSync().Return(nil).Once()
+	mockQueue.EXPECT().Register(mock.Anything).Once()
 
 	app := NewApplication(mockQueue)
 	app.Register(map[event.Event][]event.Listener{
 		&userCreated{}: {listener},
 	})
 
+	// A listener registered through the deprecated Register is reached by
+	// Dispatch, and runs in process because it doesn't enable queueing.
 	assert.False(t, app.Dispatch(&userCreated{}, []event.Arg{{Type: "string", Value: "goravel"}}).Failed())
+	assert.Equal(t, []any{"event.userCreated"}, listener.events)
+	assert.Equal(t, [][]any{{"goravel"}}, listener.args)
 }
 
 func TestApplication_DispatchConcurrently(t *testing.T) {
@@ -276,12 +275,9 @@ func TestApplication_DispatchConcurrently(t *testing.T) {
 
 func TestApplication_DispatchAfterRegisterKeepsListenRegistrations(t *testing.T) {
 	mockQueue := mocksqueue.NewQueue(t)
-	mockPendingJob := mocksqueue.NewPendingJob(t)
-	legacy := &TestListener{}
+	legacy := &recordingListener{signature: "registered"}
 
-	mockQueue.EXPECT().Register([]queue.Job{legacy}).Twice()
-	mockQueue.EXPECT().Job(legacy, []queue.Arg(nil)).Return(mockPendingJob).Once()
-	mockPendingJob.EXPECT().DispatchSync().Return(nil).Once()
+	mockQueue.EXPECT().Register(mock.Anything).Twice()
 
 	app := NewApplication(mockQueue)
 
@@ -303,8 +299,7 @@ func TestApplication_DispatchAfterRegisterKeepsListenRegistrations(t *testing.T)
 }
 
 func TestApplication_DispatchRunsEventHandleOnce(t *testing.T) {
-	mockQueue := mocksqueue.NewQueue(t)
-	app := NewApplication(mockQueue)
+	app := NewApplication(mocksqueue.NewQueue(t))
 
 	var received []any
 	assert.NoError(t, app.Listen(&transformingEvent{}, func(evt any, args ...any) error {
@@ -322,8 +317,7 @@ func TestApplication_DispatchRunsEventHandleOnce(t *testing.T) {
 }
 
 func TestApplication_DispatchEventHandleErrorShortCircuits(t *testing.T) {
-	mockQueue := mocksqueue.NewQueue(t)
-	app := NewApplication(mockQueue)
+	app := NewApplication(mocksqueue.NewQueue(t))
 
 	var called bool
 	assert.NoError(t, app.Listen(&TestEventHandleError{}, func(evt any, args ...any) error {
@@ -340,8 +334,7 @@ func TestApplication_DispatchEventHandleErrorShortCircuits(t *testing.T) {
 }
 
 func TestApplication_DispatchWithoutListenersSkipsEventHandle(t *testing.T) {
-	mockQueue := mocksqueue.NewQueue(t)
-	app := NewApplication(mockQueue)
+	app := NewApplication(mocksqueue.NewQueue(t))
 
 	// TestEventHandleError always fails, a no-op dispatch must not run it.
 	assert.False(t, app.Dispatch(&TestEventHandleError{}).Failed())
@@ -351,26 +344,20 @@ func TestApplication_DispatchWildcardOrderIsRegistrationOrder(t *testing.T) {
 	app := NewApplication(mocksqueue.NewQueue(t))
 
 	var order []string
-	for _, pattern := range []string{"user.*", "*.created", "*"} {
+	listen := func(pattern, name string) {
 		assert.NoError(t, app.Listen(pattern, func(evt any, args ...any) error {
-			order = append(order, evt.(string))
+			order = append(order, name)
 
 			return nil
 		}))
 	}
 
-	assert.False(t, app.Dispatch("user.created").Failed())
-	assert.Len(t, order, 3, "every overlapping pattern must match")
+	listen("user.*", "A")
+	listen("*.created", "B")
+	listen("user.*", "C")
 
-	// Re-dispatching must not reorder the listeners.
-	order = nil
-	assert.NoError(t, app.Listen("user.cre*", func(evt any, args ...any) error {
-		order = append(order, "last")
-
-		return nil
-	}))
 	assert.False(t, app.Dispatch("user.created").Failed())
-	assert.Equal(t, "last", order[len(order)-1])
+	assert.Equal(t, []string{"A", "B", "C"}, order, "listeners must fire in registration order")
 }
 
 func TestQueueJobRecoversFromPanic(t *testing.T) {

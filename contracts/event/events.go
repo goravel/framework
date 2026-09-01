@@ -6,7 +6,7 @@ type Instance interface {
 	// Listen registers one or more listeners for one or more events.
 	// events can be a string, []string, Event, []Event or []any, and a wildcard
 	// pattern such as "user.*" matches every event sharing the prefix.
-	// listeners can be QueueListener implementations or
+	// listeners can be Listener implementations, or
 	// func(event any, args ...any) error closures. When no listener is given,
 	// events must be a func(event *SomeEvent) error closure, and the event is
 	// resolved from the parameter type.
@@ -31,9 +31,9 @@ type Event interface {
 	Handle(args []Arg) ([]Arg, error)
 }
 
-// QueueListener is the listener interface used by Listen and Dispatch.
-// Listeners registered through the deprecated Register keep using Listener.
-type QueueListener interface {
+// Listener handles a dispatched event. It is registered through Listen, and
+// through the deprecated Register.
+type Listener interface {
 	// Handle the event. eventName is the canonical name of the dispatched event,
 	// never the event itself, so that a listener behaves the same whether it runs
 	// in process or through the queue, where only scalar arguments survive.
@@ -44,16 +44,6 @@ type QueueListener interface {
 	Queue(args ...any) Queue
 	// Signature returns the unique identifier for the listener.
 	Signature() string
-}
-
-// Listener is the listener interface used by the deprecated Register and Job.
-type Listener interface {
-	// Signature returns the unique identifier for the listener.
-	Signature() string
-	// Queue configure the event queue options.
-	Queue(args ...any) Queue
-	// Handle the event.
-	Handle(args ...any) error
 }
 
 // Result aggregates the errors returned by the listeners of a single dispatch.

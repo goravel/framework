@@ -43,7 +43,7 @@ func (receiver *TestListener) Queue(args ...any) event.Queue {
 	}
 }
 
-func (receiver *TestListener) Handle(args ...any) error {
+func (receiver *TestListener) Handle(eventName string, args ...any) error {
 	return nil
 }
 
@@ -61,6 +61,6 @@ func (receiver *TestListenerHandleError) Queue(args ...any) event.Queue {
 	}
 }
 
-func (receiver *TestListenerHandleError) Handle(args ...any) error {
+func (receiver *TestListenerHandleError) Handle(eventName string, args ...any) error {
 	return errors.New("error")
 }

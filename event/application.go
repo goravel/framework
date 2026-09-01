@@ -66,48 +66,75 @@ func (app *Application) Job(e event.Event, args []event.Arg) event.Task {
 //
 // Deprecated: Use Listen instead, Register will be removed in a future version.
 func (app *Application) Register(events map[event.Event][]event.Listener) {
+	type registration struct {
+		name      string
+		named     bool
+		listeners []*listener
+	}
+
 	var (
 		jobs     []contractsqueue.Job
 		jobNames []string
+		regs     = make([]registration, 0, len(events))
+		cloned   = make(map[event.Event][]event.Listener, len(events))
 	)
 
-	app.mu.Lock()
-
-	if app.events == nil {
-		app.events = map[event.Event][]event.Listener{}
-	}
-
+	// Resolving a signature calls into the listener. That must not happen while
+	// the registry is locked: a panicking Signature would leave the mutex held
+	// forever, and one that registers another listener would deadlock.
 	for e, listeners := range events {
 		listeners = slices.Clone(listeners)
-		app.events[e] = listeners
-		for _, listener := range listeners {
-			if !slices.Contains(jobNames, listener.Signature()) {
-				jobs = append(jobs, listener)
-				jobNames = append(jobNames, listener.Signature())
+		cloned[e] = listeners
+
+		name, err := getEventName(e)
+		reg := registration{name: name, named: err == nil}
+
+		for _, l := range listeners {
+			signature := l.Signature()
+			if !slices.Contains(jobNames, signature) {
+				jobs = append(jobs, &queueJob{listener: l})
+				jobNames = append(jobNames, signature)
+			}
+
+			if reg.named {
+				reg.listeners = append(reg.listeners, newLegacyListener(l, signature))
 			}
 		}
 
-		// Mirror the listeners on the Listen flow. Register overwrites the
-		// listeners of an event, so only the ones it registered before are
-		// dropped, the ones added through Listen are kept.
-		if name, err := getEventName(e); err == nil {
-			mirrored := slices.DeleteFunc(slices.Clone(app.listeners[name]), func(l *listener) bool {
+		regs = append(regs, reg)
+	}
+
+	func() {
+		app.mu.Lock()
+		defer app.mu.Unlock()
+
+		if app.events == nil {
+			app.events = map[event.Event][]event.Listener{}
+		}
+
+		for e, listeners := range cloned {
+			app.events[e] = listeners
+		}
+
+		// Register overwrites the listeners of an event, so only the ones it
+		// registered before are dropped, the ones added by Listen are kept.
+		for _, reg := range regs {
+			if !reg.named {
+				continue
+			}
+
+			mirrored := slices.DeleteFunc(slices.Clone(app.listeners[reg.name]), func(l *listener) bool {
 				return l.legacy
 			})
-			for _, l := range listeners {
-				mirrored = append(mirrored, newLegacyListener(l))
-			}
-			app.listeners[name] = mirrored
+			app.listeners[reg.name] = append(mirrored, reg.listeners...)
 		}
-	}
 
-	// The queue jobs are already deduplicated within this call, remember them so
-	// that a later Listen doesn't register the same signature twice.
-	for i, name := range jobNames {
-		app.registered[name] = listenerIdentity(jobs[i])
-	}
-
-	app.mu.Unlock()
+		// The queue jobs are already deduplicated within this call, remember them
+		// so that a later Listen doesn't register the same signature twice.
+		for i, name := range jobNames {
+			app.registered[name] = listenerIdentity(jobs[i].(*queueJob).listener)
+		}
+	}()
 
 	app.queue.Register(jobs)
 }

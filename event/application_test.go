@@ -27,15 +27,15 @@ func TestApplication_Register(t *testing.T) {
 				event1 := mocksevent.NewEvent(t)
 				event2 := mocksevent.NewEvent(t)
 				listener1 := mocksevent.NewListener(t)
-				listener1.EXPECT().Signature().Return("listener1").Twice()
+				listener1.EXPECT().Signature().Return("listener1").Once()
 				listener2 := mocksevent.NewListener(t)
-				listener2.EXPECT().Signature().Return("listener2").Times(3)
+				listener2.EXPECT().Signature().Return("listener2").Twice()
 
-				mockQueue.EXPECT().Register(mock.MatchedBy(func(listeners []queue.Job) bool {
-					return assert.ElementsMatch(t, []queue.Job{
-						listener1,
-						listener2,
-					}, listeners)
+				// The listeners are wrapped, so that the queue, whose jobs take
+				// only the arguments, can carry the event name as the first one.
+				// The wrapped jobs are deduplicated by signature.
+				mockQueue.EXPECT().Register(mock.MatchedBy(func(jobs []queue.Job) bool {
+					return assert.Len(t, jobs, 2)
 				})).Once()
 
 				return map[event.Event][]event.Listener{
@@ -82,7 +82,7 @@ func TestApplication_GetEventsReturnsACopy(t *testing.T) {
 	listener := &TestListener{}
 	app := NewApplication(mockQueue)
 	app.Register(map[event.Event][]event.Listener{
-		&userCreated{}: {listener},
+		&TestEvent{}: {listener},
 	})
 
 	events := app.GetEvents()

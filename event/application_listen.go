@@ -27,13 +27,12 @@ type listener struct {
 	signature string
 	// identity distinguishes listeners sharing a signature, see listenerIdentity.
 	identity any
-	// legacy reports whether the listener came from the deprecated Register.
+	// legacy reports whether the listener came from the deprecated Register,
+	// Register overwrites only the listeners it registered itself.
 	legacy bool
 	// wildcard reports whether the listener was registered on a wildcard pattern,
 	// those listeners receive the event name instead of the event itself.
 	wildcard bool
-	// withEvent reports whether the event name is prepended to the queue arguments.
-	withEvent bool
 }
 
 // wildcardEntry keeps wildcard registrations ordered, a map would make the
@@ -44,10 +43,10 @@ type wildcardEntry struct {
 	listeners []*listener
 }
 
-// queueJob adapts an event.QueueListener to the queue.Job interface, the queue
+// queueJob adapts an event.Listener to the queue.Job interface, the queue
 // only carries scalar arguments so the event name travels as the first one.
 type queueJob struct {
-	listener event.QueueListener
+	listener event.Listener
 }
 
 func (j *queueJob) Signature() string {
@@ -152,14 +151,9 @@ func (app *Application) addListener(name string, l *listener) error {
 
 	if strings.Contains(name, "*") {
 		l.wildcard = true
-		for i := range app.wildcards {
-			if app.wildcards[i].pattern == name {
-				app.wildcards[i].listeners = append(app.wildcards[i].listeners, l)
-
-				return nil
-			}
-		}
-
+		// One entry per registration. Folding a repeated pattern into its earlier
+		// entry would run its later listeners before the patterns registered in
+		// between.
 		app.wildcards = append(app.wildcards, wildcardEntry{pattern: name, listeners: []*listener{l}})
 
 		return nil
@@ -214,11 +208,11 @@ func (l *listener) clone() *listener {
 	return &cloned
 }
 
-// newListener normalizes an event.QueueListener or a closure into a listener.
+// newListener normalizes an event.Listener or a closure into a listener.
 // The event names are only used to reject listeners that could never be called.
 func newListener(eventNames []string, l any) (*listener, error) {
 	switch v := l.(type) {
-	case event.QueueListener:
+	case event.Listener:
 		// The queue resolves a job by its signature, so listeners sharing one must
 		// be distinguishable. Two values of the same type never are, which would
 		// let one listener be queued and another executed.
@@ -234,7 +228,6 @@ func newListener(eventNames []string, l any) (*listener, error) {
 			identity:     listenerIdentity(v),
 			queueOptions: v.Queue,
 			signature:    v.Signature(),
-			withEvent:    true,
 		}, nil
 	case func(evt any, args ...any) error:
 		return &listener{
@@ -265,13 +258,19 @@ func newListener(eventNames []string, l any) (*listener, error) {
 	return newClosureListener(fn), nil
 }
 
-// newLegacyListener wraps a listener registered through the deprecated Register,
-// those listeners are always executed through the queue facade.
-func newLegacyListener(l event.Listener) *listener {
+// newLegacyListener wraps a listener registered through the deprecated Register.
+// It behaves like any other listener, the flag only lets Register overwrite the
+// listeners it registered itself without touching the ones added by Listen.
+func newLegacyListener(l event.Listener, signature string) *listener {
 	return &listener{
-		job:          l,
+		handle: func(eventName string, evt any, args []event.Arg) error {
+			return l.Handle(eventName, argValues(args)...)
+		},
+		job:          &queueJob{listener: l},
+		identity:     listenerIdentity(l),
 		legacy:       true,
 		queueOptions: l.Queue,
+		signature:    signature,
 	}
 }
 

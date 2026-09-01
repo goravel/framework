@@ -211,11 +211,17 @@ func TestApplication_Listen(t *testing.T) {
 			expectedErr: errors.EventInvalidListener.Args("user.created"),
 		},
 		{
-			name: "LegacyListenerIsRejected",
+			// There is one listener interface now, so a listener written for the
+			// deprecated Register works with Listen unchanged.
+			name: "ListenerOfTheDeprecatedFlow",
 			setup: func(app *Application, mockQueue *mocksqueue.Queue) error {
+				mockQueue.EXPECT().Register(mock.Anything).Once()
+
 				return app.Listen("user.created", &TestListener{})
 			},
-			expectedErr: errors.EventInvalidListener.Args("user.created"),
+			assert: func(t *testing.T, app *Application) {
+				assert.Len(t, app.listeners["user.created"], 1)
+			},
 		},
 		{
 			name: "ClosureWithTooManyParameters",

@@ -15,7 +15,7 @@ type Task struct {
 func NewTask(queue contractsqueue.Queue, args []event.Arg, evt event.Event, listeners []event.Listener) *Task {
 	normalized := make([]*listener, 0, len(listeners))
 	for _, l := range listeners {
-		normalized = append(normalized, newLegacyListener(l))
+		normalized = append(normalized, newLegacyListener(l, l.Signature()))
 	}
 
 	return &Task{
@@ -64,11 +64,7 @@ func dispatchToQueue(queue contractsqueue.Queue, job contractsqueue.Job, options
 
 // queueArgs builds the arguments of a queued listener, the event name leads the
 // payload for listeners that expect it, since the queue only carries scalars.
-func queueArgs(l *listener, eventName string, args []event.Arg) []contractsqueue.Arg {
-	if !l.withEvent {
-		return eventArgsToQueueArgs(args)
-	}
-
+func queueArgs(eventName string, args []event.Arg) []contractsqueue.Arg {
 	queued := make([]contractsqueue.Arg, 0, len(args)+1)
 	queued = append(queued, contractsqueue.Arg{Type: "string", Value: eventName})
 	for _, arg := range args {
