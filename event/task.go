@@ -84,17 +84,3 @@ func argValues(args []event.Arg) []any {
 
 	return values
 }
-
-// eventArgsToQueueArgs converts event arguments to queue arguments, the two
-// systems carry the same Type and Value pair behind different types.
-func eventArgsToQueueArgs(args []event.Arg) []contractsqueue.Arg {
-	var queueArgs []contractsqueue.Arg
-	for _, arg := range args {
-		queueArgs = append(queueArgs, contractsqueue.Arg{
-			Type:  arg.Type,
-			Value: arg.Value,
-		})
-	}
-
-	return queueArgs
-}
