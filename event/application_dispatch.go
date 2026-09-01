@@ -32,7 +32,12 @@ func (app *Application) Dispatch(evt any, args ...[]event.Arg) event.Result {
 		return NewResult([]error{err})
 	}
 
-	// The payload is optional.
+	// The payload is optional, but only one is ever used, so a second one is a
+	// mistake rather than something to silently drop.
+	if len(args) > 1 {
+		return NewResult([]error{errors.EventTooManyPayloads.Args(name, len(args))})
+	}
+
 	var payload []event.Arg
 	if len(args) > 0 {
 		payload = args[0]
@@ -58,7 +63,7 @@ func dispatch(queue contractsqueue.Queue, evt any, eventName string, listeners [
 	// An event.Event prepares its own payload before the listeners see it, the
 	// behaviour the deprecated Task has always had.
 	if e, ok := evt.(event.Event); ok {
-		handled, err := e.Handle(args)
+		handled, err := handleEvent(e, eventName, args)
 		if err != nil {
 			return []error{err}
 		}
@@ -77,6 +82,19 @@ func dispatch(queue contractsqueue.Queue, evt any, eventName string, listeners [
 	}
 
 	return errs
+}
+
+// handleEvent lets the event prepare its payload, containing a panic the same
+// way a panicking listener is contained, so that a faulty event fails its own
+// dispatch instead of unwinding the caller.
+func handleEvent(e event.Event, eventName string, args []event.Arg) (handled []event.Arg, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			handled, err = nil, errors.EventHandlePanic.Args(eventName, r)
+		}
+	}()
+
+	return e.Handle(args)
 }
 
 // callListener runs a single listener, a panicking listener fails on its own

@@ -57,7 +57,6 @@ func TestApplication_DispatchWildcard(t *testing.T) {
 
 	assert.False(t, app.Dispatch("user.created").Failed())
 	assert.False(t, app.Dispatch("user.updated").Failed())
-	// The second dispatch of the same event is served from the wildcard cache.
 	assert.False(t, app.Dispatch("user.created").Failed())
 	assert.False(t, app.Dispatch("order.placed").Failed())
 
@@ -65,7 +64,7 @@ func TestApplication_DispatchWildcard(t *testing.T) {
 	assert.Equal(t, []any{"user.created", "user.updated", "user.created"}, received)
 }
 
-func TestApplication_DispatchWildcardCacheIsInvalidated(t *testing.T) {
+func TestApplication_DispatchMatchesAPatternRegisteredLater(t *testing.T) {
 	app := NewApplication(mocksqueue.NewQueue(t))
 
 	var calls int
@@ -111,7 +110,8 @@ func TestApplication_DispatchTypedClosureWithMismatchedEvent(t *testing.T) {
 	result := app.Dispatch(userCreated{})
 
 	assert.True(t, result.Failed())
-	assert.EqualError(t, result.Error(), errors.EventInvalidEvent.Args(userCreated{}).Error())
+	assert.EqualError(t, result.Error(), errors.EventListenerTypeMismatch.Args(
+		"github.com/goravel/framework/event.userCreated", "*event.userCreated", userCreated{}).Error())
 }
 
 func TestApplication_DispatchWithoutListeners(t *testing.T) {
@@ -247,7 +247,7 @@ func TestApplication_DispatchListenerRegisteredThroughRegister(t *testing.T) {
 	// A listener registered through the deprecated Register is reached by
 	// Dispatch, and runs in process because it doesn't enable queueing.
 	assert.False(t, app.Dispatch(&userCreated{}, []event.Arg{{Type: "string", Value: "goravel"}}).Failed())
-	assert.Equal(t, []any{"event.userCreated"}, listener.events)
+	assert.Equal(t, []any{"github.com/goravel/framework/event.userCreated"}, listener.events)
 	assert.Equal(t, [][]any{{"goravel"}}, listener.args)
 }
 
@@ -295,7 +295,7 @@ func TestApplication_DispatchAfterRegisterKeepsListenRegistrations(t *testing.T)
 
 	assert.False(t, app.Dispatch(&userCreated{}).Failed())
 	assert.Equal(t, 1, closureCalls)
-	assert.Len(t, app.listeners["event.userCreated"], 2)
+	assert.Len(t, app.listeners["github.com/goravel/framework/event.userCreated"], 2)
 }
 
 func TestApplication_DispatchRunsEventHandleOnce(t *testing.T) {
@@ -374,4 +374,129 @@ func TestQueueJobRejectsANonStringEvent(t *testing.T) {
 
 	assert.EqualError(t, job.Handle(), errors.EventQueueMissingEvent.Args("queued").Error())
 	assert.EqualError(t, job.Handle(42), errors.EventQueueMissingEvent.Args("queued").Error())
+}
+
+type panickingEvent struct{}
+
+func (r *panickingEvent) Handle(args []event.Arg) ([]event.Arg, error) {
+	panic("event panicked")
+}
+
+func TestApplication_DispatchRecoversFromAPanickingEvent(t *testing.T) {
+	app := NewApplication(mocksqueue.NewQueue(t))
+
+	var called bool
+	assert.NoError(t, app.Listen(&panickingEvent{}, func(evt any, args ...any) error {
+		called = true
+
+		return nil
+	}))
+
+	name, err := getEventName(&panickingEvent{})
+	assert.NoError(t, err)
+
+	result := app.Dispatch(&panickingEvent{})
+
+	assert.False(t, called, "listeners must not run on a payload that was never prepared")
+	assert.True(t, result.Failed())
+	assert.EqualError(t, result.Error(), errors.EventHandlePanic.Args(name, "event panicked").Error())
+}
+
+func TestTaskDispatchRecoversFromAPanickingEvent(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	name, err := getEventName(&panickingEvent{})
+	assert.NoError(t, err)
+
+	task := NewTask(mockQueue, nil, &panickingEvent{}, []event.Listener{&TestListener{}})
+
+	assert.EqualError(t, task.Dispatch(), errors.EventHandlePanic.Args(name, "event panicked").Error())
+}
+
+func TestApplication_DispatchRejectsMoreThanOnePayload(t *testing.T) {
+	app := NewApplication(mocksqueue.NewQueue(t))
+
+	result := app.Dispatch("user.created",
+		[]event.Arg{{Type: "string", Value: "first"}},
+		[]event.Arg{{Type: "string", Value: "second"}},
+	)
+
+	assert.True(t, result.Failed())
+	assert.EqualError(t, result.Error(), errors.EventTooManyPayloads.Args("user.created", 2).Error())
+}
+
+func TestApplication_JobReachesListenersRegisteredThroughListen(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	mockQueue.EXPECT().Register(mock.Anything).Once()
+
+	listener := &recordingListener{signature: "listened"}
+	app := NewApplication(mockQueue)
+	assert.NoError(t, app.Listen(&userCreated{}, listener))
+
+	// Job used to look its listeners up in the map Register writes, so a listener
+	// added through Listen was invisible to it.
+	assert.NoError(t, app.Job(&userCreated{}, []event.Arg{{Type: "string", Value: "goravel"}}).Dispatch())
+	assert.Equal(t, [][]any{{"goravel"}}, listener.args)
+}
+
+func TestApplication_JobReachesAFreshInstanceOfARegisteredEvent(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	mockQueue.EXPECT().Register(mock.Anything).Once()
+
+	listener := &recordingListener{signature: "registered"}
+	app := NewApplication(mockQueue)
+	app.Register(map[event.Event][]event.Listener{
+		&identifiedEvent{id: 1}: {listener},
+	})
+
+	// The listeners are found by event name now, the old map lookup was keyed by
+	// the identity of the value, so a fresh instance of an event with a field
+	// found nothing.
+	assert.NoError(t, app.Job(&identifiedEvent{id: 2}, nil).Dispatch())
+	assert.Len(t, listener.args, 1)
+}
+
+func TestApplication_DispatchQueuesAListenerRegisteredThroughRegister(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	mockPendingJob := mocksqueue.NewPendingJob(t)
+	listener := &recordingListener{
+		signature: "registered",
+		options:   event.Queue{Enable: true},
+	}
+
+	name, err := getEventName(&userCreated{})
+	assert.NoError(t, err)
+
+	mockQueue.EXPECT().Register(mock.Anything).Once()
+	mockQueue.EXPECT().Job(mock.Anything, []queue.Arg{
+		{Type: "string", Value: name},
+		{Type: "string", Value: "goravel"},
+	}).Return(mockPendingJob).Once()
+	mockPendingJob.EXPECT().Dispatch().Return(nil).Once()
+
+	app := NewApplication(mockQueue)
+	app.Register(map[event.Event][]event.Listener{&userCreated{}: {listener}})
+
+	assert.False(t, app.Dispatch(&userCreated{}, []event.Arg{{Type: "string", Value: "goravel"}}).Failed())
+	assert.Nil(t, listener.events, "the listener was queued, not run in process")
+}
+
+func TestApplication_DispatchQueuesAWildcardListenerWithTheMatchedName(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	mockPendingJob := mocksqueue.NewPendingJob(t)
+
+	mockQueue.EXPECT().Register(mock.Anything).Once()
+	// The pattern is what the listener was registered on, the queue must carry
+	// the name of the event that actually matched.
+	mockQueue.EXPECT().Job(mock.Anything, []queue.Arg{
+		{Type: "string", Value: "user.created"},
+	}).Return(mockPendingJob).Once()
+	mockPendingJob.EXPECT().Dispatch().Return(nil).Once()
+
+	app := NewApplication(mockQueue)
+	assert.NoError(t, app.Listen("user.*", &recordingListener{
+		signature: "audit",
+		options:   event.Queue{Enable: true},
+	}))
+
+	assert.False(t, app.Dispatch("user.created").Failed())
 }

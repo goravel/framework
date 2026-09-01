@@ -41,9 +41,10 @@ func TestDispatch(t *testing.T) {
 	}
 
 	tests := []struct {
-		name      string
-		setup     func()
-		expectErr bool
+		name        string
+		setup       func()
+		expectErr   bool
+		expectedErr error
 	}{
 		{
 			// A listener that doesn't enable queueing now runs in process, the
@@ -76,7 +77,8 @@ func TestDispatch(t *testing.T) {
 					{Type: "string", Value: "test"},
 				}, &TestEventNoRegister{}, nil)
 			},
-			expectErr: true,
+			expectErr:   true,
+			expectedErr: errors.EventListenerNotBind.Args(&TestEventNoRegister{}),
 		},
 		{
 			name: "event handle return error",
@@ -97,6 +99,9 @@ func TestDispatch(t *testing.T) {
 			test.setup()
 			err := task.Dispatch()
 			assert.Equal(t, test.expectErr, err != nil, test.name)
+			if test.expectedErr != nil {
+				assert.EqualError(t, err, test.expectedErr.Error())
+			}
 			mockQueue.AssertExpectations(t)
 		})
 	}
@@ -123,7 +128,7 @@ func TestDispatchWithQueue(t *testing.T) {
 
 	mockQueue.EXPECT().Register(mock.Anything).Maybe()
 	mockQueue.EXPECT().Job(mock.Anything, []queue.Arg{
-		{Type: "string", Value: "event.TestEvent"},
+		{Type: "string", Value: "github.com/goravel/framework/event.TestEvent"},
 		{Type: "string", Value: "test"},
 	}).Return(mockPendingJob).Once()
 	mockPendingJob.EXPECT().OnConnection("redis").Return(mockPendingJob).Once()
@@ -157,7 +162,7 @@ func TestDispatchWithQueueError(t *testing.T) {
 
 func TestTestUtils(t *testing.T) {
 	assert.Equal(t, "test_listener", (&TestListener{}).Signature())
-	assert.Nil(t, (&TestListener{}).Handle("event.TestEvent"))
+	assert.Nil(t, (&TestListener{}).Handle("github.com/goravel/framework/event.TestEvent"))
 	assert.Equal(t, "test_listener", (&TestListenerHandleError{}).Signature())
-	assert.EqualError(t, (&TestListenerHandleError{}).Handle("event.TestEvent"), "error")
+	assert.EqualError(t, (&TestListenerHandleError{}).Handle("github.com/goravel/framework/event.TestEvent"), "error")
 }

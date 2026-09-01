@@ -48,17 +48,19 @@ func (app *Application) GetEvents() map[event.Event][]event.Listener {
 
 // Job creates a new event task.
 //
+// The task now reaches every listener of the event, including the ones
+// registered through Listen and the ones registered on a matching wildcard
+// pattern. It used to look the listeners up by the identity of the event value,
+// so passing a fresh instance only found them for zero size structs.
+//
 // Deprecated: Use Dispatch instead, Job will be removed in a future version.
 func (app *Application) Job(e event.Event, args []event.Arg) event.Task {
-	app.mu.RLock()
-	defer app.mu.RUnlock()
-
-	listeners, ok := app.events[e]
-	if !ok {
-		listeners = make([]event.Listener, 0)
+	name, err := getEventName(e)
+	if err != nil {
+		return newFailedTask(err)
 	}
 
-	return NewTask(app.queue, args, e, slices.Clone(listeners))
+	return newTask(app.queue, args, e, app.prepareListeners(name))
 }
 
 // Register registers events and their listeners, the listeners are also

@@ -8,6 +8,7 @@ import (
 type Task struct {
 	event     event.Event
 	queue     contractsqueue.Queue
+	err       error
 	args      []event.Arg
 	listeners []*listener
 }
@@ -18,18 +19,34 @@ func NewTask(queue contractsqueue.Queue, args []event.Arg, evt event.Event, list
 		normalized = append(normalized, newLegacyListener(l, l.Signature()))
 	}
 
+	return newTask(queue, args, evt, normalized)
+}
+
+// newTask builds a task from listeners that are already normalized, which is how
+// Job reaches the listeners registered through Listen.
+func newTask(queue contractsqueue.Queue, args []event.Arg, evt event.Event, listeners []*listener) *Task {
 	return &Task{
 		args:      args,
 		event:     evt,
-		listeners: normalized,
+		listeners: listeners,
 		queue:     queue,
 	}
+}
+
+// newFailedTask carries an error that only surfaces when the task is dispatched,
+// Job has no way to report one itself.
+func newFailedTask(err error) *Task {
+	return &Task{err: err}
 }
 
 // Dispatch runs the event through the same pipeline as Dispatch, in the mode
 // that keeps the deprecated behaviour: an unbound event is an error, and the
 // first failing listener stops the ones behind it.
 func (receiver *Task) Dispatch() error {
+	if receiver.err != nil {
+		return receiver.err
+	}
+
 	name, err := getEventName(receiver.event)
 	if err != nil {
 		return err
@@ -43,8 +60,8 @@ func (receiver *Task) Dispatch() error {
 	return nil
 }
 
-// dispatchToQueue pushes a job onto the queue, or runs it synchronously through
-// the queue facade when the listener doesn't enable queueing.
+// dispatchToQueue pushes a job onto the queue. A listener that doesn't enable
+// queueing never reaches here, it runs in process.
 func dispatchToQueue(queue contractsqueue.Queue, job contractsqueue.Job, options event.Queue, args []contractsqueue.Arg) error {
 	task := queue.Job(job, args)
 
@@ -55,11 +72,7 @@ func dispatchToQueue(queue contractsqueue.Queue, job contractsqueue.Job, options
 		task.OnQueue(options.Queue)
 	}
 
-	if options.Enable {
-		return task.Dispatch()
-	}
-
-	return task.DispatchSync()
+	return task.Dispatch()
 }
 
 // queueArgs builds the arguments of a queued listener, the event name leads the
