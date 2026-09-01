@@ -6,10 +6,11 @@ type Instance interface {
 	// Listen registers one or more listeners for one or more events.
 	// events can be a string, []string, Event, []Event or []any, and a wildcard
 	// pattern such as "user.*" matches every event sharing the prefix.
-	// listeners can be Listener implementations, or
-	// func(event any, args ...any) error closures. When no listener is given,
-	// events must be a func(event *SomeEvent) error closure, and the event is
-	// resolved from the parameter type.
+	// listeners can be Listener implementations, func(event any, args ...any)
+	// error closures, or func(event *SomeEvent) error closures. When no listener
+	// is given, events must be the last closure form and the event is resolved
+	// from its parameter type. That form can also be passed explicitly when its
+	// parameter matches the registered event.
 	Listen(events any, listeners ...any) error
 
 	// GetEvents gets all registered events.
@@ -34,10 +35,9 @@ type Event interface {
 // Listener handles a dispatched event. It is registered through Listen, and
 // through the deprecated Register.
 type Listener interface {
-	// Handle the event. eventName is the canonical name of the dispatched event,
-	// never the event itself, so that a listener behaves the same whether it runs
-	// in process or through the queue, where only scalar arguments survive.
-	// The data a queued listener needs must therefore travel in args.
+	// Handle the event. A Listener receives only the canonical event name, never
+	// the event object itself. Any event data it needs must travel in args so that
+	// it behaves the same in process and through the queue.
 	Handle(eventName string, args ...any) error
 	// Queue configure the event queue options, the listener is pushed onto the
 	// queue instead of running synchronously when Queue().Enable is true.

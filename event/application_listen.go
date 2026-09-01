@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/goravel/framework/contracts/event"
-	"github.com/goravel/framework/contracts/queue"
+	contractsqueue "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
 )
 
@@ -20,7 +20,7 @@ type listener struct {
 	// listeners that always go through the queue.
 	handle func(eventName string, evt any, args []event.Arg) error
 	// job is pushed onto the queue when the listener is queueable, nil otherwise.
-	job queue.Job
+	job contractsqueue.Job
 	// queueOptions returns the queue options of the listener.
 	queueOptions func(args ...any) event.Queue
 	// signature is the unique identifier of the listener, empty for closures.
@@ -129,8 +129,11 @@ func (app *Application) Listen(events any, listeners ...any) error {
 // resolved from the type of its only parameter.
 func (app *Application) listenClosure(events any) error {
 	fn := reflect.ValueOf(events)
-	if fn.Kind() != reflect.Func || fn.IsNil() {
+	if fn.Kind() != reflect.Func {
 		return errors.EventInvalidListener.Args(typeName(reflect.TypeOf(events)))
+	}
+	if fn.IsNil() {
+		return errors.EventInvalidListener.Args(fn.Type().String())
 	}
 
 	name, err := closureEventName(fn.Type())
@@ -150,7 +153,7 @@ func (app *Application) addListener(name string, l *listener) error {
 	// Registering with the queue calls into code outside this module, it must not
 	// run while the registry is locked.
 	if job != nil {
-		app.queue.Register([]queue.Job{job})
+		app.queue.Register([]contractsqueue.Job{job})
 	}
 
 	app.mu.Lock()
@@ -175,7 +178,7 @@ func (app *Application) addListener(name string, l *listener) error {
 // with the queue, or nil when the listener isn't queueable or its job is already
 // registered. The queue resolves jobs by signature alone, so two different
 // listeners sharing one signature would silently run each other's code.
-func (app *Application) claimQueueJob(l *listener) (queue.Job, error) {
+func (app *Application) claimQueueJob(l *listener) (contractsqueue.Job, error) {
 	if l.job == nil {
 		return nil, nil
 	}
@@ -223,11 +226,15 @@ func newListener(eventNames []string, l any) (*listener, error) {
 		// The queue resolves a job by its signature, so listeners sharing one must
 		// be distinguishable. Two values of the same type never are, which would
 		// let one listener be queued and another executed.
-		if value := reflect.ValueOf(v); value.Kind() != reflect.Pointer || value.IsNil() {
-			return nil, errors.EventListenerNotPointer.Args(v.Signature())
+		value := reflect.ValueOf(v)
+		if value.Kind() != reflect.Pointer || value.IsNil() {
+			return nil, errors.EventListenerNotPointer.Args(typeName(reflect.TypeOf(v)))
 		}
 
 		job := newQueueJob(v)
+		if job.Signature() == "" {
+			return nil, errors.EventListenerEmptySignature.Args(typeName(reflect.TypeOf(v)))
+		}
 
 		return &listener{
 			handle: func(eventName string, evt any, args []event.Arg) error {
@@ -247,15 +254,18 @@ func newListener(eventNames []string, l any) (*listener, error) {
 	}
 
 	fn := reflect.ValueOf(l)
-	if fn.Kind() != reflect.Func || fn.IsNil() {
-		return nil, errors.EventInvalidListener.Args(strings.Join(eventNames, ", "))
+	if fn.Kind() != reflect.Func {
+		return nil, errors.EventInvalidListener.Args(typeName(reflect.TypeOf(l)))
+	}
+	if fn.IsNil() {
+		return nil, errors.EventInvalidListener.Args(fn.Type().String())
 	}
 
 	// A typed closure can only ever be called for the event its parameter names,
 	// registering it on any other event, or on a pattern, is a mistake.
 	closureName, err := closureEventName(fn.Type())
 	if err != nil {
-		return nil, errors.EventInvalidListener.Args(strings.Join(eventNames, ", "))
+		return nil, err
 	}
 
 	for _, name := range eventNames {
@@ -292,7 +302,7 @@ func newClosureListener(fn reflect.Value) *listener {
 		handle: func(eventName string, evt any, args []event.Arg) error {
 			value := reflect.ValueOf(evt)
 			if !value.IsValid() || !value.Type().AssignableTo(param) {
-				return errors.EventInvalidEvent.Args(evt)
+				return errors.EventListenerTypeMismatch.Args(eventName, param.String(), evt)
 			}
 
 			if err, ok := fn.Call([]reflect.Value{value})[0].Interface().(error); ok {
@@ -307,16 +317,11 @@ func newClosureListener(fn reflect.Value) *listener {
 // closureEventName validates a func(event *SomeEvent) error closure and returns
 // the name of the event its parameter refers to.
 func closureEventName(t reflect.Type) (string, error) {
-	if t.NumIn() != 1 || t.IsVariadic() || t.NumOut() != 1 || t.Out(0) != errorType {
-		return "", errors.EventInvalidListener.Args(typeName(t))
+	if t.NumIn() != 1 || t.IsVariadic() || t.NumOut() != 1 || t.Out(0) != errorType || !isEventType(t.In(0)) {
+		return "", errors.EventInvalidListener.Args(t.String())
 	}
 
-	name := typeName(t.In(0))
-	if name == "" {
-		return "", errors.EventInvalidListener.Args(typeName(t))
-	}
-
-	return name, nil
+	return typeName(t.In(0)), nil
 }
 
 // eventNames resolves the events to listen on to their names.
@@ -333,6 +338,10 @@ func eventNames(events any) ([]string, error) {
 	case []any:
 		return collectEventNames(e)
 	default:
+		if t := reflect.TypeOf(events); t != nil && t.Kind() == reflect.Slice {
+			return nil, errors.EventInvalidEvent.Args(events)
+		}
+
 		name, err := getEventName(events)
 
 		return []string{name}, err
@@ -364,12 +373,24 @@ func getEventName(evt any) (string, error) {
 		return name, nil
 	}
 
-	name := typeName(reflect.TypeOf(evt))
-	if name == "" {
+	t := reflect.TypeOf(evt)
+	if !isEventType(t) {
 		return "", errors.EventInvalidEvent.Args(evt)
 	}
 
-	return name, nil
+	return typeName(t), nil
+}
+
+// isEventType reports whether a type is a named struct or a pointer to one.
+func isEventType(t reflect.Type) bool {
+	if t == nil {
+		return false
+	}
+	if t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+
+	return t.Kind() == reflect.Struct && t.Name() != "" && t.PkgPath() != ""
 }
 
 // typeName returns the fully qualified name of a type, pointers are followed so

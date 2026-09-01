@@ -1,6 +1,8 @@
 package event
 
 import (
+	stderrors "errors"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -25,7 +27,7 @@ func (r *userUpdated) Handle(args []event.Arg) ([]event.Arg, error) {
 	return args, nil
 }
 
-// recordingListener is an event.QueueListener that records what it received.
+// recordingListener is an event.Listener that records what it received.
 type recordingListener struct {
 	signature string
 	options   event.Queue
@@ -204,11 +206,32 @@ func TestApplication_Listen(t *testing.T) {
 			expectedErr: errors.EventInvalidEvent.Args(nil),
 		},
 		{
+			name: "UnsupportedEventSlice",
+			setup: func(app *Application, mockQueue *mocksqueue.Queue) error {
+				return app.Listen([]*userCreated{}, func(evt any, args ...any) error { return nil })
+			},
+			expectedErr: errors.EventInvalidEvent.Args([]*userCreated{}),
+		},
+		{
+			name: "InvalidAnySliceElement",
+			setup: func(app *Application, mockQueue *mocksqueue.Queue) error {
+				return app.Listen([]any{"user.created", 42}, func(evt any, args ...any) error { return nil })
+			},
+			expectedErr: errors.EventInvalidEvent.Args(42),
+		},
+		{
+			name: "UnnamedStructEvent",
+			setup: func(app *Application, mockQueue *mocksqueue.Queue) error {
+				return app.Listen(struct{}{}, func(evt any, args ...any) error { return nil })
+			},
+			expectedErr: errors.EventInvalidEvent.Args(struct{}{}),
+		},
+		{
 			name: "InvalidListener",
 			setup: func(app *Application, mockQueue *mocksqueue.Queue) error {
 				return app.Listen("user.created", "not a listener")
 			},
-			expectedErr: errors.EventInvalidListener.Args("user.created"),
+			expectedErr: errors.EventInvalidListener.Args(".string"),
 		},
 		{
 			// There is one listener interface now, so a listener written for the
@@ -224,18 +247,69 @@ func TestApplication_Listen(t *testing.T) {
 			},
 		},
 		{
+			name: "NilPointerListener",
+			setup: func(app *Application, mockQueue *mocksqueue.Queue) error {
+				var listener *recordingListener
+
+				return app.Listen("user.created", listener)
+			},
+			expectedErr: errors.EventListenerNotPointer.Args("github.com/goravel/framework/event.recordingListener"),
+		},
+		{
+			name: "EmptyListenerSignature",
+			setup: func(app *Application, mockQueue *mocksqueue.Queue) error {
+				return app.Listen("user.created", &recordingListener{})
+			},
+			expectedErr: errors.EventListenerEmptySignature.Args("github.com/goravel/framework/event.recordingListener"),
+		},
+		{
 			name: "ClosureWithTooManyParameters",
 			setup: func(app *Application, mockQueue *mocksqueue.Queue) error {
 				return app.Listen("user.created", func(evt *userCreated, extra string) error { return nil })
 			},
-			expectedErr: errors.EventInvalidListener.Args("user.created"),
+			expectedErr: errors.EventInvalidListener.Args(reflect.TypeOf(func(evt *userCreated, extra string) error { return nil }).String()),
+		},
+		{
+			name: "ClosureWithAnyParameter",
+			setup: func(app *Application, mockQueue *mocksqueue.Queue) error {
+				return app.Listen(func(evt any) error { return nil })
+			},
+			expectedErr: errors.EventInvalidListener.Args(reflect.TypeOf(func(evt any) error { return nil }).String()),
+		},
+		{
+			name: "ClosureWithStringParameter",
+			setup: func(app *Application, mockQueue *mocksqueue.Queue) error {
+				return app.Listen(func(evt string) error { return nil })
+			},
+			expectedErr: errors.EventInvalidListener.Args(reflect.TypeOf(func(evt string) error { return nil }).String()),
+		},
+		{
+			name: "ClosureWithIntParameter",
+			setup: func(app *Application, mockQueue *mocksqueue.Queue) error {
+				return app.Listen(func(evt int) error { return nil })
+			},
+			expectedErr: errors.EventInvalidListener.Args(reflect.TypeOf(func(evt int) error { return nil }).String()),
+		},
+		{
+			name: "VariadicClosure",
+			setup: func(app *Application, mockQueue *mocksqueue.Queue) error {
+				return app.Listen(func(evts ...*userCreated) error { return nil })
+			},
+			expectedErr: errors.EventInvalidListener.Args(reflect.TypeOf(func(evts ...*userCreated) error { return nil }).String()),
+		},
+		{
+			name: "ZeroArityClosure",
+			setup: func(app *Application, mockQueue *mocksqueue.Queue) error {
+				return app.Listen(func() error { return nil })
+			},
+			expectedErr: errors.EventInvalidListener.Args(reflect.TypeOf(func() error { return nil }).String()),
 		},
 		{
 			name: "BareClosureWithoutErrorReturn",
 			setup: func(app *Application, mockQueue *mocksqueue.Queue) error {
 				return app.Listen(func(evt *userCreated) {})
 			},
-			expectedErr: errors.EventInvalidListener.Args(""),
+			expectedErr: errors.EventInvalidListener.Args(reflect.TypeOf(func(evt *userCreated) {}).String()),
 		},
 		{
 			name: "BareNonClosure",
@@ -267,10 +341,14 @@ func TestApplication_Listen(t *testing.T) {
 func TestApplication_ListenCollectsEveryError(t *testing.T) {
 	app := NewApplication(mocksqueue.NewQueue(t))
 
-	err := app.Listen([]string{"user.created", "user.updated"}, "not a listener")
+	err := app.Listen([]string{"user.created", "user.updated"}, "not a listener", 42)
 
 	// The whole request is rejected before anything is registered.
-	assert.EqualError(t, err, errors.EventInvalidListener.Args("user.created, user.updated").Error())
+	expected := stderrors.Join(
+		errors.EventInvalidListener.Args(".string"),
+		errors.EventInvalidListener.Args(".int"),
+	)
+	assert.EqualError(t, err, expected.Error())
 	assert.Empty(t, app.listeners)
 }
 
@@ -298,6 +376,8 @@ func TestGetEventName(t *testing.T) {
 		{name: "Value", event: userCreated{}, expectedName: "github.com/goravel/framework/event.userCreated"},
 		{name: "EmptyString", event: "", expectedErr: errors.EventInvalidEvent.Args("")},
 		{name: "Nil", event: nil, expectedErr: errors.EventInvalidEvent.Args(nil)},
+		{name: "Int", event: 42, expectedErr: errors.EventInvalidEvent.Args(42)},
+		{name: "UnnamedStruct", event: struct{}{}, expectedErr: errors.EventInvalidEvent.Args(struct{}{})},
 	}
 
 	for _, test := range tests {
@@ -375,6 +455,6 @@ func TestApplication_ListenRejectsAValueListener(t *testing.T) {
 	// queued and the other executed under the same signature.
 	err := app.Listen("user.created", valueListener{})
 
-	assert.EqualError(t, err, errors.EventListenerNotPointer.Args("value").Error())
+	assert.EqualError(t, err, errors.EventListenerNotPointer.Args("github.com/goravel/framework/event.valueListener").Error())
 	assert.Empty(t, app.listeners)
 }
