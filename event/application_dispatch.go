@@ -29,13 +29,13 @@ var (
 func (app *Application) Dispatch(evt any, args ...[]event.Arg) event.Result {
 	name, err := getEventName(evt)
 	if err != nil {
-		return NewResult([]error{err})
+		return newResult([]error{err})
 	}
 
 	// The payload is optional, but only one is ever used, so a second one is a
 	// mistake rather than something to silently drop.
 	if len(args) > 1 {
-		return NewResult([]error{errors.EventTooManyPayloads.Args(name, len(args))})
+		return newResult([]error{errors.EventTooManyPayloads.Args(name, len(args))})
 	}
 
 	var payload []event.Arg
@@ -43,7 +43,7 @@ func (app *Application) Dispatch(evt any, args ...[]event.Arg) event.Result {
 		payload = args[0]
 	}
 
-	return NewResult(dispatch(app.queue, evt, name, app.prepareListeners(name), payload, dispatchModeDispatch))
+	return newResult(dispatch(app.queue, evt, name, app.prepareListeners(name), payload, dispatchModeDispatch))
 }
 
 // dispatch is the single pipeline behind both Dispatch and the deprecated Task.

@@ -28,7 +28,7 @@ func TestResult(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := NewResult(test.errs)
+			result := newResult(test.errs)
 
 			assert.Equal(t, test.failed, result.Failed())
 			assert.Equal(t, test.errs, result.Errors())
@@ -41,4 +41,14 @@ func TestResult(t *testing.T) {
 			assert.EqualError(t, result.Error(), test.expected)
 		})
 	}
+}
+
+func TestResult_ErrorsReturnsACopy(t *testing.T) {
+	first := errors.New("first")
+	result := newResult([]error{first})
+
+	errs := result.Errors()
+	errs[0] = errors.New("changed")
+
+	assert.Equal(t, []error{first}, result.Errors())
 }

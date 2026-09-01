@@ -2,6 +2,7 @@ package event
 
 import (
 	stderrors "errors"
+	"slices"
 
 	"github.com/goravel/framework/contracts/event"
 )
@@ -13,7 +14,8 @@ type Result struct {
 	errs []error
 }
 
-func NewResult(errs []error) *Result {
+// newResult creates the result of a single event dispatch.
+func newResult(errs []error) *Result {
 	return &Result{errs: errs}
 }
 
@@ -22,7 +24,7 @@ func (r *Result) Error() error {
 }
 
 func (r *Result) Errors() []error {
-	return r.errs
+	return slices.Clone(r.errs)
 }
 
 func (r *Result) Failed() bool {

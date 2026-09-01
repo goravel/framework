@@ -96,6 +96,50 @@ func TestApplication_GetEventsReturnsACopy(t *testing.T) {
 	}
 }
 
+func TestApplication_RegisterDoesNotOverwriteAnotherListenersQueueClaim(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	first := &recordingListener{signature: "sig"}
+	second := &recordingListener{
+		signature: "sig",
+		options:   event.Queue{Enable: true},
+	}
+
+	mockQueue.EXPECT().Register(mock.MatchedBy(func(jobs []queue.Job) bool {
+		return len(jobs) == 1
+	})).Once()
+	mockQueue.EXPECT().Register([]queue.Job(nil)).Once()
+
+	app := NewApplication(mockQueue)
+	assert.NoError(t, app.Listen("user.created", first))
+	claimed := app.registered["sig"]
+
+	app.Register(map[event.Event][]event.Listener{
+		&userUpdated{}: {second},
+	})
+
+	assert.Equal(t, claimed, app.registered["sig"])
+	assert.False(t, app.Dispatch(&userUpdated{}).Failed())
+	assert.Equal(t, []any{"github.com/goravel/framework/event.userUpdated"}, second.events)
+}
+
+func TestApplication_RegisterThenListenWithTheSameListenerRegistersTheJobOnce(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	listener := &recordingListener{signature: "sig"}
+
+	mockQueue.EXPECT().Register(mock.MatchedBy(func(jobs []queue.Job) bool {
+		return len(jobs) == 1
+	})).Once()
+
+	app := NewApplication(mockQueue)
+	app.Register(map[event.Event][]event.Listener{
+		&userCreated{}: {listener},
+	})
+
+	assert.NoError(t, app.Listen("user.updated", listener))
+	assert.Equal(t, listenerIdentity(listener), app.registered["sig"])
+	assert.Len(t, app.listeners["user.updated"], 1)
+}
+
 // identifiedEvent carries a field, so two instances are distinct values and the
 // old identity keyed lookup could not find one from the other.
 type identifiedEvent struct {

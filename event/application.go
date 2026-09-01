@@ -75,10 +75,9 @@ func (app *Application) Register(events map[event.Event][]event.Listener) {
 	}
 
 	var (
-		jobs     []contractsqueue.Job
-		jobNames []string
-		regs     = make([]registration, 0, len(events))
-		cloned   = make(map[event.Event][]event.Listener, len(events))
+		jobs   []contractsqueue.Job
+		regs   = make([]registration, 0, len(events))
+		cloned = make(map[event.Event][]event.Listener, len(events))
 	)
 
 	// Resolving a signature calls into the listener. That must not happen while
@@ -95,15 +94,7 @@ func (app *Application) Register(events map[event.Event][]event.Listener) {
 			// The job resolves the signature, asking the listener again would call
 			// into it twice for every registration.
 			job := newQueueJob(l)
-			signature := job.Signature()
-			if !slices.Contains(jobNames, signature) {
-				jobs = append(jobs, job)
-				jobNames = append(jobNames, signature)
-			}
-
-			if reg.named {
-				reg.listeners = append(reg.listeners, newLegacyListener(l, signature))
-			}
+			reg.listeners = append(reg.listeners, newLegacyListener(l, job.Signature()))
 		}
 
 		regs = append(regs, reg)
@@ -121,6 +112,22 @@ func (app *Application) Register(events map[event.Event][]event.Listener) {
 			app.events[e] = listeners
 		}
 
+		for _, reg := range regs {
+			for _, listener := range reg.listeners {
+				job, err := app.claimQueueJobLocked(listener)
+				if err != nil {
+					// Register cannot return the duplicate-signature error. Keep the
+					// mirrored listener usable in process, but never queue a signature
+					// owned by another listener.
+					listener.job = nil
+					continue
+				}
+				if job != nil {
+					jobs = append(jobs, job)
+				}
+			}
+		}
+
 		// Register overwrites the listeners of an event, so only the ones it
 		// registered before are dropped, the ones added by Listen are kept.
 		for _, reg := range regs {
@@ -132,12 +139,6 @@ func (app *Application) Register(events map[event.Event][]event.Listener) {
 				return l.legacy
 			})
 			app.listeners[reg.name] = append(mirrored, reg.listeners...)
-		}
-
-		// The queue jobs are already deduplicated within this call, remember them
-		// so that a later Listen doesn't register the same signature twice.
-		for i, name := range jobNames {
-			app.registered[name] = listenerIdentity(jobs[i].(*queueJob).listener)
 		}
 	}()
 

@@ -179,12 +179,17 @@ func (app *Application) addListener(name string, l *listener) error {
 // registered. The queue resolves jobs by signature alone, so two different
 // listeners sharing one signature would silently run each other's code.
 func (app *Application) claimQueueJob(l *listener) (contractsqueue.Job, error) {
+	app.mu.Lock()
+	defer app.mu.Unlock()
+
+	return app.claimQueueJobLocked(l)
+}
+
+// claimQueueJobLocked claims a queue signature while app.mu is already held.
+func (app *Application) claimQueueJobLocked(l *listener) (contractsqueue.Job, error) {
 	if l.job == nil {
 		return nil, nil
 	}
-
-	app.mu.Lock()
-	defer app.mu.Unlock()
 
 	if registered, ok := app.registered[l.signature]; ok {
 		if registered != l.identity {
