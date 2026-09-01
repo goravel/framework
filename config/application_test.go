@@ -296,3 +296,100 @@ func TestOsVariables(t *testing.T) {
 	assert.Equal(t, 3306, config.GetInt("APP_PORT"))
 	assert.True(t, config.GetBool("APP_DEBUG"))
 }
+
+func (s *ApplicationTestSuite) TestGetInt64() {
+	s.config.Add("BIG_PORT", "9000000000")
+	s.Equal(int64(9000000000), s.config.GetInt64("BIG_PORT"))
+
+	s.Equal(int64(0), s.config.GetInt64("NOT_EXIST_INT64"))
+	s.Equal(int64(42), s.config.GetInt64("NOT_EXIST_INT64", 42))
+}
+
+func (s *ApplicationTestSuite) TestGetFloat64() {
+	s.Equal(3.14, s.config.GetFloat64("FLOAT_VALUE"))
+	s.Equal(0.0, s.config.GetFloat64("NOT_EXIST_FLOAT"))
+	s.Equal(1.25, s.config.GetFloat64("NOT_EXIST_FLOAT", 1.25))
+}
+
+func (s *ApplicationTestSuite) TestGetTime() {
+	s.config.Add("BIRTHDAY", "2023-08-15T10:30:00Z")
+	expected, err := time.Parse(time.RFC3339, "2023-08-15T10:30:00Z")
+	s.NoError(err)
+	s.True(expected.Equal(s.config.GetTime("BIRTHDAY")))
+
+	s.config.Add("SHORT_DATE", "2024-01-02")
+	expected2, err := time.Parse("2006-01-02", "2024-01-02")
+	s.NoError(err)
+	s.True(expected2.Equal(s.config.GetTime("SHORT_DATE")))
+
+	fallback := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+	s.Equal(time.Time{}, s.config.GetTime("NOT_EXIST_TIME"))
+	s.True(fallback.Equal(s.config.GetTime("NOT_EXIST_TIME", fallback)))
+
+	s.config.Add("INVALID_TIME", "not-a-time")
+	s.Equal(time.Time{}, s.config.GetTime("INVALID_TIME"))
+	s.True(fallback.Equal(s.config.GetTime("INVALID_TIME", fallback)))
+}
+
+func (s *ApplicationTestSuite) TestGetIntSlice() {
+	s.config.Add("PORTS", []int{80, 443, 8080})
+	s.Equal([]int{80, 443, 8080}, s.config.GetIntSlice("PORTS"))
+
+	s.config.Add("EMPTY_PORTS", []int{})
+	s.Equal([]int{}, s.config.GetIntSlice("EMPTY_PORTS"))
+
+	s.Nil(s.config.GetIntSlice("NOT_EXIST_INT_SLICE"))
+	s.Equal([]int{1, 2, 3}, s.config.GetIntSlice("NOT_EXIST_INT_SLICE", []int{1, 2, 3}))
+}
+
+func (s *ApplicationTestSuite) TestGetStringMap() {
+	s.config.Add("FEATURES", map[string]any{
+		"login":  true,
+		"signup": true,
+	})
+	got := s.config.GetStringMap("FEATURES")
+	s.Equal(true, got["login"])
+	s.Equal(true, got["signup"])
+
+	s.Nil(s.config.GetStringMap("NOT_EXIST_MAP"))
+	s.Equal(map[string]any{"a": "b"}, s.config.GetStringMap("NOT_EXIST_MAP", map[string]any{"a": "b"}))
+}
+
+func (s *ApplicationTestSuite) TestGetStringMapString() {
+	s.config.Add("HEADERS", map[string]string{
+		"X-Foo": "bar",
+		"X-Baz": "qux",
+	})
+	s.Equal(map[string]string{"X-Foo": "bar", "X-Baz": "qux"}, s.config.GetStringMapString("HEADERS"))
+
+	s.Nil(s.config.GetStringMapString("NOT_EXIST_MAP_STRING"))
+	s.Equal(map[string]string{"k": "v"}, s.config.GetStringMapString("NOT_EXIST_MAP_STRING", map[string]string{"k": "v"}))
+}
+
+func (s *ApplicationTestSuite) TestHas() {
+	s.True(s.config.Has("APP_KEY"))
+	s.True(s.config.Has("APP_DEBUG"))
+	s.False(s.config.Has("DEFINITELY_NOT_SET_12345"))
+}
+
+func (s *ApplicationTestSuite) TestForget() {
+	s.config.Add("TEMP_VALUE", "hello")
+	s.True(s.config.Has("TEMP_VALUE"))
+	s.Equal("hello", s.config.GetString("TEMP_VALUE"))
+
+	s.config.Forget("TEMP_VALUE")
+	s.False(s.config.Has("TEMP_VALUE"))
+	s.Equal("", s.config.GetString("TEMP_VALUE"))
+}
+
+func (s *ApplicationTestSuite) TestAll() {
+	s.config.Add("ALL_TEST_KEY", "value")
+	s.config.Add("ALL_TEST_BOOL", true)
+	s.config.Add("ALL_TEST_INT", 42)
+
+	all := s.config.All()
+	s.NotNil(all)
+	s.Equal("value", all["all_test_key"])
+	s.Equal(true, all["all_test_bool"])
+	s.Equal(42, all["all_test_int"])
+}
