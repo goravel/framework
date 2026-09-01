@@ -90,9 +90,12 @@ func (app *Application) Register(events map[event.Event][]event.Listener) {
 		reg := registration{name: name, named: err == nil}
 
 		for _, l := range listeners {
-			signature := l.Signature()
+			// The job resolves the signature, asking the listener again would call
+			// into it twice for every registration.
+			job := newQueueJob(l)
+			signature := job.Signature()
 			if !slices.Contains(jobNames, signature) {
-				jobs = append(jobs, &queueJob{listener: l})
+				jobs = append(jobs, job)
 				jobNames = append(jobNames, signature)
 			}
 

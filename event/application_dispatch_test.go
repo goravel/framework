@@ -362,7 +362,7 @@ func TestApplication_DispatchWildcardOrderIsRegistrationOrder(t *testing.T) {
 
 func TestQueueJobRecoversFromPanic(t *testing.T) {
 	// A panic in a queue worker must fail the job, not take the process down.
-	job := &queueJob{listener: &recordingListener{signature: "panicking", panics: true}}
+	job := newQueueJob(&recordingListener{signature: "panicking", panics: true})
 
 	err := job.Handle("user.created")
 
@@ -370,7 +370,7 @@ func TestQueueJobRecoversFromPanic(t *testing.T) {
 }
 
 func TestQueueJobRejectsANonStringEvent(t *testing.T) {
-	job := &queueJob{listener: &recordingListener{signature: "queued"}}
+	job := newQueueJob(&recordingListener{signature: "queued"})
 
 	assert.EqualError(t, job.Handle(), errors.EventQueueMissingEvent.Args("queued").Error())
 	assert.EqualError(t, job.Handle(42), errors.EventQueueMissingEvent.Args("queued").Error())

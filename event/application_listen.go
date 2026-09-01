@@ -46,11 +46,18 @@ type wildcardEntry struct {
 // queueJob adapts an event.Listener to the queue.Job interface, the queue
 // only carries scalar arguments so the event name travels as the first one.
 type queueJob struct {
-	listener event.Listener
+	listener  event.Listener
+	signature string
+}
+
+// newQueueJob resolves the listener's signature once, so that the worker and its
+// panic recovery never have to call back into the listener.
+func newQueueJob(l event.Listener) *queueJob {
+	return &queueJob{listener: l, signature: l.Signature()}
 }
 
 func (j *queueJob) Signature() string {
-	return j.listener.Signature()
+	return j.signature
 }
 
 // Handle runs the listener from a queue worker. It recovers from a panic so that
@@ -59,17 +66,17 @@ func (j *queueJob) Signature() string {
 func (j *queueJob) Handle(args ...any) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			err = errors.EventListenerPanic.Args(j.listener.Signature(), r)
+			err = errors.EventListenerPanic.Args(j.signature, r)
 		}
 	}()
 
 	if len(args) == 0 {
-		return errors.EventQueueMissingEvent.Args(j.listener.Signature())
+		return errors.EventQueueMissingEvent.Args(j.signature)
 	}
 
 	eventName, ok := args[0].(string)
 	if !ok {
-		return errors.EventQueueMissingEvent.Args(j.listener.Signature())
+		return errors.EventQueueMissingEvent.Args(j.signature)
 	}
 
 	return j.listener.Handle(eventName, args[1:]...)
@@ -220,14 +227,16 @@ func newListener(eventNames []string, l any) (*listener, error) {
 			return nil, errors.EventListenerNotPointer.Args(v.Signature())
 		}
 
+		job := newQueueJob(v)
+
 		return &listener{
 			handle: func(eventName string, evt any, args []event.Arg) error {
 				return v.Handle(eventName, argValues(args)...)
 			},
-			job:          &queueJob{listener: v},
+			job:          job,
 			identity:     listenerIdentity(v),
 			queueOptions: v.Queue,
-			signature:    v.Signature(),
+			signature:    job.Signature(),
 		}, nil
 	case func(evt any, args ...any) error:
 		return &listener{
@@ -266,7 +275,7 @@ func newLegacyListener(l event.Listener, signature string) *listener {
 		handle: func(eventName string, evt any, args []event.Arg) error {
 			return l.Handle(eventName, argValues(args)...)
 		},
-		job:          &queueJob{listener: l},
+		job:          &queueJob{listener: l, signature: signature},
 		identity:     listenerIdentity(l),
 		legacy:       true,
 		queueOptions: l.Queue,

@@ -276,7 +276,7 @@ func TestApplication_ListenCollectsEveryError(t *testing.T) {
 
 func TestQueueJob(t *testing.T) {
 	listener := &recordingListener{signature: "recording"}
-	job := &queueJob{listener: listener}
+	job := newQueueJob(listener)
 
 	assert.Equal(t, "recording", job.Signature())
 	assert.EqualError(t, job.Handle(), errors.EventQueueMissingEvent.Args("recording").Error())
