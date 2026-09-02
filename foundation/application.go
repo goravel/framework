@@ -490,6 +490,9 @@ func (r *Application) configureEventListeners() {
 			if eventFacade == nil {
 				color.Errorln("Event facade not found, please install it first: ./artisan package:install Event")
 			} else {
+				// WithEvents carries the deprecated event.Listener, Register is
+				// the only entry accepting it.
+				//nolint:staticcheck
 				eventFacade.Register(eventToListeners)
 			}
 		}

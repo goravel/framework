@@ -27,15 +27,15 @@ func TestApplication_Register(t *testing.T) {
 				event1 := mocksevent.NewEvent(t)
 				event2 := mocksevent.NewEvent(t)
 				listener1 := mocksevent.NewListener(t)
-				listener1.EXPECT().Signature().Return("listener1").Twice()
+				listener1.EXPECT().Signature().Return("listener1").Maybe()
 				listener2 := mocksevent.NewListener(t)
-				listener2.EXPECT().Signature().Return("listener2").Times(3)
+				listener2.EXPECT().Signature().Return("listener2").Maybe()
 
-				mockQueue.EXPECT().Register(mock.MatchedBy(func(listeners []queue.Job) bool {
-					return assert.ElementsMatch(t, []queue.Job{
-						listener1,
-						listener2,
-					}, listeners)
+				// The listeners are wrapped, so that the queue, whose jobs take
+				// only the arguments, can carry the event name as the first one.
+				// The wrapped jobs are deduplicated by signature.
+				mockQueue.EXPECT().Register(mock.MatchedBy(func(jobs []queue.Job) bool {
+					return assert.Len(t, jobs, 2)
 				})).Once()
 
 				return map[event.Event][]event.Listener{
@@ -73,4 +73,79 @@ func TestApplication_Register(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestApplication_GetEventsReturnsACopy(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	mockQueue.EXPECT().Register(mock.Anything).Once()
+
+	listener := &TestListener{}
+	app := NewApplication(mockQueue)
+	app.Register(map[event.Event][]event.Listener{
+		&TestEvent{}: {listener},
+	})
+
+	events := app.GetEvents()
+	for e := range events {
+		events[e] = nil
+	}
+
+	// Mutating the returned map must not affect the registered events.
+	for _, listeners := range app.GetEvents() {
+		assert.Equal(t, []event.Listener{listener}, listeners)
+	}
+}
+
+func TestApplication_RegisterDoesNotOverwriteAnotherListenersQueueClaim(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	first := &recordingListener{signature: "sig"}
+	second := &recordingListener{
+		signature: "sig",
+		options:   event.Queue{Enable: true},
+	}
+
+	mockQueue.EXPECT().Register(mock.MatchedBy(func(jobs []queue.Job) bool {
+		return len(jobs) == 1
+	})).Once()
+	mockQueue.EXPECT().Register([]queue.Job(nil)).Once()
+
+	app := NewApplication(mockQueue)
+	assert.NoError(t, app.Listen("user.created", first))
+	claimed := app.registered["sig"]
+
+	app.Register(map[event.Event][]event.Listener{
+		&userUpdated{}: {second},
+	})
+
+	assert.Equal(t, claimed, app.registered["sig"])
+	assert.False(t, app.Dispatch(&userUpdated{}).Failed())
+	assert.Equal(t, []any{"github.com/goravel/framework/event.userUpdated"}, second.events)
+}
+
+func TestApplication_RegisterThenListenWithTheSameListenerRegistersTheJobOnce(t *testing.T) {
+	mockQueue := mocksqueue.NewQueue(t)
+	listener := &recordingListener{signature: "sig"}
+
+	mockQueue.EXPECT().Register(mock.MatchedBy(func(jobs []queue.Job) bool {
+		return len(jobs) == 1
+	})).Once()
+
+	app := NewApplication(mockQueue)
+	app.Register(map[event.Event][]event.Listener{
+		&userCreated{}: {listener},
+	})
+
+	assert.NoError(t, app.Listen("user.updated", listener))
+	assert.Equal(t, listenerIdentity(listener), app.registered["sig"])
+	assert.Len(t, app.listeners["user.updated"], 1)
+}
+
+// identifiedEvent carries a field, so two instances are distinct values and the
+// old identity keyed lookup could not find one from the other.
+type identifiedEvent struct {
+	id int
+}
+
+func (r *identifiedEvent) Handle(args []event.Arg) ([]event.Arg, error) {
+	return args, nil
 }
