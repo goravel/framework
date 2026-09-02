@@ -163,6 +163,52 @@ func TestDefaultMigratorWithSqlserverSchema(t *testing.T) {
 	assert.False(t, schema.HasTable("goravel.users"))
 }
 
+func TestMigratorWithNonDefaultConnection(t *testing.T) {
+	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
+	sqliteTestQuery := NewTestQueryBuilder().Sqlite("", false)
+
+	docker, err := sqliteTestQuery.Driver().Docker()
+	assert.NoError(t, err)
+	defer func() {
+		assert.NoError(t, docker.Shutdown())
+	}()
+
+	sqliteConfig := sqliteTestQuery.Driver().Pool().Writers[0]
+	sqliteConnection := sqliteConfig.Connection
+	postgresConnection := postgresTestQuery.Driver().Pool().Writers[0].Connection
+
+	// Register the sqlite connection on the default (postgres) config so it can be
+	// lazily resolved when a migration requests it via Connection().
+	mockDatabaseConfig(postgresTestQuery.MockConfig(), sqliteConfig)
+
+	// Only the default connection is pre-cached; sqlite is loaded lazily (cold path).
+	schema := newSchema(postgresTestQuery, map[string]*TestQuery{
+		postgresConnection: postgresTestQuery,
+	})
+
+	schema.Register([]contractsschema.Migration{
+		NewTestConnectionMigration(schema, sqliteConnection, "20260826160940_create_users_table", "users"),
+		NewTestConnectionMigration(schema, sqliteConnection, "20260826161140_create_user_tokens_table", "user_tokens"),
+	})
+
+	migrator := migration.NewMigrator(nil, schema, "migrations")
+
+	// Fails on current code: the 2nd ledger row is written to sqlite (no migrations table).
+	assert.NoError(t, migrator.Run())
+
+	// Both tables were created on the non-default (sqlite) connection.
+	assert.True(t, schema.Connection(sqliteConnection).HasTable("users"))
+	assert.True(t, schema.Connection(sqliteConnection).HasTable("user_tokens"))
+
+	// Both ledger rows were written to the default (postgres) connection.
+	status, err := migrator.Status()
+	assert.NoError(t, err)
+	assert.Len(t, status, 2)
+	for _, s := range status {
+		assert.True(t, s.Ran)
+	}
+}
+
 type TestMigration struct {
 	schema contractsschema.Schema
 }
@@ -205,4 +251,33 @@ func (r *TestMigrationWithSqlserverSchema) Up() error {
 
 func (r *TestMigrationWithSqlserverSchema) Down() error {
 	return r.schema.DropIfExists("goravel.users")
+}
+
+type TestConnectionMigration struct {
+	schema     contractsschema.Schema
+	connection string
+	signature  string
+	table      string
+}
+
+func NewTestConnectionMigration(schema contractsschema.Schema, connection, signature, table string) *TestConnectionMigration {
+	return &TestConnectionMigration{schema: schema, connection: connection, signature: signature, table: table}
+}
+
+func (r *TestConnectionMigration) Signature() string {
+	return r.signature
+}
+
+func (r *TestConnectionMigration) Connection() string {
+	return r.connection
+}
+
+func (r *TestConnectionMigration) Up() error {
+	return r.schema.Create(r.table, func(table contractsschema.Blueprint) {
+		table.String("name")
+	})
+}
+
+func (r *TestConnectionMigration) Down() error {
+	return r.schema.DropIfExists(r.table)
 }
