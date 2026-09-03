@@ -360,7 +360,8 @@ var (
 	ValidationRuleRegisterFailed   = New("rule register failed: %v")
 	ValidationUnknownRule          = New("unknown validation rule: %s")
 
-	ViewFSRequired       = New("view filesystem is required")
-	ViewInvalidFSRoot    = New("invalid view filesystem root %q: %v")
-	ViewTemplateNotExist = New("view template %s does not exist")
+	ViewFSRequired         = New("view filesystem is required")
+	ViewFSRootNotDirectory = New("view filesystem root %q is not a directory")
+	ViewInvalidFSRoot      = New("invalid view filesystem root %q: %v")
+	ViewTemplateNotExist   = New("view template %s does not exist")
 )

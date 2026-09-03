@@ -90,6 +90,8 @@ func TestLoadViewsFromFS_RootNormalization(t *testing.T) {
 		{name: "leading slash", root: "/views", file: "index.tmpl"},
 		{name: "dot prefix", root: "./views", file: "index.tmpl"},
 		{name: "os separator", root: filepath.FromSlash("views/"), file: "index.tmpl"},
+		{name: "backslash separator", root: `views\`, file: "index.tmpl"},
+		{name: "backslash dot prefix", root: `.\views`, file: "index.tmpl"},
 		{name: "dot root", root: ".", file: "views/index.tmpl"},
 		{name: "slash root", root: "/", file: "views/index.tmpl"},
 		{name: "empty root", root: "", file: "views/index.tmpl"},
@@ -120,6 +122,24 @@ func TestLoadViewsFromFS_Invalid(t *testing.T) {
 		view := NewView()
 		assert.PanicsWithError(t, errors.ViewInvalidFSRoot.Args("../views", &fs.PathError{Op: "sub", Path: "../views", Err: fs.ErrInvalid}).Error(), func() {
 			view.LoadViewsFromFS(fstest.MapFS{}, "../views")
+		})
+		assert.Empty(t, view.RegisteredViewFS())
+	})
+
+	// fs.Sub does not check that the root exists, so a typo must be caught explicitly
+	// instead of registering a source that never matches anything.
+	t.Run("root does not exist", func(t *testing.T) {
+		view := NewView()
+		assert.PanicsWithError(t, errors.ViewInvalidFSRoot.Args("typo", &fs.PathError{Op: "open", Path: "typo", Err: fs.ErrNotExist}).Error(), func() {
+			view.LoadViewsFromFS(testViews, "typo")
+		})
+		assert.Empty(t, view.RegisteredViewFS())
+	})
+
+	t.Run("root is a file", func(t *testing.T) {
+		view := NewView()
+		assert.PanicsWithError(t, errors.ViewFSRootNotDirectory.Args("testdata/views/foo.tmpl").Error(), func() {
+			view.LoadViewsFromFS(testViews, "testdata/views/foo.tmpl")
 		})
 		assert.Empty(t, view.RegisteredViewFS())
 	})
@@ -155,11 +175,17 @@ func TestExists(t *testing.T) {
 		{name: "embedded package view", view: "foo.tmpl", exists: true},
 		{name: "nested embedded package view", view: "layouts/app.tmpl", exists: true},
 		{name: "nested embedded package view with os separator", view: filepath.FromSlash("pages/home.tmpl"), exists: true},
+		{name: "nested embedded package view with backslash separator", view: `pages\home.tmpl`, exists: true},
 		{name: "second embedded package view", view: "bar.tmpl", exists: true},
 		{name: "embedded view outside root", view: "views/bar.tmpl", exists: false},
 		{name: "embedded view addressed by unrooted path", view: "testdata/views/foo.tmpl", exists: false},
 		{name: "missing view", view: "missing.tmpl", exists: false},
 		{name: "missing nested view", view: "layouts/missing.tmpl", exists: false},
+		{name: "app directory is not a view", view: "admin", exists: false},
+		{name: "embedded directory is not a view", view: "layouts", exists: false},
+		{name: "empty name is not a view", view: "", exists: false},
+		{name: "dot is not a view", view: ".", exists: false},
+		{name: "slash is not a view", view: "/", exists: false},
 	}
 
 	for _, test := range tests {

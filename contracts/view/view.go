@@ -11,10 +11,15 @@ type View interface {
 	LoadViewsFrom(path string)
 	// LoadViewsFromFS registers an fs.FS (for example an embed.FS) as a package view source.
 	// Templates are resolved relative to root within fsys; pass "." to use the whole filesystem.
-	// Filesystem sources are searched after app views and after directories registered with
-	// LoadViewsFrom, in registration order. It panics if fsys is nil or root is not a valid fs path.
+	// Root may use either slash style ("views/admin" or `views\admin`) and leading "./" or "/"
+	// are ignored. Filesystem sources are searched after app views and after directories
+	// registered with LoadViewsFrom, in registration order.
 	//
-	//	//go:embed views/*
+	// Unlike LoadViewsFrom, which accepts a directory that may only exist later, an fs.FS is
+	// fixed at build time, so it panics if fsys is nil or root is not an existing directory
+	// within fsys (including roots that escape it, such as "../views").
+	//
+	//	//go:embed views
 	//	var views embed.FS
 	//
 	LoadViewsFromFS(fsys fs.FS, root string)
