@@ -1,5 +1,7 @@
 package view
 
+import "io/fs"
+
 type View interface {
 	// Exists checks if a view with the specified name exists.
 	Exists(view string) bool
@@ -7,8 +9,26 @@ type View interface {
 	// Templates from registered directories are loaded after app views; if a
 	// template name is already defined by an app view or an earlier package, it is skipped.
 	LoadViewsFrom(path string)
+	// LoadViewsFromFS registers an fs.FS (for example an embed.FS) as a package view source.
+	// Templates are resolved relative to root within fsys; pass "." to use the whole filesystem.
+	// Root may use either slash style ("views/admin" or `views\admin`) and leading "./" or "/"
+	// are ignored. Filesystem sources are searched after app views and after directories
+	// registered with LoadViewsFrom, in registration order.
+	//
+	// Unlike LoadViewsFrom, which accepts a directory that may only exist later, an fs.FS is
+	// fixed at build time, so it panics if fsys is nil or root is not an existing directory
+	// within fsys (including roots that escape it, such as "../views").
+	//
+	//	//go:embed views
+	//	var views embed.FS
+	//
+	LoadViewsFromFS(fsys fs.FS, root string)
 	// RegisteredViews returns the absolute paths of all registered package view directories.
 	RegisteredViews() []string
+	// RegisteredViewFS returns all package view filesystems registered with LoadViewsFromFS,
+	// in registration order. Each returned filesystem is already rooted at the root passed to
+	// LoadViewsFromFS, so template paths are relative to it (for example "layouts/app.tmpl").
+	RegisteredViewFS() []fs.FS
 	// Share associates a key-value pair, where the key is a string and the value is of any type,
 	// with the current view context. This shared data can be accessed by other parts of the application.
 	Share(key string, value any)
