@@ -11,6 +11,35 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestCompilePattern(t *testing.T) {
+	t.Run("compiles and matches", func(t *testing.T) {
+		re, err := compilePattern(`^[A-Z]{2}-\d{4}$`)
+		assert.NoError(t, err)
+		assert.True(t, re.MatchString("AB-1234"))
+		assert.False(t, re.MatchString("ab-1234"))
+	})
+
+	t.Run("the same pattern is compiled once", func(t *testing.T) {
+		first, err := compilePattern(`^cached-[0-9]+$`)
+		assert.NoError(t, err)
+
+		second, err := compilePattern(`^cached-[0-9]+$`)
+		assert.NoError(t, err)
+		assert.Same(t, first, second)
+	})
+
+	t.Run("an invalid pattern errors and is not cached", func(t *testing.T) {
+		const invalid = `^[a-z`
+
+		re, err := compilePattern(invalid)
+		assert.Error(t, err)
+		assert.Nil(t, re)
+
+		_, cached := compiledPatterns.Load(invalid)
+		assert.False(t, cached)
+	})
+}
+
 func TestIsValueEmpty(t *testing.T) {
 	tests := []struct {
 		name     string
