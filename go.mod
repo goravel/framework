@@ -11,7 +11,7 @@ require (
 	github.com/charmbracelet/huh/spinner v0.0.0-20260223110133-9dc45e34a40b
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/dave/dst v0.27.4
-	github.com/dromara/carbon/v2 v2.6.11
+	github.com/dromara/carbon/v2 v2.6.17
 	github.com/gabriel-vasile/mimetype v1.4.15
 	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/goforj/godump v1.9.1
