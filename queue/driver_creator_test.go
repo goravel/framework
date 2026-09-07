@@ -76,6 +76,7 @@ func (s *DriverCreatorTestSuite) TestCreate() {
 			setup: func() {
 				s.mockConfig.EXPECT().Driver("database").Return(contractsqueue.DriverDatabase).Once()
 				s.mockConfig.EXPECT().GetString("queue.connections.database.connection").Return("mysql").Once()
+				s.mockConfig.EXPECT().GetBool("queue.connections.database.use_cache_lock").Return(false).Once()
 				s.mockConfig.EXPECT().GetString("queue.connections.database.table", "jobs").Return("jobs").Once()
 				s.mockConfig.EXPECT().GetInt("queue.connections.database.retry_after", 60).Return(60).Once()
 				s.mockDB.EXPECT().Connection("mysql").Return(s.mockDB).Once()
