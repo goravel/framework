@@ -55,6 +55,53 @@ func (_c *Config_Add_Call) RunAndReturn(run func(string, interface{})) *Config_A
 	return _c
 }
 
+// All provides a mock function with no fields
+func (_m *Config) All() map[string]interface{} {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for All")
+	}
+
+	var r0 map[string]interface{}
+	if rf, ok := ret.Get(0).(func() map[string]interface{}); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]interface{})
+		}
+	}
+
+	return r0
+}
+
+// Config_All_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'All'
+type Config_All_Call struct {
+	*mock.Call
+}
+
+// All is a helper method to define mock.On call
+func (_e *Config_Expecter) All() *Config_All_Call {
+	return &Config_All_Call{Call: _e.mock.On("All")}
+}
+
+func (_c *Config_All_Call) Run(run func()) *Config_All_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Config_All_Call) Return(_a0 map[string]interface{}) *Config_All_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Config_All_Call) RunAndReturn(run func() map[string]interface{}) *Config_All_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Env provides a mock function with given fields: envName, defaultValue
 func (_m *Config) Env(envName string, defaultValue ...interface{}) interface{} {
 	var _ca []interface{}
@@ -233,6 +280,39 @@ func (_c *Config_EnvString_Call) Return(_a0 string) *Config_EnvString_Call {
 
 func (_c *Config_EnvString_Call) RunAndReturn(run func(string, ...string) string) *Config_EnvString_Call {
 	_c.Call.Return(run)
+	return _c
+}
+
+// Forget provides a mock function with given fields: path
+func (_m *Config) Forget(path string) {
+	_m.Called(path)
+}
+
+// Config_Forget_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Forget'
+type Config_Forget_Call struct {
+	*mock.Call
+}
+
+// Forget is a helper method to define mock.On call
+//   - path string
+func (_e *Config_Expecter) Forget(path interface{}) *Config_Forget_Call {
+	return &Config_Forget_Call{Call: _e.mock.On("Forget", path)}
+}
+
+func (_c *Config_Forget_Call) Run(run func(path string)) *Config_Forget_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Config_Forget_Call) Return() *Config_Forget_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Config_Forget_Call) RunAndReturn(run func(string)) *Config_Forget_Call {
+	_c.Run(run)
 	return _c
 }
 
@@ -417,6 +497,67 @@ func (_c *Config_GetDuration_Call) RunAndReturn(run func(string, ...time.Duratio
 	return _c
 }
 
+// GetFloat64 provides a mock function with given fields: path, defaultValue
+func (_m *Config) GetFloat64(path string, defaultValue ...float64) float64 {
+	_va := make([]interface{}, len(defaultValue))
+	for _i := range defaultValue {
+		_va[_i] = defaultValue[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, path)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetFloat64")
+	}
+
+	var r0 float64
+	if rf, ok := ret.Get(0).(func(string, ...float64) float64); ok {
+		r0 = rf(path, defaultValue...)
+	} else {
+		r0 = ret.Get(0).(float64)
+	}
+
+	return r0
+}
+
+// Config_GetFloat64_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetFloat64'
+type Config_GetFloat64_Call struct {
+	*mock.Call
+}
+
+// GetFloat64 is a helper method to define mock.On call
+//   - path string
+//   - defaultValue ...float64
+func (_e *Config_Expecter) GetFloat64(path interface{}, defaultValue ...interface{}) *Config_GetFloat64_Call {
+	return &Config_GetFloat64_Call{Call: _e.mock.On("GetFloat64",
+		append([]interface{}{path}, defaultValue...)...)}
+}
+
+func (_c *Config_GetFloat64_Call) Run(run func(path string, defaultValue ...float64)) *Config_GetFloat64_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]float64, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(float64)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Config_GetFloat64_Call) Return(_a0 float64) *Config_GetFloat64_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Config_GetFloat64_Call) RunAndReturn(run func(string, ...float64) float64) *Config_GetFloat64_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetInt provides a mock function with given fields: path, defaultValue
 func (_m *Config) GetInt(path string, defaultValue ...int) int {
 	_va := make([]interface{}, len(defaultValue))
@@ -474,6 +615,130 @@ func (_c *Config_GetInt_Call) Return(_a0 int) *Config_GetInt_Call {
 }
 
 func (_c *Config_GetInt_Call) RunAndReturn(run func(string, ...int) int) *Config_GetInt_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetInt64 provides a mock function with given fields: path, defaultValue
+func (_m *Config) GetInt64(path string, defaultValue ...int64) int64 {
+	_va := make([]interface{}, len(defaultValue))
+	for _i := range defaultValue {
+		_va[_i] = defaultValue[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, path)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetInt64")
+	}
+
+	var r0 int64
+	if rf, ok := ret.Get(0).(func(string, ...int64) int64); ok {
+		r0 = rf(path, defaultValue...)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	return r0
+}
+
+// Config_GetInt64_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetInt64'
+type Config_GetInt64_Call struct {
+	*mock.Call
+}
+
+// GetInt64 is a helper method to define mock.On call
+//   - path string
+//   - defaultValue ...int64
+func (_e *Config_Expecter) GetInt64(path interface{}, defaultValue ...interface{}) *Config_GetInt64_Call {
+	return &Config_GetInt64_Call{Call: _e.mock.On("GetInt64",
+		append([]interface{}{path}, defaultValue...)...)}
+}
+
+func (_c *Config_GetInt64_Call) Run(run func(path string, defaultValue ...int64)) *Config_GetInt64_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]int64, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(int64)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Config_GetInt64_Call) Return(_a0 int64) *Config_GetInt64_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Config_GetInt64_Call) RunAndReturn(run func(string, ...int64) int64) *Config_GetInt64_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetIntSlice provides a mock function with given fields: path, defaultValue
+func (_m *Config) GetIntSlice(path string, defaultValue ...[]int) []int {
+	_va := make([]interface{}, len(defaultValue))
+	for _i := range defaultValue {
+		_va[_i] = defaultValue[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, path)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetIntSlice")
+	}
+
+	var r0 []int
+	if rf, ok := ret.Get(0).(func(string, ...[]int) []int); ok {
+		r0 = rf(path, defaultValue...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]int)
+		}
+	}
+
+	return r0
+}
+
+// Config_GetIntSlice_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetIntSlice'
+type Config_GetIntSlice_Call struct {
+	*mock.Call
+}
+
+// GetIntSlice is a helper method to define mock.On call
+//   - path string
+//   - defaultValue ...[]int
+func (_e *Config_Expecter) GetIntSlice(path interface{}, defaultValue ...interface{}) *Config_GetIntSlice_Call {
+	return &Config_GetIntSlice_Call{Call: _e.mock.On("GetIntSlice",
+		append([]interface{}{path}, defaultValue...)...)}
+}
+
+func (_c *Config_GetIntSlice_Call) Run(run func(path string, defaultValue ...[]int)) *Config_GetIntSlice_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([][]int, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.([]int)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Config_GetIntSlice_Call) Return(_a0 []int) *Config_GetIntSlice_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Config_GetIntSlice_Call) RunAndReturn(run func(string, ...[]int) []int) *Config_GetIntSlice_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -539,6 +804,132 @@ func (_c *Config_GetString_Call) RunAndReturn(run func(string, ...string) string
 	return _c
 }
 
+// GetStringMap provides a mock function with given fields: path, defaultValue
+func (_m *Config) GetStringMap(path string, defaultValue ...map[string]interface{}) map[string]interface{} {
+	_va := make([]interface{}, len(defaultValue))
+	for _i := range defaultValue {
+		_va[_i] = defaultValue[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, path)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetStringMap")
+	}
+
+	var r0 map[string]interface{}
+	if rf, ok := ret.Get(0).(func(string, ...map[string]interface{}) map[string]interface{}); ok {
+		r0 = rf(path, defaultValue...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]interface{})
+		}
+	}
+
+	return r0
+}
+
+// Config_GetStringMap_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetStringMap'
+type Config_GetStringMap_Call struct {
+	*mock.Call
+}
+
+// GetStringMap is a helper method to define mock.On call
+//   - path string
+//   - defaultValue ...map[string]interface{}
+func (_e *Config_Expecter) GetStringMap(path interface{}, defaultValue ...interface{}) *Config_GetStringMap_Call {
+	return &Config_GetStringMap_Call{Call: _e.mock.On("GetStringMap",
+		append([]interface{}{path}, defaultValue...)...)}
+}
+
+func (_c *Config_GetStringMap_Call) Run(run func(path string, defaultValue ...map[string]interface{})) *Config_GetStringMap_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]map[string]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(map[string]interface{})
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Config_GetStringMap_Call) Return(_a0 map[string]interface{}) *Config_GetStringMap_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Config_GetStringMap_Call) RunAndReturn(run func(string, ...map[string]interface{}) map[string]interface{}) *Config_GetStringMap_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetStringMapString provides a mock function with given fields: path, defaultValue
+func (_m *Config) GetStringMapString(path string, defaultValue ...map[string]string) map[string]string {
+	_va := make([]interface{}, len(defaultValue))
+	for _i := range defaultValue {
+		_va[_i] = defaultValue[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, path)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetStringMapString")
+	}
+
+	var r0 map[string]string
+	if rf, ok := ret.Get(0).(func(string, ...map[string]string) map[string]string); ok {
+		r0 = rf(path, defaultValue...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]string)
+		}
+	}
+
+	return r0
+}
+
+// Config_GetStringMapString_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetStringMapString'
+type Config_GetStringMapString_Call struct {
+	*mock.Call
+}
+
+// GetStringMapString is a helper method to define mock.On call
+//   - path string
+//   - defaultValue ...map[string]string
+func (_e *Config_Expecter) GetStringMapString(path interface{}, defaultValue ...interface{}) *Config_GetStringMapString_Call {
+	return &Config_GetStringMapString_Call{Call: _e.mock.On("GetStringMapString",
+		append([]interface{}{path}, defaultValue...)...)}
+}
+
+func (_c *Config_GetStringMapString_Call) Run(run func(path string, defaultValue ...map[string]string)) *Config_GetStringMapString_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]map[string]string, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(map[string]string)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Config_GetStringMapString_Call) Return(_a0 map[string]string) *Config_GetStringMapString_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Config_GetStringMapString_Call) RunAndReturn(run func(string, ...map[string]string) map[string]string) *Config_GetStringMapString_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetStringSlice provides a mock function with given fields: path, defaultValue
 func (_m *Config) GetStringSlice(path string, defaultValue ...[]string) []string {
 	_va := make([]interface{}, len(defaultValue))
@@ -598,6 +989,113 @@ func (_c *Config_GetStringSlice_Call) Return(_a0 []string) *Config_GetStringSlic
 }
 
 func (_c *Config_GetStringSlice_Call) RunAndReturn(run func(string, ...[]string) []string) *Config_GetStringSlice_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetTime provides a mock function with given fields: path, defaultValue
+func (_m *Config) GetTime(path string, defaultValue ...time.Time) time.Time {
+	_va := make([]interface{}, len(defaultValue))
+	for _i := range defaultValue {
+		_va[_i] = defaultValue[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, path)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTime")
+	}
+
+	var r0 time.Time
+	if rf, ok := ret.Get(0).(func(string, ...time.Time) time.Time); ok {
+		r0 = rf(path, defaultValue...)
+	} else {
+		r0 = ret.Get(0).(time.Time)
+	}
+
+	return r0
+}
+
+// Config_GetTime_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTime'
+type Config_GetTime_Call struct {
+	*mock.Call
+}
+
+// GetTime is a helper method to define mock.On call
+//   - path string
+//   - defaultValue ...time.Time
+func (_e *Config_Expecter) GetTime(path interface{}, defaultValue ...interface{}) *Config_GetTime_Call {
+	return &Config_GetTime_Call{Call: _e.mock.On("GetTime",
+		append([]interface{}{path}, defaultValue...)...)}
+}
+
+func (_c *Config_GetTime_Call) Run(run func(path string, defaultValue ...time.Time)) *Config_GetTime_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]time.Time, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(time.Time)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Config_GetTime_Call) Return(_a0 time.Time) *Config_GetTime_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Config_GetTime_Call) RunAndReturn(run func(string, ...time.Time) time.Time) *Config_GetTime_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Has provides a mock function with given fields: path
+func (_m *Config) Has(path string) bool {
+	ret := _m.Called(path)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Has")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(string) bool); ok {
+		r0 = rf(path)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// Config_Has_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Has'
+type Config_Has_Call struct {
+	*mock.Call
+}
+
+// Has is a helper method to define mock.On call
+//   - path string
+func (_e *Config_Expecter) Has(path interface{}) *Config_Has_Call {
+	return &Config_Has_Call{Call: _e.mock.On("Has", path)}
+}
+
+func (_c *Config_Has_Call) Run(run func(path string)) *Config_Has_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Config_Has_Call) Return(_a0 bool) *Config_Has_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Config_Has_Call) RunAndReturn(run func(string) bool) *Config_Has_Call {
 	_c.Call.Return(run)
 	return _c
 }

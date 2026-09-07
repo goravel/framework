@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"reflect"
 	"time"
 
 	"github.com/go-viper/mapstructure/v2"
@@ -132,14 +133,133 @@ func (app *Application) GetDuration(path string, defaultValue ...time.Duration) 
 // GetStringSlice get []string type config from application.
 func (app *Application) GetStringSlice(path string, defaultValue ...[]string) []string {
 	if !app.vip.IsSet(path) {
-		for _, value := range defaultValue {
-			if value != nil {
-				return value
+		return sliceOrDefault(defaultValue)
+	}
+	value := app.vip.GetStringSlice(path)
+	if value == nil {
+		return sliceOrDefault(defaultValue)
+	}
+	return value
+}
+
+// GetIntSlice get []int type config from application.
+func (app *Application) GetIntSlice(path string, defaultValue ...[]int) []int {
+	if !app.vip.IsSet(path) {
+		return sliceOrDefault(defaultValue)
+	}
+	value := app.vip.GetIntSlice(path)
+	if value == nil {
+		return sliceOrDefault(defaultValue)
+	}
+	return value
+}
+
+// GetStringMap get map[string]any type config from application.
+func (app *Application) GetStringMap(path string, defaultValue ...map[string]any) map[string]any {
+	if !app.vip.IsSet(path) {
+		return mapOrDefault(defaultValue)
+	}
+	value := app.vip.GetStringMap(path)
+	if value == nil {
+		return mapOrDefault(defaultValue)
+	}
+	return value
+}
+
+// GetStringMapString get map[string]string type config from application.
+func (app *Application) GetStringMapString(path string, defaultValue ...map[string]string) map[string]string {
+	if !app.vip.IsSet(path) {
+		return mapOrDefault(defaultValue)
+	}
+	value := app.vip.GetStringMapString(path)
+	if value == nil {
+		return mapOrDefault(defaultValue)
+	}
+	return value
+}
+
+// Has reports whether the given path exists in the configuration.
+func (app *Application) Has(path string) bool {
+	return app.vip.IsSet(path)
+}
+
+// Forget removes the given path from the configuration.
+func (app *Application) Forget(path string) {
+	app.vip.Set(path, nil)
+}
+
+// All returns a copy of the entire configuration as a map[string]any.
+func (app *Application) All() map[string]any {
+	return app.vip.AllSettings()
+}
+
+// GetInt64 get int64 type config from application.
+func (app *Application) GetInt64(path string, defaultValue ...int64) int64 {
+	if !app.vip.IsSet(path) {
+		return convert.Default(defaultValue...)
+	}
+	return app.vip.GetInt64(path)
+}
+
+// GetFloat64 get float64 type config from application.
+func (app *Application) GetFloat64(path string, defaultValue ...float64) float64 {
+	if !app.vip.IsSet(path) {
+		return convert.Default(defaultValue...)
+	}
+	return app.vip.GetFloat64(path)
+}
+
+// GetTime get time.Time type config from application.
+func (app *Application) GetTime(path string, defaultValue ...time.Time) time.Time {
+	if !app.vip.IsSet(path) {
+		return convert.Default(defaultValue...)
+	}
+	value := app.vip.Get(path)
+	if t, ok := value.(time.Time); ok {
+		return t
+	}
+	if str, ok := value.(string); ok {
+		if layouts := []string{time.RFC3339, time.RFC3339Nano, "2006-01-02 15:04:05", "2006-01-02"}; true {
+			for _, layout := range layouts {
+				if t, err := time.Parse(layout, str); err == nil {
+					return t
+				}
 			}
 		}
-		return nil
 	}
-	return app.vip.GetStringSlice(path)
+	return convert.Default(defaultValue...)
+}
+
+func sliceOrDefault[T any](values []T) T {
+	for _, v := range values {
+		if !isZeroValue(v) {
+			return v
+		}
+	}
+	var zero T
+	return zero
+}
+
+func mapOrDefault[T any](values []T) T {
+	for _, v := range values {
+		if !isZeroValue(v) {
+			return v
+		}
+	}
+	var zero T
+	return zero
+}
+
+func isZeroValue(v any) bool {
+	if v == nil {
+		return true
+	}
+	rv := reflect.ValueOf(v)
+	switch rv.Kind() {
+	case reflect.Slice, reflect.Map, reflect.Array, reflect.Chan, reflect.Pointer, reflect.Interface:
+		return rv.IsNil()
+	}
+	return false
 }
 
 // UnmarshalKey unmarshal a specific key from config into a struct.
