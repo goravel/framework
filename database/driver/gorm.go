@@ -12,6 +12,7 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database"
 	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
+	databaseutils "github.com/goravel/framework/database/utils"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/color"
@@ -86,6 +87,12 @@ func BuildGorm(config config.Config, logger logger.Interface, pool database.Pool
 		if pluginErr := instance.Use(instrumentationdatabase.NewGormPlugin(instrument)); pluginErr != nil {
 			color.Warningln("database telemetry: " + pluginErr.Error())
 		}
+	}
+
+	// Carries the placeholder SQL and bindings on the statement context so the
+	// logger can fire QueryExecuted events with them (see DB.Listen).
+	if pluginErr := instance.Use(databaseutils.NewQueryEventPlugin()); pluginErr != nil {
+		color.Warningln("database query events: " + pluginErr.Error())
 	}
 
 	maxIdleConns := config.GetInt("database.pool.max_idle_conns", 10)

@@ -1398,16 +1398,23 @@ func (r *Query) toSqlizer(query any, args []any) (sq.Sqlizer, error) {
 }
 
 func (r *Query) trace(builder db.CommonBuilder, sql string, args []any, now *carbon.Carbon, rowsAffected int64, err error) {
+	ctx := r.ctx
+	if utils.HasQueryListeners() {
+		// Carry the placeholders and bindings on the context so the logger
+		// can report them in QueryExecuted events; rawSql is the explained form.
+		ctx = utils.WithQueryBindings(ctx, sql, args)
+	}
+
 	if r.txLogs != nil {
 		*r.txLogs = append(*r.txLogs, TxLog{
-			ctx:          r.ctx,
+			ctx:          ctx,
 			begin:        now,
 			sql:          builder.Explain(sql, args...),
 			rowsAffected: rowsAffected,
 			err:          err,
 		})
 	} else {
-		r.logger.Trace(r.ctx, now, builder.Explain(sql, args...), rowsAffected, err)
+		r.logger.Trace(ctx, now, builder.Explain(sql, args...), rowsAffected, err)
 	}
 }
 
