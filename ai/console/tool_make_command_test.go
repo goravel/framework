@@ -38,23 +38,23 @@ func TestToolMakeCommand(t *testing.T) {
 		}
 	}
 
-	mockContext.EXPECT().Argument(0).Return("").Once()
+	mockContext.EXPECT().Arguments().Return([]string{""}).Once()
 	mockContext.EXPECT().Ask("Enter the tool name", mock.Anything).Return("", errors.New("the tool name cannot be empty")).Once()
 	mockContext.EXPECT().Error("the tool name cannot be empty").Once()
 	assert.NoError(t, toolMakeCommand.Handle(mockContext))
 
-	mockContext.EXPECT().Argument(0).Return("WeatherTool").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"WeatherTool"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Tool created successfully").Once()
 	assert.NoError(t, toolMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/ai/tools/weather_tool.go"))
 
-	mockContext.EXPECT().Argument(0).Return("WeatherTool").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"WeatherTool"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Error("the tool already exists. Use the --force or -f flag to overwrite").Once()
 	assert.NoError(t, toolMakeCommand.Handle(mockContext))
 
-	mockContext.EXPECT().Argument(0).Return("user/WeatherTool").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"user/WeatherTool"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Tool created successfully").Once()
 	assert.NoError(t, toolMakeCommand.Handle(mockContext))
@@ -70,9 +70,25 @@ func TestToolMakeCommand(t *testing.T) {
 	assert.False(t, file.Contain("app/ai/tools/user/weather_tool.go", "var _ ai.Tool = (*WeatherTool)(nil)"))
 
 	support.Config.Paths.Tools = "custom/tools"
-	mockContext.EXPECT().Argument(0).Return("CurrencyTool").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"CurrencyTool"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Tool created successfully").Once()
 	assert.NoError(t, toolMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("custom/tools/currency_tool.go"))
+}
+
+func TestToolMakeCommand_MultipleNames(t *testing.T) {
+	toolMakeCommand := &ToolMakeCommand{}
+	mockContext := mocksconsole.NewContext(t)
+	defer func() {
+		_ = file.Remove("app")
+	}()
+
+	mockContext.EXPECT().Arguments().Return([]string{"WeatherTool", "CurrencyTool"}).Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
+	mockContext.EXPECT().Success("Tool created successfully").Times(2)
+	assert.NoError(t, toolMakeCommand.Handle(mockContext))
+
+	assert.True(t, file.Exists("app/ai/tools/weather_tool.go"))
+	assert.True(t, file.Exists("app/ai/tools/currency_tool.go"))
 }

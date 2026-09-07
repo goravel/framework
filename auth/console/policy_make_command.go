@@ -43,10 +43,19 @@ func (r *PolicyMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *PolicyMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "policy", ctx.Argument(0), support.Config.Paths.Policies)
+	for _, name := range supportconsole.MakeNames(ctx) {
+		if err := r.makeOne(ctx, name); err != nil {
+			ctx.Error(err.Error())
+		}
+	}
+
+	return nil
+}
+
+func (r *PolicyMakeCommand) makeOne(ctx console.Context, name string) error {
+	m, err := supportconsole.NewMake(ctx, "policy", name, support.Config.Paths.Policies)
 	if err != nil {
-		ctx.Error(err.Error())
-		return nil
+		return err
 	}
 
 	if err := file.PutContent(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
