@@ -79,33 +79,33 @@ func (s *ProviderMakeCommandTestSuite) TestHandle() {
 	mockContext := mocksconsole.NewContext(s.T())
 
 	// Test empty name
-	mockContext.EXPECT().Argument(0).Return("").Once()
+	mockContext.EXPECT().Arguments().Return([]string{""}).Once()
 	mockContext.EXPECT().Ask("Enter the provider name", mock.Anything).Return("", errors.New("the provider name cannot be empty")).Once()
 	mockContext.EXPECT().Error("the provider name cannot be empty").Once()
 	s.Nil(cmd.Handle(mockContext))
 
 	// Test successful creation
-	mockContext.EXPECT().Argument(0).Return("UserServiceProvider").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"UserServiceProvider"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Provider created successfully").Once()
 	s.NoError(cmd.Handle(mockContext))
 	s.True(file.Exists("app/providers/user_service_provider.go"))
 
 	// Test file already exists without force
-	mockContext.EXPECT().Argument(0).Return("UserServiceProvider").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"UserServiceProvider"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Error("the provider already exists. Use the --force or -f flag to overwrite").Once()
 	s.Nil(cmd.Handle(mockContext))
 
 	// Test file already exists with force
-	mockContext.EXPECT().Argument(0).Return("UserServiceProvider").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"UserServiceProvider"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(true).Once()
 	mockContext.EXPECT().Success("Provider created successfully").Once()
 	s.NoError(cmd.Handle(mockContext))
 	s.True(file.Exists("app/providers/user_service_provider.go"))
 
 	// Test nested provider creation
-	mockContext.EXPECT().Argument(0).Return("auth/AuthServiceProvider").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"auth/AuthServiceProvider"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Provider created successfully").Once()
 	s.NoError(cmd.Handle(mockContext))
@@ -115,5 +115,18 @@ func (s *ProviderMakeCommandTestSuite) TestHandle() {
 	s.True(file.Contain("app/providers/auth/auth_service_provider.go", "func (r *AuthServiceProvider) Register(app foundation.Application) {"))
 	
 	// Clean up test files
+	s.NoError(file.Remove("app"))
+}
+func (s *ProviderMakeCommandTestSuite) TestHandleMultipleNames() {
+	cmd := &ProviderMakeCommand{}
+	mockContext := mocksconsole.NewContext(s.T())
+
+	mockContext.EXPECT().Arguments().Return([]string{"AuthServiceProvider", "EventServiceProvider"}).Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
+	mockContext.EXPECT().Success("Provider created successfully").Times(2)
+	s.NoError(cmd.Handle(mockContext))
+
+	s.True(file.Exists("app/providers/auth_service_provider.go"))
+	s.True(file.Exists("app/providers/event_service_provider.go"))
 	s.NoError(file.Remove("app"))
 }

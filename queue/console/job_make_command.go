@@ -46,15 +46,23 @@ func (r *JobMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *JobMakeCommand) Handle(ctx console.Context) error {
-	make, err := supportconsole.NewMake(ctx, "job", ctx.Argument(0), support.Config.Paths.Jobs)
+	for _, name := range supportconsole.MakeNames(ctx) {
+		if err := r.makeOne(ctx, name); err != nil {
+			ctx.Error(err.Error())
+		}
+	}
+
+	return nil
+}
+
+func (r *JobMakeCommand) makeOne(ctx console.Context, name string) error {
+	make, err := supportconsole.NewMake(ctx, "job", name, support.Config.Paths.Jobs)
 	if err != nil {
-		ctx.Error(err.Error())
-		return nil
+		return err
 	}
 
 	if err := file.PutContent(make.GetFilePath(), r.populateStub(r.getStub(), make.GetPackageName(), make.GetStructName(), make.GetSignature())); err != nil {
-		ctx.Error(err.Error())
-		return nil
+		return err
 	}
 
 	ctx.Success("Job created successfully")
@@ -66,8 +74,7 @@ func (r *JobMakeCommand) Handle(ctx console.Context) error {
 	}
 
 	if err != nil {
-		ctx.Error(errors.QueueJobRegisterFailed.Args(err).Error())
-		return nil
+		return errors.QueueJobRegisterFailed.Args(err)
 	}
 
 	ctx.Success("Job registered successfully")
