@@ -8,6 +8,7 @@ import (
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support"
+	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
@@ -45,7 +46,16 @@ func (r *PackageMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *PackageMakeCommand) Handle(ctx console.Context) error {
-	pkg := ctx.Argument(0)
+	for _, pkg := range supportconsole.MakeNames(ctx) {
+		if err := r.makeOne(ctx, pkg); err != nil {
+			ctx.Error(err.Error())
+		}
+	}
+
+	return nil
+}
+
+func (r *PackageMakeCommand) makeOne(ctx console.Context, pkg string) error {
 	if pkg == "" {
 		var err error
 		pkg, err = ctx.Ask("Enter the package name", console.AskOption{
@@ -58,8 +68,7 @@ func (r *PackageMakeCommand) Handle(ctx console.Context) error {
 			},
 		})
 		if err != nil {
-			ctx.Error(err.Error())
-			return nil
+			return err
 		}
 	}
 
@@ -90,8 +99,7 @@ func (r *PackageMakeCommand) Handle(ctx console.Context) error {
 
 	for path, content := range files {
 		if err := file.PutContent(filepath.Join(root, path), content()); err != nil {
-			ctx.Error(err.Error())
-			return nil
+			return err
 		}
 	}
 

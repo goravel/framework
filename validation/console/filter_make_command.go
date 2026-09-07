@@ -46,15 +46,23 @@ func (r *FilterMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *FilterMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "filter", ctx.Argument(0), support.Config.Paths.Filters)
+	for _, name := range supportconsole.MakeNames(ctx) {
+		if err := r.makeOne(ctx, name); err != nil {
+			ctx.Error(err.Error())
+		}
+	}
+
+	return nil
+}
+
+func (r *FilterMakeCommand) makeOne(ctx console.Context, name string) error {
+	m, err := supportconsole.NewMake(ctx, "filter", name, support.Config.Paths.Filters)
 	if err != nil {
-		ctx.Error(err.Error())
-		return nil
+		return err
 	}
 
 	if err := file.PutContent(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName(), m.GetSignature())); err != nil {
-		ctx.Error(err.Error())
-		return nil
+		return err
 	}
 
 	ctx.Success("Filter created successfully")
@@ -66,8 +74,7 @@ func (r *FilterMakeCommand) Handle(ctx console.Context) error {
 	}
 
 	if err != nil {
-		ctx.Error(errors.ValidationFilterRegisterFailed.Args(err).Error())
-		return nil
+		return errors.ValidationFilterRegisterFailed.Args(err)
 	}
 
 	ctx.Success("Filter registered successfully")

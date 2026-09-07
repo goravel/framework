@@ -14,12 +14,12 @@ import (
 func TestFactoryMakeCommand(t *testing.T) {
 	factoryMakeCommand := &FactoryMakeCommand{}
 	mockContext := mocksconsole.NewContext(t)
-	mockContext.EXPECT().Argument(0).Return("").Once()
+	mockContext.EXPECT().Arguments().Return([]string{""}).Once()
 	mockContext.EXPECT().Ask("Enter the factory name", mock.Anything).Return("", errors.New("the factory name cannot be empty")).Once()
 	mockContext.EXPECT().Error("the factory name cannot be empty").Once()
 	assert.NoError(t, factoryMakeCommand.Handle(mockContext))
 
-	mockContext.EXPECT().Argument(0).Return("UserFactory").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"UserFactory"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Factory created successfully").Once()
 	assert.NoError(t, factoryMakeCommand.Handle(mockContext))
@@ -27,18 +27,32 @@ func TestFactoryMakeCommand(t *testing.T) {
 	assert.True(t, file.Contain("database/factories/user_factory.go", "package factories"))
 	assert.True(t, file.Contain("database/factories/user_factory.go", "type UserFactory struct"))
 
-	mockContext.EXPECT().Argument(0).Return("UserFactory").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"UserFactory"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Error("the factory already exists. Use the --force or -f flag to overwrite").Once()
 	assert.NoError(t, factoryMakeCommand.Handle(mockContext))
 	assert.NoError(t, file.Remove("database"))
 
-	mockContext.EXPECT().Argument(0).Return("subdir/DemoFactory").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"subdir/DemoFactory"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Factory created successfully").Once()
 	assert.NoError(t, factoryMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("database/factories/subdir/demo_factory.go"))
 	assert.True(t, file.Contain("database/factories/subdir/demo_factory.go", "package subdir"))
 	assert.True(t, file.Contain("database/factories/subdir/demo_factory.go", "type DemoFactory struct"))
+	assert.NoError(t, file.Remove("database"))
+}
+
+func TestFactoryMakeCommand_MultipleNames(t *testing.T) {
+	factoryMakeCommand := &FactoryMakeCommand{}
+	mockContext := mocksconsole.NewContext(t)
+
+	mockContext.EXPECT().Arguments().Return([]string{"UserFactory", "PostFactory"}).Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
+	mockContext.EXPECT().Success("Factory created successfully").Times(2)
+	assert.NoError(t, factoryMakeCommand.Handle(mockContext))
+
+	assert.True(t, file.Exists("database/factories/user_factory.go"))
+	assert.True(t, file.Exists("database/factories/post_factory.go"))
 	assert.NoError(t, file.Remove("database"))
 }

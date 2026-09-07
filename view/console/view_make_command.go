@@ -7,6 +7,7 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
+	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/path"
 )
@@ -51,10 +52,18 @@ func (r *ViewMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *ViewMakeCommand) Handle(ctx console.Context) error {
-	viewName := ctx.Argument(0)
+	for _, viewName := range supportconsole.MakeNames(ctx) {
+		if err := r.makeOne(ctx, viewName); err != nil {
+			ctx.Error(err.Error())
+		}
+	}
+
+	return nil
+}
+
+func (r *ViewMakeCommand) makeOne(ctx console.Context, viewName string) error {
 	if viewName == "" {
-		ctx.Error(errors.ConsoleEmptyFieldValue.Args("view name").Error())
-		return nil
+		return errors.ConsoleEmptyFieldValue.Args("view name")
 	}
 
 	// Get the view extension from configuration
@@ -69,8 +78,7 @@ func (r *ViewMakeCommand) Handle(ctx console.Context) error {
 
 	// Check if file already exists
 	if file.Exists(filePath) && !ctx.OptionBool("force") {
-		ctx.Error(errors.ConsoleFileAlreadyExists.Args(filePath).Error())
-		return nil
+		return errors.ConsoleFileAlreadyExists.Args(filePath)
 	}
 
 	// Create the view file
