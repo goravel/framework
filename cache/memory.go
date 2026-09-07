@@ -82,7 +82,7 @@ func (r *Memory) Forget(key string) bool {
 
 // Flush Remove all items from the cache.
 func (r *Memory) Flush() bool {
-	r.instance = sync.Map{}
+	r.instance.Clear()
 	return true
 }
 
