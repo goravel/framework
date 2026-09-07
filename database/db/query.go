@@ -49,6 +49,9 @@ func NewQuery(ctx context.Context, readBuilder db.CommonBuilder, writeBuilder db
 	}
 }
 
+// cursorBufferSize is the number of rows Cursor keeps in flight.
+const cursorBufferSize = 64
+
 func (r *Query) Chunk(size uint64, callback func(rows []db.Row) error) error {
 	offset := uint64(0)
 
@@ -116,7 +119,9 @@ func (r *Query) CrossJoin(query string, args ...any) db.Query {
 }
 
 func (r *Query) Cursor() chan db.Row {
-	ch := make(chan db.Row)
+	// Buffered so the producing goroutine can stay ahead of the consumer. An
+	// unbuffered channel costs a goroutine handoff on every single row.
+	ch := make(chan db.Row, cursorBufferSize)
 	go func() {
 		var (
 			args  []any
