@@ -59,16 +59,18 @@ func (s *DatabaseTestSuite) TestNewDatabase() {
 	var mockConfig *mocksqueue.Config
 
 	tests := []struct {
-		name          string
-		cache         contractscache.Cache
-		setup         func()
-		expectedError error
+		name             string
+		cache            contractscache.Cache
+		setup            func()
+		wantUseCacheLock bool
+		expectedError    error
 	}{
 		{
-			name:  "successful creation",
-			cache: mockscache.NewCache(s.T()),
+			name:  "successful creation without cache",
+			cache: nil,
 			setup: func() {
 				mockConfig.EXPECT().GetString("queue.connections.default.connection").Return("mysql").Once()
+				mockConfig.EXPECT().GetBool("queue.connections.default.use_cache_lock").Return(false).Once()
 				mockConfig.EXPECT().GetString("queue.connections.default.table", "jobs").Return("jobs").Once()
 				mockConfig.EXPECT().GetInt("queue.connections.default.retry_after", 60).Return(60).Once()
 				s.mockDB.EXPECT().Connection("mysql").Return(s.mockDB).Once()
@@ -76,8 +78,25 @@ func (s *DatabaseTestSuite) TestNewDatabase() {
 			expectedError: nil,
 		},
 		{
-			name:          "invalid cache",
-			setup:         func() {},
+			name:  "successful creation with cache lock",
+			cache: mockscache.NewCache(s.T()),
+			setup: func() {
+				mockConfig.EXPECT().GetString("queue.connections.default.connection").Return("mysql").Once()
+				mockConfig.EXPECT().GetBool("queue.connections.default.use_cache_lock").Return(true).Once()
+				mockConfig.EXPECT().GetString("queue.connections.default.table", "jobs").Return("jobs").Once()
+				mockConfig.EXPECT().GetInt("queue.connections.default.retry_after", 60).Return(60).Once()
+				s.mockDB.EXPECT().Connection("mysql").Return(s.mockDB).Once()
+			},
+			wantUseCacheLock: true,
+			expectedError:    nil,
+		},
+		{
+			name:  "cache lock requested but cache not set",
+			cache: nil,
+			setup: func() {
+				mockConfig.EXPECT().GetString("queue.connections.default.connection").Return("mysql").Once()
+				mockConfig.EXPECT().GetBool("queue.connections.default.use_cache_lock").Return(true).Once()
+			},
 			expectedError: errors.CacheFacadeNotSet.SetModule(errors.ModuleQueue),
 		},
 		{
@@ -109,6 +128,7 @@ func (s *DatabaseTestSuite) TestNewDatabase() {
 				s.Equal(s.mockJson, database.json)
 				s.Equal(s.jobsTable, database.jobsTable)
 				s.Equal(s.retryAfter, database.retryAfter)
+				s.Equal(test.wantUseCacheLock, database.useCacheLock)
 			}
 		})
 	}
@@ -128,12 +148,80 @@ func (s *DatabaseTestSuite) TestPop() {
 
 	tests := []struct {
 		name            string
+		useCacheLock    bool
 		setup           func()
 		wantReservedJob contractsqueue.ReservedJob
 		wantError       error
 	}{
 		{
 			name: "happy path",
+			setup: func() {
+				mockTx := mocksdb.NewTx(s.T())
+				mockQuery := mocksdb.NewQuery(s.T())
+
+				s.mockDB.EXPECT().Transaction(mock.Anything).Run(func(txFunc func(tx contractsdb.Tx) error) {
+					s.NoError(txFunc(mockTx))
+				}).Return(nil).Once()
+
+				mockTx.EXPECT().Table(s.jobsTable).Return(mockQuery).Once()
+				mockQuery.EXPECT().LockForUpdate().Return(mockQuery).Once()
+				mockQuery.EXPECT().Where("queue", queue).Return(mockQuery).Once()
+				mockQuery.EXPECT().Where(mock.Anything).Return(mockQuery).Once()
+				mockQuery.EXPECT().OrderBy("id").Return(mockQuery).Once()
+
+				var job models.Job
+				wantJob := models.Job{
+					ID:       1,
+					Queue:    queue,
+					Payload:  payload,
+					Attempts: 0,
+				}
+				mockQuery.EXPECT().First(&job).
+					Run(func(dest any) {
+						*dest.(*models.Job) = wantJob
+					}).Return(nil).Once()
+
+				mockTx.EXPECT().Table(s.jobsTable).Return(mockQuery).Once()
+				mockQuery.EXPECT().Where("id", uint(1)).Return(mockQuery).Once()
+				mockQuery.EXPECT().Update(map[string]any{
+					"attempts":    1,
+					"reserved_at": carbon.NewDateTime(carbon.Now()),
+				}).Return(nil, nil).Once()
+
+				var task utils.Task
+				s.mockJson.EXPECT().UnmarshalString(payload, &task).
+					Run(func(_ string, taskPtr any) {
+						*taskPtr.(*utils.Task) = utils.Task{
+							UUID: "test",
+							Job: utils.Job{
+								Signature: testJobOne.Signature(),
+							},
+						}
+					}).Return(nil).Once()
+				s.mockJobStorer.EXPECT().Get(testJobOne.Signature()).Return(testJobOne, nil).Once()
+			},
+			wantReservedJob: &DatabaseReservedJob{
+				db: s.mockDB,
+				job: &models.Job{
+					ID:         1,
+					Queue:      queue,
+					Payload:    payload,
+					Attempts:   1,
+					ReservedAt: carbon.NewDateTime(carbon.Now()),
+				},
+				jobsTable: s.jobsTable,
+				task: contractsqueue.Task{
+					UUID: "test",
+					ChainJob: contractsqueue.ChainJob{
+						Job: testJobOne,
+					},
+				},
+			},
+			wantError: nil,
+		},
+		{
+			name:         "happy path with cache lock",
+			useCacheLock: true,
 			setup: func() {
 				mockCacheLock := mockscache.NewLock(s.T())
 				s.mockCache.EXPECT().Lock("goravel:queue-database-default:lock", 1*time.Minute).Return(mockCacheLock).Once()
@@ -204,12 +292,18 @@ func (s *DatabaseTestSuite) TestPop() {
 			wantError: nil,
 		},
 		{
-			name: "no job found",
+			name:         "failed to acquire cache lock",
+			useCacheLock: true,
 			setup: func() {
 				mockCacheLock := mockscache.NewLock(s.T())
 				s.mockCache.EXPECT().Lock("goravel:queue-database-default:lock", 1*time.Minute).Return(mockCacheLock).Once()
-				mockCacheLock.EXPECT().Block(1 * time.Minute).Return(true).Once()
-				mockCacheLock.EXPECT().Release().Return(true).Once()
+				mockCacheLock.EXPECT().Block(1 * time.Minute).Return(false).Once()
+			},
+			wantError: errors.QueuePopIsLocked.Args(queue, "goravel:queue-database-default:lock"),
+		},
+		{
+			name: "no job found",
+			setup: func() {
 				s.mockDB.EXPECT().Transaction(mock.Anything).Return(errors.QueueDriverNoJobFound.Args(queue)).Once()
 			},
 			wantError: errors.QueueDriverNoJobFound.Args(queue),
@@ -218,6 +312,7 @@ func (s *DatabaseTestSuite) TestPop() {
 
 	for _, test := range tests {
 		s.Run(test.name, func() {
+			s.database.useCacheLock = test.useCacheLock
 			test.setup()
 
 			job, err := s.database.Pop(queue)
