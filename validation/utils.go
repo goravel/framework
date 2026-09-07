@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -15,6 +16,31 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/spf13/cast"
 )
+
+// compiledPatterns caches compiled patterns. The patterns come from rule
+// definitions, which are written in application code, so the set of distinct
+// patterns a program uses is bounded by the rules it declares. Failed compiles
+// are deliberately not cached, so an invalid pattern cannot grow the map.
+var compiledPatterns sync.Map
+
+// compilePattern compiles a pattern once and reuses it afterwards. Compiling is
+// what a regular expression costs, matching against an already compiled one is
+// cheap, and the rules that use this compiled the same pattern on every field of
+// every request.
+func compilePattern(pattern string) (*regexp.Regexp, error) {
+	if cached, ok := compiledPatterns.Load(pattern); ok {
+		return cached.(*regexp.Regexp), nil
+	}
+
+	compiled, err := regexp.Compile(pattern)
+	if err != nil {
+		return nil, err
+	}
+
+	compiledPatterns.Store(pattern, compiled)
+
+	return compiled, nil
+}
 
 // isValueEmpty checks if a value is considered "empty" for validation purposes.
 func isValueEmpty(val any) bool {
@@ -466,7 +492,7 @@ func expandWildcardFields[T any](fields map[string]T, dataKeys []string, keepUnm
 
 		pattern := "^" + regexp.QuoteMeta(field) + "$"
 		pattern = strings.ReplaceAll(pattern, `\*`, `[^.]+`)
-		re, err := regexp.Compile(pattern)
+		re, err := compilePattern(pattern)
 		if err != nil {
 			expanded[field] = value
 			continue

@@ -10,6 +10,28 @@ import (
 
 // --- End-to-end validation benchmarks ---
 
+func BenchmarkValidation_RegexRule(b *testing.B) {
+	v := NewValidation()
+	ctx := context.Background()
+	data := map[string]any{
+		"name": "John",
+		"code": "AB-1234",
+	}
+	rules := map[string]any{
+		"name": "required|string",
+		"code": `required|regex:^[A-Z]{2}-\d{4}$`,
+	}
+
+	b.ReportAllocs()
+	for b.Loop() {
+		validator, err := v.Make(ctx, data, rules)
+		if err != nil {
+			b.Fatal(err)
+		}
+		_ = validator.Fails()
+	}
+}
+
 func BenchmarkValidation_Simple(b *testing.B) {
 	v := NewValidation()
 	ctx := context.Background()
