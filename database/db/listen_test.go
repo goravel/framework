@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 	gormtests "gorm.io/gorm/utils/tests"
@@ -15,6 +16,7 @@ import (
 	contractsdb "github.com/goravel/framework/contracts/database/db"
 	"github.com/goravel/framework/contracts/database/logger"
 	"github.com/goravel/framework/database/utils"
+	mocksdb "github.com/goravel/framework/mocks/database/db"
 	"github.com/goravel/framework/support/carbon"
 )
 
@@ -157,4 +159,190 @@ func TestDBListenRegistersGlobally(t *testing.T) {
 	logger.Trace(context.Background(), carbon.Now(), "SELECT 1", 1, nil)
 
 	assert.Len(t, events(), 1)
+}
+
+func TestLoggerWithConnection(t *testing.T) {
+	events := collectEvents(t, "listen-connection")
+
+	r := &Logger{}
+	assert.Same(t, r, r.WithConnection("listen-connection"))
+	assert.Equal(t, "listen-connection", r.connection)
+
+	// The connection set through WithConnection is reported in events.
+	r.Trace(context.Background(), carbon.Now(), "SELECT 1", 1, nil)
+
+	got := events()
+	require.Len(t, got, 1)
+	assert.Equal(t, "listen-connection", got[0].Connection)
+}
+
+func TestTxSelectWithListenersCarriesBindings(t *testing.T) {
+	events := collectEvents(t, "listen-tx-select")
+
+	ctx := context.Background()
+	parameterizedSQL := "SELECT * FROM users WHERE name = ?"
+	explainedSQL := `SELECT * FROM users WHERE name = "John"`
+
+	mockBuilder := mocksdb.NewTxBuilder(t)
+	mockBuilder.EXPECT().Explain(parameterizedSQL, "John").Return(explainedSQL).Once()
+	mockBuilder.EXPECT().SelectContext(ctx, mock.Anything, parameterizedSQL, "John").Return(nil).Once()
+
+	tx := &Tx{ctx: ctx, logger: &Logger{connection: "listen-tx-select", level: logger.Silent}, txBuilder: mockBuilder}
+
+	var users []TestUser
+	require.NoError(t, tx.Select(&users, parameterizedSQL, "John"))
+
+	got := events()
+	require.Len(t, got, 1)
+	assert.Equal(t, parameterizedSQL, got[0].Sql)
+	assert.Equal(t, []any{"John"}, got[0].Bindings)
+	assert.Equal(t, explainedSQL, got[0].RawSql)
+	assert.Nil(t, got[0].Error)
+}
+
+func TestTxSelectWithListenersErrorCarried(t *testing.T) {
+	events := collectEvents(t, "listen-tx-select-err")
+
+	ctx := context.Background()
+	queryErr := errors.New("select failed")
+
+	mockBuilder := mocksdb.NewTxBuilder(t)
+	mockBuilder.EXPECT().Explain("SELECT 1").Return("SELECT 1").Once()
+	mockBuilder.EXPECT().GetContext(ctx, mock.Anything, "SELECT 1").Return(queryErr).Once()
+
+	tx := &Tx{ctx: ctx, logger: &Logger{connection: "listen-tx-select-err", level: logger.Silent}, txBuilder: mockBuilder}
+
+	var user TestUser
+	assert.ErrorIs(t, tx.Select(&user, "SELECT 1"), queryErr)
+
+	got := events()
+	require.Len(t, got, 1)
+	assert.ErrorIs(t, got[0].Error, queryErr)
+}
+
+func TestTxSelectSliceErrorCarried(t *testing.T) {
+	events := collectEvents(t, "listen-tx-select-slice-err")
+
+	ctx := context.Background()
+	queryErr := errors.New("select slice failed")
+
+	mockBuilder := mocksdb.NewTxBuilder(t)
+	mockBuilder.EXPECT().Explain("SELECT * FROM users WHERE id = ?", 1).Return("SELECT * FROM users WHERE id = 1").Once()
+	mockBuilder.EXPECT().SelectContext(ctx, mock.Anything, "SELECT * FROM users WHERE id = ?", 1).Return(queryErr).Once()
+
+	tx := &Tx{ctx: ctx, logger: &Logger{connection: "listen-tx-select-slice-err", level: logger.Silent}, txBuilder: mockBuilder}
+
+	var users []TestUser
+	assert.ErrorIs(t, tx.Select(&users, "SELECT * FROM users WHERE id = ?", 1), queryErr)
+
+	got := events()
+	require.Len(t, got, 1)
+	assert.ErrorIs(t, got[0].Error, queryErr)
+	assert.Equal(t, "SELECT * FROM users WHERE id = ?", got[0].Sql)
+	assert.Equal(t, []any{1}, got[0].Bindings)
+}
+
+func TestTxExecWithListenersCarriesBindings(t *testing.T) {
+	events := collectEvents(t, "listen-tx-exec")
+
+	ctx := context.Background()
+	sqlStr := "INSERT INTO users (name) VALUES (?)"
+	explainedSQL := `INSERT INTO users (name) VALUES ("John")`
+
+	mockResult := &MockResult{}
+	mockResult.On("RowsAffected").Return(int64(1), nil).Once()
+
+	mockBuilder := mocksdb.NewTxBuilder(t)
+	mockBuilder.EXPECT().Explain(sqlStr, "John").Return(explainedSQL).Once()
+	mockBuilder.EXPECT().ExecContext(ctx, sqlStr, "John").Return(mockResult, nil).Once()
+
+	tx := &Tx{ctx: ctx, logger: &Logger{connection: "listen-tx-exec", level: logger.Silent}, txBuilder: mockBuilder}
+
+	result, err := tx.Insert(sqlStr, "John")
+	require.NoError(t, err)
+	assert.Equal(t, int64(1), result.RowsAffected)
+
+	got := events()
+	require.Len(t, got, 1)
+	assert.Equal(t, sqlStr, got[0].Sql)
+	assert.Equal(t, []any{"John"}, got[0].Bindings)
+	assert.Equal(t, explainedSQL, got[0].RawSql)
+	assert.Nil(t, got[0].Error)
+}
+
+func TestTxExecWithListenersErrorCarried(t *testing.T) {
+	events := collectEvents(t, "listen-tx-exec-err")
+
+	ctx := context.Background()
+	execErr := errors.New("exec failed")
+
+	mockBuilder := mocksdb.NewTxBuilder(t)
+	mockBuilder.EXPECT().Explain("DELETE FROM users").Return("DELETE FROM users").Once()
+	mockBuilder.EXPECT().ExecContext(ctx, "DELETE FROM users").Return(nil, execErr).Once()
+
+	tx := &Tx{ctx: ctx, logger: &Logger{connection: "listen-tx-exec-err", level: logger.Silent}, txBuilder: mockBuilder}
+
+	_, err := tx.Delete("DELETE FROM users")
+	assert.ErrorIs(t, err, execErr)
+
+	got := events()
+	require.Len(t, got, 1)
+	assert.ErrorIs(t, got[0].Error, execErr)
+}
+
+func TestQueryTraceWithListeners(t *testing.T) {
+	events := collectEvents(t, "listen-query-trace")
+
+	ctx := context.Background()
+	parameterizedSQL := "SELECT * FROM users WHERE id = ?"
+	explainedSQL := "SELECT * FROM users WHERE id = 1"
+
+	mockBuilder := mocksdb.NewCommonBuilder(t)
+	mockBuilder.EXPECT().Explain(parameterizedSQL, 1).Return(explainedSQL).Once()
+
+	r := &Query{ctx: ctx, logger: &Logger{connection: "listen-query-trace", level: logger.Silent}}
+	r.trace(mockBuilder, parameterizedSQL, []any{1}, carbon.Now(), 1, nil)
+
+	got := events()
+	require.Len(t, got, 1)
+	assert.Equal(t, parameterizedSQL, got[0].Sql)
+	assert.Equal(t, []any{1}, got[0].Bindings)
+	assert.Equal(t, explainedSQL, got[0].RawSql)
+}
+
+func TestQueryTraceWithListenersInTransaction(t *testing.T) {
+	events := collectEvents(t, "listen-query-trace-tx")
+
+	ctx := context.Background()
+	parameterizedSQL := "UPDATE users SET name = ? WHERE id = ?"
+	explainedSQL := "UPDATE users SET name = 'John' WHERE id = 1"
+
+	mockBuilder := mocksdb.NewCommonBuilder(t)
+	mockBuilder.EXPECT().Explain(parameterizedSQL, "John", 1).Return(explainedSQL).Once()
+
+	txLogs := []TxLog{}
+	r := &Query{ctx: ctx, logger: &Logger{connection: "listen-query-trace-tx", level: logger.Silent}, txLogs: &txLogs}
+	r.trace(mockBuilder, parameterizedSQL, []any{"John", 1}, carbon.Now(), 2, nil)
+
+	// Inside a transaction the trace is buffered; the event fires on Commit.
+	assert.Empty(t, events())
+	require.Len(t, txLogs, 1)
+
+	sql, bindings, ok := utils.QueryBindingsFromContext(txLogs[0].ctx)
+	require.True(t, ok)
+	assert.Equal(t, parameterizedSQL, sql)
+	assert.Equal(t, []any{"John", 1}, bindings)
+
+	// Commit replays the buffered logs through Trace, firing the event.
+	mockTxBuilder := mocksdb.NewTxBuilder(t)
+	mockTxBuilder.EXPECT().Commit().Return(nil).Once()
+
+	tx := &Tx{ctx: ctx, logger: &Logger{connection: "listen-query-trace-tx", level: logger.Silent}, txBuilder: mockTxBuilder, txLogs: &txLogs}
+	require.NoError(t, tx.Commit())
+
+	got := events()
+	require.Len(t, got, 1)
+	assert.Equal(t, parameterizedSQL, got[0].Sql)
+	assert.Equal(t, []any{"John", 1}, got[0].Bindings)
+	assert.Equal(t, explainedSQL, got[0].RawSql)
 }
