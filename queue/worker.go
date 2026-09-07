@@ -2,6 +2,7 @@ package queue
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -19,6 +20,11 @@ import (
 	"github.com/goravel/framework/support/console"
 )
 
+// defaultReceiveTimeout is the fallback timeout, in seconds, for a single
+// blocking Receive call made by the worker. It can be overridden per
+// connection via queue.connections.<connection>.timeout.
+const defaultReceiveTimeout = 5
+
 type Worker struct {
 	config queue.Config
 	db     db.DB
@@ -35,6 +41,7 @@ type Worker struct {
 	failedJobWg    sync.WaitGroup
 	concurrent     int
 	tries          int
+	timeout        time.Duration
 	shutdownCtx    context.Context
 	shutdownCancel context.CancelFunc
 
@@ -65,6 +72,7 @@ func NewWorker(config queue.Config, cache cache.Cache, db db.DB, job queue.JobSt
 		queue:          queue,
 		concurrent:     concurrent,
 		tries:          tries,
+		timeout:        time.Duration(config.GetInt(fmt.Sprintf("queue.connections.%s.timeout", connection), defaultReceiveTimeout)) * time.Second,
 		debug:          config.Debug(),
 		shutdownCtx:    shutdownCtx,
 		shutdownCancel: shutdownCancel,
@@ -307,7 +315,7 @@ func (r *Worker) runWithReceive(receiver queue.DriverWithReceive) error {
 			return nil
 		}
 
-		ctx, cancel := context.WithTimeout(r.shutdownCtx, 5*time.Second) // TODO make the timeout configurable
+		ctx, cancel := context.WithTimeout(r.shutdownCtx, r.timeout)
 		jobs, err := receiver.Receive(ctx, r.queue, r.concurrent)
 		cancel()
 

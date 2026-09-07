@@ -59,6 +59,7 @@ func (s *WorkerTestSuite) SetupTest() {
 		queue:          "default",
 		concurrent:     1,
 		tries:          1,
+		timeout:        defaultReceiveTimeout * time.Second,
 		debug:          true,
 		shutdownCtx:    shutdownCtx,
 		shutdownCancel: shutdownCancel,
@@ -68,11 +69,24 @@ func (s *WorkerTestSuite) SetupTest() {
 func (s *WorkerTestSuite) TestNewWorker() {
 	s.Run("happy path", func() {
 		s.mockConfig.EXPECT().Driver("sync").Return(contractsqueue.DriverSync).Once()
+		s.mockConfig.EXPECT().GetInt("queue.connections.sync.timeout", defaultReceiveTimeout).Return(defaultReceiveTimeout).Once()
 		s.mockConfig.EXPECT().Debug().Return(true).Once()
 		worker, err := NewWorker(s.mockConfig, nil, s.mockDB, s.mockJob, s.mockJson, s.mockLog, "sync", "default", 2, 1)
 
 		s.NotNil(worker)
 		s.NoError(err)
+		s.Equal(defaultReceiveTimeout*time.Second, worker.timeout)
+	})
+
+	s.Run("custom timeout", func() {
+		s.mockConfig.EXPECT().Driver("sync").Return(contractsqueue.DriverSync).Once()
+		s.mockConfig.EXPECT().GetInt("queue.connections.sync.timeout", defaultReceiveTimeout).Return(10).Once()
+		s.mockConfig.EXPECT().Debug().Return(true).Once()
+		worker, err := NewWorker(s.mockConfig, nil, s.mockDB, s.mockJob, s.mockJson, s.mockLog, "sync", "default", 2, 1)
+
+		s.NotNil(worker)
+		s.NoError(err)
+		s.Equal(10*time.Second, worker.timeout)
 	})
 
 	s.Run("failed to create driver", func() {
