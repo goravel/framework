@@ -13,6 +13,10 @@ type DB interface {
 	BeginTransaction() (Tx, error)
 	// Connection gets an Orm instance from the connection pool.
 	Connection(name string) DB
+	// Listen registers a listener that is called for every SQL query executed
+	// by the database, mirroring Laravel's DB::listen. The registry is global,
+	// so a listener sees queries from every connection.
+	Listen(listener func(event *QueryExecuted) error)
 	// Transaction runs a callback wrapped in a database transaction.
 	Transaction(txFunc func(tx Tx) error) error
 	// WithContext sets the context to be used by the Orm.
