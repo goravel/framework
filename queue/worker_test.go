@@ -59,7 +59,7 @@ func (s *WorkerTestSuite) SetupTest() {
 		queue:          "default",
 		concurrent:     1,
 		tries:          1,
-		timeout:        defaultReceiveTimeout * time.Second,
+		receiveTimeout: defaultReceiveTimeout * time.Second,
 		debug:          true,
 		shutdownCtx:    shutdownCtx,
 		shutdownCancel: shutdownCancel,
@@ -69,24 +69,24 @@ func (s *WorkerTestSuite) SetupTest() {
 func (s *WorkerTestSuite) TestNewWorker() {
 	s.Run("happy path", func() {
 		s.mockConfig.EXPECT().Driver("sync").Return(contractsqueue.DriverSync).Once()
-		s.mockConfig.EXPECT().GetInt("queue.connections.sync.timeout", defaultReceiveTimeout).Return(defaultReceiveTimeout).Once()
+		s.mockConfig.EXPECT().Timeout("sync").Return(defaultReceiveTimeout * time.Second).Once()
 		s.mockConfig.EXPECT().Debug().Return(true).Once()
 		worker, err := NewWorker(s.mockConfig, nil, s.mockDB, s.mockJob, s.mockJson, s.mockLog, "sync", "default", 2, 1)
 
 		s.NotNil(worker)
 		s.NoError(err)
-		s.Equal(defaultReceiveTimeout*time.Second, worker.timeout)
+		s.Equal(defaultReceiveTimeout*time.Second, worker.receiveTimeout)
 	})
 
 	s.Run("custom timeout", func() {
 		s.mockConfig.EXPECT().Driver("sync").Return(contractsqueue.DriverSync).Once()
-		s.mockConfig.EXPECT().GetInt("queue.connections.sync.timeout", defaultReceiveTimeout).Return(10).Once()
+		s.mockConfig.EXPECT().Timeout("sync").Return(10 * time.Second).Once()
 		s.mockConfig.EXPECT().Debug().Return(true).Once()
 		worker, err := NewWorker(s.mockConfig, nil, s.mockDB, s.mockJob, s.mockJson, s.mockLog, "sync", "default", 2, 1)
 
 		s.NotNil(worker)
 		s.NoError(err)
-		s.Equal(10*time.Second, worker.timeout)
+		s.Equal(10*time.Second, worker.receiveTimeout)
 	})
 
 	s.Run("failed to create driver", func() {
@@ -780,6 +780,62 @@ func (s *WorkerTestSuite) Test_runWithReceive() {
 		time.Sleep(200 * time.Millisecond)
 		s.NoError(s.worker.Shutdown())
 	})
+
+	for _, tt := range []struct {
+		name    string
+		timeout time.Duration
+	}{
+		{name: "default timeout", timeout: defaultReceiveTimeout * time.Second},
+		{name: "custom timeout", timeout: 2 * time.Second},
+	} {
+		s.Run("receive context deadline matches "+tt.name, func() {
+			s.SetupTest()
+
+			mockDriverWithReceive := mocksqueue.NewDriverWithReceive(s.T())
+			s.worker.driver = &receiveDriver{
+				driver:   s.mockDriver,
+				receiver: mockDriverWithReceive,
+			}
+			s.worker.connection = connection
+			s.worker.receiveTimeout = tt.timeout
+
+			deadlineCh := make(chan time.Time, 1)
+			mockDriverWithReceive.EXPECT().Receive(mock.Anything, queue, s.worker.concurrent).
+				Run(func(ctx context.Context, _ string, _ int) {
+					deadline, ok := ctx.Deadline()
+					s.True(ok, "receive context should have a deadline")
+					select {
+					case deadlineCh <- deadline:
+					default:
+					}
+				}).Return(nil, nil).Once()
+			mockDriverWithReceive.EXPECT().Receive(mock.Anything, queue, s.worker.concurrent).
+				RunAndReturn(func(ctx context.Context, _ string, _ int) ([]contractsqueue.ReservedJob, error) {
+					<-ctx.Done()
+					return nil, ctx.Err()
+				}).Once()
+
+			before := time.Now()
+			go func() {
+				s.NoError(s.worker.run())
+			}()
+
+			select {
+			case deadline := <-deadlineCh:
+				after := time.Now()
+				// The deadline must sit ~receiveTimeout after the moment the
+				// context was created, not at some other value.
+				s.GreaterOrEqual(deadline, before.Add(tt.timeout-100*time.Millisecond))
+				s.LessOrEqual(deadline, after.Add(tt.timeout+100*time.Millisecond))
+			case <-time.After(2 * time.Second):
+				s.Fail("timed out waiting for Receive to be called")
+			}
+
+			// Let the loop issue its second (blocking) Receive before shutting down
+			time.Sleep(200 * time.Millisecond)
+			s.NoError(s.worker.Shutdown())
+		})
+	}
 
 	s.Run("receive error", func() {
 		s.SetupTest()
