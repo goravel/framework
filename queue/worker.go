@@ -35,6 +35,7 @@ type Worker struct {
 	failedJobWg    sync.WaitGroup
 	concurrent     int
 	tries          int
+	receiveTimeout time.Duration
 	shutdownCtx    context.Context
 	shutdownCancel context.CancelFunc
 
@@ -65,6 +66,7 @@ func NewWorker(config queue.Config, cache cache.Cache, db db.DB, job queue.JobSt
 		queue:          queue,
 		concurrent:     concurrent,
 		tries:          tries,
+		receiveTimeout: config.Timeout(connection),
 		debug:          config.Debug(),
 		shutdownCtx:    shutdownCtx,
 		shutdownCancel: shutdownCancel,
@@ -307,7 +309,7 @@ func (r *Worker) runWithReceive(receiver queue.DriverWithReceive) error {
 			return nil
 		}
 
-		ctx, cancel := context.WithTimeout(r.shutdownCtx, 5*time.Second) // TODO make the timeout configurable
+		ctx, cancel := context.WithTimeout(r.shutdownCtx, r.receiveTimeout)
 		jobs, err := receiver.Receive(ctx, r.queue, r.concurrent)
 		cancel()
 

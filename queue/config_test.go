@@ -2,6 +2,7 @@ package queue
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/suite"
 
@@ -63,4 +64,31 @@ func (s *ConfigTestSuite) TestFailedTable() {
 func (s *ConfigTestSuite) TestVia() {
 	s.mockConfig.EXPECT().Get("queue.connections.sync.via").Return("sync").Once()
 	s.Equal("sync", s.config.Via("sync"))
+}
+
+func (s *ConfigTestSuite) TestTimeout() {
+	tests := []struct {
+		name     string
+		value    any
+		expected time.Duration
+	}{
+		{"int seconds", 10, 10 * time.Second},
+		{"int64 seconds", int64(8), 8 * time.Second},
+		{"float64 seconds", float64(7), 7 * time.Second},
+		{"duration string", "5s", 5 * time.Second},
+		{"duration string with ms", "1500ms", 1500 * time.Millisecond},
+		{"zero falls back to default", 0, defaultReceiveTimeout * time.Second},
+		{"negative falls back to default", -3, defaultReceiveTimeout * time.Second},
+		{"negative duration string falls back to default", "-5s", defaultReceiveTimeout * time.Second},
+		{"garbage string falls back to default", "not-a-duration", defaultReceiveTimeout * time.Second},
+		{"missing falls back to default", nil, defaultReceiveTimeout * time.Second},
+		{"unsupported type falls back to default", true, defaultReceiveTimeout * time.Second},
+	}
+
+	for _, test := range tests {
+		s.Run(test.name, func() {
+			s.mockConfig.EXPECT().Get("queue.connections.redis.timeout").Return(test.value).Once()
+			s.Equal(test.expected, s.config.Timeout("redis"))
+		})
+	}
 }
