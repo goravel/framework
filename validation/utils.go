@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -17,16 +18,19 @@ import (
 	"github.com/spf13/cast"
 )
 
-// compiledPatterns caches compiled patterns. The patterns come from rule
-// definitions, which are written in application code, so the set of distinct
-// patterns a program uses is bounded by the rules it declares. Failed compiles
-// are deliberately not cached, so an invalid pattern cannot grow the map.
-var compiledPatterns sync.Map
+// maxCompiledPatterns is a soft cap on the number of cached patterns. Patterns
+// come from rule definitions, so a program normally stays far below it. The cap
+// only matters when rules are built from untrusted input: once it is reached,
+// new patterns are compiled on every call instead of being retained.
+const maxCompiledPatterns = 1024
 
-// compilePattern compiles a pattern once and reuses it afterwards. Compiling is
-// what a regular expression costs, matching against an already compiled one is
-// cheap, and the rules that use this compiled the same pattern on every field of
-// every request.
+var (
+	compiledPatterns      sync.Map
+	compiledPatternsCount atomic.Int64
+)
+
+// compilePattern returns the compiled form of pattern, compiling it on first use
+// and reusing it afterwards. Failed compiles are not cached.
 func compilePattern(pattern string) (*regexp.Regexp, error) {
 	if cached, ok := compiledPatterns.Load(pattern); ok {
 		return cached.(*regexp.Regexp), nil
@@ -37,9 +41,16 @@ func compilePattern(pattern string) (*regexp.Regexp, error) {
 		return nil, err
 	}
 
-	compiledPatterns.Store(pattern, compiled)
+	if compiledPatternsCount.Load() >= maxCompiledPatterns {
+		return compiled, nil
+	}
 
-	return compiled, nil
+	actual, loaded := compiledPatterns.LoadOrStore(pattern, compiled)
+	if !loaded {
+		compiledPatternsCount.Add(1)
+	}
+
+	return actual.(*regexp.Regexp), nil
 }
 
 // isValueEmpty checks if a value is considered "empty" for validation purposes.

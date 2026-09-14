@@ -23,6 +23,7 @@ func BenchmarkValidation_RegexRule(b *testing.B) {
 	}
 
 	b.ReportAllocs()
+	b.ResetTimer()
 	for b.Loop() {
 		validator, err := v.Make(ctx, data, rules)
 		if err != nil {
@@ -116,6 +117,30 @@ func BenchmarkValidation_Wildcards(b *testing.B) {
 		"items.*.name":  "required|string|max:100",
 		"items.*.price": "required|numeric|min:0",
 		"items.*.qty":   "required|integer|min:1",
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for b.Loop() {
+		_, _ = v.Make(ctx, data, rules)
+	}
+}
+
+func BenchmarkValidation_WildcardsDistinct(b *testing.B) {
+	v := NewValidation()
+	ctx := context.Background()
+	items := make([]any, 20)
+	for i := range 20 {
+		items[i] = map[string]any{
+			"sku": fmt.Sprintf("SKU-%d", i),
+			"qty": fmt.Sprintf("%d", i+1),
+		}
+	}
+	data := map[string]any{"items": items}
+	rules := map[string]any{
+		"items":       "required|array|min:1",
+		"items.*.sku": "required|string|distinct",
+		"items.*.qty": "required|integer|min:1",
 	}
 
 	b.ReportAllocs()
