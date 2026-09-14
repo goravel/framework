@@ -278,7 +278,11 @@ func (e *Engine) trackDistinct(field string, value any) bool {
 		if strings.Contains(pattern, "*") {
 			re := "^" + regexp.QuoteMeta(pattern) + "$"
 			re = strings.ReplaceAll(re, `\*`, `[^.]+`)
-			if matched, _ := regexp.MatchString(re, field); matched {
+			compiled, err := compilePattern(re)
+			if err != nil {
+				continue
+			}
+			if compiled.MatchString(field) {
 				if _, ok := e.distinctValues[pattern]; !ok {
 					e.distinctValues[pattern] = make(map[string]bool)
 				}

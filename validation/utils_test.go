@@ -2,14 +2,107 @@ package validation
 
 import (
 	"context"
+	"fmt"
 	"mime/multipart"
 	"net/url"
 	"reflect"
+	"regexp"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func resetCompiledPatterns() {
+	compiledPatterns.Clear()
+	compiledPatternsCount.Store(0)
+}
+
+func TestCompilePattern(t *testing.T) {
+	t.Run("compiles and matches", func(t *testing.T) {
+		resetCompiledPatterns()
+
+		re, err := compilePattern(`^[A-Z]{2}-\d{4}$`)
+		assert.NoError(t, err)
+		assert.True(t, re.MatchString("AB-1234"))
+		assert.False(t, re.MatchString("ab-1234"))
+	})
+
+	t.Run("the same pattern is compiled once", func(t *testing.T) {
+		resetCompiledPatterns()
+
+		first, err := compilePattern(`^cached-[0-9]+$`)
+		assert.NoError(t, err)
+
+		second, err := compilePattern(`^cached-[0-9]+$`)
+		assert.NoError(t, err)
+		assert.Same(t, first, second)
+		assert.Equal(t, int64(1), compiledPatternsCount.Load())
+	})
+
+	t.Run("concurrent callers share one compiled pattern", func(t *testing.T) {
+		resetCompiledPatterns()
+
+		const goroutines = 32
+		results := make([]*regexp.Regexp, goroutines)
+
+		var wg sync.WaitGroup
+		for i := range goroutines {
+			wg.Go(func() {
+				re, err := compilePattern(`^concurrent-[0-9]+$`)
+				assert.NoError(t, err)
+				results[i] = re
+			})
+		}
+		wg.Wait()
+
+		for _, re := range results {
+			assert.Same(t, results[0], re)
+		}
+		assert.Equal(t, int64(1), compiledPatternsCount.Load())
+	})
+
+	t.Run("an invalid pattern errors and is not cached", func(t *testing.T) {
+		resetCompiledPatterns()
+
+		const invalid = `^[a-z`
+
+		re, err := compilePattern(invalid)
+		assert.Error(t, err)
+		assert.Nil(t, re)
+
+		_, cached := compiledPatterns.Load(invalid)
+		assert.False(t, cached)
+		assert.Equal(t, int64(0), compiledPatternsCount.Load())
+	})
+
+	t.Run("patterns beyond the cap are compiled but not cached", func(t *testing.T) {
+		resetCompiledPatterns()
+		t.Cleanup(resetCompiledPatterns)
+
+		for i := range maxCompiledPatterns {
+			_, err := compilePattern(fmt.Sprintf(`^p%d$`, i))
+			assert.NoError(t, err)
+		}
+		assert.Equal(t, int64(maxCompiledPatterns), compiledPatternsCount.Load())
+
+		const overflow = `^overflow$`
+		re, err := compilePattern(overflow)
+		assert.NoError(t, err)
+		assert.True(t, re.MatchString("overflow"))
+
+		_, cached := compiledPatterns.Load(overflow)
+		assert.False(t, cached)
+		assert.Equal(t, int64(maxCompiledPatterns), compiledPatternsCount.Load())
+
+		cachedRe, err := compilePattern(`^p0$`)
+		assert.NoError(t, err)
+		again, err := compilePattern(`^p0$`)
+		assert.NoError(t, err)
+		assert.Same(t, cachedRe, again)
+	})
+}
 
 func TestIsValueEmpty(t *testing.T) {
 	tests := []struct {
