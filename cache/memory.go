@@ -81,6 +81,7 @@ func (r *Memory) Forget(key string) bool {
 }
 
 // Flush Remove all items from the cache.
+// Clear in place: replacing the sync.Map would swap out the mutex held by concurrent readers.
 func (r *Memory) Flush() bool {
 	r.instance.Clear()
 	return true
