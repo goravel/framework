@@ -111,6 +111,37 @@ func (s *MemoryTestSuite) TestFlush() {
 	s.False(s.memory.Has("test-flush"))
 }
 
+// TestFlushWhileReading guards against replacing the sync.Map itself. Assigning
+// a fresh sync.Map over it swaps out the mutex the readers inside Load are
+// holding, and the runtime kills the process with "sync: unlock of unlocked
+// mutex".
+func (s *MemoryTestSuite) TestFlushWhileReading() {
+	s.Nil(s.memory.Put("test-flush-while-reading", "goravel", NoExpiration))
+
+	var wg sync.WaitGroup
+	for range 50 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for range 500 {
+				s.memory.Get("test-flush-while-reading")
+			}
+		}()
+	}
+	for range 10 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for range 200 {
+				s.memory.Flush()
+			}
+		}()
+	}
+	wg.Wait()
+
+	s.False(s.memory.Has("test-flush-while-reading"))
+}
+
 func (s *MemoryTestSuite) TestGet() {
 	s.Nil(s.memory.Put("name", "Goravel", 1*time.Second))
 	s.Equal("Goravel", s.memory.Get("name", "").(string))
