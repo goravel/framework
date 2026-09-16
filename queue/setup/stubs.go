@@ -32,6 +32,10 @@ func init() {
 				"connection": config.Env("DB_CONNECTION"),
 				"queue":      "default",
 				"concurrent": 1,
+				// Optionally guard Pop() with a cache lock on top of the
+				// database row lock. Requires a cache driver to be
+				// configured; defaults to false.
+				"use_cache_lock": false,
 			},
 		},
 
