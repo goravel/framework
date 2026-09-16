@@ -97,7 +97,7 @@ func Boot() {
 		{
 			name: "name is empty",
 			setup: func() {
-				mockContext.EXPECT().Argument(0).Return("").Once()
+				mockContext.EXPECT().Arguments().Return([]string{""}).Once()
 				mockContext.EXPECT().Ask("Enter the package name", mock.Anything).Return("", errors.New("the package name cannot be empty")).Once()
 				mockContext.EXPECT().Error("the package name cannot be empty").Once()
 			},
@@ -108,7 +108,7 @@ func Boot() {
 		{
 			name: "name is sms and use default root",
 			setup: func() {
-				mockContext.EXPECT().Argument(0).Return("sms").Once()
+				mockContext.EXPECT().Arguments().Return([]string{"sms"}).Once()
 				mockContext.EXPECT().Option("root").Return("packages").Once()
 				mockContext.EXPECT().Success("Package created successfully: packages/sms").Once()
 			},
@@ -129,7 +129,7 @@ func Boot() {
 		{
 			name: "name is github.com/goravel/sms and use other root",
 			setup: func() {
-				mockContext.EXPECT().Argument(0).Return("github.com/goravel/sms-aws").Once()
+				mockContext.EXPECT().Arguments().Return([]string{"github.com/goravel/sms-aws"}).Once()
 				mockContext.EXPECT().Option("root").Return("package").Once()
 				mockContext.EXPECT().Success("Package created successfully: package/github_com_goravel_sms_aws").Once()
 			},
@@ -162,4 +162,31 @@ func (s *PackageMakeCommandTestSuite) TestPackageName() {
 	input2 := "example.com/another_package.name"
 	expected2 := "another_package_name"
 	s.Equal(expected2, packageName(input2))
+}
+
+func (s *PackageMakeCommandTestSuite) TestHandleMultipleNames() {
+	// Create bootstrap/app.go to trigger IsBootstrapSetup() == true
+	s.Require().NoError(file.Create("bootstrap/app.go", `package bootstrap
+
+import "github.com/goravel/framework/foundation"
+
+func Boot() {
+	foundation.Setup().Start()
+}
+`))
+	s.T().Cleanup(func() {
+		_ = file.Remove("bootstrap")
+		_ = file.Remove("packages")
+	})
+
+	mockContext := mocksconsole.NewContext(s.T())
+	mockContext.EXPECT().Arguments().Return([]string{"sms", "email"}).Once()
+	mockContext.EXPECT().Option("root").Return("packages").Times(2)
+	mockContext.EXPECT().Success("Package created successfully: packages/sms").Once()
+	mockContext.EXPECT().Success("Package created successfully: packages/email").Once()
+
+	s.NoError(NewPackageMakeCommand().Handle(mockContext))
+
+	s.True(file.Exists("packages/sms/sms.go"))
+	s.True(file.Exists("packages/email/email.go"))
 }

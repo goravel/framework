@@ -38,23 +38,23 @@ func TestAgentMakeCommand(t *testing.T) {
 		}
 	}
 
-	mockContext.EXPECT().Argument(0).Return("").Once()
+	mockContext.EXPECT().Arguments().Return([]string{""}).Once()
 	mockContext.EXPECT().Ask("Enter the agent name", mock.Anything).Return("", errors.New("the agent name cannot be empty")).Once()
 	mockContext.EXPECT().Error("the agent name cannot be empty").Once()
 	assert.NoError(t, agentMakeCommand.Handle(mockContext))
 
-	mockContext.EXPECT().Argument(0).Return("UserAgent").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"UserAgent"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Agent created successfully").Once()
 	assert.NoError(t, agentMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/ai/agents/user_agent.go"))
 
-	mockContext.EXPECT().Argument(0).Return("UserAgent").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"UserAgent"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Error("the agent already exists. Use the --force or -f flag to overwrite").Once()
 	assert.NoError(t, agentMakeCommand.Handle(mockContext))
 
-	mockContext.EXPECT().Argument(0).Return("user/SupportAgent").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"user/SupportAgent"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Agent created successfully").Once()
 	assert.NoError(t, agentMakeCommand.Handle(mockContext))
@@ -66,9 +66,25 @@ func TestAgentMakeCommand(t *testing.T) {
 	assert.True(t, file.Contain("app/ai/agents/user/support_agent.go", "func (r *SupportAgent) Middleware() []ai.Middleware"))
 
 	support.Config.Paths.Agents = "custom/agents"
-	mockContext.EXPECT().Argument(0).Return("BillingAgent").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"BillingAgent"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Agent created successfully").Once()
 	assert.NoError(t, agentMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("custom/agents/billing_agent.go"))
+}
+
+func TestAgentMakeCommand_MultipleNames(t *testing.T) {
+	agentMakeCommand := &AgentMakeCommand{}
+	mockContext := mocksconsole.NewContext(t)
+	defer func() {
+		_ = file.Remove("app")
+	}()
+
+	mockContext.EXPECT().Arguments().Return([]string{"SupportAgent", "BillingAgent"}).Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
+	mockContext.EXPECT().Success("Agent created successfully").Times(2)
+	assert.NoError(t, agentMakeCommand.Handle(mockContext))
+
+	assert.True(t, file.Exists("app/ai/agents/support_agent.go"))
+	assert.True(t, file.Exists("app/ai/agents/billing_agent.go"))
 }
