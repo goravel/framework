@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"reflect"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-viper/mapstructure/v2"
@@ -26,20 +27,61 @@ func (r *Row) Err() error {
 	return r.err
 }
 
+// decodeHooks is built once. Composing it per row rebuilt the same six hooks on
+// every row of every result set.
+var decodeHooks = mapstructure.ComposeDecodeHookFunc(
+	ToStringHookFunc(), ToTimeHookFunc(), ToDeletedAtHookFunc(), ToScannerHookFunc(), ToSliceHookFunc(), ToMapHookFunc(),
+)
+
+// mapstructure calls MatchName for every column and field pair, so the case
+// conversions ran O(columns x fields) times per row. Column names and struct
+// field names come from the schema and from the code, so the set is small and
+// fixed for the life of the process.
+var (
+	studlyNames sync.Map
+	snakeNames  sync.Map
+)
+
+func studlyName(name string) string {
+	if cached, ok := studlyNames.Load(name); ok {
+		return cached.(string)
+	}
+
+	converted := str.Of(name).Studly().String()
+	studlyNames.Store(name, converted)
+
+	return converted
+}
+
+func snakeName(name string) string {
+	if cached, ok := snakeNames.Load(name); ok {
+		return cached.(string)
+	}
+
+	converted := str.Of(name).Snake().String()
+	snakeNames.Store(name, converted)
+
+	return converted
+}
+
+// matchName keeps the three original conditions, with the one that needs no
+// conversion first.
+func matchName(mapKey, fieldName string) bool {
+	return strings.EqualFold(mapKey, fieldName) ||
+		studlyName(mapKey) == fieldName ||
+		mapKey == snakeName(fieldName)
+}
+
 func (r *Row) Scan(value any) error {
 	if r.err != nil {
 		return r.err
 	}
 
 	msConfig := &mapstructure.DecoderConfig{
-		DecodeHook: mapstructure.ComposeDecodeHookFunc(
-			ToStringHookFunc(), ToTimeHookFunc(), ToDeletedAtHookFunc(), ToScannerHookFunc(), ToSliceHookFunc(), ToMapHookFunc(),
-		),
-		Squash: true,
-		Result: value,
-		MatchName: func(mapKey, fieldName string) bool {
-			return str.Of(mapKey).Studly().String() == fieldName || mapKey == str.Of(fieldName).Snake().String() || strings.EqualFold(mapKey, fieldName)
-		},
+		DecodeHook: decodeHooks,
+		Squash:     true,
+		Result:     value,
+		MatchName:  matchName,
 	}
 
 	decoder, err := mapstructure.NewDecoder(msConfig)
@@ -50,11 +92,19 @@ func (r *Row) Scan(value any) error {
 	return decoder.Decode(r.row)
 }
 
+var (
+	stringType    = reflect.TypeOf("")
+	timeType      = reflect.TypeOf(time.Time{})
+	deletedAtType = reflect.TypeOf(gorm.DeletedAt{})
+	byteSliceType = reflect.TypeOf([]byte(nil))
+	scannerType   = reflect.TypeOf((*interface{ Scan(any) error })(nil)).Elem()
+)
+
 // ToStringHookFunc is a hook function that converts []uint8 to string.
 // Mysql returns []uint8 for String type when scanning the rows.
 func ToStringHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
-		if t != reflect.TypeOf("") {
+		if t != stringType {
 			return data, nil
 		}
 
@@ -69,7 +119,7 @@ func ToStringHookFunc() mapstructure.DecodeHookFunc {
 
 func ToTimeHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
-		if t != reflect.TypeOf(time.Time{}) {
+		if t != timeType {
 			return data, nil
 		}
 
@@ -88,11 +138,11 @@ func ToTimeHookFunc() mapstructure.DecodeHookFunc {
 
 func ToDeletedAtHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
-		if t != reflect.TypeOf(gorm.DeletedAt{}) {
+		if t != deletedAtType {
 			return data, nil
 		}
 
-		if f == reflect.TypeOf(time.Time{}) {
+		if f == timeType {
 			return gorm.DeletedAt{Time: data.(time.Time), Valid: true}, nil
 		}
 
@@ -109,7 +159,7 @@ func ToDeletedAtHookFunc() mapstructure.DecodeHookFunc {
 func ToScannerHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
 		// Skip types that are handled by other specific hooks
-		if t == reflect.TypeOf(time.Time{}) || t == reflect.TypeOf(gorm.DeletedAt{}) {
+		if t == timeType || t == deletedAtType {
 			return data, nil
 		}
 
@@ -119,12 +169,9 @@ func ToScannerHookFunc() mapstructure.DecodeHookFunc {
 		}
 
 		// Only process database types (string, []byte, []uint8, time.Time)
-		if f.Kind() != reflect.String && f != reflect.TypeOf([]byte(nil)) && f != reflect.TypeOf([]uint8(nil)) && f != reflect.TypeOf(time.Time{}) {
+		if f.Kind() != reflect.String && f != byteSliceType && f != timeType {
 			return data, nil
 		}
-
-		// Check if the target type implements a Scan method
-		scannerType := reflect.TypeOf((*interface{ Scan(any) error })(nil)).Elem()
 
 		// Create a pointer to the target type to check for Scan method
 		targetPtr := reflect.PointerTo(t)
