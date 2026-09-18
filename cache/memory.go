@@ -28,14 +28,26 @@ func NewMemory(config config.Config) (*Memory, error) {
 
 // Add an item in the cache if the key does not exist.
 func (r *Memory) Add(key string, value any, t time.Duration) bool {
-	if t != NoExpiration {
-		time.AfterFunc(t, func() {
-			r.Forget(key)
-		})
-	}
+	k := r.key(key)
+	fresh := newItem(value, t)
 
-	_, loaded := r.instance.LoadOrStore(r.key(key), value)
-	return !loaded
+	for {
+		stored, loaded := r.instance.LoadOrStore(k, fresh)
+		if !loaded {
+			return true
+		}
+
+		// The key is taken. An expired item does not count as present, but it
+		// has to be replaced atomically: another goroutine may be doing the
+		// same, and only one of us may win.
+		cached := stored.(*item)
+		if !cached.expired() {
+			return false
+		}
+		if r.instance.CompareAndSwap(k, stored, fresh) {
+			return true
+		}
+	}
 }
 
 // Decrement decrements the value of an item in the cache.
@@ -89,7 +101,7 @@ func (r *Memory) Flush() bool {
 
 // Get Retrieve an item from the cache by key.
 func (r *Memory) Get(key string, def ...any) any {
-	val, exist := r.instance.Load(r.key(key))
+	val, exist := r.load(r.key(key))
 	if exist {
 		return val
 	}
@@ -140,7 +152,7 @@ func (r *Memory) GetString(key string, def ...string) string {
 
 // Has Checks an item exists in the cache.
 func (r *Memory) Has(key string) bool {
-	_, exist := r.instance.Load(r.key(key))
+	_, exist := r.load(r.key(key))
 	return exist
 }
 
@@ -184,13 +196,7 @@ func (r *Memory) Pull(key string, def ...any) any {
 
 // Put an item in the cache for a given number of seconds.
 func (r *Memory) Put(key string, value any, t time.Duration) error {
-	if t != NoExpiration {
-		time.AfterFunc(t, func() {
-			r.Forget(key)
-		})
-	}
-
-	r.instance.Store(r.key(key), value)
+	r.instance.Store(r.key(key), newItem(value, t))
 	return nil
 }
 
@@ -238,6 +244,45 @@ func (r *Memory) WithContext(ctx context.Context) contractscache.Driver {
 	r.ctx = ctx
 
 	return r
+}
+
+// item is a cached value together with the moment it expires. The expiry is
+// stored with the value instead of being scheduled with a timer: a timer only
+// knows the key, so it deletes whatever sits under it when it fires, even a
+// value stored after the timer was armed.
+type item struct {
+	value    any
+	expireAt time.Time
+}
+
+func newItem(value any, t time.Duration) *item {
+	res := &item{value: value}
+	if t != NoExpiration {
+		res.expireAt = time.Now().Add(t)
+	}
+
+	return res
+}
+
+func (r *item) expired() bool {
+	return !r.expireAt.IsZero() && !time.Now().Before(r.expireAt)
+}
+
+// load returns the value stored under key, dropping it first if it has expired.
+func (r *Memory) load(key string) (any, bool) {
+	stored, exist := r.instance.Load(key)
+	if !exist {
+		return nil, false
+	}
+
+	cached := stored.(*item)
+	if cached.expired() {
+		// Delete this item only, a fresh one may have taken its place already.
+		r.instance.CompareAndDelete(key, stored)
+		return nil, false
+	}
+
+	return cached.value, true
 }
 
 func (r *Memory) key(key string) string {

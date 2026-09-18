@@ -3,6 +3,7 @@ package cache
 import (
 	"errors"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -71,21 +72,25 @@ func (s *MemoryTestSuite) TestDecrementWithConcurrent() {
 	s.Equal(int64(-1), res)
 	s.Nil(err)
 
-	var wg sync.WaitGroup
+	var (
+		wg     sync.WaitGroup
+		failed atomic.Int64
+	)
 	for range 1000 {
 		wg.Add(1)
 		go func() {
-			_, err = s.memory.Decrement("decrement_concurrent", 1)
-			s.Nil(err)
-			wg.Done()
+			defer wg.Done()
+			// Assertions belong on the test goroutine, and err is shared.
+			if _, err := s.memory.Decrement("decrement_concurrent", 1); err != nil {
+				failed.Add(1)
+			}
 		}()
 	}
 
 	wg.Wait()
 
-	res = s.memory.GetInt64("decrement_concurrent")
-	s.Equal(int64(-1001), res)
-	s.Nil(err)
+	s.Equal(int64(0), failed.Load())
+	s.Equal(int64(-1001), s.memory.GetInt64("decrement_concurrent"))
 }
 
 func (s *MemoryTestSuite) TestForever() {
@@ -140,6 +145,93 @@ func (s *MemoryTestSuite) TestFlushWhileReading() {
 	wg.Wait()
 
 	s.False(s.memory.Has("test-flush-while-reading"))
+}
+
+// TestAddDoesNotExpireTheStoredValue guards against expiring a key on behalf of
+// a failed Add. The contender below never stores anything, so nothing it does
+// may remove the value the first Add stored.
+func (s *MemoryTestSuite) TestAddDoesNotExpireTheStoredValue() {
+	s.True(s.memory.Add("test-add-keeps-value", "goravel", NoExpiration))
+	s.False(s.memory.Add("test-add-keeps-value", "contender", 100*time.Millisecond))
+
+	time.Sleep(300 * time.Millisecond)
+
+	s.Equal("goravel", s.memory.Get("test-add-keeps-value"))
+}
+
+// TestLockIsNotReleasedByAFailedGet is the same guard seen through Lock, which
+// is built on Add: a lock the current holder still owns must survive a failed
+// attempt to acquire it, whatever expiration that attempt asked for.
+func (s *MemoryTestSuite) TestLockIsNotReleasedByAFailedGet() {
+	holder := s.memory.Lock("test-lock-not-released", time.Minute)
+	s.True(holder.Get())
+
+	s.False(s.memory.Lock("test-lock-not-released", 100*time.Millisecond).Get())
+	time.Sleep(300 * time.Millisecond)
+
+	s.False(s.memory.Lock("test-lock-not-released", time.Minute).Get())
+	s.True(holder.Release())
+}
+
+// TestPutAfterFlushKeepsTheNewValue guards against an expiration outliving the
+// value it belongs to: the value stored after Flush has no expiration of its own.
+func (s *MemoryTestSuite) TestPutAfterFlushKeepsTheNewValue() {
+	s.Nil(s.memory.Put("test-put-after-flush", "old", 100*time.Millisecond))
+	s.True(s.memory.Flush())
+	s.True(s.memory.Forever("test-put-after-flush", "new"))
+
+	time.Sleep(300 * time.Millisecond)
+
+	s.Equal("new", s.memory.Get("test-put-after-flush"))
+}
+
+// TestPutExtendsTheExpiration guards the same invariant on overwrite: the
+// expiration of the second Put replaces the first one.
+func (s *MemoryTestSuite) TestPutExtendsTheExpiration() {
+	s.Nil(s.memory.Put("test-put-extends", "short", 100*time.Millisecond))
+	s.Nil(s.memory.Put("test-put-extends", "long", time.Minute))
+
+	time.Sleep(300 * time.Millisecond)
+
+	s.Equal("long", s.memory.Get("test-put-extends"))
+}
+
+// TestAddReplacesAnExpiredKey covers the other side: once the expiration has
+// passed, the key counts as missing and Add takes it.
+func (s *MemoryTestSuite) TestAddReplacesAnExpiredKey() {
+	s.True(s.memory.Add("test-add-expired", "first", 100*time.Millisecond))
+	s.False(s.memory.Add("test-add-expired", "second", NoExpiration))
+
+	time.Sleep(300 * time.Millisecond)
+
+	s.False(s.memory.Has("test-add-expired"))
+	s.True(s.memory.Add("test-add-expired", "third", NoExpiration))
+	s.Equal("third", s.memory.Get("test-add-expired"))
+}
+
+// TestAddWithConcurrent covers the swap that replaces an expired item: every
+// goroutine below sees the same expired key, and exactly one may take it.
+func (s *MemoryTestSuite) TestAddWithConcurrent() {
+	s.True(s.memory.Add("test-add-concurrent", "expired", 50*time.Millisecond))
+	time.Sleep(100 * time.Millisecond)
+
+	var (
+		wg    sync.WaitGroup
+		added atomic.Int64
+	)
+	for range 50 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if s.memory.Add("test-add-concurrent", "goravel", NoExpiration) {
+				added.Add(1)
+			}
+		}()
+	}
+	wg.Wait()
+
+	s.Equal(int64(1), added.Load())
+	s.Equal("goravel", s.memory.Get("test-add-concurrent"))
 }
 
 func (s *MemoryTestSuite) TestGet() {
@@ -210,21 +302,25 @@ func (s *MemoryTestSuite) TestIncrementWithConcurrent() {
 	s.Equal(int64(1), res)
 	s.Nil(err)
 
-	var wg sync.WaitGroup
+	var (
+		wg     sync.WaitGroup
+		failed atomic.Int64
+	)
 	for range 1000 {
 		wg.Add(1)
 		go func() {
-			_, err = s.memory.Increment("increment_concurrent", 1)
-			s.Nil(err)
-			wg.Done()
+			defer wg.Done()
+			// Assertions belong on the test goroutine, and err is shared.
+			if _, err := s.memory.Increment("increment_concurrent", 1); err != nil {
+				failed.Add(1)
+			}
 		}()
 	}
 
 	wg.Wait()
 
-	res = s.memory.GetInt64("increment_concurrent")
-	s.Equal(int64(1001), res)
-	s.Nil(err)
+	s.Equal(int64(0), failed.Load())
+	s.Equal(int64(1001), s.memory.GetInt64("increment_concurrent"))
 }
 
 func (s *MemoryTestSuite) TestLock() {
