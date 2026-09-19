@@ -54,6 +54,7 @@ func TestTemplateRender(t *testing.T) {
 		{name: "shared data only", view: "greeting.tmpl", expect: "Hello, shared"},
 		{name: "map overrides shared data", view: "greeting.tmpl", data: []any{map[string]string{"Name": "Goravel"}}, expect: "Hello, Goravel"},
 		{name: "nil data", view: "greeting.tmpl", data: []any{nil}, expect: "Hello, shared"},
+		{name: "nil pointer data", view: "greeting.tmpl", data: []any{(*page)(nil)}, expect: "Hello, shared"},
 		{
 			name:   "struct data with nested layout, partial and block",
 			view:   "pages/home.tmpl",
@@ -117,6 +118,16 @@ func TestTemplateRender_ParseError(t *testing.T) {
 
 	_, err := NewView().Make("broken.tmpl").Render()
 	assert.Error(t, err)
+}
+
+func TestTemplateRender_ExecuteError(t *testing.T) {
+	setupAppViews(t, map[string]string{
+		"exec.tmpl": `{{ define "exec.tmpl" }}{{ template "missing.tmpl" }}{{ end }}`,
+	})
+
+	html, err := NewView().Make("exec.tmpl").Render()
+	assert.ErrorContains(t, err, "missing.tmpl")
+	assert.Empty(t, html)
 }
 
 func TestTemplateRender_RecompilesAfterRegisteringSource(t *testing.T) {
