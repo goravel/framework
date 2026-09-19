@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"regexp"
 	"testing"
 	"testing/fstest"
 
@@ -265,7 +264,7 @@ func TestResolveTemplates(t *testing.T) {
 }
 
 // setupAppViews points the application resources path at a temp dir and writes the given views into it.
-func setupAppViews(t *testing.T, files map[string]string) string {
+func setupAppViews(t testing.TB, files map[string]string) string {
 	t.Helper()
 
 	relativePath := support.RelativePath
@@ -335,5 +334,3 @@ func parseAll(t *testing.T, appDir string, view *View) *template.Template {
 
 	return tmpl
 }
-
-var defineRe = regexp.MustCompile(`\{\{\s*define\s+"([^"]+)"`)

@@ -375,4 +375,6 @@ var (
 	ViewFSRootNotDirectory = New("view filesystem root %q is not a directory")
 	ViewInvalidFSRoot      = New("invalid view filesystem root %q: %v")
 	ViewTemplateNotExist   = New("view template %s does not exist")
+	ViewInvalidData        = New("view %s data must be a map or struct, got %T")
+	ViewNoneExist          = New("none of the views %v exist")
 )
