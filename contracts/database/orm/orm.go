@@ -187,6 +187,8 @@ type Query interface {
 	// UpdateOrCreate finds the first record that matches the given attributes
 	// or create a new one with those attributes if none was found.
 	UpdateOrCreate(dest any, attributes any, values any) error
+	// When executes the callback if the condition is true, otherwise the falseCallback if it is given.
+	When(condition bool, callback func(query Query) Query, falseCallback ...func(query Query) Query) Query
 	// Where add a "where" clause to the query.
 	Where(query any, args ...any) Query
 	// WhereAll adds a "where all columns match" clause to the query.
