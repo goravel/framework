@@ -1,12 +1,14 @@
 package view
 
 import (
+	"html/template"
 	"io/fs"
 	"os"
 	"path"
 	"strings"
 	"sync"
 
+	contractsview "github.com/goravel/framework/contracts/view"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages/paths"
 	"github.com/goravel/framework/support"
@@ -17,6 +19,9 @@ type View struct {
 	paths       []string
 	filesystems []fs.FS
 	shared      sync.Map
+
+	tmplMu sync.Mutex
+	tmpl   *template.Template
 }
 
 func NewView() *View {
@@ -52,10 +57,25 @@ func (r *View) Exists(view string) bool {
 	return false
 }
 
+func (r *View) First(views []string, data ...any) contractsview.Template {
+	for _, view := range views {
+		if r.Exists(view) {
+			return r.Make(view, data...)
+		}
+	}
+
+	template := NewTemplate(r, "", data...)
+	template.err = errors.ViewNoneExist.Args(views)
+
+	return template
+}
+
 func (r *View) LoadViewsFrom(path string) {
 	r.mu.Lock()
-	defer r.mu.Unlock()
 	r.paths = append(r.paths, path)
+	r.mu.Unlock()
+
+	r.resetTemplate()
 }
 
 func (r *View) LoadViewsFromFS(fsys fs.FS, root string) {
@@ -83,8 +103,14 @@ func (r *View) LoadViewsFromFS(fsys fs.FS, root string) {
 	}
 
 	r.mu.Lock()
-	defer r.mu.Unlock()
 	r.filesystems = append(r.filesystems, sub)
+	r.mu.Unlock()
+
+	r.resetTemplate()
+}
+
+func (r *View) Make(view string, data ...any) contractsview.Template {
+	return NewTemplate(r, view, data...)
 }
 
 func (r *View) RegisteredViews() []string {

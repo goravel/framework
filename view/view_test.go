@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"regexp"
 	"testing"
 	"testing/fstest"
 
@@ -335,5 +334,3 @@ func parseAll(t *testing.T, appDir string, view *View) *template.Template {
 
 	return tmpl
 }
-
-var defineRe = regexp.MustCompile(`\{\{\s*define\s+"([^"]+)"`)
