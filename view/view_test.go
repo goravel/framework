@@ -264,7 +264,7 @@ func TestResolveTemplates(t *testing.T) {
 }
 
 // setupAppViews points the application resources path at a temp dir and writes the given views into it.
-func setupAppViews(t *testing.T, files map[string]string) string {
+func setupAppViews(t testing.TB, files map[string]string) string {
 	t.Helper()
 
 	relativePath := support.RelativePath

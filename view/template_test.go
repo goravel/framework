@@ -3,6 +3,7 @@ package view
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"testing/fstest"
@@ -120,6 +121,43 @@ func TestTemplateRender_ParseError(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestTemplateRender_PointerFields(t *testing.T) {
+	setupAppViews(t, map[string]string{
+		"post.tmpl": `{{ define "post.tmpl" }}[{{ .Title }}][{{ .Author }}]{{ end }}`,
+	})
+
+	type post struct {
+		Title  *string
+		Author *string
+	}
+
+	title := "Hello"
+	html, err := NewView().Make("post.tmpl", post{Title: &title}).Render()
+	require.NoError(t, err)
+	assert.Equal(t, "[Hello][]", html)
+}
+
+func TestTemplateRender_ParseErrorIsCached(t *testing.T) {
+	dir := setupAppViews(t, map[string]string{
+		"broken.tmpl": `{{ define "broken.tmpl" }}{{ .Name }`,
+	})
+
+	view := NewView()
+	_, err := view.Make("broken.tmpl").Render()
+	require.Error(t, err)
+
+	// Fixing the file does not help until a new source is registered, the same way the
+	// route drivers compile their views once.
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "broken.tmpl"), []byte(`{{ define "broken.tmpl" }}fixed{{ end }}`), 0o644))
+	_, err = view.Make("broken.tmpl").Render()
+	require.Error(t, err)
+
+	view.LoadViewsFrom(t.TempDir())
+	html, err := view.Make("broken.tmpl").Render()
+	require.NoError(t, err)
+	assert.Equal(t, "fixed", html)
+}
+
 func TestTemplateRender_ExecuteError(t *testing.T) {
 	setupAppViews(t, map[string]string{
 		"exec.tmpl": `{{ define "exec.tmpl" }}{{ template "missing.tmpl" }}{{ end }}`,
@@ -225,4 +263,38 @@ func TestFirst(t *testing.T) {
 	assert.Equal(t, data, template.Data())
 	_, err = template.Render()
 	assert.ErrorIs(t, err, errors.ViewNoneExist)
+}
+
+func BenchmarkTemplateRender(b *testing.B) {
+	var page strings.Builder
+	page.WriteString(`{{ define "page.tmpl" }}<html><body><h1>{{ .Title }}</h1><ul>`)
+	for i := 0; i < 200; i++ {
+		page.WriteString(`<li class="item">{{ .Title }} item</li>`)
+	}
+	page.WriteString(`</ul></body></html>{{ end }}`)
+
+	setupAppViews(b, map[string]string{"page.tmpl": page.String()})
+
+	view := NewView()
+	view.Share("Name", "Goravel")
+	data := map[string]any{"Title": "Home"}
+
+	_, err := view.Make("page.tmpl", data).Render()
+	require.NoError(b, err)
+
+	b.Run("serial", func(b *testing.B) {
+		b.ReportAllocs()
+		for b.Loop() {
+			_, _ = view.Make("page.tmpl", data).Render()
+		}
+	})
+
+	b.Run("parallel", func(b *testing.B) {
+		b.ReportAllocs()
+		b.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
+				_, _ = view.Make("page.tmpl", data).Render()
+			}
+		})
+	})
 }

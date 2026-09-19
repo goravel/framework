@@ -38,7 +38,11 @@ func (r *Template) Render() (string, error) {
 		return "", r.err
 	}
 
-	values := r.view.GetShared()
+	values := make(map[string]any, len(r.data)+8)
+	r.view.shared.Range(func(key, value any) bool {
+		values[key.(string)] = value
+		return true
+	})
 	for key, value := range r.data {
 		values[key] = value
 	}
@@ -79,8 +83,20 @@ func toMap(view string, data ...any) (map[string]any, error) {
 	case reflect.Struct:
 		for i := 0; i < value.NumField(); i++ {
 			field := value.Type().Field(i)
-			if field.IsExported() {
-				values[field.Name] = value.Field(i).Interface()
+			if !field.IsExported() {
+				continue
+			}
+			// Pointer fields are dereferenced the same way the route drivers do it, so a
+			// nil pointer renders as an empty value instead of "<nil>".
+			fieldValue := value.Field(i)
+			if fieldValue.Kind() == reflect.Pointer {
+				if fieldValue.IsNil() {
+					values[field.Name] = nil
+				} else {
+					values[field.Name] = fieldValue.Elem().Interface()
+				}
+			} else {
+				values[field.Name] = fieldValue.Interface()
 			}
 		}
 	default:

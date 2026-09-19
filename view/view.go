@@ -1,12 +1,12 @@
 package view
 
 import (
-	"html/template"
 	"io/fs"
 	"os"
 	"path"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	contractsview "github.com/goravel/framework/contracts/view"
 	"github.com/goravel/framework/errors"
@@ -20,8 +20,8 @@ type View struct {
 	filesystems []fs.FS
 	shared      sync.Map
 
-	tmplMu sync.Mutex
-	tmpl   *template.Template
+	compileMu sync.Mutex
+	compiled  atomic.Pointer[compiled]
 }
 
 func NewView() *View {
@@ -75,7 +75,7 @@ func (r *View) LoadViewsFrom(path string) {
 	r.paths = append(r.paths, path)
 	r.mu.Unlock()
 
-	r.resetTemplate()
+	r.resetCompiled()
 }
 
 func (r *View) LoadViewsFromFS(fsys fs.FS, root string) {
@@ -106,7 +106,7 @@ func (r *View) LoadViewsFromFS(fsys fs.FS, root string) {
 	r.filesystems = append(r.filesystems, sub)
 	r.mu.Unlock()
 
-	r.resetTemplate()
+	r.resetCompiled()
 }
 
 func (r *View) Make(view string, data ...any) contractsview.Template {
