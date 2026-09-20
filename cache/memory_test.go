@@ -2,6 +2,7 @@ package cache
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -211,27 +212,100 @@ func (s *MemoryTestSuite) TestAddReplacesAnExpiredKey() {
 
 // TestAddWithConcurrent covers the swap that replaces an expired item: every
 // goroutine below sees the same expired key, and exactly one may take it.
+// Replacing the swap with a plain Store hands the key to two of them in about
+// fifteen percent of the rounds, so the contention is repeated: a single round
+// is won before most of its goroutines have started.
 func (s *MemoryTestSuite) TestAddWithConcurrent() {
-	s.True(s.memory.Add("test-add-concurrent", "expired", 50*time.Millisecond))
-	time.Sleep(100 * time.Millisecond)
+	for round := range 500 {
+		key := fmt.Sprintf("test-add-concurrent-%d", round)
+		s.Nil(s.memory.Put(key, "expired", time.Nanosecond))
 
-	var (
-		wg    sync.WaitGroup
-		added atomic.Int64
-	)
-	for range 50 {
-		wg.Add(1)
+		var (
+			wg    sync.WaitGroup
+			added atomic.Int64
+			start = make(chan struct{})
+		)
+		for range 8 {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				// Contend on the same expired item: a goroutine released after
+				// a winner has replaced it leaves through the "not expired"
+				// branch, which proves nothing about the swap.
+				<-start
+				if s.memory.Add(key, "goravel", NoExpiration) {
+					added.Add(1)
+				}
+			}()
+		}
+		close(start)
+		wg.Wait()
+
+		s.Equal(int64(1), added.Load(), "round %d", round)
+		s.Equal("goravel", s.memory.Get(key))
+	}
+}
+
+// TestExpiredItemIsNotDroppedOverAFreshValue guards the CompareAndDelete a read
+// uses to reclaim an expired item: an unconditional Delete would also remove a
+// value stored between the read and the delete. The window is a few
+// instructions wide, so the two are released together and the race is repeated;
+// replacing the CompareAndDelete loses a value about six times in a thousand.
+func (s *MemoryTestSuite) TestExpiredItemIsNotDroppedOverAFreshValue() {
+	for range 5000 {
+		s.Nil(s.memory.Put("test-expired-vs-fresh", "stale", time.Nanosecond))
+
+		var (
+			wg    sync.WaitGroup
+			start = make(chan struct{})
+		)
+		wg.Add(2)
 		go func() {
 			defer wg.Done()
-			if s.memory.Add("test-add-concurrent", "goravel", NoExpiration) {
-				added.Add(1)
-			}
+			<-start
+			s.memory.Get("test-expired-vs-fresh")
 		}()
-	}
-	wg.Wait()
+		go func() {
+			defer wg.Done()
+			<-start
+			s.Nil(s.memory.Put("test-expired-vs-fresh", "fresh", NoExpiration))
+		}()
+		close(start)
+		wg.Wait()
 
-	s.Equal(int64(1), added.Load())
-	s.Equal("goravel", s.memory.Get("test-add-concurrent"))
+		s.Equal("fresh", s.memory.Get("test-expired-vs-fresh"))
+	}
+}
+
+// TestExpiredItemsAreSweptOnWrite covers the sweep that reclaims keys nothing
+// reads again: without it an expired item would sit in the map for the life of
+// the process.
+func (s *MemoryTestSuite) TestExpiredItemsAreSweptOnWrite() {
+	for _, key := range []string{"test-swept-1", "test-swept-2"} {
+		s.Nil(s.memory.Put(key, "value", time.Millisecond))
+	}
+	s.Nil(s.memory.Put("test-swept-kept", "value", NoExpiration))
+	time.Sleep(10 * time.Millisecond)
+	s.Equal(3, s.entries())
+
+	// The next write is the first one past the sweep interval.
+	s.memory.lastSweep.Store(0)
+	s.Nil(s.memory.Put("test-swept-trigger", "value", NoExpiration))
+
+	s.Eventually(func() bool {
+		return s.entries() == 2
+	}, time.Second, 10*time.Millisecond, "the expired items were not reclaimed")
+	s.Equal("value", s.memory.Get("test-swept-kept"))
+}
+
+func (s *MemoryTestSuite) entries() int {
+	count := 0
+	s.memory.instance.Range(func(_, _ any) bool {
+		count++
+		return true
+	})
+
+	return count
 }
 
 func (s *MemoryTestSuite) TestGet() {

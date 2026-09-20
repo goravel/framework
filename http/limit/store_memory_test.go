@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/goravel/framework/cache"
 	contractscache "github.com/goravel/framework/contracts/cache"
@@ -38,21 +39,25 @@ func TestStoreWithMemoryKeepsLimiting(t *testing.T) {
 	mockConfig := configmock.NewConfig(t)
 	mockConfig.EXPECT().GetString("cache.prefix").Return("goravel_cache")
 	memory, err := cache.NewMemory(mockConfig)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	store := NewStore(memoryCache{memory}, json.New(), tokens, interval)
 
 	allowed := make([]int, rounds)
 	start := time.Now()
 	for {
-		round := int(time.Since(start) / interval)
+		sent := time.Since(start)
+		round := int(sent / interval)
 		if round >= rounds {
 			break
 		}
 
 		_, _, _, ok, err := store.Take(context.Background(), "127.0.0.1")
-		assert.Nil(t, err)
-		if ok {
+		require.NoError(t, err)
+		// The bucket counts the interval the request is served in, the loop the
+		// one it was sent in. A request that crossed a boundary in between, for
+		// instance while it waited for the lock, belongs to neither.
+		if ok && round == int(time.Since(start)/interval) {
 			allowed[round]++
 		}
 
@@ -61,5 +66,7 @@ func TestStoreWithMemoryKeepsLimiting(t *testing.T) {
 
 	for round, count := range allowed {
 		assert.LessOrEqual(t, count, tokens, "interval %d let %d requests through, the limit is %d", round, count, tokens)
+		// A limiter that refuses every request also stays under the limit.
+		assert.NotZero(t, count, "interval %d let nothing through", round)
 	}
 }
