@@ -25,9 +25,14 @@ type Memory struct {
 const sweepInterval = time.Minute
 
 func NewMemory(config config.Config) (*Memory, error) {
-	return &Memory{
+	memory := &Memory{
 		prefix: prefix(config),
-	}, nil
+	}
+	// Start the sweep clock now: a cache that has just been built has nothing
+	// to reclaim.
+	memory.lastSweep.Store(time.Now().UnixNano())
+
+	return memory, nil
 }
 
 // Add an item in the cache if the key does not exist.

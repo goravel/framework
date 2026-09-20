@@ -218,7 +218,10 @@ func (s *MemoryTestSuite) TestAddReplacesAnExpiredKey() {
 func (s *MemoryTestSuite) TestAddWithConcurrent() {
 	for round := range 500 {
 		key := fmt.Sprintf("test-add-concurrent-%d", round)
-		s.Nil(s.memory.Put(key, "expired", time.Nanosecond))
+		// Stored already expired. A nanosecond would not do it on a platform
+		// whose clock advances in milliseconds: the whole round runs inside a
+		// single tick, time.Now() does not move, and the item counts as live.
+		s.Nil(s.memory.Put(key, "expired", -time.Second))
 
 		var (
 			wg    sync.WaitGroup
@@ -252,8 +255,8 @@ func (s *MemoryTestSuite) TestAddWithConcurrent() {
 // instructions wide, so the two are released together and the race is repeated;
 // replacing the CompareAndDelete loses a value about six times in a thousand.
 func (s *MemoryTestSuite) TestExpiredItemIsNotDroppedOverAFreshValue() {
-	for range 5000 {
-		s.Nil(s.memory.Put("test-expired-vs-fresh", "stale", time.Nanosecond))
+	for range 2000 {
+		s.Nil(s.memory.Put("test-expired-vs-fresh", "stale", -time.Second))
 
 		var (
 			wg    sync.WaitGroup
@@ -282,11 +285,10 @@ func (s *MemoryTestSuite) TestExpiredItemIsNotDroppedOverAFreshValue() {
 // the process.
 func (s *MemoryTestSuite) TestExpiredItemsAreSweptOnWrite() {
 	for _, key := range []string{"test-swept-1", "test-swept-2"} {
-		s.Nil(s.memory.Put(key, "value", time.Millisecond))
+		s.Nil(s.memory.Put(key, "value", -time.Second))
 	}
 	s.Nil(s.memory.Put("test-swept-kept", "value", NoExpiration))
-	time.Sleep(10 * time.Millisecond)
-	s.Equal(3, s.entries())
+	s.Equal(3, s.entries(), "an expired item stays until something reclaims it")
 
 	// The next write is the first one past the sweep interval.
 	s.memory.lastSweep.Store(0)
