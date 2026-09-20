@@ -14,6 +14,8 @@ import (
 	"github.com/goravel/framework/support"
 )
 
+var _ contractsview.View = (*View)(nil)
+
 type View struct {
 	mu          sync.RWMutex
 	paths       []string
@@ -59,13 +61,18 @@ func (r *View) Exists(view string) bool {
 
 func (r *View) First(views []string, data ...any) contractsview.Template {
 	for _, view := range views {
-		if r.Exists(view) {
+		// Exists answers for the file, which is not the same question: a file that only holds
+		// define blocks exists without being addressable under its own name. Picking a candidate
+		// that cannot be rendered would stop First from falling through to the next one.
+		if r.renderable(view) {
 			return r.Make(view, data...)
 		}
 	}
 
 	template := NewTemplate(r, "", data...)
-	template.err = errors.ViewNoneExist.Args(views)
+	if template.err == nil {
+		template.err = errors.ViewNoneExist.Args(views)
+	}
 
 	return template
 }
