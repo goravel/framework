@@ -43,6 +43,21 @@ func (s *ConfigTestSuite) TestDefaultQueue() {
 	s.Equal("default", s.config.DefaultQueue())
 }
 
+func (s *ConfigTestSuite) TestConfiguredQueueListKeepsDispatchQueueSingle() {
+	mockConfig := mocksconfig.NewConfig(s.T())
+	mockConfig.EXPECT().GetString("queue.default").Return("redis").Once()
+	mockConfig.EXPECT().GetString("queue.connections.redis.queue", "default").Return(" high, default ").Once()
+	mockConfig.EXPECT().GetInt("queue.connections.redis.concurrent", 1).Return(1).Once()
+	mockConfig.EXPECT().GetString("app.name", "goravel").Return("goravel").Once()
+	mockConfig.EXPECT().GetBool("app.debug").Return(false).Once()
+	mockConfig.EXPECT().GetString("queue.failed.database").Return("").Once()
+	mockConfig.EXPECT().GetString("queue.failed.table").Return("").Once()
+
+	config := NewConfig(mockConfig)
+
+	s.Equal("high", config.DefaultQueue())
+}
+
 func (s *ConfigTestSuite) TestDefaultConcurrent() {
 	s.Equal(2, s.config.DefaultConcurrent())
 }

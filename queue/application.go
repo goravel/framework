@@ -68,7 +68,9 @@ func (r *Application) Worker(payloads ...queue.Args) queue.Worker {
 	defaultConcurrent := r.config.DefaultConcurrent()
 
 	if len(payloads) == 0 {
-		worker, err := NewWorker(r.config, r.cache, r.db, r.jobStorer, r.json, r.log, defaultConnection, defaultQueue, defaultConcurrent, 1)
+		workerQueue := r.config.GetString(fmt.Sprintf("queue.connections.%s.queue", defaultConnection), defaultQueue)
+
+		worker, err := NewWorker(r.config, r.cache, r.db, r.jobStorer, r.json, r.log, defaultConnection, workerQueue, defaultConcurrent, 1)
 		if err != nil {
 			panic(err)
 		}
