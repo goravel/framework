@@ -43,19 +43,45 @@ func (s *ConfigTestSuite) TestDefaultQueue() {
 	s.Equal("default", s.config.DefaultQueue())
 }
 
-func (s *ConfigTestSuite) TestConfiguredQueueListKeepsDispatchQueueSingle() {
-	mockConfig := mocksconfig.NewConfig(s.T())
-	mockConfig.EXPECT().GetString("queue.default").Return("redis").Once()
-	mockConfig.EXPECT().GetString("queue.connections.redis.queue", "default").Return(" high, default ").Once()
-	mockConfig.EXPECT().GetInt("queue.connections.redis.concurrent", 1).Return(1).Once()
-	mockConfig.EXPECT().GetString("app.name", "goravel").Return("goravel").Once()
-	mockConfig.EXPECT().GetBool("app.debug").Return(false).Once()
-	mockConfig.EXPECT().GetString("queue.failed.database").Return("").Once()
-	mockConfig.EXPECT().GetString("queue.failed.table").Return("").Once()
+func (s *ConfigTestSuite) TestNewConfigNormalizesDefaultQueue() {
+	tests := []struct {
+		name            string
+		configuredQueue string
+		expect          string
+	}{
+		{
+			name:            "queue list uses the first valid name",
+			configuredQueue: " high, default ",
+			expect:          "high",
+		},
+		{
+			name:            "empty queue falls back to default",
+			configuredQueue: "",
+			expect:          "default",
+		},
+		{
+			name:            "whitespace-only queue falls back to default",
+			configuredQueue: " , ",
+			expect:          "default",
+		},
+	}
 
-	config := NewConfig(mockConfig)
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			mockConfig := mocksconfig.NewConfig(s.T())
+			mockConfig.EXPECT().GetString("queue.default").Return("redis").Once()
+			mockConfig.EXPECT().GetString("queue.connections.redis.queue", "default").Return(tt.configuredQueue).Once()
+			mockConfig.EXPECT().GetInt("queue.connections.redis.concurrent", 1).Return(1).Once()
+			mockConfig.EXPECT().GetString("app.name", "goravel").Return("goravel").Once()
+			mockConfig.EXPECT().GetBool("app.debug").Return(false).Once()
+			mockConfig.EXPECT().GetString("queue.failed.database").Return("").Once()
+			mockConfig.EXPECT().GetString("queue.failed.table").Return("").Once()
 
-	s.Equal("high", config.DefaultQueue())
+			config := NewConfig(mockConfig)
+
+			s.Equal(tt.expect, config.DefaultQueue())
+		})
+	}
 }
 
 func (s *ConfigTestSuite) TestDefaultConcurrent() {

@@ -1,7 +1,6 @@
 package queue
 
 import (
-	"context"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -9,11 +8,14 @@ import (
 
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
+	mocksdb "github.com/goravel/framework/mocks/database/db"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
+	"github.com/goravel/framework/queue/models"
 	"github.com/goravel/framework/queue/utils"
+	"github.com/goravel/framework/support/carbon"
 )
 
-func (s *WorkerTestSuite) TestQueueNames() {
+func (s *WorkerTestSuite) TestSplitQueueNames() {
 	tests := []struct {
 		name   string
 		queue  string
@@ -44,26 +46,29 @@ func (s *WorkerTestSuite) TestQueueNames() {
 			queue:  "",
 			expect: []string{"default"},
 		},
+		{
+			name:   "duplicate queues are preserved",
+			queue:  "high,high,default",
+			expect: []string{"high", "high", "default"},
+		},
 	}
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			s.worker.queue = tt.queue
-
-			s.Equal(tt.expect, s.worker.queueNames())
+			s.Equal(tt.expect, splitQueueNames(tt.queue))
 		})
 	}
 }
 
-func (s *WorkerTestSuite) TestPop() {
+func (s *WorkerTestSuite) TestPopNextJob() {
 	s.Run("falls through empty queues in priority order", func() {
 		s.SetupTest()
 
 		reservedJob := mocksqueue.NewReservedJob(s.T())
-		s.mockDriver.EXPECT().Pop("high").Return(nil, errors.QueueDriverNoJobFound).Once()
+		s.mockDriver.EXPECT().Pop("high").Return(nil, errors.QueueDriverNoJobFound.Args("high")).Once()
 		s.mockDriver.EXPECT().Pop("default").Return(reservedJob, nil).Once()
 
-		actualJob, actualQueue, err := s.worker.pop([]string{"high", "default"})
+		actualJob, actualQueue, err := s.worker.popNextJob([]string{"high", "default"})
 
 		s.NoError(err)
 		s.Same(reservedJob, actualJob)
@@ -76,7 +81,7 @@ func (s *WorkerTestSuite) TestPop() {
 		reservedJob := mocksqueue.NewReservedJob(s.T())
 		s.mockDriver.EXPECT().Pop("high").Return(reservedJob, nil).Once()
 
-		actualJob, actualQueue, err := s.worker.pop([]string{"high", "default"})
+		actualJob, actualQueue, err := s.worker.popNextJob([]string{"high", "default"})
 
 		s.NoError(err)
 		s.Same(reservedJob, actualJob)
@@ -90,21 +95,11 @@ func (s *WorkerTestSuite) TestPop() {
 		s.mockDriver.EXPECT().Pop("high").Return(nil, nil).Once()
 		s.mockDriver.EXPECT().Pop("default").Return(reservedJob, nil).Once()
 
-		actualJob, actualQueue, err := s.worker.pop([]string{"high", "default"})
+		actualJob, actualQueue, err := s.worker.popNextJob([]string{"high", "default"})
 
 		s.NoError(err)
 		s.Same(reservedJob, actualJob)
 		s.Equal("default", actualQueue)
-	})
-
-	s.Run("handles an empty queue list", func() {
-		s.SetupTest()
-
-		actualJob, actualQueue, err := s.worker.pop(nil)
-
-		s.Nil(actualJob)
-		s.Empty(actualQueue)
-		s.ErrorIs(err, errors.QueueDriverNoJobFound)
 	})
 
 	s.Run("stops on driver errors", func() {
@@ -112,7 +107,7 @@ func (s *WorkerTestSuite) TestPop() {
 
 		s.mockDriver.EXPECT().Pop("high").Return(nil, assert.AnError).Once()
 
-		actualJob, actualQueue, err := s.worker.pop([]string{"high", "default"})
+		actualJob, actualQueue, err := s.worker.popNextJob([]string{"high", "default"})
 
 		s.Nil(actualJob)
 		s.Equal("high", actualQueue)
@@ -122,14 +117,15 @@ func (s *WorkerTestSuite) TestPop() {
 	s.Run("reports the last queue when all queues are empty", func() {
 		s.SetupTest()
 
-		s.mockDriver.EXPECT().Pop("high").Return(nil, errors.QueueDriverNoJobFound).Once()
-		s.mockDriver.EXPECT().Pop("default").Return(nil, errors.QueueDriverNoJobFound).Once()
+		lastErr := errors.QueueDriverNoJobFound.Args("default")
+		s.mockDriver.EXPECT().Pop("high").Return(nil, errors.QueueDriverNoJobFound.Args("high")).Once()
+		s.mockDriver.EXPECT().Pop("default").Return(nil, lastErr).Once()
 
-		actualJob, actualQueue, err := s.worker.pop([]string{"high", "default"})
+		actualJob, actualQueue, err := s.worker.popNextJob([]string{"high", "default"})
 
 		s.Nil(actualJob)
 		s.Equal("default", actualQueue)
-		s.ErrorIs(err, errors.QueueDriverNoJobFound)
+		s.Same(lastErr, err)
 	})
 }
 
@@ -143,19 +139,9 @@ func (s *WorkerTestSuite) TestRunWithMultipleQueuesPops() {
 		receiver: mockDriverWithReceive,
 	}
 
-	// Receive only accepts one queue, so a multi-queue worker must not call it.
-	receiveCalled := make(chan struct{}, 1)
-	mockDriverWithReceive.EXPECT().Receive(mock.Anything, mock.Anything, mock.Anything).
-		Run(func(context.Context, string, int) {
-			select {
-			case receiveCalled <- struct{}{}:
-			default:
-			}
-		}).Return(nil, nil).Maybe()
-
 	poppedFromAllQueues := make(chan struct{})
-	s.mockDriver.EXPECT().Pop("high").Return(nil, errors.QueueDriverNoJobFound).Once()
-	s.mockDriver.EXPECT().Pop("default").Return(nil, errors.QueueDriverNoJobFound).
+	s.mockDriver.EXPECT().Pop("high").Return(nil, errors.QueueDriverNoJobFound.Args("high")).Once()
+	s.mockDriver.EXPECT().Pop("default").Return(nil, errors.QueueDriverNoJobFound.Args("default")).
 		Run(func(string) {
 			close(poppedFromAllQueues)
 		}).Once()
@@ -171,33 +157,81 @@ func (s *WorkerTestSuite) TestRunWithMultipleQueuesPops() {
 		s.Fail("the worker did not pop from every configured queue")
 	}
 
-	select {
-	case <-receiveCalled:
-		s.Fail("a multi-queue worker must not receive from a single queue")
-	default:
-	}
-
 	s.NoError(s.worker.Shutdown())
-	s.NoError(<-runErrChan)
+	select {
+	case err := <-runErrChan:
+		s.NoError(err)
+	case <-time.After(5 * time.Second):
+		s.Fail("the worker did not stop after shutdown")
+	}
+	mockDriverWithReceive.AssertNotCalled(s.T(), "Receive", mock.Anything, mock.Anything, mock.Anything)
 }
 
-func (s *WorkerTestSuite) TestCallRecordsReservedQueue() {
+func (s *WorkerTestSuite) TestRunRecordsReservedQueue() {
 	s.SetupTest()
+	carbon.SetTestNow(carbon.FromStdTime(time.Now()))
+	defer carbon.ClearTestNow()
+
+	s.worker.queue = "high,default"
 
 	task := contractsqueue.Task{
 		ChainJob: contractsqueue.ChainJob{Job: &TestJobErr{}},
 		UUID:     "test",
 	}
+	reservedJob := mocksqueue.NewReservedJob(s.T())
+	lastPollCompleted := make(chan struct{})
+	s.mockDriver.EXPECT().Pop("high").Return(nil, errors.QueueDriverNoJobFound.Args("high")).Twice()
+	s.mockDriver.EXPECT().Pop("default").Return(reservedJob, nil).Once()
+	s.mockDriver.EXPECT().Pop("default").Return(nil, errors.QueueDriverNoJobFound.Args("default")).
+		Run(func(string) {
+			close(lastPollCompleted)
+		}).Once()
+	reservedJob.EXPECT().Task().Return(task).Once()
+	reservedJob.EXPECT().Attempts().Return(1).Once()
+	reservedJob.EXPECT().Delete().Return(nil).Once()
+
 	s.mockJob.EXPECT().Call(task.Job.Signature(), make([]any, 0)).Return(assert.AnError).Once()
 	s.mockJson.EXPECT().MarshalString(utils.Task{
 		Job:  utils.Job{Signature: task.Job.Signature()},
 		UUID: "test",
 	}).Return("{}", nil).Once()
 
-	// The worker is configured for "default", the job was reserved from "high".
-	released, err := s.worker.call(task, nil, "high")
+	failedJob := &models.FailedJob{
+		UUID:       "test",
+		Connection: "sync",
+		Queue:      "default",
+		Payload:    "{}",
+		Exception:  assert.AnError.Error(),
+		FailedAt:   carbon.NewDateTime(carbon.Now()),
+	}
+	s.mockConfig.EXPECT().FailedDatabase().Return("mysql").Once()
+	s.mockConfig.EXPECT().FailedTable().Return("failed_jobs").Once()
+	s.mockDB.EXPECT().Connection("mysql").Return(s.mockDB).Once()
+	mockQuery := mocksdb.NewQuery(s.T())
+	s.mockDB.EXPECT().Table("failed_jobs").Return(mockQuery).Once()
+	failedJobSaved := make(chan struct{})
+	mockQuery.EXPECT().Insert(failedJob).Run(func(any) {
+		close(failedJobSaved)
+	}).Return(nil, nil).Once()
 
-	s.False(released)
-	s.Equal(errors.QueueFailedToCallJob, err)
-	s.Equal("high", (<-s.worker.failedJobChan).Queue)
+	runErrChan := make(chan error, 1)
+	go func() {
+		runErrChan <- s.worker.run()
+	}()
+
+	for _, completed := range []chan struct{}{lastPollCompleted, failedJobSaved} {
+		select {
+		case <-completed:
+		case <-time.After(5 * time.Second):
+			s.Fail("the worker did not finish processing the failed job")
+		}
+	}
+
+	s.NoError(s.worker.Shutdown())
+	select {
+	case err := <-runErrChan:
+		s.NoError(err)
+	case <-time.After(5 * time.Second):
+		s.Fail("the worker did not stop after shutdown")
+	}
 }

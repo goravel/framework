@@ -21,8 +21,7 @@ type Config struct {
 
 func NewConfig(config contractsconfig.Config) *Config {
 	defaultConnection := config.GetString("queue.default")
-	configuredQueue := config.GetString(fmt.Sprintf("queue.connections.%s.queue", defaultConnection), "default")
-	defaultQueue := splitQueueNames(configuredQueue)[0]
+	defaultQueue := splitQueueNames(configuredQueue(config, defaultConnection))[0]
 	defaultConcurrent := max(config.GetInt(fmt.Sprintf("queue.connections.%s.concurrent", defaultConnection), 1), 1)
 
 	c := &Config{
@@ -72,6 +71,12 @@ func (r *Config) Via(connection string) any {
 	return r.Get(fmt.Sprintf("queue.connections.%s.via", connection))
 }
 
+func configuredQueue(config contractsconfig.Config, connection string) string {
+	return config.GetString(fmt.Sprintf("queue.connections.%s.queue", connection), "default")
+}
+
+// splitQueueNames normalizes a comma-separated worker queue list while
+// preserving its order and duplicate names to match Laravel's semantics.
 func splitQueueNames(queue string) []string {
 	queueNames := make([]string, 0, strings.Count(queue, ",")+1)
 	for _, queueName := range strings.Split(queue, ",") {

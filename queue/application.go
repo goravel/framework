@@ -64,11 +64,10 @@ func (r *Application) Register(jobs []queue.Job) {
 
 func (r *Application) Worker(payloads ...queue.Args) queue.Worker {
 	defaultConnection := r.config.DefaultConnection()
-	defaultQueue := r.config.DefaultQueue()
 	defaultConcurrent := r.config.DefaultConcurrent()
 
 	if len(payloads) == 0 {
-		workerQueue := r.config.GetString(fmt.Sprintf("queue.connections.%s.queue", defaultConnection), defaultQueue)
+		workerQueue := configuredQueue(r.config, defaultConnection)
 
 		worker, err := NewWorker(r.config, r.cache, r.db, r.jobStorer, r.json, r.log, defaultConnection, workerQueue, defaultConcurrent, 1)
 		if err != nil {
@@ -80,7 +79,7 @@ func (r *Application) Worker(payloads ...queue.Args) queue.Worker {
 		payloads[0].Connection = defaultConnection
 	}
 	if payloads[0].Queue == "" {
-		payloads[0].Queue = r.config.GetString(fmt.Sprintf("queue.connections.%s.queue", payloads[0].Connection), "default")
+		payloads[0].Queue = configuredQueue(r.config, payloads[0].Connection)
 	}
 	if payloads[0].Concurrent == 0 {
 		payloads[0].Concurrent = r.config.GetInt(fmt.Sprintf("queue.connections.%s.concurrent", payloads[0].Connection), 1)
