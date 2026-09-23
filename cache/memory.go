@@ -15,27 +15,58 @@ import (
 )
 
 type Memory struct {
-	ctx      context.Context
-	prefix   string
-	instance sync.Map
+	ctx       context.Context
+	prefix    string
+	instance  sync.Map
+	lastSweep atomic.Int64
 }
 
+// sweepInterval bounds how often a write may start a sweep of expired items.
+const sweepInterval = time.Minute
+
 func NewMemory(config config.Config) (*Memory, error) {
-	return &Memory{
+	memory := &Memory{
 		prefix: prefix(config),
-	}, nil
+	}
+	// Start the sweep clock now: a cache that has just been built has nothing
+	// to reclaim.
+	memory.lastSweep.Store(time.Now().UnixNano())
+
+	return memory, nil
 }
 
 // Add an item in the cache if the key does not exist.
 func (r *Memory) Add(key string, value any, t time.Duration) bool {
-	if t != NoExpiration {
-		time.AfterFunc(t, func() {
-			r.Forget(key)
-		})
+	r.sweepExpired()
+
+	k := r.key(key)
+
+	// A key that is already taken is the common outcome on the contended path:
+	// Lock.Get is built on Add and polls it every 10ms. Answer it before
+	// building an item that would be thrown away.
+	if stored, loaded := r.instance.Load(k); loaded {
+		if cached, ok := stored.(*item); ok && !cached.expired() {
+			return false
+		}
 	}
 
-	_, loaded := r.instance.LoadOrStore(r.key(key), value)
-	return !loaded
+	fresh := newItem(value, t)
+	for {
+		stored, loaded := r.instance.LoadOrStore(k, fresh)
+		if !loaded {
+			return true
+		}
+
+		// The key is taken. An expired item does not count as present, but it
+		// has to be replaced atomically: another goroutine may be doing the
+		// same, and only one of us may win.
+		if cached, ok := stored.(*item); ok && !cached.expired() {
+			return false
+		}
+		if r.instance.CompareAndSwap(k, stored, fresh) {
+			return true
+		}
+	}
 }
 
 // Decrement decrements the value of an item in the cache.
@@ -89,7 +120,7 @@ func (r *Memory) Flush() bool {
 
 // Get Retrieve an item from the cache by key.
 func (r *Memory) Get(key string, def ...any) any {
-	val, exist := r.instance.Load(r.key(key))
+	val, exist := r.load(r.key(key))
 	if exist {
 		return val
 	}
@@ -140,7 +171,7 @@ func (r *Memory) GetString(key string, def ...string) string {
 
 // Has Checks an item exists in the cache.
 func (r *Memory) Has(key string) bool {
-	_, exist := r.instance.Load(r.key(key))
+	_, exist := r.load(r.key(key))
 	return exist
 }
 
@@ -184,13 +215,8 @@ func (r *Memory) Pull(key string, def ...any) any {
 
 // Put an item in the cache for a given number of seconds.
 func (r *Memory) Put(key string, value any, t time.Duration) error {
-	if t != NoExpiration {
-		time.AfterFunc(t, func() {
-			r.Forget(key)
-		})
-	}
-
-	r.instance.Store(r.key(key), value)
+	r.sweepExpired()
+	r.instance.Store(r.key(key), newItem(value, t))
 	return nil
 }
 
@@ -238,6 +264,68 @@ func (r *Memory) WithContext(ctx context.Context) contractscache.Driver {
 	r.ctx = ctx
 
 	return r
+}
+
+// item is a cached value together with the moment it expires. The expiry is
+// stored with the value instead of being scheduled with a timer: a timer only
+// knows the key, so it deletes whatever sits under it when it fires, even a
+// value stored after the timer was armed.
+type item struct {
+	value    any
+	expireAt time.Time
+}
+
+func newItem(value any, t time.Duration) *item {
+	res := &item{value: value}
+	if t != NoExpiration {
+		res.expireAt = time.Now().Add(t)
+	}
+
+	return res
+}
+
+func (i *item) expired() bool {
+	return !i.expireAt.IsZero() && !time.Now().Before(i.expireAt)
+}
+
+// load returns the value stored under key, dropping it first if it has expired.
+func (r *Memory) load(key string) (any, bool) {
+	stored, exist := r.instance.Load(key)
+	if !exist {
+		return nil, false
+	}
+
+	cached, ok := stored.(*item)
+	if !ok || cached.expired() {
+		// Delete this item only, a fresh one may have taken its place already.
+		r.instance.CompareAndDelete(key, stored)
+		return nil, false
+	}
+
+	return cached.value, true
+}
+
+// sweepExpired drops every item that has expired. Reading or writing a key
+// reclaims the item under it, but a key written once and never touched again
+// would hold its value for the life of the process, so a write sweeps the whole
+// map once every sweepInterval. Memory has no shutdown hook to hang a janitor
+// goroutine on; ranging the map is O(n), so the sweep runs in the background
+// rather than on the write that happened to reach the interval.
+func (r *Memory) sweepExpired() {
+	last := r.lastSweep.Load()
+	now := time.Now().UnixNano()
+	if now-last < int64(sweepInterval) || !r.lastSweep.CompareAndSwap(last, now) {
+		return
+	}
+
+	go r.instance.Range(func(key, stored any) bool {
+		if cached, ok := stored.(*item); !ok || cached.expired() {
+			// Delete this item only, a fresh one may have taken its place already.
+			r.instance.CompareAndDelete(key, stored)
+		}
+
+		return true
+	})
 }
 
 func (r *Memory) key(key string) string {
