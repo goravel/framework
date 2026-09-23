@@ -39,15 +39,23 @@ func (r *AgentMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *AgentMakeCommand) Handle(ctx console.Context) error {
-	make, err := supportconsole.NewMake(ctx, "agent", ctx.Argument(0), support.Config.Paths.Agents)
+	for _, name := range supportconsole.MakeNames(ctx) {
+		if err := r.makeOne(ctx, name); err != nil {
+			ctx.Error(err.Error())
+		}
+	}
+
+	return nil
+}
+
+func (r *AgentMakeCommand) makeOne(ctx console.Context, name string) error {
+	make, err := supportconsole.NewMake(ctx, "agent", name, support.Config.Paths.Agents)
 	if err != nil {
-		ctx.Error(err.Error())
-		return nil
+		return err
 	}
 
 	if err := file.PutContent(make.GetFilePath(), r.populateStub(r.getStub(), make.GetPackageName(), make.GetStructName())); err != nil {
-		ctx.Error(err.Error())
-		return nil
+		return err
 	}
 
 	ctx.Success("Agent created successfully")

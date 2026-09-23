@@ -84,12 +84,12 @@ func Jobs() []queue.Job {
 func TestJobMakeCommand(t *testing.T) {
 	jobMakeCommand := &JobMakeCommand{}
 	mockContext := mocksconsole.NewContext(t)
-	mockContext.EXPECT().Argument(0).Return("").Once()
+	mockContext.EXPECT().Arguments().Return([]string{""}).Once()
 	mockContext.EXPECT().Ask("Enter the job name", mock.Anything).Return("", errors.New("the job name cannot be empty")).Once()
 	mockContext.EXPECT().Error("the job name cannot be empty").Once()
 	assert.NoError(t, jobMakeCommand.Handle(mockContext))
 
-	mockContext.EXPECT().Argument(0).Return("GoravelJob").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"GoravelJob"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Job created successfully").Once()
 	mockContext.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
@@ -98,12 +98,12 @@ func TestJobMakeCommand(t *testing.T) {
 	assert.NoError(t, jobMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/jobs/goravel_job.go"))
 
-	mockContext.On("Argument", 0).Return("GoravelJob").Once()
+	mockContext.On("Arguments").Return([]string{"GoravelJob"}).Once()
 	mockContext.On("OptionBool", "force").Return(false).Once()
 	mockContext.EXPECT().Error("the job already exists. Use the --force or -f flag to overwrite").Once()
 	assert.NoError(t, jobMakeCommand.Handle(mockContext))
 
-	mockContext.EXPECT().Argument(0).Return("Goravel/Job").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"Goravel/Job"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Job created successfully").Once()
 	mockContext.EXPECT().Success("Job registered successfully").Once()
@@ -173,7 +173,7 @@ func TestJobMakeCommand_WithBootstrapSetup(t *testing.T) {
 			// Setup mock context
 			jobMakeCommand := &JobMakeCommand{}
 			mockContext := mocksconsole.NewContext(t)
-			mockContext.EXPECT().Argument(0).Return(tt.jobName).Once()
+			mockContext.EXPECT().Arguments().Return([]string{tt.jobName}).Once()
 			mockContext.EXPECT().OptionBool("force").Return(false).Once()
 			mockContext.EXPECT().Success("Job created successfully").Once()
 
@@ -251,7 +251,7 @@ func TestJobMakeCommand_WithNonBootstrapSetup(t *testing.T) {
 			// Setup mock context
 			jobMakeCommand := &JobMakeCommand{}
 			mockContext := mocksconsole.NewContext(t)
-			mockContext.EXPECT().Argument(0).Return(tt.jobName).Once()
+			mockContext.EXPECT().Arguments().Return([]string{tt.jobName}).Once()
 			mockContext.EXPECT().OptionBool("force").Return(false).Once()
 			mockContext.EXPECT().Success("Job created successfully").Once()
 
@@ -310,7 +310,7 @@ func TestJobMakeCommand_RegistrationError(t *testing.T) {
 		// Setup mock context
 		jobMakeCommand := &JobMakeCommand{}
 		mockContext := mocksconsole.NewContext(t)
-		mockContext.EXPECT().Argument(0).Return("FailJob").Once()
+		mockContext.EXPECT().Arguments().Return([]string{"FailJob"}).Once()
 		mockContext.EXPECT().OptionBool("force").Return(false).Once()
 		mockContext.EXPECT().Success("Job created successfully").Once()
 		mockContext.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
@@ -335,7 +335,7 @@ func TestJobMakeCommand_RegistrationError(t *testing.T) {
 		// Setup mock context
 		jobMakeCommand := &JobMakeCommand{}
 		mockContext := mocksconsole.NewContext(t)
-		mockContext.EXPECT().Argument(0).Return("ErrorJob").Once()
+		mockContext.EXPECT().Arguments().Return([]string{"ErrorJob"}).Once()
 		mockContext.EXPECT().OptionBool("force").Return(false).Once()
 		mockContext.EXPECT().Success("Job created successfully").Once()
 		mockContext.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
@@ -345,4 +345,23 @@ func TestJobMakeCommand_RegistrationError(t *testing.T) {
 		// Execute command
 		assert.NoError(t, jobMakeCommand.Handle(mockContext))
 	})
+}
+
+func TestJobMakeCommand_MultipleNames(t *testing.T) {
+	jobMakeCommand := &JobMakeCommand{}
+	mockContext := mocksconsole.NewContext(t)
+	defer func() {
+		assert.NoError(t, file.Remove("app"))
+	}()
+
+	assert.NoError(t, file.PutContent("app/providers/queue_service_provider.go", queueServiceProvider))
+
+	mockContext.EXPECT().Arguments().Return([]string{"SendEmail", "ProcessImage"}).Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
+	mockContext.EXPECT().Success("Job created successfully").Times(2)
+	mockContext.EXPECT().Success("Job registered successfully").Times(2)
+	assert.NoError(t, jobMakeCommand.Handle(mockContext))
+
+	assert.True(t, file.Exists("app/jobs/send_email.go"))
+	assert.True(t, file.Exists("app/jobs/process_image.go"))
 }

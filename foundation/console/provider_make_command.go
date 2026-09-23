@@ -47,25 +47,32 @@ func (r *ProviderMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *ProviderMakeCommand) Handle(ctx console.Context) error {
-	make, err := supportconsole.NewMake(ctx, "provider", ctx.Argument(0), support.Config.Paths.Providers)
+	for _, name := range supportconsole.MakeNames(ctx) {
+		if err := r.makeOne(ctx, name); err != nil {
+			ctx.Error(err.Error())
+		}
+	}
+
+	return nil
+}
+
+func (r *ProviderMakeCommand) makeOne(ctx console.Context, name string) error {
+	make, err := supportconsole.NewMake(ctx, "provider", name, support.Config.Paths.Providers)
 	if err != nil {
-		ctx.Error(err.Error())
-		return nil
+		return err
 	}
 
 	stub := r.getStub()
 
 	if err := file.PutContent(make.GetFilePath(), r.populateStub(stub, make.GetPackageName(), make.GetStructName())); err != nil {
-		ctx.Error(err.Error())
-		return nil
+		return err
 	}
 
 	ctx.Success("Provider created successfully")
 
 	if env.IsBootstrapSetup() {
 		if err := modify.AddProvider(make.GetPackageImportPath(), fmt.Sprintf("&%s.%s{}", make.GetPackageName(), make.GetStructName())); err != nil {
-			ctx.Error(errors.ProviderRegisterFailed.Args(make.GetStructName(), err).Error())
-			return nil
+			return errors.ProviderRegisterFailed.Args(make.GetStructName(), err)
 		}
 
 		ctx.Success("Provider registered successfully")
