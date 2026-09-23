@@ -265,7 +265,7 @@ func TestResolveTemplates(t *testing.T) {
 }
 
 // setupAppViews points the application resources path at a temp dir and writes the given views into it.
-func setupAppViews(t *testing.T, files map[string]string) string {
+func setupAppViews(t testing.TB, files map[string]string) string {
 	t.Helper()
 
 	relativePath := support.RelativePath
@@ -287,6 +287,10 @@ func setupAppViews(t *testing.T, files map[string]string) string {
 
 	return dir
 }
+
+// driverDefineRe mirrors the regular expression the route drivers scan views with. It is kept
+// here, rather than shared with the package, so parseAll stays an independent reference.
+var driverDefineRe = regexp.MustCompile(`\{\{\s*define\s+"([^"]+)"`)
 
 // parseAll mirrors a route driver: it parses every source into one template set, in precedence
 // order, skipping any file whose define name was already claimed by an earlier source.
@@ -314,7 +318,7 @@ func parseAll(t *testing.T, appDir string, view *View) *template.Template {
 				return err
 			}
 
-			name := defineRe.FindStringSubmatch(string(content))
+			name := driverDefineRe.FindStringSubmatch(string(content))
 			if len(name) > 1 {
 				if seen[name[1]] {
 					return nil
@@ -335,5 +339,3 @@ func parseAll(t *testing.T, appDir string, view *View) *template.Template {
 
 	return tmpl
 }
-
-var defineRe = regexp.MustCompile(`\{\{\s*define\s+"([^"]+)"`)

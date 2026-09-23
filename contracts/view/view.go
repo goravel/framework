@@ -5,6 +5,9 @@ import "io/fs"
 type View interface {
 	// Exists checks if a view with the specified name exists.
 	Exists(view string) bool
+	// First returns a template for the first view in the list that exists. If none of them
+	// exist, rendering the returned template fails.
+	First(views []string, data ...any) Template
 	// LoadViewsFrom registers a package view directory for template fallback.
 	// Templates from registered directories are loaded after app views; if a
 	// template name is already defined by an app view or an earlier package, it is skipped.
@@ -23,6 +26,9 @@ type View interface {
 	//	var views embed.FS
 	//
 	LoadViewsFromFS(fsys fs.FS, root string)
+	// Make returns a template for the view. The data may be a map with string keys or a struct;
+	// it is merged over the shared data when the template is rendered.
+	Make(view string, data ...any) Template
 	// RegisteredViews returns the absolute paths of all registered package view directories.
 	RegisteredViews() []string
 	// RegisteredViewFS returns all package view filesystems registered with LoadViewsFromFS,
@@ -37,4 +43,23 @@ type View interface {
 	Shared(key string, def ...any) any
 	// GetShared returns a map containing all the shared data associated with the current view context.
 	GetShared() map[string]any
+}
+
+// Template is a view bound to its data, ready to be rendered. A template collects data as it
+// is built and is not safe for use from several goroutines at once; render it where it was
+// built, or build one per goroutine.
+type Template interface {
+	// Data returns a copy of the data passed to the template, without the shared data.
+	Data() map[string]any
+	// Name returns the name of the view.
+	Name() string
+	// Render renders the view and returns the resulting HTML. Templates are resolved the same
+	// way as for HTTP responses: application views first, then directories registered with
+	// LoadViewsFrom, then filesystems registered with LoadViewsFromFS.
+	//
+	// Rendering happens outside a request, so request-bound values such as csrf_token are
+	// not available.
+	Render() (string, error)
+	// With adds a key-value pair to the template data.
+	With(key string, value any) Template
 }

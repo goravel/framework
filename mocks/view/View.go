@@ -5,6 +5,7 @@ package view
 import (
 	fs "io/fs"
 
+	view "github.com/goravel/framework/contracts/view"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -63,6 +64,65 @@ func (_c *View_Exists_Call) Return(_a0 bool) *View_Exists_Call {
 }
 
 func (_c *View_Exists_Call) RunAndReturn(run func(string) bool) *View_Exists_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// First provides a mock function with given fields: views, data
+func (_m *View) First(views []string, data ...interface{}) view.Template {
+	var _ca []interface{}
+	_ca = append(_ca, views)
+	_ca = append(_ca, data...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for First")
+	}
+
+	var r0 view.Template
+	if rf, ok := ret.Get(0).(func([]string, ...interface{}) view.Template); ok {
+		r0 = rf(views, data...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(view.Template)
+		}
+	}
+
+	return r0
+}
+
+// View_First_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'First'
+type View_First_Call struct {
+	*mock.Call
+}
+
+// First is a helper method to define mock.On call
+//   - views []string
+//   - data ...interface{}
+func (_e *View_Expecter) First(views interface{}, data ...interface{}) *View_First_Call {
+	return &View_First_Call{Call: _e.mock.On("First",
+		append([]interface{}{views}, data...)...)}
+}
+
+func (_c *View_First_Call) Run(run func(views []string, data ...interface{})) *View_First_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].([]string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *View_First_Call) Return(_a0 view.Template) *View_First_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *View_First_Call) RunAndReturn(run func([]string, ...interface{}) view.Template) *View_First_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -178,6 +238,65 @@ func (_c *View_LoadViewsFromFS_Call) Return() *View_LoadViewsFromFS_Call {
 
 func (_c *View_LoadViewsFromFS_Call) RunAndReturn(run func(fs.FS, string)) *View_LoadViewsFromFS_Call {
 	_c.Run(run)
+	return _c
+}
+
+// Make provides a mock function with given fields: _a0, data
+func (_m *View) Make(_a0 string, data ...interface{}) view.Template {
+	var _ca []interface{}
+	_ca = append(_ca, _a0)
+	_ca = append(_ca, data...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Make")
+	}
+
+	var r0 view.Template
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) view.Template); ok {
+		r0 = rf(_a0, data...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(view.Template)
+		}
+	}
+
+	return r0
+}
+
+// View_Make_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Make'
+type View_Make_Call struct {
+	*mock.Call
+}
+
+// Make is a helper method to define mock.On call
+//   - _a0 string
+//   - data ...interface{}
+func (_e *View_Expecter) Make(_a0 interface{}, data ...interface{}) *View_Make_Call {
+	return &View_Make_Call{Call: _e.mock.On("Make",
+		append([]interface{}{_a0}, data...)...)}
+}
+
+func (_c *View_Make_Call) Run(run func(_a0 string, data ...interface{})) *View_Make_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *View_Make_Call) Return(_a0 view.Template) *View_Make_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *View_Make_Call) RunAndReturn(run func(string, ...interface{}) view.Template) *View_Make_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
