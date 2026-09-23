@@ -310,6 +310,39 @@ func (_c *DB_Insert_Call) RunAndReturn(run func(string, ...interface{}) (*db.Res
 	return _c
 }
 
+// Listen provides a mock function with given fields: listener
+func (_m *DB) Listen(listener func(*db.QueryExecuted) error) {
+	_m.Called(listener)
+}
+
+// DB_Listen_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Listen'
+type DB_Listen_Call struct {
+	*mock.Call
+}
+
+// Listen is a helper method to define mock.On call
+//   - listener func(*db.QueryExecuted) error
+func (_e *DB_Expecter) Listen(listener interface{}) *DB_Listen_Call {
+	return &DB_Listen_Call{Call: _e.mock.On("Listen", listener)}
+}
+
+func (_c *DB_Listen_Call) Run(run func(listener func(*db.QueryExecuted) error)) *DB_Listen_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func(*db.QueryExecuted) error))
+	})
+	return _c
+}
+
+func (_c *DB_Listen_Call) Return() *DB_Listen_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *DB_Listen_Call) RunAndReturn(run func(func(*db.QueryExecuted) error)) *DB_Listen_Call {
+	_c.Run(run)
+	return _c
+}
+
 // Rollback provides a mock function with no fields
 func (_m *DB) Rollback() error {
 	ret := _m.Called()
