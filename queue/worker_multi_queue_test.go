@@ -15,51 +15,6 @@ import (
 	"github.com/goravel/framework/support/carbon"
 )
 
-func (s *WorkerTestSuite) TestSplitQueueNames() {
-	tests := []struct {
-		name   string
-		queue  string
-		expect []string
-	}{
-		{
-			name:   "single queue",
-			queue:  "default",
-			expect: []string{"default"},
-		},
-		{
-			name:   "comma separated queues",
-			queue:  "high,default",
-			expect: []string{"high", "default"},
-		},
-		{
-			name:   "trimmed and empty queue names",
-			queue:  " high, , default,",
-			expect: []string{"high", "default"},
-		},
-		{
-			name:   "whitespace-only queue falls back to default",
-			queue:  " , ",
-			expect: []string{"default"},
-		},
-		{
-			name:   "empty queue falls back to default",
-			queue:  "",
-			expect: []string{"default"},
-		},
-		{
-			name:   "duplicate queues are preserved",
-			queue:  "high,high,default",
-			expect: []string{"high", "high", "default"},
-		},
-	}
-
-	for _, tt := range tests {
-		s.Run(tt.name, func() {
-			s.Equal(tt.expect, splitQueueNames(tt.queue))
-		})
-	}
-}
-
 func (s *WorkerTestSuite) TestPopNextJob() {
 	s.Run("falls through empty queues in priority order", func() {
 		s.SetupTest()
@@ -114,18 +69,44 @@ func (s *WorkerTestSuite) TestPopNextJob() {
 		s.Equal(assert.AnError, err)
 	})
 
-	s.Run("reports the last queue when all queues are empty", func() {
+	s.Run("stops on a locked higher priority queue", func() {
 		s.SetupTest()
 
-		lastErr := errors.QueueDriverNoJobFound.Args("default")
-		s.mockDriver.EXPECT().Pop("high").Return(nil, errors.QueueDriverNoJobFound.Args("high")).Once()
-		s.mockDriver.EXPECT().Pop("default").Return(nil, lastErr).Once()
+		lockErr := errors.QueuePopIsLocked.Args("high", "lock-key")
+		s.mockDriver.EXPECT().Pop("high").Return(nil, lockErr).Once()
+
+		actualJob, actualQueue, err := s.worker.popNextJob([]string{"high", "default"})
+
+		s.Nil(actualJob)
+		s.Equal("high", actualQueue)
+		s.ErrorIs(err, errors.QueuePopIsLocked)
+	})
+
+	s.Run("stops before checking another queue after shutdown", func() {
+		s.SetupTest()
+
+		s.mockDriver.EXPECT().Pop("high").Run(func(string) {
+			s.worker.isShutdown.Store(true)
+		}).Return(nil, errors.QueueDriverNoJobFound.Args("high")).Once()
 
 		actualJob, actualQueue, err := s.worker.popNextJob([]string{"high", "default"})
 
 		s.Nil(actualJob)
 		s.Equal("default", actualQueue)
-		s.Same(lastErr, err)
+		s.ErrorIs(err, errors.QueueDriverNoJobFound)
+	})
+
+	s.Run("reports the last queue when all queues are empty", func() {
+		s.SetupTest()
+
+		s.mockDriver.EXPECT().Pop("high").Return(nil, errors.QueueDriverNoJobFound.Args("high")).Once()
+		s.mockDriver.EXPECT().Pop("default").Return(nil, errors.QueueDriverNoJobFound.Args("default")).Once()
+
+		actualJob, actualQueue, err := s.worker.popNextJob([]string{"high", "default"})
+
+		s.Nil(actualJob)
+		s.Equal("default", actualQueue)
+		s.ErrorIs(err, errors.QueueDriverNoJobFound)
 	})
 }
 

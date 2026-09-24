@@ -75,8 +75,9 @@ func configuredQueue(config contractsconfig.Config, connection string) string {
 	return config.GetString(fmt.Sprintf("queue.connections.%s.queue", connection), "default")
 }
 
-// splitQueueNames normalizes a comma-separated worker queue list while
-// preserving its order and duplicate names to match Laravel's semantics.
+// splitQueueNames normalizes a comma-separated worker queue list. It always
+// returns at least one name, falls back to "default", and preserves order and
+// duplicate names to match Laravel's semantics.
 func splitQueueNames(queue string) []string {
 	queueNames := make([]string, 0, strings.Count(queue, ",")+1)
 	for _, queueName := range strings.Split(queue, ",") {

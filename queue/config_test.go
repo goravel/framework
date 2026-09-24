@@ -84,6 +84,51 @@ func (s *ConfigTestSuite) TestNewConfigNormalizesDefaultQueue() {
 	}
 }
 
+func (s *ConfigTestSuite) TestSplitQueueNames() {
+	tests := []struct {
+		name   string
+		queue  string
+		expect []string
+	}{
+		{
+			name:   "single queue",
+			queue:  "default",
+			expect: []string{"default"},
+		},
+		{
+			name:   "comma separated queues",
+			queue:  "high,default",
+			expect: []string{"high", "default"},
+		},
+		{
+			name:   "trimmed and empty queue names",
+			queue:  " high, , default,",
+			expect: []string{"high", "default"},
+		},
+		{
+			name:   "whitespace-only queue falls back to default",
+			queue:  " , ",
+			expect: []string{"default"},
+		},
+		{
+			name:   "empty queue falls back to default",
+			queue:  "",
+			expect: []string{"default"},
+		},
+		{
+			name:   "duplicate queues are preserved",
+			queue:  "high,high,default",
+			expect: []string{"high", "high", "default"},
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			s.Equal(tt.expect, splitQueueNames(tt.queue))
+		})
+	}
+}
+
 func (s *ConfigTestSuite) TestDefaultConcurrent() {
 	s.Equal(2, s.config.DefaultConcurrent())
 }

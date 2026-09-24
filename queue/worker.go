@@ -424,6 +424,10 @@ func (r *Worker) processReservedJob(reservedJob queue.ReservedJob, queueName str
 func (r *Worker) popNextJob(queueNames []string) (queue.ReservedJob, string, error) {
 	var lastErr error
 	for _, queueName := range queueNames {
+		if r.isShutdown.Load() {
+			return nil, queueName, errors.QueueDriverNoJobFound.Args(queueName)
+		}
+
 		reservedJob, err := r.driver.Pop(queueName)
 		if err == nil {
 			if reservedJob == nil {
