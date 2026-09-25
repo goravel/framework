@@ -495,12 +495,13 @@ func (s *TranslatorTestSuite) TestLoad() {
 
 			translator := NewTranslator(s.ctx, tt.fsLoader, tt.fileLoader, "en", "en", s.mockLog)
 
-			_, err := translator.load(tt.locale, tt.group)
+			translations, err := translator.load(tt.locale, tt.group)
 
 			if tt.expectError != nil {
 				s.Equal(tt.expectError.Error(), err.Error())
 			} else {
 				s.NoError(err)
+				s.Equal(tt.expected, translations)
 				if tt.expected != nil {
 					actual, _ := lookupLoaded(tt.locale, tt.group)
 					s.Equal(tt.expected, actual)
@@ -510,7 +511,7 @@ func (s *TranslatorTestSuite) TestLoad() {
 	}
 }
 
-func (s *TranslatorTestSuite) TestIsLoaded() {
+func (s *TranslatorTestSuite) TestLookupLoaded() {
 	translator := NewTranslator(s.ctx, nil, s.mockLoader, "en", "en", s.mockLog)
 	s.mockLoader.On("Load", "en", "bar").Once().Return(map[string]any{
 		"foo": "one",
@@ -519,13 +520,17 @@ func (s *TranslatorTestSuite) TestIsLoaded() {
 	s.NoError(err)
 
 	// Case: Folder and locale are not loaded
-	s.False(translator.isLoaded("fr", "folder1"))
+	_, ok := lookupLoaded("fr", "folder1")
+	s.False(ok)
 
 	// Case: Folder is loaded, but locale is not loaded
-	s.False(translator.isLoaded("fr", "bar"))
+	_, ok = lookupLoaded("fr", "bar")
+	s.False(ok)
 
 	// Case: Both folder and locale are loaded
-	s.True(translator.isLoaded("en", "bar"))
+	translations, ok := lookupLoaded("en", "bar")
+	s.True(ok)
+	s.Equal(map[string]any{"foo": "one"}, translations)
 }
 
 // concurrentLoader stands in for a real loader, the mock is not meant to be
@@ -541,20 +546,24 @@ func (concurrentLoader) Load(locale, group string) (map[string]any, error) {
 // and a per instance mutex would guard nothing. Before the fix this crashed the
 // process with "concurrent map read and map write".
 func (s *TranslatorTestSuite) TestConcurrentGet() {
-	loaded.Clear()
+	results := make([]string, 200)
 
 	var wg sync.WaitGroup
-	for i := 0; i < 200; i++ {
+	for i := range results {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
 
 			translator := NewTranslator(context.Background(), nil, concurrentLoader{}, "en", "en", s.mockLog)
 			translator.SetLocale(fmt.Sprintf("locale%d", i%8))
-			s.Equal("bar", translator.Get("foo"))
+			results[i] = translator.Get("foo")
 		}(i)
 	}
 	wg.Wait()
+
+	for i, result := range results {
+		s.Equal("bar", result, "goroutine %d", i)
+	}
 }
 
 func TestMakeReplacements(t *testing.T) {

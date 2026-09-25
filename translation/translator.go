@@ -36,7 +36,8 @@ type Translator struct {
 //
 // loaded is a sync.Map because the access pattern is the one it is built for, a
 // cache that only grows where every entry is written once and read many times.
-// loadMu serializes the cold path only, so a group is still loaded exactly once.
+// loadMu serializes the cold path only, so a group that loads successfully is
+// still loaded exactly once. A failed load is not cached and is retried.
 var (
 	loaded sync.Map
 	loadMu sync.Mutex
@@ -229,6 +230,8 @@ func (t *Translator) load(locale string, group string) (map[string]any, error) {
 	return translations, nil
 }
 
+// loadedKey joins locale and group with NUL, which cannot occur in either. A
+// printable separator could collide, since groups contain "/" (e.g. "foo/test").
 func loadedKey(locale string, group string) string {
 	return locale + "\x00" + group
 }
@@ -241,11 +244,6 @@ func lookupLoaded(locale string, group string) (map[string]any, bool) {
 
 	translations, ok := value.(map[string]any)
 	return translations, ok
-}
-
-func (t *Translator) isLoaded(locale string, group string) bool {
-	_, ok := lookupLoaded(locale, group)
-	return ok
 }
 
 func makeReplacements(line string, replace map[string]string) string {
