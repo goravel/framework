@@ -20,7 +20,7 @@ type PendingJob interface {
 	DispatchSync() error
 	// OnConnection sets the connection of the task.
 	OnConnection(connection string) PendingJob
-	// OnQueue sets the queue of the task.
+	// OnQueue sets the single queue to which the task is dispatched.
 	OnQueue(queue string) PendingJob
 }
 

@@ -127,7 +127,7 @@ func (r *PendingJob) OnConnection(connection string) contractsqueue.PendingJob {
 	return r
 }
 
-// OnQueue sets the queue name
+// OnQueue sets the single queue to which the task is dispatched.
 func (r *PendingJob) OnQueue(queue string) contractsqueue.PendingJob {
 	r.queue = queue
 	return r

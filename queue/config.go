@@ -2,6 +2,7 @@ package queue
 
 import (
 	"fmt"
+	"strings"
 
 	contractsconfig "github.com/goravel/framework/contracts/config"
 )
@@ -20,7 +21,7 @@ type Config struct {
 
 func NewConfig(config contractsconfig.Config) *Config {
 	defaultConnection := config.GetString("queue.default")
-	defaultQueue := config.GetString(fmt.Sprintf("queue.connections.%s.queue", defaultConnection), "default")
+	defaultQueue := splitQueueNames(configuredQueue(config, defaultConnection))[0]
 	defaultConcurrent := max(config.GetInt(fmt.Sprintf("queue.connections.%s.concurrent", defaultConnection), 1), 1)
 
 	c := &Config{
@@ -68,4 +69,27 @@ func (r *Config) FailedTable() string {
 
 func (r *Config) Via(connection string) any {
 	return r.Get(fmt.Sprintf("queue.connections.%s.via", connection))
+}
+
+func configuredQueue(config contractsconfig.Config, connection string) string {
+	return config.GetString(fmt.Sprintf("queue.connections.%s.queue", connection), "default")
+}
+
+// splitQueueNames normalizes a comma-separated worker queue list. It always
+// returns at least one name, falls back to "default", and preserves order and
+// duplicate names to match Laravel's semantics.
+func splitQueueNames(queue string) []string {
+	queueNames := make([]string, 0, strings.Count(queue, ",")+1)
+	for _, queueName := range strings.Split(queue, ",") {
+		queueName = strings.TrimSpace(queueName)
+		if queueName != "" {
+			queueNames = append(queueNames, queueName)
+		}
+	}
+
+	if len(queueNames) == 0 {
+		return []string{"default"}
+	}
+
+	return queueNames
 }

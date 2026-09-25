@@ -43,6 +43,92 @@ func (s *ConfigTestSuite) TestDefaultQueue() {
 	s.Equal("default", s.config.DefaultQueue())
 }
 
+func (s *ConfigTestSuite) TestNewConfigNormalizesDefaultQueue() {
+	tests := []struct {
+		name            string
+		configuredQueue string
+		expect          string
+	}{
+		{
+			name:            "queue list uses the first valid name",
+			configuredQueue: " high, default ",
+			expect:          "high",
+		},
+		{
+			name:            "empty queue falls back to default",
+			configuredQueue: "",
+			expect:          "default",
+		},
+		{
+			name:            "whitespace-only queue falls back to default",
+			configuredQueue: " , ",
+			expect:          "default",
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			mockConfig := mocksconfig.NewConfig(s.T())
+			mockConfig.EXPECT().GetString("queue.default").Return("redis").Once()
+			mockConfig.EXPECT().GetString("queue.connections.redis.queue", "default").Return(tt.configuredQueue).Once()
+			mockConfig.EXPECT().GetInt("queue.connections.redis.concurrent", 1).Return(1).Once()
+			mockConfig.EXPECT().GetString("app.name", "goravel").Return("goravel").Once()
+			mockConfig.EXPECT().GetBool("app.debug").Return(false).Once()
+			mockConfig.EXPECT().GetString("queue.failed.database").Return("").Once()
+			mockConfig.EXPECT().GetString("queue.failed.table").Return("").Once()
+
+			config := NewConfig(mockConfig)
+
+			s.Equal(tt.expect, config.DefaultQueue())
+		})
+	}
+}
+
+func (s *ConfigTestSuite) TestSplitQueueNames() {
+	tests := []struct {
+		name   string
+		queue  string
+		expect []string
+	}{
+		{
+			name:   "single queue",
+			queue:  "default",
+			expect: []string{"default"},
+		},
+		{
+			name:   "comma separated queues",
+			queue:  "high,default",
+			expect: []string{"high", "default"},
+		},
+		{
+			name:   "trimmed and empty queue names",
+			queue:  " high, , default,",
+			expect: []string{"high", "default"},
+		},
+		{
+			name:   "whitespace-only queue falls back to default",
+			queue:  " , ",
+			expect: []string{"default"},
+		},
+		{
+			name:   "empty queue falls back to default",
+			queue:  "",
+			expect: []string{"default"},
+		},
+		{
+			name:   "duplicate queues are preserved",
+			queue:  "high,high,default",
+			expect: []string{"high", "high", "default"},
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			s.Equal(tt.expect, splitQueueNames(tt.queue))
+		})
+	}
+}
+
 func (s *ConfigTestSuite) TestDefaultConcurrent() {
 	s.Equal(2, s.config.DefaultConcurrent())
 }
