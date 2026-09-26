@@ -24,8 +24,9 @@ type Database struct {
 	jobStorer contractsqueue.JobStorer
 	json      contractsfoundation.Json
 
-	jobsTable  string
-	retryAfter int
+	jobsTable    string
+	retryAfter   int
+	useCacheLock bool
 }
 
 func NewDatabase(
@@ -35,13 +36,18 @@ func NewDatabase(
 	jobStorer contractsqueue.JobStorer,
 	json contractsfoundation.Json,
 	connection string) (*Database, error) {
-	if cache == nil {
-		return nil, errors.CacheFacadeNotSet.SetModule(errors.ModuleQueue)
-	}
-
 	dbConnection := config.GetString(fmt.Sprintf("queue.connections.%s.connection", connection))
 	if dbConnection == "" {
 		return nil, errors.QueueInvalidDatabaseConnection.Args(connection)
+	}
+
+	// The cache lock is opt-in: the SELECT ... FOR UPDATE inside the
+	// transaction already serializes job reservation on the database
+	// (same contract as Laravel's database queue driver), so a cache
+	// backend is not required unless explicitly enabled.
+	useCacheLock := config.GetBool(fmt.Sprintf("queue.connections.%s.use_cache_lock", connection))
+	if useCacheLock && cache == nil {
+		return nil, errors.CacheFacadeNotSet.SetModule(errors.ModuleQueue)
 	}
 
 	return &Database{
@@ -50,8 +56,9 @@ func NewDatabase(
 		jobStorer: jobStorer,
 		json:      json,
 
-		jobsTable:  config.GetString(fmt.Sprintf("queue.connections.%s.table", connection), "jobs"),
-		retryAfter: config.GetInt(fmt.Sprintf("queue.connections.%s.retry_after", connection), 60),
+		jobsTable:    config.GetString(fmt.Sprintf("queue.connections.%s.table", connection), "jobs"),
+		retryAfter:   config.GetInt(fmt.Sprintf("queue.connections.%s.retry_after", connection), 60),
+		useCacheLock: useCacheLock,
 	}, nil
 }
 
@@ -62,13 +69,15 @@ func (r *Database) Driver() string {
 func (r *Database) Pop(queue string) (contractsqueue.ReservedJob, error) {
 	var job models.Job
 
-	cacheLock := fmt.Sprintf("goravel:queue-database-%s:lock", queue)
-	lock := r.cache.Lock(cacheLock, 1*time.Minute)
-	if !lock.Block(1 * time.Minute) {
-		return nil, errors.QueuePopIsLocked.Args(queue, cacheLock)
-	}
+	if r.useCacheLock {
+		cacheLock := fmt.Sprintf("goravel:queue-database-%s:lock", queue)
+		lock := r.cache.Lock(cacheLock, 1*time.Minute)
+		if !lock.Block(1 * time.Minute) {
+			return nil, errors.QueuePopIsLocked.Args(queue, cacheLock)
+		}
 
-	defer lock.Release()
+		defer lock.Release()
+	}
 
 	if err := r.db.Transaction(func(tx contractsdb.Tx) error {
 		if err := tx.Table(r.jobsTable).LockForUpdate().Where("queue", queue).Where(func(q contractsdb.Query) contractsdb.Query {
