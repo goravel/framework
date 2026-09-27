@@ -18,8 +18,10 @@ type Template struct {
 	err  error
 }
 
-// NewTemplate binds a view to its data. The data may be a map with string keys or a struct,
-// and is copied, so later changes to the caller's value are not picked up.
+// NewTemplate binds a view to its data. The data may be a map with string keys or a struct.
+// It is copied at the top level only: replacing a key in the caller's map is not picked up,
+// but nested maps, slices and pointers are still shared with the caller and must not be
+// changed while the template is in use.
 func NewTemplate(view *View, name string, data ...any) *Template {
 	values, err := toMap(name, data...)
 
@@ -67,7 +69,8 @@ func (r *Template) With(key string, value any) contractsview.Template {
 	return r
 }
 
-// toMap copies the given map or struct into a new map, leaving the caller's data untouched.
+// toMap copies the top level of the given map or struct into a new map, leaving the caller's
+// map untouched.
 func toMap(view string, data ...any) (map[string]any, error) {
 	if len(data) == 0 || data[0] == nil {
 		return make(map[string]any), nil

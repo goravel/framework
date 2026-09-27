@@ -1,6 +1,7 @@
 package view
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"path"
@@ -59,6 +60,7 @@ func (r *View) Exists(view string) bool {
 	return false
 }
 
+// First returns a template for the first view in the list that can be rendered.
 func (r *View) First(views []string, data ...any) contractsview.Template {
 	for _, view := range views {
 		// Exists answers for the file, which is not the same question: a file that only holds
@@ -69,12 +71,14 @@ func (r *View) First(views []string, data ...any) contractsview.Template {
 		}
 	}
 
-	template := NewTemplate(r, "", data...)
-	if template.err == nil {
-		template.err = errors.ViewNoneExist.Args(views)
+	// Nothing matched, so the template has no name, but a data error still names the views it
+	// was meant for.
+	values, err := toMap(fmt.Sprint(views), data...)
+	if err == nil {
+		err = errors.ViewNoneExist.Args(views)
 	}
 
-	return template
+	return &Template{view: r, data: values, err: err}
 }
 
 func (r *View) LoadViewsFrom(path string) {
@@ -116,6 +120,7 @@ func (r *View) LoadViewsFromFS(fsys fs.FS, root string) {
 	r.resetCompiled()
 }
 
+// Make returns a template for the view, bound to the given data.
 func (r *View) Make(view string, data ...any) contractsview.Template {
 	return NewTemplate(r, view, data...)
 }

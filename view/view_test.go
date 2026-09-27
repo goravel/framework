@@ -265,6 +265,7 @@ func TestResolveTemplates(t *testing.T) {
 }
 
 // setupAppViews points the application resources path at a temp dir and writes the given views into it.
+// It changes package-wide globals, so tests that call it must not run in parallel.
 func setupAppViews(t testing.TB, files map[string]string) string {
 	t.Helper()
 

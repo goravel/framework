@@ -120,6 +120,7 @@ func TestTemplateRender_ParseError(t *testing.T) {
 
 	_, err := NewView().Make("broken.tmpl").Render()
 	assert.ErrorContains(t, err, "broken.tmpl")
+	assert.NotErrorIs(t, err, errors.ViewTemplateNotExist)
 }
 
 func TestTemplateRender_PointerFields(t *testing.T) {
@@ -394,6 +395,9 @@ func TestFirst_ReportsInvalidDataBeforeMissingViews(t *testing.T) {
 	_, err := view.First([]string{"missing.tmpl"}, map[int]string{1: "one"}).Render()
 	assert.ErrorIs(t, err, errors.ViewInvalidData)
 
+	// The template has no name, so the error names the candidates instead.
+	assert.ErrorContains(t, err, "[missing.tmpl]")
+
 	_, err = view.First(nil).Render()
 	assert.ErrorIs(t, err, errors.ViewNoneExist)
 
@@ -432,17 +436,61 @@ func TestTemplateRender_BlockPlaceholderDoesNotWinOverPage(t *testing.T) {
 	assert.Equal(t, "[page]", html)
 }
 
+func TestTemplateRender_EmptyTemplateIsNotAView(t *testing.T) {
+	setupAppViews(t, map[string]string{
+		"empty.tmpl": `{{ define "empty.name" }}{{ end }}`,
+		// The layout is walked before the page here, so the empty block placeholder is claimed
+		// first and the page's content has to make the name renderable afterwards.
+		"a_layout.tmpl": `{{ define "a_layout.tmpl" }}[{{ block "content" . }}{{ end }}|{{ block "aside" . }}{{ end }}]{{ end }}`,
+		"b_page.tmpl":   `{{ define "b_page.tmpl" }}{{ template "a_layout.tmpl" . }}{{ end }}{{ define "content" }}page{{ end }}`,
+		"fallback.tmpl": `{{ define "fallback.tmpl" }}fallback{{ end }}`,
+	})
+
+	view := NewView()
+
+	for _, name := range []string{"empty.name", "aside"} {
+		html, err := view.Make(name).Render()
+		assert.ErrorIs(t, err, errors.ViewTemplateNotExist, name)
+		assert.Empty(t, html)
+	}
+
+	// Empty templates stay in the set, so a layout still resolves its placeholders.
+	html, err := view.Make("b_page.tmpl").Render()
+	require.NoError(t, err)
+	assert.Equal(t, "[page|]", html)
+
+	html, err = view.Make("content").Render()
+	require.NoError(t, err)
+	assert.Equal(t, "page", html)
+
+	template := view.First([]string{"empty.name", "aside", "fallback.tmpl"})
+	assert.Equal(t, "fallback.tmpl", template.Name())
+}
+
 func TestFirst_FallsBackToExistsWhenSourcesAreBroken(t *testing.T) {
 	setupAppViews(t, map[string]string{
 		"broken.tmpl": `{{ define "broken.tmpl" }}{{ .Name }`,
 		"good.tmpl":   `{{ define "good.tmpl" }}good{{ end }}`,
 	})
 
-	// Nothing compiles, so First cannot tell which views are renderable. It has to pick the
-	// candidate that exists and let Render report the parse error, rather than claiming that
-	// none of the views exist.
+	// Nothing compiles, so First cannot tell which views are renderable. It has to pick a
+	// candidate and let Render report the parse error, rather than claiming that none of the
+	// views exist.
 	_, err := NewView().First([]string{"good.tmpl"}).Render()
 	assert.ErrorContains(t, err, "broken.tmpl")
+}
+
+func TestFirst_BaseNameCandidateWhenSourcesAreBroken(t *testing.T) {
+	setupAppViews(t, map[string]string{
+		"broken.tmpl":    `{{ define "broken.tmpl" }}{{ .Name }`,
+		"pages/raw.tmpl": `raw`,
+	})
+
+	// raw.tmpl is only a base name, which Exists does not answer for. The parse error is still
+	// what the caller needs to see.
+	_, err := NewView().First([]string{"raw.tmpl"}).Render()
+	assert.ErrorContains(t, err, "broken.tmpl")
+	assert.NotErrorIs(t, err, errors.ViewNoneExist)
 }
 
 func TestTemplateRender_MapPointerData(t *testing.T) {
@@ -456,10 +504,11 @@ func TestTemplateRender_MapPointerData(t *testing.T) {
 	assert.Equal(t, "[Goravel]", html)
 
 	// The copy is taken when the template is built, so a later change is not picked up.
+	template := view.Make("greet.tmpl", &data)
 	data["Name"] = "changed"
-	html, err = view.Make("greet.tmpl", &data).With("Name", "With").Render()
+	html, err = template.Render()
 	require.NoError(t, err)
-	assert.Equal(t, "[With]", html)
+	assert.Equal(t, "[Goravel]", html)
 
 	html, err = view.Make("greet.tmpl", (*map[string]any)(nil)).Render()
 	require.NoError(t, err)

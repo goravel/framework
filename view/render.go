@@ -4,7 +4,7 @@ import (
 	"html/template"
 	"io/fs"
 	"os"
-	stdpath "path"
+	"path"
 	"strings"
 	"sync/atomic"
 	"text/template/parse"
@@ -57,12 +57,12 @@ func (r *View) render(name string, values map[string]any) (string, error) {
 // renderable reports whether the view resolves to a template that can be rendered, which is
 // the question First has to ask: a file can exist without being addressable under its own
 // name, for example when it holds nothing but define blocks. When the sources cannot be
-// parsed it falls back to Exists, so Render reports the parse error rather than First
-// reporting that none of the views exist.
+// parsed there is no telling which names resolve, so every view counts as renderable and
+// Render reports the parse error rather than First reporting that none of the views exist.
 func (r *View) renderable(view string) bool {
 	c := r.compile()
 	if c.err != nil {
-		return r.Exists(view)
+		return true
 	}
 
 	_, ok := c.sizes[view]
@@ -122,15 +122,16 @@ func (r *View) sources() []fs.FS {
 }
 
 // parse loads every source into one template set and returns the names the set can be
-// rendered by. A file contributes each of its define blocks, and, when it has text of its own
-// around them, its path within the source plus, for a nested file, its base name, which is
-// what html/template.ParseFS and the route drivers address it by. Names are owned per source:
-// views in one directory override each other the way html/template behaves on its own, while
-// a later source is only used for the names no earlier source contributed. It returns a nil
-// template when no source contributes one.
+// rendered by. A file contributes each of its non-empty define blocks, and, when it has text
+// of its own around them, its path within the source plus, for a nested file, its base name,
+// which is what html/template.ParseFS and the route drivers address it by. Names are owned per
+// source: views in one directory override each other the way html/template behaves on its
+// own, while a later source is only used for the names no earlier source contributed. It
+// returns a nil template when no source contributes one.
 func (r *View) parse() (*template.Template, []string, error) {
 	tmpl := template.New("")
 	owned := make(map[string]bool)
+	renderable := make(map[string]bool)
 	var names []string
 	loaded := false
 
@@ -152,8 +153,14 @@ func (r *View) parse() (*template.Template, []string, error) {
 			if _, err := tmpl.AddParseTree(name, tree); err != nil {
 				return err
 			}
-			if !contributed[name] {
-				contributed[name] = true
+			contributed[name] = true
+
+			// An empty tree stays in the set, so {{ template }} and {{ block }} references to it
+			// resolve, but it is not a view: rendering it returns an empty string, which must
+			// not pass for a page. The name becomes renderable once a body for it turns up,
+			// whichever of the two is walked first.
+			if !renderable[name] && !parse.IsEmptyTree(tree.Root) {
+				renderable[name] = true
 				names = append(names, name)
 			}
 
@@ -201,7 +208,7 @@ func (r *View) parse() (*template.Template, []string, error) {
 			if err := claim(name, body.Tree, false); err != nil {
 				return err
 			}
-			if base := stdpath.Base(name); base != name {
+			if base := path.Base(name); base != name {
 				return claim(base, body.Tree.Copy(), true)
 			}
 

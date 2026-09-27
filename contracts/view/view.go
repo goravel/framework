@@ -5,8 +5,10 @@ import "io/fs"
 type View interface {
 	// Exists checks if a view with the specified name exists.
 	Exists(view string) bool
-	// First returns a template for the first view in the list that exists. If none of them
-	// exist, rendering the returned template fails.
+	// First returns a template for the first view in the list that can be rendered, which is
+	// not always a view that Exists: a file holding only define blocks under other names exists
+	// but cannot be rendered by its path. If none of them can be rendered, rendering the
+	// returned template fails.
 	First(views []string, data ...any) Template
 	// LoadViewsFrom registers a package view directory for template fallback.
 	// Templates from registered directories are loaded after app views; if a
