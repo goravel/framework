@@ -119,7 +119,7 @@ func (s *WorkerTestSuite) Test_call() {
 
 		s.mockJob.EXPECT().Call(task.Job.Signature(), utils.ConvertArgs(task.Args)).Return(nil).Once()
 
-		released, err := s.worker.call(task, nil)
+		released, err := s.worker.call(task, nil, s.worker.queue)
 		s.False(released)
 		s.NoError(err)
 	})
@@ -144,7 +144,7 @@ func (s *WorkerTestSuite) Test_call() {
 			},
 		}).Return("{\"signature\":\"test_job_one\",\"args\":[{\"type\":\"string\",\"value\":\"test\"}],\"delay\":null,\"uuid\":\"test\",\"chain\":[{\"signature\":\"test_job_two\",\"args\":[{\"type\":\"int\",\"value\":1}],\"delay\":null,\"uuid\":\"test\",\"chain\":[]}]}", nil).Once()
 
-		released, err := s.worker.call(task, nil)
+		released, err := s.worker.call(task, nil, s.worker.queue)
 		s.False(released)
 		s.Equal(errors.QueueFailedToCallJob, err)
 	})
@@ -165,7 +165,7 @@ func (s *WorkerTestSuite) Test_call() {
 		mockReservedJob.EXPECT().Attempts().Return(1).Once()
 		mockReservedJob.EXPECT().Release(time.Duration(0)).Return(nil).Once()
 
-		released, err := s.worker.call(errorTask, mockReservedJob)
+		released, err := s.worker.call(errorTask, mockReservedJob, s.worker.queue)
 		s.True(released)
 		s.NoError(err)
 	})
@@ -187,7 +187,7 @@ func (s *WorkerTestSuite) Test_call() {
 		mockReservedJob.EXPECT().Release(time.Duration(0)).Return(assert.AnError).Once()
 		s.mockLog.EXPECT().Error(errors.QueueFailedToReleaseReservedJob.Args(mockReservedJob, assert.AnError)).Once()
 
-		released, err := s.worker.call(errorTask, mockReservedJob)
+		released, err := s.worker.call(errorTask, mockReservedJob, s.worker.queue)
 		s.True(released)
 		s.NoError(err)
 	})
@@ -207,7 +207,7 @@ func (s *WorkerTestSuite) Test_call() {
 		mockReservedJob.EXPECT().Attempts().Return(3).Once()
 		mockReservedJob.EXPECT().Release(time.Duration(0)).Return(nil).Once()
 
-		released, err := s.worker.call(retryTask, mockReservedJob)
+		released, err := s.worker.call(retryTask, mockReservedJob, s.worker.queue)
 		s.True(released)
 		s.NoError(err)
 		s.Equal(3, retryTask.Job.(*TestJobRetry).attempt)
@@ -230,7 +230,7 @@ func (s *WorkerTestSuite) Test_call() {
 		mockReservedJob.EXPECT().Attempts().Return(1).Once()
 		mockReservedJob.EXPECT().Release(time.Duration(0)).Return(nil).Once()
 
-		released, err := s.worker.call(retryTask, mockReservedJob)
+		released, err := s.worker.call(retryTask, mockReservedJob, s.worker.queue)
 		s.True(released)
 		s.NoError(err)
 		s.Equal(3, retryTask.Job.(*TestJobRetry).maxTries) // worker's tries handed to ShouldRetry

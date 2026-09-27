@@ -4229,6 +4229,45 @@ func (s *QueryTestSuite) TestUpdateOrCreate() {
 	}
 }
 
+func (s *QueryTestSuite) TestWhen() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			users := []User{{Name: "when_user", Avatar: "when_avatar"}, {Name: "when_user", Avatar: "when_avatar1"}}
+			s.Nil(query.Query().Create(&users))
+			s.True(users[0].ID > 0)
+			s.True(users[1].ID > 0)
+
+			s.Run("condition is true", func() {
+				var result []User
+				s.Nil(query.Query().Where("name", "when_user").When(true, func(query contractsorm.Query) contractsorm.Query {
+					return query.Where("avatar", "when_avatar")
+				}).Find(&result))
+				s.Equal(1, len(result))
+				s.Equal("when_avatar", result[0].Avatar)
+			})
+
+			s.Run("condition is false", func() {
+				var result []User
+				s.Nil(query.Query().Where("name", "when_user").When(false, func(query contractsorm.Query) contractsorm.Query {
+					return query.Where("avatar", "when_avatar")
+				}).Find(&result))
+				s.Equal(2, len(result))
+			})
+
+			s.Run("condition is false with false callback", func() {
+				var result []User
+				s.Nil(query.Query().Where("name", "when_user").When(false, func(query contractsorm.Query) contractsorm.Query {
+					return query.Where("avatar", "when_avatar")
+				}, func(query contractsorm.Query) contractsorm.Query {
+					return query.Where("avatar", "when_avatar1")
+				}).Find(&result))
+				s.Equal(1, len(result))
+				s.Equal("when_avatar1", result[0].Avatar)
+			})
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestWhere() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {

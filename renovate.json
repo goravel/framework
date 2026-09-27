@@ -24,6 +24,10 @@
       "enabled": false
     },
     {
+      "matchPackageNames": ["google.golang.org/grpc"],
+      "allowedVersions": ">=1.85.0-dev.0.20260825072537-93e31b48545e"
+    },
+    {
       "groupName": "non-major dependencies",
       "matchUpdateTypes": [
         "digest",
