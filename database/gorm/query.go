@@ -591,20 +591,27 @@ func (r *Query) OrderBy(column string, direction ...string) contractsorm.Query {
 	} else {
 		orderDirection = "ASC"
 	}
-	return r.OrderByRaw(fmt.Sprintf("%s %s", r.quoteColumn(column), orderDirection))
+
+	// A plain column is passed to gorm as a column, so the connection that builds the query quotes it.
+	// gorm can only express ASC and DESC for it, any other direction keeps the raw form.
+	if isPlainIdentifier(column) {
+		switch strings.ToUpper(strings.TrimSpace(orderDirection)) {
+		case "ASC":
+			return r.addOrder(clause.OrderByColumn{Column: clause.Column{Name: column}})
+		case "DESC":
+			return r.addOrder(clause.OrderByColumn{Column: clause.Column{Name: column}, Desc: true})
+		}
+	}
+
+	return r.OrderByRaw(fmt.Sprintf("%s %s", column, orderDirection))
 }
 
 func (r *Query) OrderByDesc(column string) contractsorm.Query {
-	return r.OrderByRaw(fmt.Sprintf("%s DESC", r.quoteColumn(column)))
+	return r.OrderBy(column, "DESC")
 }
 
 func (r *Query) OrderByRaw(raw string) contractsorm.Query {
-	var rawAny any = raw
-
-	conditions := r.conditions
-	conditions.order = deep.Append(r.conditions.order, rawAny)
-
-	return r.setConditions(conditions)
+	return r.addOrder(raw)
 }
 
 func (r *Query) Instance() *gormio.DB {
@@ -974,8 +981,9 @@ func (r *Query) WhereAll(columns []string, args ...any) contractsorm.Query {
 	var conditions []string
 	var conditionArgs []any
 	for _, column := range columns {
-		conditions = append(conditions, fmt.Sprintf("%s %v ?", r.quoteColumn(column), op))
-		conditionArgs = append(conditionArgs, value)
+		columnQuery, columnArgs := columnCondition(column)
+		conditions = append(conditions, fmt.Sprintf("%s %v ?", columnQuery, op))
+		conditionArgs = append(append(conditionArgs, columnArgs...), value)
 	}
 
 	query := strings.Join(conditions, " AND ")
@@ -998,8 +1006,9 @@ func (r *Query) WhereAny(columns []string, args ...any) contractsorm.Query {
 	var conditions []string
 	var conditionArgs []any
 	for _, column := range columns {
-		conditions = append(conditions, fmt.Sprintf("%s %v ?", r.quoteColumn(column), op))
-		conditionArgs = append(conditionArgs, value)
+		columnQuery, columnArgs := columnCondition(column)
+		conditions = append(conditions, fmt.Sprintf("%s %v ?", columnQuery, op))
+		conditionArgs = append(append(conditionArgs, columnArgs...), value)
 	}
 
 	query := fmt.Sprintf("(%s)", strings.Join(conditions, " OR "))
@@ -1012,7 +1021,9 @@ func (r *Query) WhereAny(columns []string, args ...any) contractsorm.Query {
 }
 
 func (r *Query) WhereIn(column string, values []any) contractsorm.Query {
-	return r.Where(fmt.Sprintf("%s IN ?", r.quoteColumn(column)), values)
+	query, args := columnCondition(column)
+
+	return r.Where(fmt.Sprintf("%s IN ?", query), append(args, values)...)
 }
 
 func (r *Query) WhereJsonContains(column string, value any) contractsorm.Query {
@@ -1056,7 +1067,9 @@ func (r *Query) WhereJsonLength(column string, length int) contractsorm.Query {
 }
 
 func (r *Query) OrWhereIn(column string, values []any) contractsorm.Query {
-	return r.OrWhere(fmt.Sprintf("%s IN ?", r.quoteColumn(column)), values)
+	query, args := columnCondition(column)
+
+	return r.OrWhere(fmt.Sprintf("%s IN ?", query), append(args, values)...)
 }
 
 func (r *Query) OrWhereJsonContains(column string, value any) contractsorm.Query {
@@ -1105,31 +1118,45 @@ func (r *Query) OrWhereJsonLength(column string, length int) contractsorm.Query 
 }
 
 func (r *Query) WhereNotIn(column string, values []any) contractsorm.Query {
-	return r.Where(fmt.Sprintf("%s NOT IN ?", r.quoteColumn(column)), values)
+	query, args := columnCondition(column)
+
+	return r.Where(fmt.Sprintf("%s NOT IN ?", query), append(args, values)...)
 }
 
 func (r *Query) OrWhereNotIn(column string, values []any) contractsorm.Query {
-	return r.OrWhere(fmt.Sprintf("%s NOT IN ?", r.quoteColumn(column)), values)
+	query, args := columnCondition(column)
+
+	return r.OrWhere(fmt.Sprintf("%s NOT IN ?", query), append(args, values)...)
 }
 
 func (r *Query) WhereBetween(column string, x, y any) contractsorm.Query {
-	return r.Where(fmt.Sprintf("%s BETWEEN ? AND ?", r.quoteColumn(column)), x, y)
+	query, args := columnCondition(column)
+
+	return r.Where(fmt.Sprintf("%s BETWEEN ? AND ?", query), append(args, x, y)...)
 }
 
 func (r *Query) WhereNotBetween(column string, x, y any) contractsorm.Query {
-	return r.Where(fmt.Sprintf("%s NOT BETWEEN ? AND ?", r.quoteColumn(column)), x, y)
+	query, args := columnCondition(column)
+
+	return r.Where(fmt.Sprintf("%s NOT BETWEEN ? AND ?", query), append(args, x, y)...)
 }
 
 func (r *Query) OrWhereBetween(column string, x, y any) contractsorm.Query {
-	return r.OrWhere(fmt.Sprintf("%s BETWEEN ? AND ?", r.quoteColumn(column)), x, y)
+	query, args := columnCondition(column)
+
+	return r.OrWhere(fmt.Sprintf("%s BETWEEN ? AND ?", query), append(args, x, y)...)
 }
 
 func (r *Query) OrWhereNotBetween(column string, x, y any) contractsorm.Query {
-	return r.OrWhere(fmt.Sprintf("%s NOT BETWEEN ? AND ?", r.quoteColumn(column)), x, y)
+	query, args := columnCondition(column)
+
+	return r.OrWhere(fmt.Sprintf("%s NOT BETWEEN ? AND ?", query), append(args, x, y)...)
 }
 
 func (r *Query) OrWhereNull(column string) contractsorm.Query {
-	return r.OrWhere(fmt.Sprintf("%s IS NULL", r.quoteColumn(column)))
+	query, args := columnCondition(column)
+
+	return r.OrWhere(fmt.Sprintf("%s IS NULL", query), args...)
 }
 
 func (r *Query) WhereNone(columns []string, args ...any) contractsorm.Query {
@@ -1143,12 +1170,13 @@ func (r *Query) WhereNone(columns []string, args ...any) contractsorm.Query {
 	var conditions []string
 	var conditionArgs []any
 	for _, column := range columns {
+		columnQuery, columnArgs := columnCondition(column)
 		if op == "=" {
-			conditions = append(conditions, fmt.Sprintf("%s <> ?", r.quoteColumn(column)))
+			conditions = append(conditions, fmt.Sprintf("%s <> ?", columnQuery))
 		} else {
-			conditions = append(conditions, fmt.Sprintf("NOT (%s %v ?)", r.quoteColumn(column), op))
+			conditions = append(conditions, fmt.Sprintf("NOT (%s %v ?)", columnQuery, op))
 		}
-		conditionArgs = append(conditionArgs, value)
+		conditionArgs = append(append(conditionArgs, columnArgs...), value)
 	}
 
 	query := strings.Join(conditions, " AND ")
@@ -1161,11 +1189,15 @@ func (r *Query) WhereNone(columns []string, args ...any) contractsorm.Query {
 }
 
 func (r *Query) WhereNotNull(column string) contractsorm.Query {
-	return r.Where(fmt.Sprintf("%s IS NOT NULL", r.quoteColumn(column)))
+	query, args := columnCondition(column)
+
+	return r.Where(fmt.Sprintf("%s IS NOT NULL", query), args...)
 }
 
 func (r *Query) WhereNull(column string) contractsorm.Query {
-	return r.Where(fmt.Sprintf("%s IS NULL", r.quoteColumn(column)))
+	query, args := columnCondition(column)
+
+	return r.Where(fmt.Sprintf("%s IS NULL", query), args...)
 }
 
 func (r *Query) With(query string, args ...any) contractsorm.Query {
@@ -1245,6 +1277,13 @@ func (r *Query) addGlobalScopes() *Query {
 	}
 
 	return r.Scopes(globalScopes...).(*Query)
+}
+
+func (r *Query) addOrder(order any) contractsorm.Query {
+	conditions := r.conditions
+	conditions.order = deep.Append(r.conditions.order, order)
+
+	return r.setConditions(conditions)
 }
 
 func (r *Query) addWhere(where contractsdriver.Where) contractsorm.Query {
@@ -1814,16 +1853,6 @@ func (r *Query) omitSave(value any) error {
 	}
 
 	return r.instance.Save(value).Error
-}
-
-// quoteColumn quotes a plain column name with the driver's identifier quote, so reserved or case sensitive names work.
-// Expressions such as "LOWER(name)" or JSON selectors such as "data->name" are returned as is.
-func (r *Query) quoteColumn(column string) string {
-	if !isPlainIdentifier(column) {
-		return column
-	}
-
-	return r.instance.Statement.Quote(column)
 }
 
 func (r *Query) refreshConnection() (*Query, error) {

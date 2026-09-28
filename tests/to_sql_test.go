@@ -409,7 +409,17 @@ func (s *ToSqlTestSuite) TestQuoteColumns() {
 		{
 			name:     "OrderBy",
 			query:    s.query.OrderBy("order"),
-			expected: "SELECT * FROM \"users\" WHERE \"users\".\"deleted_at\" IS NULL ORDER BY \"order\" ASC",
+			expected: "SELECT * FROM \"users\" WHERE \"users\".\"deleted_at\" IS NULL ORDER BY \"order\"",
+		},
+		{
+			name:     "OrderBy with custom direction is not quoted",
+			query:    s.query.OrderBy("order", "DESC NULLS LAST"),
+			expected: "SELECT * FROM \"users\" WHERE \"users\".\"deleted_at\" IS NULL ORDER BY order DESC NULLS LAST",
+		},
+		{
+			name:     "OrderBy chained with OrderByRaw",
+			query:    s.query.OrderBy("order").OrderByRaw("id desc").OrderByDesc("group"),
+			expected: "SELECT * FROM \"users\" WHERE \"users\".\"deleted_at\" IS NULL ORDER BY \"order\",id desc,\"group\" DESC",
 		},
 		{
 			name:     "OrderBy with direction",
