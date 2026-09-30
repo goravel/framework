@@ -17,6 +17,7 @@ import (
 	"github.com/goravel/framework/contracts/log"
 	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
 	databasedriver "github.com/goravel/framework/database/driver"
+	"github.com/goravel/framework/database/utils"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	instrumentationdatabase "github.com/goravel/framework/telemetry/instrumentation/database"
@@ -65,7 +66,7 @@ func BuildDB(ctx context.Context, config config.Config, log log.Log, connection 
 	}
 
 	pool := driver.Pool()
-	logger := NewLogger(config, log)
+	logger := NewLogger(config, log).WithConnection(connection)
 	gorm, instrument, err := databasedriver.BuildGorm(config, logger.ToGorm(), pool, connection, telemetryResolver)
 	if err != nil {
 		return nil, err
@@ -234,13 +235,19 @@ func (r *Tx) Select(dest any, sql string, args ...any) error {
 	}
 
 	realSql = builder.Explain(sql, args...)
+	// Carry the placeholders and bindings on the context so the logger can
+	// report them in QueryExecuted events.
+	traceCtx := r.ctx
+	if utils.HasQueryListeners() {
+		traceCtx = utils.WithQueryBindings(traceCtx, sql, args)
+	}
 
 	destValue := reflect.Indirect(reflect.ValueOf(dest))
 
 	rowsAffected := int64(1)
 	if destValue.Kind() == reflect.Slice {
 		if err = builder.SelectContext(r.ctx, dest, sql, args...); err != nil {
-			r.logger.Trace(r.ctx, carbon.Now(), realSql, -1, err)
+			r.logger.Trace(traceCtx, carbon.Now(), realSql, -1, err)
 
 			return err
 		}
@@ -248,13 +255,13 @@ func (r *Tx) Select(dest any, sql string, args ...any) error {
 		rowsAffected = int64(destValue.Len())
 	} else {
 		if err = builder.GetContext(r.ctx, dest, sql, args...); err != nil {
-			r.logger.Trace(r.ctx, carbon.Now(), realSql, -1, err)
+			r.logger.Trace(traceCtx, carbon.Now(), realSql, -1, err)
 
 			return err
 		}
 	}
 
-	r.logger.Trace(r.ctx, carbon.Now(), realSql, rowsAffected, nil)
+	r.logger.Trace(traceCtx, carbon.Now(), realSql, rowsAffected, nil)
 
 	return nil
 }
@@ -309,19 +316,26 @@ func (r *Tx) exec(sql string, args ...any) (*contractsdb.Result, error) {
 	}
 
 	realSql = builder.Explain(sql, args...)
+	// Carry the placeholders and bindings on the context so the logger can
+	// report them in QueryExecuted events.
+	traceCtx := r.ctx
+	if utils.HasQueryListeners() {
+		traceCtx = utils.WithQueryBindings(traceCtx, sql, args)
+	}
+
 	result, err = builder.ExecContext(r.ctx, sql, args...)
 	if err != nil {
-		r.logger.Trace(r.ctx, carbon.Now(), realSql, -1, err)
+		r.logger.Trace(traceCtx, carbon.Now(), realSql, -1, err)
 		return nil, err
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		r.logger.Trace(r.ctx, carbon.Now(), realSql, -1, err)
+		r.logger.Trace(traceCtx, carbon.Now(), realSql, -1, err)
 		return nil, err
 	}
 
-	r.logger.Trace(r.ctx, carbon.Now(), realSql, rowsAffected, nil)
+	r.logger.Trace(traceCtx, carbon.Now(), realSql, rowsAffected, nil)
 
 	return &contractsdb.Result{RowsAffected: rowsAffected}, nil
 }
