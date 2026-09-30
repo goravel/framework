@@ -15,13 +15,13 @@ import (
 func TestNotificationMakeCommand(t *testing.T) {
 	notificationMakeCommand := &NotificationMakeCommand{}
 	mockContext := mocksconsole.NewContext(t)
-	mockContext.EXPECT().Argument(0).Return("").Once()
+	mockContext.EXPECT().Arguments().Return([]string{""}).Once()
 	mockContext.EXPECT().Ask("Enter the notification name", mock.Anything).Return("", errors.New("the notification name cannot be empty")).Once()
 	mockContext.EXPECT().Error("the notification name cannot be empty").Once()
 	assert.NoError(t, notificationMakeCommand.Handle(mockContext))
 	assert.False(t, file.Exists("app/notifications/invoice_paid.go"))
 
-	mockContext.EXPECT().Argument(0).Return("InvoicePaid").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"InvoicePaid"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().OptionBool("database").Return(false).Once()
 	mockContext.EXPECT().Success("Notification created successfully").Once()
@@ -29,12 +29,12 @@ func TestNotificationMakeCommand(t *testing.T) {
 	assert.True(t, file.Exists("app/notifications/invoice_paid.go"))
 	assert.True(t, file.Contain("app/notifications/invoice_paid.go", "func (r *InvoicePaid) ToMail"))
 
-	mockContext.EXPECT().Argument(0).Return("InvoicePaid").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"InvoicePaid"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Error("the notification already exists. Use the --force or -f flag to overwrite").Once()
 	assert.NoError(t, notificationMakeCommand.Handle(mockContext))
 
-	mockContext.EXPECT().Argument(0).Return("Billing/InvoicePaid").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"Billing/InvoicePaid"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().OptionBool("database").Return(false).Once()
 	mockContext.EXPECT().Success("Notification created successfully").Once()
@@ -49,7 +49,7 @@ func TestNotificationMakeCommand(t *testing.T) {
 func TestNotificationMakeCommand_DatabaseFlag_GeneratesDatabaseTemplate(t *testing.T) {
 	notificationMakeCommand := &NotificationMakeCommand{}
 	mockContext := mocksconsole.NewContext(t)
-	mockContext.EXPECT().Argument(0).Return("InvoicePaid").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"InvoicePaid"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().OptionBool("database").Return(true).Once()
 	mockContext.EXPECT().Success("Notification created successfully").Once()
@@ -72,4 +72,19 @@ func TestNotificationMakeCommand_Metadata(t *testing.T) {
 	assert.Len(t, extend.Flags, 2)
 	assert.Equal(t, "force", extend.Flags[0].(*command.BoolFlag).Name)
 	assert.Equal(t, "database", extend.Flags[1].(*command.BoolFlag).Name)
+}
+
+func TestNotificationMakeCommand_MultipleNames(t *testing.T) {
+	notificationMakeCommand := &NotificationMakeCommand{}
+	mockContext := mocksconsole.NewContext(t)
+
+	mockContext.EXPECT().Arguments().Return([]string{"InvoicePaid", "InvoiceRefunded"}).Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
+	mockContext.EXPECT().OptionBool("database").Return(false).Times(2)
+	mockContext.EXPECT().Success("Notification created successfully").Times(2)
+	assert.NoError(t, notificationMakeCommand.Handle(mockContext))
+
+	assert.True(t, file.Exists("app/notifications/invoice_paid.go"))
+	assert.True(t, file.Exists("app/notifications/invoice_refunded.go"))
+	assert.Nil(t, file.Remove("app"))
 }
