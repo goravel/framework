@@ -34,12 +34,9 @@ func init() {
 				"connection": config.Env("DB_CONNECTION"),
 				"queue":      "default",
 				"concurrent": 1,
-				// Seconds to wait for a blocking receive; honored by receive-based drivers
-				// (e.g. Redis Streams, Kafka), ignored by Pop-based drivers such as database.
+				// Seconds to wait for a blocking receive, e.g. 5, "1s" or 5*time.Second.
 				"timeout": 5,
 			},
-			// Receive-based custom drivers (e.g. Redis Streams, Kafka) honor the
-			// same "timeout" key; set it on their connection entry.
 		},
 
 		// Failed Queue Jobs
