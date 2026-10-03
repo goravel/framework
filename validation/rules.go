@@ -1096,7 +1096,7 @@ func ruleRegex(ctx *RuleContext) bool {
 		return false
 	}
 	pattern := ctx.Parameters[0]
-	re, err := regexp.Compile(pattern)
+	re, err := compilePattern(pattern)
 	if err != nil {
 		return false
 	}
@@ -1109,7 +1109,7 @@ func ruleNotRegex(ctx *RuleContext) bool {
 		return false
 	}
 	pattern := ctx.Parameters[0]
-	re, err := regexp.Compile(pattern)
+	re, err := compilePattern(pattern)
 	if err != nil {
 		return false
 	}

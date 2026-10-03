@@ -29,7 +29,8 @@ type Worker interface {
 type Args struct {
 	// Specify connection
 	Connection string
-	// Specify queue
+	// Queue specifies queue names as a comma-separated priority list,
+	// consumed from left to right.
 	Queue string
 	// Concurrent num
 	Concurrent int

@@ -937,6 +937,26 @@ func TestObserverEvent(t *testing.T) {
 	assert.Nil(t, getObserverEvent("error", &UserObserver{}))
 }
 
+func TestWhen(t *testing.T) {
+	query := &Query{}
+	trueQuery := &Query{}
+	falseQuery := &Query{}
+
+	callback := func(q contractsorm.Query) contractsorm.Query {
+		assert.Same(t, query, q)
+		return trueQuery
+	}
+	falseCallback := func(q contractsorm.Query) contractsorm.Query {
+		assert.Same(t, query, q)
+		return falseQuery
+	}
+
+	assert.Same(t, trueQuery, query.When(true, callback))
+	assert.Same(t, trueQuery, query.When(true, callback, falseCallback))
+	assert.Same(t, query, query.When(false, callback))
+	assert.Same(t, falseQuery, query.When(false, callback, falseCallback))
+}
+
 type User struct {
 	Name string
 }

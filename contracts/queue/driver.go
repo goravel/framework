@@ -23,8 +23,9 @@ type Driver interface {
 
 // DriverWithReceive is an optional interface for drivers that support
 // batch message receiving with blocking semantics (e.g., Kafka).
-// When a driver implements this interface, the Worker uses Receive
-// instead of Pop for message consumption.
+// When a driver implements this interface, a single-queue Worker uses
+// Receive instead of Pop for message consumption. Multi-queue Workers
+// use Pop to preserve priority order.
 type DriverWithReceive interface {
 	// Receive retrieves up to count messages from the queue.
 	// It may block until at least one message is available or ctx expires.

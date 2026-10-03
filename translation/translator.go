@@ -24,16 +24,24 @@ type Translator struct {
 	selector   *MessageSelector
 	locale     string
 	fallback   string
-	mu         sync.Mutex
 }
 
-// loaded is a map structure used to store loaded translation data.
-// It is organized as follows:
-//   - First map (map[string]): Maps from locale to...
-//   - Second map (map[string]): Maps from folder(group) to...
-//   - Third map (map[string]): Maps from key to...
-//   - Value (any): The translation line corresponding to the key in the specified locale, folder(group), and key hierarchy.
-var loaded = make(map[string]map[string]map[string]any)
+// loaded stores the translation data that has been read from a loader. The key
+// is the locale and the folder(group) it came from, the value is the map from
+// translation key to line.
+//
+// The state is package level because the Lang binding is registered with
+// BindWith: every facades.Lang() call builds a new Translator, so per-instance
+// state would guard nothing.
+//
+// loaded is a sync.Map because the access pattern is the one it is built for, a
+// cache that only grows where every entry is written once and read many times.
+// loadMu serializes the cold path only, so a group that loads successfully is
+// still loaded exactly once. A failed load is not cached and is retried.
+var (
+	loaded sync.Map
+	loadMu sync.Mutex
+)
 
 // contextKey is an unexported type for keys defined in this package.
 type contextKey string
@@ -156,7 +164,7 @@ func (t *Translator) SetLocale(locale string) context.Context {
 }
 
 func (t *Translator) getLine(locale string, group string, key string, options ...translationcontract.Option) string {
-	err := t.load(locale, group)
+	translations, err := t.load(locale, group)
 	if err != nil {
 		if errors.Is(err, errors.LangFileNotExist) {
 			return ""
@@ -168,7 +176,7 @@ func (t *Translator) getLine(locale string, group string, key string, options ..
 		return ""
 	}
 
-	keyValue := getValue(loaded[locale][group], key)
+	keyValue := getValue(translations, key)
 	// If the key doesn't exist, return empty string.
 	if keyValue == nil {
 		return ""
@@ -185,17 +193,22 @@ func (t *Translator) getLine(locale string, group string, key string, options ..
 	return line
 }
 
-func (t *Translator) load(locale string, group string) error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
+func (t *Translator) load(locale string, group string) (map[string]any, error) {
+	if translations, ok := lookupLoaded(locale, group); ok {
+		return translations, nil
+	}
 
-	if t.isLoaded(locale, group) {
-		return nil
+	loadMu.Lock()
+	defer loadMu.Unlock()
+
+	// Another goroutine may have loaded the group while this one waited.
+	if translations, ok := lookupLoaded(locale, group); ok {
+		return translations, nil
 	}
 
 	// Check if no loaders are available
 	if t.fileLoader == nil && t.fsLoader == nil {
-		return errors.LangNoLoaderAvailable
+		return nil, errors.LangNoLoaderAvailable
 	}
 
 	var (
@@ -210,26 +223,27 @@ func (t *Translator) load(locale string, group string) error {
 		translations, err = t.fsLoader.Load(locale, group)
 	}
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if loaded[locale] == nil {
-		loaded[locale] = make(map[string]map[string]any)
-	}
-	loaded[locale][group] = translations
-	return nil
+	loaded.Store(loadedKey(locale, group), translations)
+	return translations, nil
 }
 
-func (t *Translator) isLoaded(locale string, group string) bool {
-	if _, ok := loaded[locale]; !ok {
-		return false
+// loadedKey joins locale and group with NUL, which cannot occur in either. A
+// printable separator could collide, since groups contain "/" (e.g. "foo/test").
+func loadedKey(locale string, group string) string {
+	return locale + "\x00" + group
+}
+
+func lookupLoaded(locale string, group string) (map[string]any, bool) {
+	value, ok := loaded.Load(loadedKey(locale, group))
+	if !ok {
+		return nil, false
 	}
 
-	if _, ok := loaded[locale][group]; !ok {
-		return false
-	}
-
-	return true
+	translations, ok := value.(map[string]any)
+	return translations, ok
 }
 
 func makeReplacements(line string, replace map[string]string) string {

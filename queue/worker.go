@@ -2,6 +2,7 @@ package queue
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -101,7 +102,7 @@ func (r *Worker) Shutdown() error {
 	return nil
 }
 
-func (r *Worker) call(task queue.Task, reservedJob queue.ReservedJob) (released bool, err error) {
+func (r *Worker) call(task queue.Task, reservedJob queue.ReservedJob, queueName string) (released bool, err error) {
 	attempt := 1
 	r.printRunningLog(task)
 
@@ -161,7 +162,7 @@ func (r *Worker) call(task queue.Task, reservedJob queue.ReservedJob) (released 
 		r.failedJobChan <- models.FailedJob{
 			UUID:       task.UUID,
 			Connection: r.connection,
-			Queue:      r.queue,
+			Queue:      queueName,
 			Payload:    payload,
 			Exception:  callErr.Error(),
 			FailedAt:   carbon.NewDateTime(carbon.Now()),
@@ -231,8 +232,9 @@ func (r *Worker) printFailedLog(task queue.Task, duration string) {
 }
 
 func (r *Worker) run() error {
+	queueNames := splitQueueNames(r.queue)
 	if r.debug {
-		color.Infoln(errors.QueueProcessingJobs.Args(r.connection, r.queue).Error())
+		color.Infoln(errors.QueueProcessingJobs.Args(r.connection, strings.Join(queueNames, ",")).Error())
 	}
 
 	r.failedJobWg.Add(1)
@@ -243,14 +245,14 @@ func (r *Worker) run() error {
 		}
 	}()
 
-	if receiver, ok := r.driver.(queue.DriverWithReceive); ok {
-		return r.runWithReceive(receiver)
+	if receiver, ok := r.driver.(queue.DriverWithReceive); ok && len(queueNames) == 1 {
+		return r.runWithReceive(receiver, queueNames[0])
 	}
 
-	return r.runWithPop()
+	return r.runWithPop(queueNames)
 }
 
-func (r *Worker) runWithPop() error {
+func (r *Worker) runWithPop(queueNames []string) error {
 	for i := 0; i < r.concurrent; i++ {
 		r.jobWg.Add(1)
 		go func() {
@@ -265,10 +267,10 @@ func (r *Worker) runWithPop() error {
 					return
 				}
 
-				reservedJob, err := r.driver.Pop(r.queue)
+				reservedJob, queueName, err := r.popNextJob(queueNames)
 				if err != nil {
 					if !errors.Is(err, errors.QueueDriverNoJobFound) {
-						r.log.Error(errors.QueueDriverFailedToPop.Args(r.queue, err))
+						r.log.Error(errors.QueueDriverFailedToPop.Args(queueName, err))
 
 						currentDelay *= 2
 						if currentDelay > maxDelay {
@@ -286,7 +288,7 @@ func (r *Worker) runWithPop() error {
 				}
 
 				currentDelay = 1 * time.Second
-				r.processReservedJob(reservedJob)
+				r.processReservedJob(reservedJob, queueName)
 			}
 		}()
 	}
@@ -296,7 +298,7 @@ func (r *Worker) runWithPop() error {
 	return nil
 }
 
-func (r *Worker) runWithReceive(receiver queue.DriverWithReceive) error {
+func (r *Worker) runWithReceive(receiver queue.DriverWithReceive, queueName string) error {
 	r.jobWg.Add(1)
 	defer r.jobWg.Done()
 
@@ -310,7 +312,7 @@ func (r *Worker) runWithReceive(receiver queue.DriverWithReceive) error {
 		}
 
 		ctx, cancel := context.WithTimeout(r.shutdownCtx, r.receiveTimeout)
-		jobs, err := receiver.Receive(ctx, r.queue, r.concurrent)
+		jobs, err := receiver.Receive(ctx, r.queueName, r.concurrent)
 		cancel()
 
 		if err != nil {
@@ -318,7 +320,7 @@ func (r *Worker) runWithReceive(receiver queue.DriverWithReceive) error {
 				continue
 			}
 			if !errors.Is(err, context.DeadlineExceeded) {
-				r.log.Error(errors.QueueDriverFailedToReceive.Args(r.queue, err))
+				r.log.Error(errors.QueueDriverFailedToReceive.Args(queueName, err))
 
 				currentDelay *= 2
 				if currentDelay > maxDelay {
@@ -350,17 +352,17 @@ func (r *Worker) runWithReceive(receiver queue.DriverWithReceive) error {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				r.processReservedJob(reservedJob)
+				r.processReservedJob(reservedJob, queueName)
 			}()
 		}
 		wg.Wait()
 	}
 }
 
-func (r *Worker) processReservedJob(reservedJob queue.ReservedJob) {
+func (r *Worker) processReservedJob(reservedJob queue.ReservedJob, queueName string) {
 	task := reservedJob.Task()
 
-	released, err := r.call(task, reservedJob)
+	released, err := r.call(task, reservedJob, queueName)
 	if released {
 		// The job is back in the queue for a later retry (or was left
 		// reserved for retry_after expiry recovery); its row must remain
@@ -393,7 +395,7 @@ func (r *Worker) processReservedJob(reservedJob queue.ReservedJob) {
 			// invariant, stop the chain rather than silently continuing to
 			// the next job — hence the explicit released check (which also
 			// prevents the final Delete below from orphaning chain jobs).
-			released, err = r.call(chainTask, nil)
+			released, err = r.call(chainTask, nil, queueName)
 			if released {
 				break
 			}
@@ -416,4 +418,34 @@ func (r *Worker) processReservedJob(reservedJob queue.ReservedJob) {
 	if err := reservedJob.Delete(); err != nil {
 		r.log.Error(errors.QueueFailedToDeleteReservedJob.Args(reservedJob, err))
 	}
+}
+
+// popNextJob checks the given queues from left to right for one reservation.
+// A driver error stops the lookup instead of consuming a lower priority queue.
+// queueNames is non-empty because splitQueueNames always returns at least one name.
+func (r *Worker) popNextJob(queueNames []string) (queue.ReservedJob, string, error) {
+	var lastErr error
+	for _, queueName := range queueNames {
+		if r.isShutdown.Load() {
+			return nil, queueName, errors.QueueDriverNoJobFound.Args(queueName)
+		}
+
+		reservedJob, err := r.driver.Pop(queueName)
+		if err == nil {
+			if reservedJob == nil {
+				lastErr = errors.QueueDriverNoJobFound.Args(queueName)
+				continue
+			}
+
+			return reservedJob, queueName, nil
+		}
+		if !errors.Is(err, errors.QueueDriverNoJobFound) {
+			return nil, queueName, err
+		}
+
+		lastErr = err
+	}
+
+	lastQueue := queueNames[len(queueNames)-1]
+	return nil, lastQueue, lastErr
 }

@@ -133,7 +133,7 @@ func (s *WorkerTestSuite) Test_call() {
 
 		s.mockJob.EXPECT().Call(task.Job.Signature(), utils.ConvertArgs(task.Args)).Return(nil).Once()
 
-		released, err := s.worker.call(task, nil)
+		released, err := s.worker.call(task, nil, s.worker.queue)
 		s.False(released)
 		s.NoError(err)
 	})
@@ -158,7 +158,7 @@ func (s *WorkerTestSuite) Test_call() {
 			},
 		}).Return("{\"signature\":\"test_job_one\",\"args\":[{\"type\":\"string\",\"value\":\"test\"}],\"delay\":null,\"uuid\":\"test\",\"chain\":[{\"signature\":\"test_job_two\",\"args\":[{\"type\":\"int\",\"value\":1}],\"delay\":null,\"uuid\":\"test\",\"chain\":[]}]}", nil).Once()
 
-		released, err := s.worker.call(task, nil)
+		released, err := s.worker.call(task, nil, s.worker.queue)
 		s.False(released)
 		s.Equal(errors.QueueFailedToCallJob, err)
 	})
@@ -179,7 +179,7 @@ func (s *WorkerTestSuite) Test_call() {
 		mockReservedJob.EXPECT().Attempts().Return(1).Once()
 		mockReservedJob.EXPECT().Release(time.Duration(0)).Return(nil).Once()
 
-		released, err := s.worker.call(errorTask, mockReservedJob)
+		released, err := s.worker.call(errorTask, mockReservedJob, s.worker.queue)
 		s.True(released)
 		s.NoError(err)
 	})
@@ -201,7 +201,7 @@ func (s *WorkerTestSuite) Test_call() {
 		mockReservedJob.EXPECT().Release(time.Duration(0)).Return(assert.AnError).Once()
 		s.mockLog.EXPECT().Error(errors.QueueFailedToReleaseReservedJob.Args(mockReservedJob, assert.AnError)).Once()
 
-		released, err := s.worker.call(errorTask, mockReservedJob)
+		released, err := s.worker.call(errorTask, mockReservedJob, s.worker.queue)
 		s.True(released)
 		s.NoError(err)
 	})
@@ -221,7 +221,7 @@ func (s *WorkerTestSuite) Test_call() {
 		mockReservedJob.EXPECT().Attempts().Return(3).Once()
 		mockReservedJob.EXPECT().Release(time.Duration(0)).Return(nil).Once()
 
-		released, err := s.worker.call(retryTask, mockReservedJob)
+		released, err := s.worker.call(retryTask, mockReservedJob, s.worker.queue)
 		s.True(released)
 		s.NoError(err)
 		s.Equal(3, retryTask.Job.(*TestJobRetry).attempt)
@@ -244,7 +244,7 @@ func (s *WorkerTestSuite) Test_call() {
 		mockReservedJob.EXPECT().Attempts().Return(1).Once()
 		mockReservedJob.EXPECT().Release(time.Duration(0)).Return(nil).Once()
 
-		released, err := s.worker.call(retryTask, mockReservedJob)
+		released, err := s.worker.call(retryTask, mockReservedJob, s.worker.queue)
 		s.True(released)
 		s.NoError(err)
 		s.Equal(3, retryTask.Job.(*TestJobRetry).maxTries) // worker's tries handed to ShouldRetry
@@ -353,14 +353,11 @@ func (s *WorkerTestSuite) Test_run() {
 		s.SetupTest()
 		s.mockDriver.EXPECT().Pop(queue).Return(nil, errors.QueueDriverNoJobFound).Once()
 
-		go func() {
-			err := s.worker.run()
-			s.NoError(err)
-		}()
+		runErrChan := s.startWorker()
 
 		time.Sleep(500 * time.Millisecond)
 
-		s.NoError(s.worker.Shutdown())
+		s.shutdownWorker(runErrChan)
 	})
 
 	s.Run("failed to pop job", func() {
@@ -369,14 +366,11 @@ func (s *WorkerTestSuite) Test_run() {
 
 		s.mockLog.EXPECT().Error(errors.QueueDriverFailedToPop.Args(queue, assert.AnError)).Once()
 
-		go func() {
-			err := s.worker.run()
-			s.NoError(err)
-		}()
+		runErrChan := s.startWorker()
 
 		time.Sleep(500 * time.Millisecond)
 
-		s.NoError(s.worker.Shutdown())
+		s.shutdownWorker(runErrChan)
 	})
 
 	s.Run("job failed, insert failed job", func() {
@@ -404,14 +398,11 @@ func (s *WorkerTestSuite) Test_run() {
 		s.mockDB.EXPECT().Table("failed_jobs").Return(mockQuery).Once()
 		mockQuery.EXPECT().Insert(failedJob).Return(nil, nil).Once()
 
-		go func() {
-			err := s.worker.run()
-			s.NoError(err)
-		}()
+		runErrChan := s.startWorker()
 
 		time.Sleep(500 * time.Millisecond)
 
-		s.NoError(s.worker.Shutdown())
+		s.shutdownWorker(runErrChan)
 	})
 
 	s.Run("failed to insert failed job", func() {
@@ -440,14 +431,11 @@ func (s *WorkerTestSuite) Test_run() {
 		mockQuery.EXPECT().Insert(failedJob).Return(nil, assert.AnError).Once()
 		s.mockLog.EXPECT().Error(errors.QueueFailedToSaveFailedJob.Args(assert.AnError, *failedJob)).Once()
 
-		go func() {
-			err := s.worker.run()
-			s.NoError(err)
-		}()
+		runErrChan := s.startWorker()
 
 		time.Sleep(500 * time.Millisecond)
 
-		s.NoError(s.worker.Shutdown())
+		s.shutdownWorker(runErrChan)
 	})
 
 	s.Run("chain job failed, insert failed job", func() {
@@ -512,14 +500,11 @@ func (s *WorkerTestSuite) Test_run() {
 			FailedAt:   carbon.NewDateTime(carbon.Now()),
 		}).Return(nil, nil).Once()
 
-		go func() {
-			err := s.worker.run()
-			s.NoError(err)
-		}()
+		runErrChan := s.startWorker()
 
 		time.Sleep(500 * time.Millisecond)
 
-		s.NoError(s.worker.Shutdown())
+		s.shutdownWorker(runErrChan)
 	})
 
 	s.Run("happy path", func() {
@@ -547,14 +532,11 @@ func (s *WorkerTestSuite) Test_run() {
 		mockReservedJob.EXPECT().Delete().Return(nil).Once()
 		s.mockDriver.EXPECT().Pop(queue).Return(nil, errors.QueueDriverNoJobFound).Once()
 
-		go func() {
-			err := s.worker.run()
-			s.NoError(err)
-		}()
+		runErrChan := s.startWorker()
 
 		time.Sleep(1500 * time.Millisecond)
 
-		s.NoError(s.worker.Shutdown())
+		s.shutdownWorker(runErrChan)
 	})
 
 	s.Run("happy path with chain", func() {
@@ -586,14 +568,11 @@ func (s *WorkerTestSuite) Test_run() {
 		mockReservedJob.EXPECT().Delete().Return(nil).Once()
 		s.mockDriver.EXPECT().Pop(queue).Return(nil, errors.QueueDriverNoJobFound).Once()
 
-		go func() {
-			err := s.worker.run()
-			s.NoError(err)
-		}()
+		runErrChan := s.startWorker()
 
 		time.Sleep(500 * time.Millisecond)
 
-		s.NoError(s.worker.Shutdown())
+		s.shutdownWorker(runErrChan)
 	})
 
 	s.Run("retry job failed, insert failed job", func() {
@@ -658,15 +637,12 @@ func (s *WorkerTestSuite) Test_run() {
 			FailedAt:   carbon.NewDateTime(carbon.Now()),
 		}).Return(nil, nil).Once()
 
-		go func() {
-			s.worker.tries = 2 // Set tries to 2 for retry
-			err := s.worker.run()
-			s.NoError(err)
-		}()
+		s.worker.tries = 2 // Set tries to 2 for retry
+		runErrChan := s.startWorker()
 
 		time.Sleep(500 * time.Millisecond)
 
-		s.NoError(s.worker.Shutdown())
+		s.shutdownWorker(runErrChan)
 		s.worker.tries = 1
 	})
 
@@ -710,15 +686,12 @@ func (s *WorkerTestSuite) Test_run() {
 		mockReservedJob.EXPECT().Delete().Return(nil).Once()
 		s.mockDriver.EXPECT().Pop(queue).Return(nil, errors.QueueDriverNoJobFound)
 
-		go func() {
-			s.worker.tries = 3 // Set tries to 3 for retry
-			err := s.worker.run()
-			s.NoError(err)
-		}()
+		s.worker.tries = 3 // Set tries to 3 for retry
+		runErrChan := s.startWorker()
 
 		time.Sleep(500 * time.Millisecond)
 
-		s.NoError(s.worker.Shutdown())
+		s.shutdownWorker(runErrChan)
 		s.worker.tries = 1
 	})
 }
@@ -773,12 +746,10 @@ func (s *WorkerTestSuite) Test_runWithReceive() {
 				return nil, ctx.Err()
 			}).Once()
 
-		go func() {
-			s.NoError(s.worker.run())
-		}()
+		runErrChan := s.startWorker()
 
 		time.Sleep(200 * time.Millisecond)
-		s.NoError(s.worker.Shutdown())
+		s.shutdownWorker(runErrChan)
 	})
 
 	for _, tt := range []struct {
@@ -858,12 +829,10 @@ func (s *WorkerTestSuite) Test_runWithReceive() {
 
 		s.mockLog.EXPECT().Error(errors.QueueDriverFailedToReceive.Args(queue, assert.AnError)).Once()
 
-		go func() {
-			s.NoError(s.worker.run())
-		}()
+		runErrChan := s.startWorker()
 
 		time.Sleep(500 * time.Millisecond)
-		s.NoError(s.worker.Shutdown())
+		s.shutdownWorker(runErrChan)
 	})
 
 	s.Run("happy path", func() {
@@ -898,12 +867,10 @@ func (s *WorkerTestSuite) Test_runWithReceive() {
 
 		s.mockJob.EXPECT().Call(successTask.Job.Signature(), make([]any, 0)).Return(nil).Once()
 
-		go func() {
-			s.NoError(s.worker.run())
-		}()
+		runErrChan := s.startWorker()
 
 		time.Sleep(500 * time.Millisecond)
-		s.NoError(s.worker.Shutdown())
+		s.shutdownWorker(runErrChan)
 	})
 
 	s.Run("job failed, insert failed job", func() {
@@ -951,12 +918,10 @@ func (s *WorkerTestSuite) Test_runWithReceive() {
 		s.mockDB.EXPECT().Table("failed_jobs").Return(mockQuery).Once()
 		mockQuery.EXPECT().Insert(matchFailedJob("test-receive-err")).Return(nil, nil).Once()
 
-		go func() {
-			s.NoError(s.worker.run())
-		}()
+		runErrChan := s.startWorker()
 
 		time.Sleep(500 * time.Millisecond)
-		s.NoError(s.worker.Shutdown())
+		s.shutdownWorker(runErrChan)
 	})
 
 	s.Run("batch messages", func() {
@@ -995,12 +960,10 @@ func (s *WorkerTestSuite) Test_runWithReceive() {
 
 		s.mockJob.EXPECT().Call(testJobOne.Signature(), make([]any, 0)).Return(nil).Times(3)
 
-		go func() {
-			s.NoError(s.worker.run())
-		}()
+		runErrChan := s.startWorker()
 
 		time.Sleep(500 * time.Millisecond)
-		s.NoError(s.worker.Shutdown())
+		s.shutdownWorker(runErrChan)
 	})
 
 	s.Run("shutdown waits for receive loop", func() {
@@ -1032,16 +995,13 @@ func (s *WorkerTestSuite) Test_runWithReceive() {
 		mockDriverWithReceive.EXPECT().Receive(mock.Anything, queue, s.worker.concurrent).
 			Return([]contractsqueue.ReservedJob{mockReservedJob}, nil).Once()
 
-		go func() {
-			s.NoError(s.worker.run())
-		}()
+		runErrChan := s.startWorker()
 
 		// Shutdown is called while job is still running (job takes 300ms, shutdown at 100ms)
 		time.Sleep(100 * time.Millisecond)
 
 		// Shutdown should block until the in-flight job completes
-		err := s.worker.Shutdown()
-		s.NoError(err)
+		s.shutdownWorker(runErrChan)
 		s.True(called)
 	})
 }
@@ -1070,17 +1030,13 @@ func (s *WorkerTestSuite) TestShutdown() {
 		s.mockDriver.EXPECT().Pop(s.worker.queue).Return(nil, errors.QueueDriverNoJobFound).Once()
 
 		// Start the worker
-		go func() {
-			s.NoError(s.worker.run())
-		}()
+		runErrChan := s.startWorker()
 
 		// Give worker time to start
 		time.Sleep(100 * time.Millisecond)
 
 		// Call shutdown - it should wait for WaitGroup
-		err := s.worker.Shutdown()
-
-		s.NoError(err)
+		s.shutdownWorker(runErrChan)
 		s.True(s.worker.isShutdown.Load())
 	})
 
@@ -1108,16 +1064,13 @@ func (s *WorkerTestSuite) TestShutdown() {
 		mockReservedJob.EXPECT().Delete().Return(nil).Once()
 
 		// Start the worker
-		go func() {
-			s.NoError(s.worker.run())
-		}()
+		runErrChan := s.startWorker()
 
 		// Give worker time to start processing
 		time.Sleep(100 * time.Millisecond)
 
 		// Shutdown should wait for the job to complete
-		err := s.worker.Shutdown()
-		s.NoError(err)
+		s.shutdownWorker(runErrChan)
 		s.True(called)
 	})
 
@@ -1156,16 +1109,13 @@ func (s *WorkerTestSuite) TestShutdown() {
 		mockQuery.EXPECT().Insert(matchFailedJob("test-error")).Return(nil, nil).Once()
 
 		// Start the worker
-		go func() {
-			s.NoError(s.worker.run())
-		}()
+		runErrChan := s.startWorker()
 
 		// Give worker time to process the failed job
 		time.Sleep(200 * time.Millisecond)
 
 		// Shutdown should wait for failed job logger goroutine
-		err := s.worker.Shutdown()
-		s.NoError(err)
+		s.shutdownWorker(runErrChan)
 	})
 
 	s.Run("shutdown when a task is running but fails finally", func() {
@@ -1206,16 +1156,13 @@ func (s *WorkerTestSuite) TestShutdown() {
 		mockQuery.EXPECT().Insert(matchFailedJob("test-error")).Return(nil, nil).Once()
 
 		// Start the worker
-		go func() {
-			s.NoError(s.worker.run())
-		}()
+		runErrChan := s.startWorker()
 
 		// Give worker time to process the failed job
 		time.Sleep(200 * time.Millisecond)
 
 		// Shutdown should wait for failed job logger goroutine
-		err := s.worker.Shutdown()
-		s.NoError(err)
+		s.shutdownWorker(runErrChan)
 	})
 
 	s.Run("shutdown with multiple jobs", func() {
@@ -1250,17 +1197,37 @@ func (s *WorkerTestSuite) TestShutdown() {
 		s.mockDriver.EXPECT().Pop(s.worker.queue).Return(nil, errors.QueueDriverNoJobFound).Twice()
 
 		// Start the worker
-		go func() {
-			s.NoError(s.worker.run())
-		}()
+		runErrChan := s.startWorker()
 
 		// Give workers time to process
 		time.Sleep(200 * time.Millisecond)
 
 		// Shutdown should wait for all workers to complete
-		err := s.worker.Shutdown()
-		s.NoError(err)
+		s.shutdownWorker(runErrChan)
 	})
+}
+
+// startWorker runs the worker in the background and returns a channel that receives run's result.
+// Asserting on that result from the subtest goroutine, instead of inside the background goroutine,
+// keeps it from racing with testify resetting the suite's T once the subtest ends.
+func (s *WorkerTestSuite) startWorker() <-chan error {
+	runErrChan := make(chan error, 1)
+	go func() {
+		runErrChan <- s.worker.run()
+	}()
+
+	return runErrChan
+}
+
+// shutdownWorker shuts the worker down and waits for the run started by startWorker to return.
+func (s *WorkerTestSuite) shutdownWorker(runErrChan <-chan error) {
+	s.NoError(s.worker.Shutdown())
+	select {
+	case err := <-runErrChan:
+		s.NoError(err)
+	case <-time.After(5 * time.Second):
+		s.Fail("the worker did not stop after shutdown")
+	}
 }
 
 // matchFailedJob is a helper to match FailedJob with specific UUID

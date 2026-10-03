@@ -944,6 +944,18 @@ func (r *Query) UpdateOrCreate(dest any, attributes any, values any) error {
 	return r.Create(dest)
 }
 
+func (r *Query) When(condition bool, callback func(query contractsorm.Query) contractsorm.Query, falseCallback ...func(query contractsorm.Query) contractsorm.Query) contractsorm.Query {
+	if condition {
+		return callback(r)
+	}
+
+	if len(falseCallback) > 0 {
+		return falseCallback[0](r)
+	}
+
+	return r
+}
+
 func (r *Query) Where(query any, args ...any) contractsorm.Query {
 	return r.addWhere(contractsdriver.Where{
 		Query: query,

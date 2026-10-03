@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -15,6 +17,41 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/spf13/cast"
 )
+
+// maxCompiledPatterns is a soft cap on the number of cached patterns. Patterns
+// come from rule definitions, so a program normally stays far below it. The cap
+// only matters when rules are built from untrusted input: once it is reached,
+// new patterns are compiled on every call instead of being retained.
+const maxCompiledPatterns = 1024
+
+var (
+	compiledPatterns      sync.Map
+	compiledPatternsCount atomic.Int64
+)
+
+// compilePattern returns the compiled form of pattern, compiling it on first use
+// and reusing it afterwards. Failed compiles are not cached.
+func compilePattern(pattern string) (*regexp.Regexp, error) {
+	if cached, ok := compiledPatterns.Load(pattern); ok {
+		return cached.(*regexp.Regexp), nil
+	}
+
+	compiled, err := regexp.Compile(pattern)
+	if err != nil {
+		return nil, err
+	}
+
+	if compiledPatternsCount.Load() >= maxCompiledPatterns {
+		return compiled, nil
+	}
+
+	actual, loaded := compiledPatterns.LoadOrStore(pattern, compiled)
+	if !loaded {
+		compiledPatternsCount.Add(1)
+	}
+
+	return actual.(*regexp.Regexp), nil
+}
 
 // isValueEmpty checks if a value is considered "empty" for validation purposes.
 func isValueEmpty(val any) bool {
@@ -466,7 +503,7 @@ func expandWildcardFields[T any](fields map[string]T, dataKeys []string, keepUnm
 
 		pattern := "^" + regexp.QuoteMeta(field) + "$"
 		pattern = strings.ReplaceAll(pattern, `\*`, `[^.]+`)
-		re, err := regexp.Compile(pattern)
+		re, err := compilePattern(pattern)
 		if err != nil {
 			expanded[field] = value
 			continue

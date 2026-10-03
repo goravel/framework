@@ -3796,6 +3796,70 @@ func (_c *Query_UpdateOrCreate_Call) RunAndReturn(run func(interface{}, interfac
 	return _c
 }
 
+// When provides a mock function with given fields: condition, callback, falseCallback
+func (_m *Query) When(condition bool, callback func(orm.Query) orm.Query, falseCallback ...func(orm.Query) orm.Query) orm.Query {
+	_va := make([]interface{}, len(falseCallback))
+	for _i := range falseCallback {
+		_va[_i] = falseCallback[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, condition, callback)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for When")
+	}
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(bool, func(orm.Query) orm.Query, ...func(orm.Query) orm.Query) orm.Query); ok {
+		r0 = rf(condition, callback, falseCallback...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_When_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'When'
+type Query_When_Call struct {
+	*mock.Call
+}
+
+// When is a helper method to define mock.On call
+//   - condition bool
+//   - callback func(orm.Query) orm.Query
+//   - falseCallback ...func(orm.Query) orm.Query
+func (_e *Query_Expecter) When(condition interface{}, callback interface{}, falseCallback ...interface{}) *Query_When_Call {
+	return &Query_When_Call{Call: _e.mock.On("When",
+		append([]interface{}{condition, callback}, falseCallback...)...)}
+}
+
+func (_c *Query_When_Call) Run(run func(condition bool, callback func(orm.Query) orm.Query, falseCallback ...func(orm.Query) orm.Query)) *Query_When_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]func(orm.Query) orm.Query, len(args)-2)
+		for i, a := range args[2:] {
+			if a != nil {
+				variadicArgs[i] = a.(func(orm.Query) orm.Query)
+			}
+		}
+		run(args[0].(bool), args[1].(func(orm.Query) orm.Query), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Query_When_Call) Return(_a0 orm.Query) *Query_When_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_When_Call) RunAndReturn(run func(bool, func(orm.Query) orm.Query, ...func(orm.Query) orm.Query) orm.Query) *Query_When_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Where provides a mock function with given fields: query, args
 func (_m *Query) Where(query interface{}, args ...interface{}) orm.Query {
 	var _ca []interface{}
