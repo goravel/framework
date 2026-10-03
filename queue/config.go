@@ -2,10 +2,16 @@ package queue
 
 import (
 	"fmt"
-	"strings"
+ 	"strings"
+	"time"
 
 	contractsconfig "github.com/goravel/framework/contracts/config"
 )
+
+// defaultReceiveTimeout is the fallback timeout, in seconds, for a single
+// blocking Receive call made by the worker. It can be overridden per
+// connection via queue.connections.<connection>.timeout.
+const defaultReceiveTimeout = 5
 
 type Config struct {
 	contractsconfig.Config
@@ -71,6 +77,43 @@ func (r *Config) Via(connection string) any {
 	return r.Get(fmt.Sprintf("queue.connections.%s.via", connection))
 }
 
+func (r *Config) Timeout(connection string) time.Duration {
+	switch timeout := r.Get(fmt.Sprintf("queue.connections.%s.timeout", connection)).(type) {
+	case int:
+		return secondsToTimeout(timeout)
+	case int64:
+		return secondsToTimeout(int(timeout))
+	case float64:
+		return secondsToTimeout(int(timeout))
+	case string:
+		duration, err := time.ParseDuration(timeout)
+		if err != nil {
+			return defaultReceiveTimeout * time.Second
+		}
+		return durationToTimeout(duration)
+	default:
+		return defaultReceiveTimeout * time.Second
+	}
+}
+
+// secondsToTimeout converts a configured number of seconds into a duration,
+// falling back to the default when the value is missing or non-positive.
+func secondsToTimeout(seconds int) time.Duration {
+	if seconds <= 0 {
+		return defaultReceiveTimeout * time.Second
+	}
+	return time.Duration(seconds) * time.Second
+}
+
+// durationToTimeout returns the duration as-is when positive, otherwise the
+// default.
+func durationToTimeout(duration time.Duration) time.Duration {
+	if duration <= 0 {
+		return defaultReceiveTimeout * time.Second
+	}
+	return duration
+}
+  
 func configuredQueue(config contractsconfig.Config, connection string) string {
 	return config.GetString(fmt.Sprintf("queue.connections.%s.queue", connection), "default")
 }

@@ -918,6 +918,52 @@ func (_c *Config_GetStringSlice_Call) RunAndReturn(run func(string, ...[]string)
 	return _c
 }
 
+// Timeout provides a mock function with given fields: connection
+func (_m *Config) Timeout(connection string) time.Duration {
+	ret := _m.Called(connection)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Timeout")
+	}
+
+	var r0 time.Duration
+	if rf, ok := ret.Get(0).(func(string) time.Duration); ok {
+		r0 = rf(connection)
+	} else {
+		r0 = ret.Get(0).(time.Duration)
+	}
+
+	return r0
+}
+
+// Config_Timeout_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Timeout'
+type Config_Timeout_Call struct {
+	*mock.Call
+}
+
+// Timeout is a helper method to define mock.On call
+//   - connection string
+func (_e *Config_Expecter) Timeout(connection interface{}) *Config_Timeout_Call {
+	return &Config_Timeout_Call{Call: _e.mock.On("Timeout", connection)}
+}
+
+func (_c *Config_Timeout_Call) Run(run func(connection string)) *Config_Timeout_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Config_Timeout_Call) Return(_a0 time.Duration) *Config_Timeout_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Config_Timeout_Call) RunAndReturn(run func(string) time.Duration) *Config_Timeout_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // UnmarshalKey provides a mock function with given fields: key, rawVal
 func (_m *Config) UnmarshalKey(key string, rawVal interface{}) error {
 	ret := _m.Called(key, rawVal)
