@@ -59,6 +59,7 @@ func (s *WorkerTestSuite) SetupTest() {
 		queue:          "default",
 		concurrent:     1,
 		tries:          1,
+		receiveTimeout: defaultReceiveTimeout,
 		debug:          true,
 		shutdownCtx:    shutdownCtx,
 		shutdownCancel: shutdownCancel,
@@ -68,11 +69,24 @@ func (s *WorkerTestSuite) SetupTest() {
 func (s *WorkerTestSuite) TestNewWorker() {
 	s.Run("happy path", func() {
 		s.mockConfig.EXPECT().Driver("sync").Return(contractsqueue.DriverSync).Once()
+		s.mockConfig.EXPECT().Timeout("sync").Return(defaultReceiveTimeout).Once()
 		s.mockConfig.EXPECT().Debug().Return(true).Once()
 		worker, err := NewWorker(s.mockConfig, nil, s.mockDB, s.mockJob, s.mockJson, s.mockLog, "sync", "default", 2, 1)
 
 		s.NotNil(worker)
 		s.NoError(err)
+		s.Equal(defaultReceiveTimeout, worker.receiveTimeout)
+	})
+
+	s.Run("custom timeout", func() {
+		s.mockConfig.EXPECT().Driver("sync").Return(contractsqueue.DriverSync).Once()
+		s.mockConfig.EXPECT().Timeout("sync").Return(10 * time.Second).Once()
+		s.mockConfig.EXPECT().Debug().Return(true).Once()
+		worker, err := NewWorker(s.mockConfig, nil, s.mockDB, s.mockJob, s.mockJson, s.mockLog, "sync", "default", 2, 1)
+
+		s.NotNil(worker)
+		s.NoError(err)
+		s.Equal(10*time.Second, worker.receiveTimeout)
 	})
 
 	s.Run("failed to create driver", func() {
@@ -736,6 +750,124 @@ func (s *WorkerTestSuite) Test_runWithReceive() {
 
 		time.Sleep(200 * time.Millisecond)
 		s.shutdownWorker(runErrChan)
+	})
+
+	for _, tt := range []struct {
+		name    string
+		timeout time.Duration
+	}{
+		{name: "default timeout", timeout: defaultReceiveTimeout},
+		{name: "custom timeout", timeout: 2 * time.Second},
+	} {
+		s.Run("receive context deadline matches "+tt.name, func() {
+			s.SetupTest()
+
+			mockDriverWithReceive := mocksqueue.NewDriverWithReceive(s.T())
+			s.worker.driver = &receiveDriver{
+				driver:   s.mockDriver,
+				receiver: mockDriverWithReceive,
+			}
+			s.worker.connection = connection
+			s.worker.receiveTimeout = tt.timeout
+
+			type deadlineResult struct {
+				deadline time.Time
+				ok       bool
+			}
+			deadlineCh := make(chan deadlineResult, 1)
+			mockDriverWithReceive.EXPECT().Receive(mock.Anything, queue, s.worker.concurrent).
+				Run(func(ctx context.Context, _ string, _ int) {
+					deadline, ok := ctx.Deadline()
+					select {
+					case deadlineCh <- deadlineResult{deadline: deadline, ok: ok}:
+					default:
+					}
+				}).Return(nil, nil).Once()
+			secondCalled := make(chan struct{})
+			release := make(chan struct{})
+			mockDriverWithReceive.EXPECT().Receive(mock.Anything, queue, s.worker.concurrent).
+				RunAndReturn(func(ctx context.Context, _ string, _ int) ([]contractsqueue.ReservedJob, error) {
+					close(secondCalled)
+					<-release
+					<-ctx.Done()
+					return nil, ctx.Err()
+				}).Once()
+
+			before := time.Now()
+			runErrChan := s.startWorker()
+
+			select {
+			case result := <-deadlineCh:
+				s.Require().True(result.ok, "receive context should have a deadline")
+				after := time.Now()
+				// The deadline must sit ~receiveTimeout after the moment the
+				// context was created, not at some other value.
+				s.GreaterOrEqual(result.deadline, before.Add(tt.timeout-100*time.Millisecond))
+				s.LessOrEqual(result.deadline, after.Add(tt.timeout+100*time.Millisecond))
+			case <-time.After(2 * time.Second):
+				s.Fail("timed out waiting for Receive to be called")
+			}
+
+			// Wait for the loop to issue its second (blocking) Receive instead
+			// of sleeping a fixed amount, which is racy on slow runners.
+			select {
+			case <-secondCalled:
+			case <-time.After(2 * time.Second):
+				s.Fail("second Receive was not called")
+			}
+
+			// Release the second Receive before Shutdown so the run goroutine
+			// can leave Receive (Shutdown waits on it) and cannot issue a third
+			// call against the two-call mock.
+			close(release)
+			s.shutdownWorker(runErrChan)
+		})
+	}
+
+	s.Run("receive deadline exceeded is retried without logging", func() {
+		s.SetupTest()
+
+		mockDriverWithReceive := mocksqueue.NewDriverWithReceive(s.T())
+		s.worker.driver = &receiveDriver{
+			driver:   s.mockDriver,
+			receiver: mockDriverWithReceive,
+		}
+		s.worker.connection = connection
+		s.worker.receiveTimeout = 500 * time.Millisecond
+
+		// First call lets the receive deadline elapse without any shutdown, so
+		// the worker must treat DeadlineExceeded as a normal retry (no error
+		// log, no fatal backoff).
+		mockDriverWithReceive.EXPECT().Receive(mock.Anything, queue, s.worker.concurrent).
+			RunAndReturn(func(ctx context.Context, _ string, _ int) ([]contractsqueue.ReservedJob, error) {
+				<-ctx.Done()
+				return nil, context.DeadlineExceeded
+			}).Once()
+		secondCalled := make(chan struct{})
+		release := make(chan struct{})
+		mockDriverWithReceive.EXPECT().Receive(mock.Anything, queue, s.worker.concurrent).
+			RunAndReturn(func(ctx context.Context, _ string, _ int) ([]contractsqueue.ReservedJob, error) {
+				close(secondCalled)
+				<-release
+				<-ctx.Done()
+				return nil, ctx.Err()
+			}).Once()
+
+		runErrChan := s.startWorker()
+
+		select {
+		case <-secondCalled:
+		case <-time.After(2 * time.Second):
+			s.Fail("worker did not retry Receive after the deadline elapsed")
+		}
+
+		// Release the second Receive before Shutdown: Shutdown waits on the run
+		// goroutine, so that goroutine must be able to leave Receive first. The
+		// context is then only canceled by Shutdown, which keeps the second call
+		// terminal (no third Receive can be issued against the two-call mock).
+		close(release)
+		s.shutdownWorker(runErrChan)
+		s.mockLog.AssertNotCalled(s.T(), "Error", mock.Anything)
 	})
 
 	s.Run("receive error", func() {

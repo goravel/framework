@@ -1,11 +1,22 @@
 package queue
 
 import (
+	"encoding/json"
 	"fmt"
+	"math"
+	"reflect"
+	"strconv"
 	"strings"
+	"time"
 
 	contractsconfig "github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/contracts/queue"
 )
+
+// defaultReceiveTimeout is the fallback timeout for a single blocking Receive
+// call made by the worker. It can be overridden per connection via
+// `queue.connections.<connection>.timeout`.
+const defaultReceiveTimeout = queue.DefaultReceiveTimeout
 
 type Config struct {
 	contractsconfig.Config
@@ -69,6 +80,93 @@ func (r *Config) FailedTable() string {
 
 func (r *Config) Via(connection string) any {
 	return r.Get(fmt.Sprintf("queue.connections.%s.via", connection))
+}
+
+// Timeout resolves the blocking receive timeout for the given connection from
+// `queue.connections.<connection>.timeout`, falling back to the default when
+// the value is missing, non-positive or unparsable.
+func (r *Config) Timeout(connection string) time.Duration {
+	value := r.Get(fmt.Sprintf("queue.connections.%s.timeout", connection))
+
+	switch timeout := value.(type) {
+	case time.Duration:
+		return durationToTimeout(timeout)
+	case string:
+		if duration, err := time.ParseDuration(timeout); err == nil {
+			return durationToTimeout(duration)
+		}
+		if seconds, err := strconv.ParseFloat(timeout, 64); err == nil {
+			return floatToTimeout(seconds)
+		}
+		return defaultReceiveTimeout
+	case json.Number:
+		if seconds, err := timeout.Float64(); err == nil {
+			return floatToTimeout(seconds)
+		}
+		return defaultReceiveTimeout
+	default:
+		if timeout, ok := numericTimeout(value); ok {
+			return timeout
+		}
+		return defaultReceiveTimeout
+	}
+}
+
+// numericTimeout normalizes any Go integer or float kind into a timeout. It
+// reports false when the value is not numeric so the caller can apply the
+// default. Values are widened to int64/uint64/float64 before the positivity
+// and overflow guards run, so the conversion is 32-bit safe.
+func numericTimeout(value any) (time.Duration, bool) {
+	switch v := reflect.ValueOf(value); v.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return secondsToTimeout(v.Int()), true
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return uintToTimeout(v.Uint()), true
+	case reflect.Float32, reflect.Float64:
+		return floatToTimeout(v.Float()), true
+	}
+
+	return 0, false
+}
+
+// secondsToTimeout converts a configured number of seconds into a duration,
+// falling back to the default when the value is non-positive or too large to be
+// represented as a duration without overflowing.
+func secondsToTimeout(seconds int64) time.Duration {
+	if seconds <= 0 || seconds > math.MaxInt64/int64(time.Second) {
+		return defaultReceiveTimeout
+	}
+	return time.Duration(seconds) * time.Second
+}
+
+// uintToTimeout converts a configured number of unsigned seconds into a
+// duration, falling back to the default when the value is zero or too large to
+// be represented as a duration without overflowing.
+func uintToTimeout(seconds uint64) time.Duration {
+	if seconds == 0 || seconds > uint64(math.MaxInt64)/uint64(time.Second) {
+		return defaultReceiveTimeout
+	}
+	return time.Duration(seconds) * time.Second
+}
+
+// floatToTimeout converts a configured number of seconds into a duration,
+// falling back to the default when the value is non-positive, NaN or too large
+// to be represented as a duration without overflowing.
+func floatToTimeout(seconds float64) time.Duration {
+	nanos := seconds * float64(time.Second)
+	if math.IsNaN(seconds) || seconds <= 0 || nanos >= float64(math.MaxInt64) {
+		return defaultReceiveTimeout
+	}
+	return durationToTimeout(time.Duration(nanos))
+}
+
+// durationToTimeout returns the duration as-is when positive, otherwise the
+// default.
+func durationToTimeout(duration time.Duration) time.Duration {
+	if duration <= 0 {
+		return defaultReceiveTimeout
+	}
+	return duration
 }
 
 func configuredQueue(config contractsconfig.Config, connection string) string {
