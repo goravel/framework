@@ -34,6 +34,8 @@ func init() {
 				"connection": config.Env("DB_CONNECTION"),
 				"queue":      "default",
 				"concurrent": 1,
+				// Seconds to wait for a blocking receive, e.g. 5, "1s" or 5*time.Second.
+				"timeout": 5,
 			},
 		},
 

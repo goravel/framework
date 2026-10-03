@@ -27,6 +27,7 @@ func (s *ApplicationTestSuite) TestWorkerUsesConfiguredQueueListForDefaultConnec
 	s.mockConfig.EXPECT().DefaultConcurrent().Return(2).Once()
 	s.mockConfig.EXPECT().GetString("queue.connections.sync.queue", "default").Return("high,default").Once()
 	s.mockConfig.EXPECT().Driver("sync").Return(contractsqueue.DriverSync).Once()
+	s.mockConfig.EXPECT().Timeout("sync").Return(defaultReceiveTimeout).Once()
 	s.mockConfig.EXPECT().Debug().Return(false).Once()
 
 	worker := NewApplication(s.mockConfig, nil, nil, nil, nil, nil).Worker().(*Worker)
@@ -41,6 +42,7 @@ func (s *ApplicationTestSuite) TestWorkerUsesConfiguredQueueListForSelectedConne
 	s.mockConfig.EXPECT().GetString("queue.connections.redis.queue", "default").Return("high,default").Once()
 	s.mockConfig.EXPECT().GetInt("queue.connections.redis.concurrent", 1).Return(3).Once()
 	s.mockConfig.EXPECT().Driver("redis").Return(contractsqueue.DriverSync).Once()
+	s.mockConfig.EXPECT().Timeout("redis").Return(defaultReceiveTimeout).Once()
 	s.mockConfig.EXPECT().Debug().Return(false).Once()
 
 	worker := NewApplication(s.mockConfig, nil, nil, nil, nil, nil).Worker(contractsqueue.Args{
