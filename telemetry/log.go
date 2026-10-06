@@ -7,11 +7,11 @@ import (
 	"os"
 	"time"
 
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutlog"
 	"go.opentelemetry.io/otel/log"
-	"go.opentelemetry.io/otel/log/global"
 	"go.opentelemetry.io/otel/log/noop"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 	"google.golang.org/grpc/credentials"
@@ -34,7 +34,7 @@ func NewLoggerProvider(ctx context.Context, cfg Config, opts ...sdklog.LoggerPro
 	exporterName := cfg.Logs.Exporter
 	if exporterName == "" {
 		lp := noop.NewLoggerProvider()
-		global.SetLoggerProvider(lp)
+		otel.SetLoggerProvider(lp)
 		return lp, NoopShutdown(), NoopFlush(), nil
 	}
 
@@ -59,7 +59,7 @@ func NewLoggerProvider(ctx context.Context, cfg Config, opts ...sdklog.LoggerPro
 	providerOptions = append(providerOptions, opts...)
 
 	lp := sdklog.NewLoggerProvider(providerOptions...)
-	global.SetLoggerProvider(lp)
+	otel.SetLoggerProvider(lp)
 
 	return lp, lp.Shutdown, lp.ForceFlush, nil
 }
