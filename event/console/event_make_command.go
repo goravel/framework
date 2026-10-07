@@ -47,10 +47,19 @@ func (r *EventMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *EventMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "event", ctx.Argument(0), support.Config.Paths.Events)
+	for _, name := range supportconsole.MakeNames(ctx) {
+		if err := r.makeOne(ctx, name); err != nil {
+			ctx.Error(err.Error())
+		}
+	}
+
+	return nil
+}
+
+func (r *EventMakeCommand) makeOne(ctx console.Context, name string) error {
+	m, err := supportconsole.NewMake(ctx, "event", name, support.Config.Paths.Events)
 	if err != nil {
-		ctx.Error(err.Error())
-		return nil
+		return err
 	}
 
 	if err := file.PutContent(m.GetFilePath(), r.populateStub(r.getStub(ctx), m.GetPackageName(), m.GetStructName())); err != nil {

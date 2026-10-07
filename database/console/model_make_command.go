@@ -72,10 +72,19 @@ func (r *ModelMakeCommand) Extend() command.Extend {
 }
 
 func (r *ModelMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "model", ctx.Argument(0), support.Config.Paths.Models)
+	for _, name := range supportconsole.MakeNames(ctx) {
+		if err := r.makeOne(ctx, name); err != nil {
+			ctx.Error(err.Error())
+		}
+	}
+
+	return nil
+}
+
+func (r *ModelMakeCommand) makeOne(ctx console.Context, name string) error {
+	m, err := supportconsole.NewMake(ctx, "model", name, support.Config.Paths.Models)
 	if err != nil {
-		ctx.Error(err.Error())
-		return nil
+		return err
 	}
 
 	table := ctx.Option("table")
@@ -86,32 +95,27 @@ func (r *ModelMakeCommand) Handle(ctx console.Context) error {
 
 	if table != "" {
 		if !r.schema.HasTable(table) {
-			ctx.Error(errors.SchemaTableNotFound.Args(table).Error())
-			return nil
+			return errors.SchemaTableNotFound.Args(table)
 		}
 
 		columns, err := r.schema.GetColumns(table)
 		if err != nil {
-			ctx.Error(err.Error())
-			return nil
+			return err
 		}
 
 		model, err = r.generateModelInfo(columns, structName, table)
 		if err != nil {
-			ctx.Error(err.Error())
-			return nil
+			return err
 		}
 	}
 
 	stubContent, err := r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName(), model)
 	if err != nil {
-		ctx.Error(err.Error())
-		return nil
+		return err
 	}
 
 	if err := file.PutContent(m.GetFilePath(), stubContent); err != nil {
-		ctx.Error(err.Error())
-		return nil
+		return err
 	}
 
 	ctx.Success("Model created successfully")

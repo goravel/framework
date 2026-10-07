@@ -38,10 +38,19 @@ func (r *ChannelMakeCommand) Extend() command.Extend {
 }
 
 func (r *ChannelMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "channel", ctx.Argument(0), support.Config.Paths.Broadcasting)
+	for _, name := range supportconsole.MakeNames(ctx) {
+		if err := r.makeOne(ctx, name); err != nil {
+			ctx.Error(err.Error())
+		}
+	}
+
+	return nil
+}
+
+func (r *ChannelMakeCommand) makeOne(ctx console.Context, name string) error {
+	m, err := supportconsole.NewMake(ctx, "channel", name, support.Config.Paths.Broadcasting)
 	if err != nil {
-		ctx.Error(err.Error())
-		return nil
+		return err
 	}
 
 	if err := file.PutContent(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
