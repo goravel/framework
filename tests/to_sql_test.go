@@ -325,6 +325,137 @@ func (s *ToSqlTestSuite) TestPluck() {
 	s.Equal("SELECT \"id\" FROM \"global_scopes\" WHERE \"id\" = 1 AND \"avatar\" = 'avatar_scope' AND \"global_scopes\".\"deleted_at\" IS NULL", toSql.Pluck("id", GlobalScope{}))
 }
 
+func (s *ToSqlTestSuite) TestQuoteColumns() {
+	tests := []struct {
+		name     string
+		query    ormcontract.Query
+		expected string
+	}{
+		{
+			name:     "WhereIn",
+			query:    s.query.WhereIn("group", []any{"a", "b"}),
+			expected: "SELECT * FROM \"users\" WHERE \"group\" IN ('a','b') AND \"users\".\"deleted_at\" IS NULL",
+		},
+		{
+			name:     "OrWhereIn",
+			query:    s.query.Where("id", 1).OrWhereIn("group", []any{"a"}),
+			expected: "SELECT * FROM \"users\" WHERE (\"id\" = 1 OR \"group\" IN ('a')) AND \"users\".\"deleted_at\" IS NULL",
+		},
+		{
+			name:     "WhereNotIn",
+			query:    s.query.WhereNotIn("group", []any{"a"}),
+			expected: "SELECT * FROM \"users\" WHERE \"group\" NOT IN ('a') AND \"users\".\"deleted_at\" IS NULL",
+		},
+		{
+			name:     "OrWhereNotIn",
+			query:    s.query.Where("id", 1).OrWhereNotIn("group", []any{"a"}),
+			expected: "SELECT * FROM \"users\" WHERE (\"id\" = 1 OR \"group\" NOT IN ('a')) AND \"users\".\"deleted_at\" IS NULL",
+		},
+		{
+			name:     "WhereBetween",
+			query:    s.query.WhereBetween("order", 1, 2),
+			expected: "SELECT * FROM \"users\" WHERE (\"order\" BETWEEN 1 AND 2) AND \"users\".\"deleted_at\" IS NULL",
+		},
+		{
+			name:     "WhereNotBetween",
+			query:    s.query.WhereNotBetween("order", 1, 2),
+			expected: "SELECT * FROM \"users\" WHERE (\"order\" NOT BETWEEN 1 AND 2) AND \"users\".\"deleted_at\" IS NULL",
+		},
+		{
+			name:     "OrWhereBetween",
+			query:    s.query.Where("id", 1).OrWhereBetween("order", 1, 2),
+			expected: "SELECT * FROM \"users\" WHERE (\"id\" = 1 OR (\"order\" BETWEEN 1 AND 2)) AND \"users\".\"deleted_at\" IS NULL",
+		},
+		{
+			name:     "OrWhereNotBetween",
+			query:    s.query.Where("id", 1).OrWhereNotBetween("order", 1, 2),
+			expected: "SELECT * FROM \"users\" WHERE (\"id\" = 1 OR (\"order\" NOT BETWEEN 1 AND 2)) AND \"users\".\"deleted_at\" IS NULL",
+		},
+		{
+			name:     "WhereNull",
+			query:    s.query.WhereNull("group"),
+			expected: "SELECT * FROM \"users\" WHERE \"group\" IS NULL AND \"users\".\"deleted_at\" IS NULL",
+		},
+		{
+			name:     "OrWhereNull",
+			query:    s.query.Where("id", 1).OrWhereNull("group"),
+			expected: "SELECT * FROM \"users\" WHERE (\"id\" = 1 OR \"group\" IS NULL) AND \"users\".\"deleted_at\" IS NULL",
+		},
+		{
+			name:     "WhereNotNull",
+			query:    s.query.WhereNotNull("group"),
+			expected: "SELECT * FROM \"users\" WHERE \"group\" IS NOT NULL AND \"users\".\"deleted_at\" IS NULL",
+		},
+		{
+			name:     "WhereAll",
+			query:    s.query.WhereAll([]string{"group", "order"}, "=", "a"),
+			expected: "SELECT * FROM \"users\" WHERE (\"group\" = 'a' AND \"order\" = 'a') AND \"users\".\"deleted_at\" IS NULL",
+		},
+		{
+			name:     "WhereAny",
+			query:    s.query.WhereAny([]string{"group", "order"}, "=", "a"),
+			expected: "SELECT * FROM \"users\" WHERE ((\"group\" = 'a' OR \"order\" = 'a')) AND \"users\".\"deleted_at\" IS NULL",
+		},
+		{
+			name:     "WhereNone",
+			query:    s.query.WhereNone([]string{"group", "order"}, "LIKE", "a"),
+			expected: "SELECT * FROM \"users\" WHERE (NOT (\"group\" LIKE 'a') AND NOT (\"order\" LIKE 'a')) AND \"users\".\"deleted_at\" IS NULL",
+		},
+		{
+			name:     "WhereNone with equal operator",
+			query:    s.query.WhereNone([]string{"group"}, "a"),
+			expected: "SELECT * FROM \"users\" WHERE \"group\" <> 'a' AND \"users\".\"deleted_at\" IS NULL",
+		},
+		{
+			name:     "OrderBy",
+			query:    s.query.OrderBy("order"),
+			expected: "SELECT * FROM \"users\" WHERE \"users\".\"deleted_at\" IS NULL ORDER BY \"order\"",
+		},
+		{
+			name:     "OrderBy with custom direction is not quoted",
+			query:    s.query.OrderBy("order", "DESC NULLS LAST"),
+			expected: "SELECT * FROM \"users\" WHERE \"users\".\"deleted_at\" IS NULL ORDER BY order DESC NULLS LAST",
+		},
+		{
+			name:     "OrderBy chained with OrderByRaw",
+			query:    s.query.OrderBy("order").OrderByRaw("id desc").OrderByDesc("group"),
+			expected: "SELECT * FROM \"users\" WHERE \"users\".\"deleted_at\" IS NULL ORDER BY \"order\",id desc,\"group\" DESC",
+		},
+		{
+			name:     "OrderBy with direction",
+			query:    s.query.OrderBy("order", "DESC"),
+			expected: "SELECT * FROM \"users\" WHERE \"users\".\"deleted_at\" IS NULL ORDER BY \"order\" DESC",
+		},
+		{
+			name:     "OrderByDesc",
+			query:    s.query.OrderByDesc("order"),
+			expected: "SELECT * FROM \"users\" WHERE \"users\".\"deleted_at\" IS NULL ORDER BY \"order\" DESC",
+		},
+		{
+			name:     "table qualified column",
+			query:    s.query.WhereIn("users.group", []any{"a"}),
+			expected: "SELECT * FROM \"users\" WHERE \"users\".\"group\" IN ('a') AND \"users\".\"deleted_at\" IS NULL",
+		},
+		{
+			name:     "expression is not quoted",
+			query:    s.query.WhereIn("LOWER(name)", []any{"a"}),
+			expected: "SELECT * FROM \"users\" WHERE LOWER(name) IN ('a') AND \"users\".\"deleted_at\" IS NULL",
+		},
+		{
+			name:     "quoted column is not quoted again",
+			query:    s.query.WhereNull(`"group"`),
+			expected: "SELECT * FROM \"users\" WHERE \"group\" IS NULL AND \"users\".\"deleted_at\" IS NULL",
+		},
+	}
+
+	for _, test := range tests {
+		s.Run(test.name, func() {
+			toSql := gorm.NewToSql(test.query.(*gorm.Query), s.mockLog, true)
+			s.Equal(test.expected, toSql.Get([]User{}))
+		})
+	}
+}
+
 func (s *ToSqlTestSuite) TestSave() {
 	toSql := gorm.NewToSql(s.query.(*gorm.Query), s.mockLog, false)
 	s.Equal("INSERT INTO \"users\" (\"created_at\",\"updated_at\",\"deleted_at\",\"name\",\"bio\",\"avatar\",\"ratio\") VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING \"id\"", toSql.Save(&User{}))
