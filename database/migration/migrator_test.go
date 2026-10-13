@@ -682,7 +682,7 @@ func (s *MigratorSuite) TestStatus() {
 				s.mockRepository.EXPECT().RepositoryExists().Return(false).Once()
 			},
 			assert: func() {
-				s.Equal("\x1b[30;43m\x1b[30;43m WARNING \x1b[0m\x1b[0m \x1b[33m\x1b[33mMigration table not found\x1b[0m\x1b[0m\n", color.CaptureOutput(func(w io.Writer) {
+				s.Equal("\x1b[30;43m WARNING \x1b[0m \x1b[33mMigration table not found\x1b[0m\n", color.CaptureOutput(func(w io.Writer) {
 					status, err := s.migrator.Status()
 					s.NoError(err)
 					s.Nil(status)
@@ -709,7 +709,7 @@ func (s *MigratorSuite) TestStatus() {
 				s.mockRepository.EXPECT().GetMigrations().Return(nil, nil).Once()
 			},
 			assert: func() {
-				s.Equal("\x1b[30;43m\x1b[30;43m WARNING \x1b[0m\x1b[0m \x1b[33m\x1b[33mNo migrations found\x1b[0m\x1b[0m\n", color.CaptureOutput(func(w io.Writer) {
+				s.Equal("\x1b[30;43m WARNING \x1b[0m \x1b[33mNo migrations found\x1b[0m\n", color.CaptureOutput(func(w io.Writer) {
 					status, err := s.migrator.Status()
 					s.NoError(err)
 					s.Len(status, 0)

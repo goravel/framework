@@ -1,6 +1,11 @@
 package color
 
-import "github.com/pterm/pterm"
+import (
+	"fmt"
+
+	gookitcolor "github.com/gookit/color"
+	"github.com/pterm/pterm"
+)
 
 /*
 Package color provides utilities for rendering and printing colorized text using color tags.
@@ -23,7 +28,7 @@ Supported Features:
 //
 // color.Print("<suc>Hello</>, <red>World</>")
 func Print(a ...any) {
-	pterm.Print(a...)
+	pterm.Print(Sprint(a...))
 }
 
 // Println renders color tags and prints the provided arguments with a newline.
@@ -32,7 +37,7 @@ func Print(a ...any) {
 //
 // color.Println("<cyan>Welcome</>, <green>to</>, <yellow>Go</>")
 func Println(a ...any) {
-	pterm.Println(a...)
+	Print(Sprintln(a...))
 }
 
 // Printf formats a string with the provided arguments, renders color tags, and prints the result.
@@ -41,7 +46,7 @@ func Println(a ...any) {
 //
 // color.Printf("<red>Error:</> %s\n", err)
 func Printf(format string, a ...any) {
-	pterm.Printf(format, a...)
+	Print(Sprintf(format, a...))
 }
 
 // Printfln formats a string with the provided arguments, renders color tags,
@@ -51,7 +56,7 @@ func Printf(format string, a ...any) {
 //
 // color.Printfln("<success>Success:</> %s", message)
 func Printfln(format string, a ...any) {
-	pterm.Printfln(format, a...)
+	Print(Sprintfln(format, a...))
 }
 
 // Sprint renders color tags and returns the formatted string.
@@ -60,7 +65,7 @@ func Printfln(format string, a ...any) {
 //
 // result := color.Sprint("<blue>Processing...</>")
 func Sprint(a ...any) string {
-	return pterm.Sprint(a...)
+	return gookitcolor.Sprint(a...)
 }
 
 // Sprintln renders color tags and returns the formatted string with a newline.
@@ -69,7 +74,7 @@ func Sprint(a ...any) string {
 //
 // result := color.Sprintln("<fg=yellow;op=bold>Loading complete.</>")
 func Sprintln(a ...any) string {
-	return pterm.Sprintln(a...)
+	return Sprint(fmt.Sprintln(a...))
 }
 
 // Sprintf formats a string with the provided arguments, renders color tags,
@@ -79,7 +84,7 @@ func Sprintln(a ...any) string {
 //
 // result := color.Sprintf("<red>Error:</> %s", err)
 func Sprintf(format string, a ...any) string {
-	return pterm.Sprintf(format, a...)
+	return gookitcolor.Sprintf(format, a...)
 }
 
 // Sprintfln formats a string with the provided arguments, renders color tags,
@@ -89,5 +94,5 @@ func Sprintf(format string, a ...any) string {
 //
 // result := color.Sprintfln("<green>Task completed:</> %s", taskName)
 func Sprintfln(format string, a ...any) string {
-	return pterm.Sprintfln(format, a...)
+	return gookitcolor.Sprintf(format, a...) + "\n"
 }

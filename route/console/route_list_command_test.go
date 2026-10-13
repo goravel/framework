@@ -38,7 +38,7 @@ func TestRouteListCommand(t *testing.T) {
 						color.Warningln(msg)
 					}).Once()
 			},
-			expected: "\x1b[30;43m\x1b[30;43m WARNING \x1b[0m\x1b[0m \x1b[33m\x1b[33mYour application doesn't have any routes.\x1b[0m\x1b[0m\n",
+			expected: "\x1b[30;43m WARNING \x1b[0m \x1b[33mYour application doesn't have any routes.\x1b[0m\n",
 		},
 		{
 			name: "no routes matching criteria",
@@ -57,7 +57,7 @@ func TestRouteListCommand(t *testing.T) {
 						color.Warningln(msg)
 					}).Once()
 			},
-			expected: "\x1b[30;43m\x1b[30;43m WARNING \x1b[0m\x1b[0m \x1b[33m\x1b[33mYour application doesn't have any routes matching the given criteria.\x1b[0m\x1b[0m\n",
+			expected: "\x1b[30;43m WARNING \x1b[0m \x1b[33mYour application doesn't have any routes matching the given criteria.\x1b[0m\n",
 		},
 		{
 			name: "filter by method",
