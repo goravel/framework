@@ -33,6 +33,9 @@ import (
 
 const Associations = clause.Associations
 
+// cursorBufferSize is the number of rows Cursor keeps in flight.
+const cursorBufferSize = 64
+
 type Query struct {
 	config            config.Config
 	ctx               context.Context
@@ -164,7 +167,9 @@ func (r *Query) Cursor() chan contractsdb.Row {
 	query := r.addGlobalScopes().buildConditions()
 	r.conditions.with = with
 
-	cursorChan := make(chan contractsdb.Row)
+	// Buffered so the producing goroutine can stay ahead of the consumer. An
+	// unbuffered channel costs a goroutine handoff on every single row.
+	cursorChan := make(chan contractsdb.Row, cursorBufferSize)
 	go func() {
 		var (
 			err  error
