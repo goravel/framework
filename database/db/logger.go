@@ -7,8 +7,10 @@ import (
 	gormlogger "gorm.io/gorm/logger"
 
 	"github.com/goravel/framework/contracts/config"
+	contractsdb "github.com/goravel/framework/contracts/database/db"
 	"github.com/goravel/framework/contracts/database/logger"
 	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/database/utils"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/str"
@@ -20,7 +22,7 @@ var (
 	traceErrStr  = "[%.3fms] [rows:%v] %s\t%s"
 )
 
-func NewLogger(config config.Config, log log.Log) logger.Logger {
+func NewLogger(config config.Config, log log.Log) *Logger {
 	level := logger.Warn
 	if config.GetBool("app.debug") {
 		level = logger.Info
@@ -42,6 +44,14 @@ type Logger struct {
 	log           log.Log
 	level         logger.Level
 	slowThreshold time.Duration
+	connection    string
+}
+
+// WithConnection sets the connection name reported in QueryExecuted events.
+func (r *Logger) WithConnection(connection string) *Logger {
+	r.connection = connection
+
+	return r
 }
 
 func (r *Logger) Log() log.Log {
@@ -85,12 +95,33 @@ func (r *Logger) Panicf(ctx context.Context, msg string, data ...any) {
 }
 
 func (r *Logger) Trace(ctx context.Context, begin *carbon.Carbon, sql string, rowsAffected int64, err error) {
+	duration := begin.DiffInDuration()
+	elapsed := float64(duration.Nanoseconds()) / 1e6
+
+	// Query events fire regardless of the log level, mirroring Laravel's
+	// DB::listen, which is independent from the query log.
+	if utils.HasQueryListeners() {
+		// sql is the explained (interpolated) statement; when the gorm
+		// query-event plugin carried the placeholders and bindings on the
+		// context, prefer those for Sql/Bindings.
+		eventSql, bindings, ok := utils.QueryBindingsFromContext(ctx)
+		if !ok {
+			eventSql = sql
+		}
+
+		utils.DispatchQueryEvent(&contractsdb.QueryExecuted{
+			Connection: r.connection,
+			Sql:        eventSql,
+			Bindings:   bindings,
+			RawSql:     sql,
+			Time:       duration,
+			Error:      err,
+		})
+	}
+
 	if r.level <= logger.Silent {
 		return
 	}
-
-	duration := begin.DiffInDuration()
-	elapsed := float64(duration.Nanoseconds()) / 1e6
 
 	addQueryLogToContext(ctx, sql, elapsed)
 
