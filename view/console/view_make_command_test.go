@@ -48,7 +48,7 @@ func (s *ViewMakeCommandTestSuite) TestEmptyName() {
 	viewMakeCommand := &ViewMakeCommand{}
 	mockContext := mocksconsole.NewContext(s.T())
 
-	mockContext.EXPECT().Argument(0).Return("").Once()
+	mockContext.EXPECT().Arguments().Return([]string{""}).Once()
 	mockContext.EXPECT().Error("the view name name cannot be empty").Once()
 	s.Nil(viewMakeCommand.Handle(mockContext))
 }
@@ -57,7 +57,7 @@ func (s *ViewMakeCommandTestSuite) TestCreateSuccess() {
 	viewMakeCommand := &ViewMakeCommand{}
 	mockContext := mocksconsole.NewContext(s.T())
 
-	mockContext.EXPECT().Argument(0).Return("welcome").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"welcome"}).Once()
 
 	expectedPath := filepath.Join("resources", "views", "welcome.tmpl")
 	mockContext.EXPECT().Success("View created successfully").Once()
@@ -112,4 +112,17 @@ func (s *ViewMakeCommandTestSuite) TestPopulateStub() {
 			s.Equal(tt.expectedResult, result)
 		})
 	}
+}
+
+func (s *ViewMakeCommandTestSuite) TestMultipleNames() {
+	viewMakeCommand := &ViewMakeCommand{}
+	mockContext := mocksconsole.NewContext(s.T())
+
+	mockContext.EXPECT().Arguments().Return([]string{"welcome", "dashboard"}).Once()
+	mockContext.EXPECT().Success("View created successfully").Times(2)
+
+	s.Nil(viewMakeCommand.Handle(mockContext))
+	s.True(file.Exists(filepath.Join("resources", "views", "welcome.tmpl")))
+	s.True(file.Exists(filepath.Join("resources", "views", "dashboard.tmpl")))
+	s.Nil(file.Remove("resources"))
 }

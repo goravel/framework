@@ -42,15 +42,23 @@ func (r *NotificationMakeCommand) Extend() command.Extend {
 }
 
 func (r *NotificationMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "notification", ctx.Argument(0), support.Config.Paths.Notifications)
+	for _, name := range supportconsole.MakeNames(ctx) {
+		if err := r.makeOne(ctx, name); err != nil {
+			ctx.Error(err.Error())
+		}
+	}
+
+	return nil
+}
+
+func (r *NotificationMakeCommand) makeOne(ctx console.Context, name string) error {
+	m, err := supportconsole.NewMake(ctx, "notification", name, support.Config.Paths.Notifications)
 	if err != nil {
-		ctx.Error(err.Error())
-		return nil
+		return err
 	}
 
 	if err := file.PutContent(m.GetFilePath(), r.populateStub(r.getStub(ctx), m.GetPackageName(), m.GetStructName())); err != nil {
-		ctx.Error(err.Error())
-		return nil
+		return err
 	}
 
 	ctx.Success("Notification created successfully")

@@ -51,17 +51,25 @@ func (r *MigrateMakeCommand) Extend() command.Extend {
 
 // Handle Executes the console command.
 func (r *MigrateMakeCommand) Handle(ctx console.Context) error {
-	makeMigration, err := supportconsole.NewMake(ctx, "migration", ctx.Argument(0), support.Config.Paths.Migrations)
+	for _, name := range supportconsole.MakeNames(ctx) {
+		if err := r.makeOne(ctx, name); err != nil {
+			ctx.Error(err.Error())
+		}
+	}
+
+	return nil
+}
+
+func (r *MigrateMakeCommand) makeOne(ctx console.Context, name string) error {
+	makeMigration, err := supportconsole.NewMake(ctx, "migration", name, support.Config.Paths.Migrations)
 	if err != nil {
-		ctx.Error(err.Error())
-		return nil
+		return err
 	}
 	modelName := ctx.Option("model")
 
 	fileName, err := r.migrator.Create(makeMigration.GetName(), modelName)
 	if err != nil {
-		ctx.Error(errors.MigrationCreateFailed.Args(err).Error())
-		return nil
+		return errors.MigrationCreateFailed.Args(err)
 	}
 
 	ctx.Success(fmt.Sprintf("Created Migration: %s", makeMigration.GetName()))
@@ -74,8 +82,7 @@ func (r *MigrateMakeCommand) Handle(ctx console.Context) error {
 	}
 
 	if err != nil {
-		ctx.Error(errors.MigrationRegisterFailed.Args(err).Error())
-		return nil
+		return errors.MigrationRegisterFailed.Args(err)
 	}
 
 	ctx.Success("Migration registered successfully")

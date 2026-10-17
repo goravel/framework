@@ -72,23 +72,23 @@ func (s *TestMakeCommandTestSuite) TestTestHandle() {
 	cmd := NewTestMakeCommand()
 	mockContext := mocksconsole.NewContext(s.T())
 
-	mockContext.EXPECT().Argument(0).Return("").Once()
+	mockContext.EXPECT().Arguments().Return([]string{""}).Once()
 	mockContext.EXPECT().Ask("Enter the test name", mock.Anything).Return("", errors.New("the test name cannot be empty")).Once()
 	mockContext.EXPECT().Error("the test name cannot be empty").Once()
 	s.Nil(cmd.Handle(mockContext))
 
-	mockContext.EXPECT().Argument(0).Return("UserTest").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"UserTest"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Test created successfully").Once()
 	s.NoError(cmd.Handle(mockContext))
 	s.True(file.Exists("tests/user_test.go"))
 
-	mockContext.EXPECT().Argument(0).Return("UserTest").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"UserTest"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Error("the test already exists. Use the --force or -f flag to overwrite").Once()
 	s.Nil(cmd.Handle(mockContext))
 
-	mockContext.EXPECT().Argument(0).Return("user/UserTest").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"user/UserTest"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Test created successfully").Once()
 	s.NoError(cmd.Handle(mockContext))
@@ -98,5 +98,19 @@ func (s *TestMakeCommandTestSuite) TestTestHandle() {
 	s.True(file.Contain("tests/user/user_test.go", "func (s *UserTestSuite) SetupTest() {"))
 	s.True(file.Contain("tests/user/user_test.go", `"github.com/goravel/framework/tests"`))
 	s.True(file.Contain("tests/user/user_test.go", "tests.TestCase"))
+	s.NoError(file.Remove("tests"))
+}
+
+func (s *TestMakeCommandTestSuite) TestTestHandleMultipleNames() {
+	cmd := NewTestMakeCommand()
+	mockContext := mocksconsole.NewContext(s.T())
+
+	mockContext.EXPECT().Arguments().Return([]string{"UserTest", "PostTest"}).Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
+	mockContext.EXPECT().Success("Test created successfully").Times(2)
+	s.NoError(cmd.Handle(mockContext))
+
+	s.True(file.Exists("tests/user_test.go"))
+	s.True(file.Exists("tests/post_test.go"))
 	s.NoError(file.Remove("tests"))
 }
