@@ -2,9 +2,13 @@ package color
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
+	"strconv"
+	"strings"
 
+	gookitcolor "github.com/gookit/color"
 	"github.com/pterm/pterm"
 
 	"github.com/goravel/framework/contracts/support"
@@ -55,6 +59,11 @@ var (
 
 func init() {
 	pterm.EnableDebugMessages()
+	// pterm v0.12.84 no longer bundles gookit/color, so tag rendering is
+	// provided by gookit directly. Force color support so color tags render
+	// regardless of the detected terminal.
+	gookitcolor.ForceColor()
+	gookitcolor.Enable = true
 	// Temporarily fix output issue including by https://github.com/pterm/pterm/commit/825931aa7ab264074e6c4045c3bdbca5482c758c
 	if env.IsTesting() {
 		info.Writer = nil
@@ -113,72 +122,89 @@ func Magenta() support.Printer {
 type Color uint8
 
 func (c Color) Sprint(a ...any) string {
-	return pterm.Color(c).Sprint(a...)
+	message := Sprint(a...)
+	code := strconv.Itoa(int(c))
+	messageLines := strings.Split(message, "\n")
+	// Re-apply the color after every inner reset so nested styled segments do
+	// not drop the outer color once they close.
+	reset := fmt.Sprintf("\x1b[0m\x1b[%sm", code)
+	for i, line := range messageLines {
+		messageLines[i] = gookitcolor.RenderCode(code, strings.ReplaceAll(line, gookitcolor.ResetSet, reset))
+	}
+	return strings.Join(messageLines, "\n")
 }
 
 func (c Color) Sprintln(a ...any) string {
-	return pterm.Color(c).Sprintln(a...)
+	return c.Sprint(fmt.Sprintln(a...))
 }
 
 func (c Color) Sprintf(format string, a ...any) string {
-	return pterm.Color(c).Sprintf(format, a...)
+	return c.Sprint(gookitcolor.Sprintf(format, a...))
 }
 
 func (c Color) Sprintfln(format string, a ...any) string {
-	return pterm.Color(c).Sprintfln(format, a...)
+	return c.Sprint(gookitcolor.Sprintf(format, a...) + "\n")
 }
 
 func (c Color) Print(a ...any) *support.Printer {
-	pterm.Color(c).Print(a...)
+	Print(c.Sprint(a...))
 	p := support.Printer(c)
 	return &p
 }
 
 func (c Color) Println(a ...any) *support.Printer {
-	pterm.Color(c).Println(a...)
+	Print(c.Sprintln(a...))
 	p := support.Printer(c)
 	return &p
 }
 
 func (c Color) Printf(format string, a ...any) *support.Printer {
-	pterm.Color(c).Printf(format, a...)
+	Print(c.Sprintf(format, a...))
 	p := support.Printer(c)
 	return &p
 }
 
 func (c Color) Printfln(format string, a ...any) *support.Printer {
-	pterm.Color(c).Printfln(format, a...)
+	Print(c.Sprintfln(format, a...))
 	p := support.Printer(c)
 	return &p
 }
 
 // Quick use color print message
 
-func Debugf(format string, a ...any) { debug.Printf(format, a...) }
+func Debugf(format string, a ...any) { debug.Print(Sprintf(format, a...)) }
 
-func Debugln(a ...any) { debug.Println(a...) }
+func Debugln(a ...any) { debug.Print(Sprintln(a...)) }
 
-func Errorf(format string, a ...any) { err.Printf(format, a...) }
+func Errorf(format string, a ...any) { err.Print(Sprintf(format, a...)) }
 
-func Errorln(a ...any) { err.Println(a...) }
+func Errorln(a ...any) { err.Print(Sprintln(a...)) }
 
-func Infof(format string, a ...any) { info.Printf(format, a...) }
+func Infof(format string, a ...any) { info.Print(Sprintf(format, a...)) }
 
-func Infoln(a ...any) { info.Println(a...) }
+func Infoln(a ...any) { info.Print(Sprintln(a...)) }
 
-func Successf(format string, a ...any) { success.Printf(format, a...) }
+func Successf(format string, a ...any) { success.Print(Sprintf(format, a...)) }
 
-func Successln(a ...any) { success.Println(a...) }
+func Successln(a ...any) { success.Print(Sprintln(a...)) }
 
 // DEPRECATED: Use Warningf instead
-func Warnf(format string, a ...any) { warning.Printf(format, a...) }
+func Warnf(format string, a ...any) { warning.Print(Sprintf(format, a...)) }
 
 // DEPRECATED: Use Warningln instead
-func Warnln(a ...any) { warning.Println(a...) }
+func Warnln(a ...any) { warning.Print(Sprintln(a...)) }
 
-func Warningf(format string, a ...any) { warning.Printf(format, a...) }
+func Warningf(format string, a ...any) { warning.Print(Sprintf(format, a...)) }
 
-func Warningln(a ...any) { warning.Println(a...) }
+func Warningln(a ...any) { warning.Print(Sprintln(a...)) }
+
+// StripColor removes color tags and ANSI escape sequences, returning plain text.
+func StripColor(s string) string {
+	if strings.ContainsRune(s, '<') {
+		s = Sprint(s)
+	}
+	return pterm.RemoveColorFromString(s)
+}
 
 // CaptureOutput simulates capturing of os.stdout with a buffer and returns what was written to the screen
 func CaptureOutput(f func(w io.Writer)) string {
@@ -199,9 +225,11 @@ func CaptureOutput(f func(w io.Writer)) string {
 // Disable disables color output
 func Disable() {
 	pterm.DisableColor()
+	gookitcolor.Enable = false
 }
 
 // Enable enables color output
 func Enable() {
 	pterm.EnableColor()
+	gookitcolor.Enable = true
 }

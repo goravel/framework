@@ -163,7 +163,7 @@ func TwoColumnDetail(first, second string, filler ...rune) string {
 		return builder.String()
 	}
 	width := func(s string) int {
-		return runewidth.StringWidth(pterm.RemoveColorFromString(s))
+		return runewidth.StringWidth(color.StripColor(s))
 	}
 	first = margin(first, 2, 1)
 	if w := width(second); w > 0 {
