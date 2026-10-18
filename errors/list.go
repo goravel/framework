@@ -80,6 +80,8 @@ var (
 	CacheMemoryDriverNotSupportDocker = New("memory driver doesn't support docker")
 	CacheMemoryInvalidIntValueType    = New("value type of %s is not *atomic.Int64 or *int64 or *atomic.Int32 or *int32")
 	CacheStoreContractNotFulfilled    = New("%s doesn't implement contracts/cache/store")
+	CacheTagsNotSupported             = New("cache store %s doesn't support tags")
+	CacheTagsRequired                 = New("at least one cache tag is required")
 
 	CommandEmptyPackageName = New("the package name cannot be empty")
 
