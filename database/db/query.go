@@ -682,15 +682,17 @@ func (r *Query) OrWhereRaw(raw string, args []any) db.Query {
 }
 
 func (r *Query) Paginate(page, limit int, dest any, total *int64) error {
-	offset := (page - 1) * limit
+	// A page lower than 1 returns the first page, the same as the ORM Paginate method.
+	offset := max((page-1)*limit, 0)
 
-	q := r.clone()
-	count, err := q.Count()
-	if err != nil {
-		return err
+	if total != nil {
+		count, err := r.clone().Count()
+		if err != nil {
+			return err
+		}
+
+		*total = count
 	}
-
-	*total = count
 
 	return r.Offset(uint64(offset)).Limit(uint64(limit)).Get(dest)
 }

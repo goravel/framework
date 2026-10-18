@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	databasesql "database/sql"
+	"strconv"
 	"testing"
 
 	sq "github.com/Masterminds/squirrel"
@@ -1274,6 +1275,54 @@ func (s *QueryTestSuite) TestPaginate() {
 		s.Equal(int64(2), total)
 		s.Equal(2, len(users))
 	})
+
+	s.Run("total is nil", func() {
+		var users []TestUser
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE name = ? LIMIT 10 OFFSET 10", "John").
+			Run(func(ctx context.Context, dest any, query string, args ...any) {
+				destUsers := dest.(*[]TestUser)
+				*destUsers = []TestUser{{ID: 1, Name: "John", Age: 25}}
+			}).Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE name = ? LIMIT 10 OFFSET 10", "John").Return("SELECT * FROM users WHERE name = \"John\" LIMIT 10 OFFSET 10").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE name = \"John\" LIMIT 10 OFFSET 10", int64(1), nil).Return().Once()
+
+		s.NotPanics(func() {
+			err := s.query.Where("name", "John").Paginate(2, 10, &users, nil)
+			s.Nil(err)
+		})
+		s.Equal(1, len(users))
+	})
+
+	for _, page := range []int{0, -1} {
+		s.Run("page is "+strconv.Itoa(page), func() {
+			var users []TestUser
+			var total int64
+
+			s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Twice()
+			s.mockReadBuilder.EXPECT().GetContext(s.ctx, &total, "SELECT COUNT(*) FROM users WHERE name = ?", "John").
+				Run(func(ctx context.Context, dest any, query string, args ...any) {
+					destTotal := dest.(*int64)
+					*destTotal = 2
+				}).Return(nil).Once()
+			s.mockReadBuilder.EXPECT().Explain("SELECT COUNT(*) FROM users WHERE name = ?", "John").Return("SELECT COUNT(*) FROM users WHERE name = \"John\"").Once()
+			s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(*) FROM users WHERE name = \"John\"", int64(-1), nil).Return().Once()
+
+			s.mockReadBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE name = ? LIMIT 10 OFFSET 0", "John").
+				Run(func(ctx context.Context, dest any, query string, args ...any) {
+					destUsers := dest.(*[]TestUser)
+					*destUsers = []TestUser{{ID: 1, Name: "John", Age: 25}, {ID: 2, Name: "Jane", Age: 30}}
+				}).Return(nil).Once()
+			s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE name = ? LIMIT 10 OFFSET 0", "John").Return("SELECT * FROM users WHERE name = \"John\" LIMIT 10 OFFSET 0").Once()
+			s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE name = \"John\" LIMIT 10 OFFSET 0", int64(2), nil).Return().Once()
+
+			err := s.query.Where("name", "John").Paginate(page, 10, &users, &total)
+			s.Nil(err)
+			s.Equal(int64(2), total)
+			s.Equal(2, len(users))
+		})
+	}
 }
 
 func (s *QueryTestSuite) TestPluck() {
