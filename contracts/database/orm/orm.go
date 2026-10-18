@@ -52,6 +52,8 @@ type Query interface {
 	// Create inserts new record into the database.
 	Create(value any) error
 	// Cursor returns a cursor, use scan to iterate over the returned rows.
+	// If the iteration is stopped before the channel is closed (e.g. break), cancel the context passed to
+	// WithContext, otherwise the underlying goroutine, rows and connection are not released.
 	Cursor() chan db.Row
 	// DB gets the underlying database connection.
 	DB() (*sql.DB, error)

@@ -2,6 +2,8 @@ package tests
 
 import (
 	"context"
+	"runtime"
+	"strings"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
@@ -35,4 +37,26 @@ func newSchema(testQuery *TestQuery, connectionToTestQuery map[string]*TestQuery
 	}
 
 	return schema
+}
+
+// countGoroutines returns the number of goroutines whose stack trace contains the given function name.
+func countGoroutines(function string) int {
+	buf := make([]byte, 1<<20)
+	for {
+		n := runtime.Stack(buf, true)
+		if n < len(buf) {
+			buf = buf[:n]
+			break
+		}
+		buf = make([]byte, 2*len(buf))
+	}
+
+	var count int
+	for _, goroutine := range strings.Split(string(buf), "\n\n") {
+		if strings.Contains(goroutine, function) {
+			count++
+		}
+	}
+
+	return count
 }
