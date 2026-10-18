@@ -1323,6 +1323,23 @@ func (s *QueryTestSuite) TestPaginate() {
 			s.Equal(2, len(users))
 		})
 	}
+
+	s.Run("failed to count", func() {
+		var (
+			users []TestUser
+			total int64
+		)
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().GetContext(s.ctx, &total, "SELECT COUNT(*) FROM users WHERE name = ?", "John").Return(assert.AnError).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT COUNT(*) FROM users WHERE name = ?", "John").Return("SELECT COUNT(*) FROM users WHERE name = \"John\"").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(*) FROM users WHERE name = \"John\"", int64(-1), assert.AnError).Return().Once()
+
+		// The error is returned and the page is not queried.
+		err := s.query.Where("name", "John").Paginate(1, 10, &users, &total)
+		s.ErrorIs(err, assert.AnError)
+		s.Empty(users)
+	})
 }
 
 func (s *QueryTestSuite) TestPluck() {
