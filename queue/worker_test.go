@@ -2,6 +2,7 @@ package queue
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -1396,5 +1397,40 @@ func (s *WorkerTestSuite) Test_Process() {
 		released, err := s.worker.Process(ctx, mocksqueue.NewReservedJob(s.T()), "default")
 		s.False(released)
 		s.ErrorIs(err, context.Canceled)
+	})
+
+	s.Run("delete errors are logged", func() {
+		s.SetupTest()
+
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+		mockReservedJob.EXPECT().Task().Return(task).Once()
+		s.mockJob.EXPECT().Call(task.Job.Signature(), utils.ConvertArgs(task.Args)).Return(nil).Once()
+		mockReservedJob.EXPECT().Delete().Return(assert.AnError).Once()
+		s.mockLog.EXPECT().Error(errors.QueueFailedToDeleteReservedJob.Args(mockReservedJob, assert.AnError)).Once()
+
+		released, err := s.worker.Process(context.Background(), mockReservedJob, "default")
+		s.False(released)
+		s.NoError(err)
+	})
+
+	s.Run("delete errors after a failure are logged", func() {
+		s.SetupTest()
+
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+		mockReservedJob.EXPECT().Task().Return(task).Once()
+		s.mockJob.EXPECT().Call(task.Job.Signature(), utils.ConvertArgs(task.Args)).Return(assert.AnError).Once()
+		mockReservedJob.EXPECT().Attempts().Return(1).Once()
+		s.mockJson.EXPECT().MarshalString(mock.Anything).Return(`{}`, nil).Once()
+		s.mockConfig.EXPECT().FailedDatabase().Return("").Once()
+		s.mockConfig.EXPECT().FailedTable().Return("").Once()
+		s.mockLog.EXPECT().Error(mock.MatchedBy(func(err error) bool {
+			return strings.HasPrefix(err.Error(), "job failed:")
+		})).Once()
+		mockReservedJob.EXPECT().Delete().Return(assert.AnError).Once()
+		s.mockLog.EXPECT().Error(errors.QueueFailedToDeleteReservedJob.Args(mockReservedJob, assert.AnError)).Once()
+
+		released, err := s.worker.Process(context.Background(), mockReservedJob, "default")
+		s.False(released)
+		s.Equal(errors.QueueFailedToCallJob, err)
 	})
 }
