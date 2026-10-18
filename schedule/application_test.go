@@ -294,3 +294,12 @@ func (s *ApplicationTestSuite) TestRunDueErrors() {
 	s.ErrorContains(err, "schedule event broken failed: "+assert.AnError.Error())
 	s.ErrorContains(err, "schedule event panicking panicked: boom")
 }
+
+func (s *ApplicationTestSuite) TestRunDueSkipsInvalidCron() {
+	// Register drops events with an invalid expression; RunDue ignores them
+	// too if one gets into the list another way.
+	app := NewApplication(mocksconsole.NewArtisan(s.T()), nil, nil, false)
+	app.events = append(app.events, app.Command("invalid").Cron("not a cron"))
+
+	s.NoError(app.RunDue(context.Background(), time.Now()))
+}
