@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	gormio "gorm.io/gorm"
+	gormtests "gorm.io/gorm/utils/tests"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
@@ -955,6 +956,58 @@ func TestWhen(t *testing.T) {
 	assert.Same(t, trueQuery, query.When(true, callback, falseCallback))
 	assert.Same(t, query, query.When(false, callback))
 	assert.Same(t, falseQuery, query.When(false, callback, falseCallback))
+}
+
+func TestLatest(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	newQuery := func() contractsorm.Query {
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, nil, nil, nil, nil, nil).Table("users")
+	}
+
+	tests := []struct {
+		name      string
+		query     func() contractsorm.Query
+		expectSql string
+	}{
+		{
+			name:      "default column",
+			query:     func() contractsorm.Query { return newQuery().Latest() },
+			expectSql: "SELECT * FROM `users` ORDER BY created_at DESC",
+		},
+		{
+			name:      "empty column falls back to default",
+			query:     func() contractsorm.Query { return newQuery().Latest("") },
+			expectSql: "SELECT * FROM `users` ORDER BY created_at DESC",
+		},
+		{
+			name:      "custom column",
+			query:     func() contractsorm.Query { return newQuery().Latest("id") },
+			expectSql: "SELECT * FROM `users` ORDER BY id DESC",
+		},
+		{
+			name:      "combined with other orders",
+			query:     func() contractsorm.Query { return newQuery().Latest("updated_at").OrderBy("id") },
+			expectSql: "SELECT * FROM `users` ORDER BY updated_at DESC,id ASC",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			query := test.query().(*Query).buildConditions()
+			statement := query.instance.Find(&[]map[string]any{}).Statement
+			assert.NoError(t, statement.Error)
+			assert.Equal(t, test.expectSql, statement.SQL.String())
+		})
+	}
+}
+
+func TestValueWithNonPointerDest(t *testing.T) {
+	var name string
+	err := (&Query{}).Value("name", name)
+
+	assert.EqualError(t, err, errors.DatabaseUnsupportedType.Args(reflect.String, "pointer").Error())
 }
 
 type User struct {
