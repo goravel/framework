@@ -17,9 +17,9 @@ type notExpression struct {
 }
 
 func (r notExpression) Build(builder clause.Builder) {
-	builder.WriteString("NOT (")
+	_, _ = builder.WriteString("NOT (")
 	clause.Where{Exprs: r.exprs}.Build(builder)
-	builder.WriteByte(')')
+	_ = builder.WriteByte(')')
 }
 
 func buildWhereColumn(column1 string, column2 ...string) (string, error) {
