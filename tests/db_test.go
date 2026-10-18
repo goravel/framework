@@ -394,6 +394,46 @@ func (s *DBTestSuite) TestDistinct() {
 	}
 }
 
+func (s *DBTestSuite) TestEach() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			_, err := query.DB().Table("products").Insert([]Product{
+				{Name: "each_product1"},
+				{Name: "each_product2"},
+				{Name: "each_product3"},
+			})
+			s.NoError(err)
+
+			s.Run("iterates all rows with a single query", func() {
+				ctx := databasedb.EnableQueryLog(context.Background())
+
+				var names []string
+				err := query.DB().WithContext(ctx).Table("products").OrderBy("id").Each(func(row db.Row) error {
+					var product Product
+					s.NoError(row.Scan(&product))
+					names = append(names, product.Name)
+
+					return nil
+				})
+				s.NoError(err)
+				s.Equal([]string{"each_product1", "each_product2", "each_product3"}, names)
+				s.Len(databasedb.GetQueryLog(ctx), 1)
+			})
+
+			s.Run("stops when the callback returns an error", func() {
+				var count int
+				err := query.DB().Table("products").OrderBy("id").Each(func(row db.Row) error {
+					count++
+
+					return assert.AnError
+				})
+				s.Equal(assert.AnError, err)
+				s.Equal(1, count)
+			})
+		})
+	}
+}
+
 func (s *DBTestSuite) TestExists() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
