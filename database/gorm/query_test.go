@@ -1104,6 +1104,67 @@ func TestIncrementAndDecrementTouchUpdatedAt(t *testing.T) {
 	assert.Equal(t, 1, model.Votes)
 }
 
+func TestIncrementAndDecrementSyncTheModel(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+	// DryRun affects no rows: pretend one row was updated so the in-memory sync runs.
+	assert.NoError(t, db.Callback().Update().After("gorm:update").Register("test:rows", func(tx *gormio.DB) {
+		tx.RowsAffected = 1
+	}))
+
+	newQuery := func() contractsorm.Query {
+		mockGrammar := mocksdriver.NewGrammar(t)
+		mockGrammar.EXPECT().CompileJsonColumnsUpdate(mock.Anything).RunAndReturn(func(values map[string]any) (map[string]any, error) {
+			return values, nil
+		}).Maybe()
+
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, mockGrammar, nil, nil, nil, nil)
+	}
+
+	ptr := 10
+	model := &IncrementSyncModel{ID: 1, Int: 5, Uint: 5, Float: 1.5, Ptr: &ptr, Name: "goravel"}
+
+	assert.NoError(t, newQuery().Model(model).Increment("int", 2))
+	assert.NoError(t, newQuery().Model(model).Decrement("uint"))
+	assert.NoError(t, newQuery().Model(model).Increment("float", 3))
+	assert.NoError(t, newQuery().Model(model).Decrement("ptr", 4))
+	// Nil pointers, non numeric and unknown fields are left alone.
+	assert.NoError(t, newQuery().Model(model).Increment("nil_ptr"))
+	assert.NoError(t, newQuery().Model(model).Increment("name"))
+	assert.NoError(t, newQuery().Model(model).Increment("unknown"))
+
+	assert.Equal(t, 7, model.Int)
+	assert.Equal(t, uint(4), model.Uint)
+	assert.Equal(t, 4.5, model.Float)
+	assert.Equal(t, 6, *model.Ptr)
+	assert.Nil(t, model.NilPtr)
+	assert.Equal(t, "goravel", model.Name)
+
+	// Decrementing the other numeric kinds.
+	assert.NoError(t, newQuery().Model(model).Decrement("int"))
+	assert.NoError(t, newQuery().Model(model).Increment("uint", 6))
+	assert.NoError(t, newQuery().Model(model).Decrement("float", 2))
+	assert.Equal(t, 6, model.Int)
+	assert.Equal(t, uint(10), model.Uint)
+	assert.Equal(t, 2.5, model.Float)
+
+	// A model without a primary key value has no condition to update by: GORM
+	// refuses the update and the struct isn't touched.
+	unsaved := &IncrementSyncModel{Int: 1}
+	assert.ErrorIs(t, newQuery().Model(unsaved).Increment("int"), gormio.ErrMissingWhereClause)
+	assert.Equal(t, 1, unsaved.Int)
+}
+
+type IncrementSyncModel struct {
+	ID     uint `gorm:"primaryKey"`
+	Int    int
+	Uint   uint
+	Float  float64
+	Ptr    *int
+	NilPtr *int
+	Name   string
+}
+
 type IncrementModel struct {
 	ID        uint `gorm:"primaryKey"`
 	Votes     int
