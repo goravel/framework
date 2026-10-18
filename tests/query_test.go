@@ -2985,6 +2985,106 @@ func (s *QueryTestSuite) TestOrderByDesc() {
 	}
 }
 
+func (s *QueryTestSuite) TestIncrementAndDecrement() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			s.Run("with conditions", func() {
+				users := []User{
+					{Name: "increment_conditions_user", Avatar: "increment_conditions_avatar_1", Ratio: 1},
+					{Name: "increment_conditions_user", Avatar: "increment_conditions_avatar_2", Ratio: 1},
+					{Name: "increment_conditions_other", Avatar: "increment_conditions_avatar_3", Ratio: 1},
+				}
+				s.Nil(query.Query().Create(&users))
+
+				s.Nil(query.Query().Model(&User{}).Where("name", "increment_conditions_user").Increment("ratio"))
+				s.Nil(query.Query().Model(&User{}).Where("name", "increment_conditions_user").Increment("ratio", 5))
+
+				var result []User
+				s.Nil(query.Query().Where("name LIKE ?", "increment_conditions_%").Order("id").Find(&result))
+				s.Len(result, 3)
+				s.Equal(float64(7), result[0].Ratio)
+				s.Equal(float64(7), result[1].Ratio)
+				s.Equal(float64(1), result[2].Ratio)
+
+				s.Nil(query.Query().Model(&User{}).Where("name", "increment_conditions_user").Decrement("ratio"))
+				s.Nil(query.Query().Model(&User{}).Where("name", "increment_conditions_user").Decrement("ratio", 4))
+
+				result = nil
+				s.Nil(query.Query().Where("name LIKE ?", "increment_conditions_%").Order("id").Find(&result))
+				s.Len(result, 3)
+				s.Equal(float64(2), result[0].Ratio)
+				s.Equal(float64(2), result[1].Ratio)
+				s.Equal(float64(1), result[2].Ratio)
+			})
+
+			s.Run("with table", func() {
+				user := User{Name: "increment_table_user", Avatar: "increment_table_avatar", Ratio: 1}
+				s.Nil(query.Query().Create(&user))
+
+				s.Nil(query.Query().Table("users").Where("id", user.ID).Increment("ratio", 2))
+
+				var result User
+				s.Nil(query.Query().Find(&result, user.ID))
+				s.Equal(float64(3), result.Ratio)
+			})
+
+			s.Run("with loaded model", func() {
+				user := User{Name: "increment_model_user", Avatar: "increment_model_avatar", Ratio: 1}
+				other := User{Name: "increment_model_other", Avatar: "increment_model_avatar", Ratio: 1}
+				s.Nil(query.Query().Create(&user))
+				s.Nil(query.Query().Create(&other))
+
+				// Use a whole second, some drivers round fractional seconds.
+				now := carbon.Now().AddHour().StartOfSecond()
+				carbon.SetTestNow(now)
+				defer carbon.ClearTestNow()
+
+				s.Nil(query.Query().Model(&user).Increment("ratio", 5))
+				s.Equal(float64(6), user.Ratio)
+				s.Equal(now.ToDateTimeString(), user.UpdatedAt.ToDateTimeString())
+
+				var result User
+				s.Nil(query.Query().Find(&result, user.ID))
+				s.Equal(float64(6), result.Ratio)
+				s.Equal(now.ToDateTimeString(), result.UpdatedAt.ToDateTimeString())
+
+				s.Nil(query.Query().Model(&user).Decrement("ratio", 2))
+				s.Equal(float64(4), user.Ratio)
+
+				result = User{}
+				s.Nil(query.Query().Find(&result, user.ID))
+				s.Equal(float64(4), result.Ratio)
+
+				result = User{}
+				s.Nil(query.Query().Find(&result, other.ID))
+				s.Equal(float64(1), result.Ratio)
+			})
+
+			s.Run("skips soft deleted rows", func() {
+				users := []User{
+					{Name: "increment_soft_delete_user", Avatar: "increment_soft_delete_avatar_1", Ratio: 1},
+					{Name: "increment_soft_delete_user", Avatar: "increment_soft_delete_avatar_2", Ratio: 1},
+				}
+				s.Nil(query.Query().Create(&users))
+				_, err := query.Query().Delete(&users[1])
+				s.Nil(err)
+
+				s.Nil(query.Query().Model(&User{}).Where("name", "increment_soft_delete_user").Increment("ratio"))
+
+				var result []User
+				s.Nil(query.Query().WithTrashed().Where("name", "increment_soft_delete_user").Order("id").Find(&result))
+				s.Len(result, 2)
+				s.Equal(float64(2), result[0].Ratio)
+				s.Equal(float64(1), result[1].Ratio)
+
+				// The in-memory value is not changed when no row is updated.
+				s.Nil(query.Query().Model(&users[1]).Increment("ratio"))
+				s.Equal(float64(1), users[1].Ratio)
+			})
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestInRandomOrder() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {

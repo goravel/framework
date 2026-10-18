@@ -55,6 +55,8 @@ type Query interface {
 	Cursor() chan db.Row
 	// DB gets the underlying database connection.
 	DB() (*sql.DB, error)
+	// Decrement decrements the given column's value by the given amount (default 1).
+	Decrement(column string, value ...uint64) error
 	// Delete deletes records matching given conditions, if the conditions are empty will delete all records.
 	Delete(value ...any) (*db.Result, error)
 	// Distinct specifies distinct fields to query.
@@ -93,6 +95,8 @@ type Query interface {
 	GroupBy(column ...string) Query
 	// Having specifying HAVING conditions for the query.
 	Having(query any, args ...any) Query
+	// Increment increments the given column's value by the given amount (default 1).
+	Increment(column string, value ...uint64) error
 	// InRandomOrder specifies the order randomly.
 	InRandomOrder() Query
 	// InTransaction checks if the query is in a transaction.
