@@ -159,6 +159,10 @@ func (r *Query) Create(value any) error {
 	return query.create(value)
 }
 
+func (r *Query) CrossJoin(query string, args ...any) contractsorm.Query {
+	return r.addJoin("CROSS JOIN "+query, args...)
+}
+
 func (r *Query) Cursor() chan contractsdb.Row {
 	with := r.conditions.with
 	query := r.addGlobalScopes().buildConditions()
@@ -452,13 +456,11 @@ func (r *Query) Having(query any, args ...any) contractsorm.Query {
 }
 
 func (r *Query) Join(query string, args ...any) contractsorm.Query {
-	conditions := r.conditions
-	conditions.join = deep.Append(conditions.join, contractsdriver.Join{
-		Query: query,
-		Args:  args,
-	})
+	return r.addJoin(query, args...)
+}
 
-	return r.setConditions(conditions)
+func (r *Query) LeftJoin(query string, args ...any) contractsorm.Query {
+	return r.addJoin("LEFT JOIN "+query, args...)
 }
 
 func (r *Query) Limit(limit int) contractsorm.Query {
@@ -704,6 +706,10 @@ func (r *Query) Restore(dests ...any) (*contractsdb.Result, error) {
 	return &contractsdb.Result{
 		RowsAffected: res.RowsAffected,
 	}, res.Error
+}
+
+func (r *Query) RightJoin(query string, args ...any) contractsorm.Query {
+	return r.addJoin("RIGHT JOIN "+query, args...)
 }
 
 func (r *Query) Rollback() error {
@@ -1245,6 +1251,17 @@ func (r *Query) addGlobalScopes() *Query {
 	}
 
 	return r.Scopes(globalScopes...).(*Query)
+}
+
+// addJoin appends a raw JOIN clause, all join types share the same slice so the call order is kept.
+func (r *Query) addJoin(query string, args ...any) contractsorm.Query {
+	conditions := r.conditions
+	conditions.join = deep.Append(conditions.join, contractsdriver.Join{
+		Query: query,
+		Args:  args,
+	})
+
+	return r.setConditions(conditions)
 }
 
 func (r *Query) addWhere(where contractsdriver.Where) contractsorm.Query {

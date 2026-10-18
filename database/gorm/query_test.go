@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	gormio "gorm.io/gorm"
+	gormtests "gorm.io/gorm/utils/tests"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
@@ -405,6 +406,83 @@ func TestGetObserver(t *testing.T) {
 
 	assert.Nil(t, query.getObserver(Product{}))
 	assert.Equal(t, &UserObserver{}, query.getObserver(User{}))
+}
+
+func TestJoinClauses(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	newQuery := func() contractsorm.Query {
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, nil, nil, nil, nil, nil).Table("users")
+	}
+
+	tests := []struct {
+		name       string
+		query      func() contractsorm.Query
+		expectSql  string
+		expectVars []any
+	}{
+		{
+			name:      "Join",
+			query:     func() contractsorm.Query { return newQuery().Join("JOIN posts ON posts.user_id = users.id") },
+			expectSql: "SELECT * FROM `users` JOIN posts ON posts.user_id = users.id",
+		},
+		{
+			name:      "LeftJoin",
+			query:     func() contractsorm.Query { return newQuery().LeftJoin("posts ON posts.user_id = users.id") },
+			expectSql: "SELECT * FROM `users` LEFT JOIN posts ON posts.user_id = users.id",
+		},
+		{
+			name: "LeftJoin with args",
+			query: func() contractsorm.Query {
+				return newQuery().LeftJoin("posts ON posts.user_id = users.id AND posts.published = ?", true).Where("users.id", 1)
+			},
+			expectSql:  "SELECT * FROM `users` LEFT JOIN posts ON posts.user_id = users.id AND posts.published = ? WHERE `users`.`id` = ?",
+			expectVars: []any{true, 1},
+		},
+		{
+			name:      "RightJoin",
+			query:     func() contractsorm.Query { return newQuery().RightJoin("posts ON posts.user_id = users.id") },
+			expectSql: "SELECT * FROM `users` RIGHT JOIN posts ON posts.user_id = users.id",
+		},
+		{
+			name: "RightJoin with args",
+			query: func() contractsorm.Query {
+				return newQuery().RightJoin("posts ON posts.user_id = users.id AND posts.id > ?", 10)
+			},
+			expectSql:  "SELECT * FROM `users` RIGHT JOIN posts ON posts.user_id = users.id AND posts.id > ?",
+			expectVars: []any{10},
+		},
+		{
+			name:      "CrossJoin",
+			query:     func() contractsorm.Query { return newQuery().CrossJoin("roles") },
+			expectSql: "SELECT * FROM `users` CROSS JOIN roles",
+		},
+		{
+			name: "mixed joins keep the call order",
+			query: func() contractsorm.Query {
+				return newQuery().
+					CrossJoin("roles").
+					LeftJoin("posts ON posts.user_id = users.id").
+					Join("JOIN addresses ON addresses.user_id = users.id").
+					RightJoin("books ON books.user_id = users.id")
+			},
+			expectSql: "SELECT * FROM `users` CROSS JOIN roles LEFT JOIN posts ON posts.user_id = users.id JOIN addresses ON addresses.user_id = users.id RIGHT JOIN books ON books.user_id = users.id",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			statement := test.query().(*Query).buildConditions().instance.Find(&[]map[string]any{}).Statement
+			assert.NoError(t, statement.Error)
+			assert.Equal(t, test.expectSql, statement.SQL.String())
+			if len(test.expectVars) == 0 {
+				assert.Empty(t, statement.Vars)
+			} else {
+				assert.Equal(t, test.expectVars, statement.Vars)
+			}
+		})
+	}
 }
 
 func TestModelToStruct(t *testing.T) {
