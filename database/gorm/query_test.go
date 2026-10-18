@@ -1010,6 +1010,35 @@ func TestValueWithNonPointerDest(t *testing.T) {
 	assert.EqualError(t, err, errors.DatabaseUnsupportedType.Args(reflect.String, "pointer").Error())
 }
 
+func TestValueAndDoesntExist(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	newQuery := func(db *gormio.DB) contractsorm.Query {
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, nil, nil, nil, nil, nil).Table("users")
+	}
+
+	// Value scans, which GORM refuses in dry run mode: the query is built and
+	// the error is returned without touching dest.
+	name := "unchanged"
+	assert.ErrorIs(t, newQuery(db).Where("id", 1).Value("name", &name), gormio.ErrDryRunModeUnsupported)
+	assert.Equal(t, "unchanged", name)
+
+	doesntExist, err := newQuery(db).Where("id", 1).DoesntExist()
+	assert.NoError(t, err)
+	assert.True(t, doesntExist)
+
+	// Errors of the underlying query are returned.
+	failing := db.Session(&gormio.Session{})
+	_ = failing.AddError(assert.AnError)
+
+	assert.ErrorIs(t, newQuery(failing).Value("name", &name), assert.AnError)
+
+	doesntExist, err = newQuery(failing).DoesntExist()
+	assert.ErrorIs(t, err, assert.AnError)
+	assert.False(t, doesntExist)
+}
+
 type User struct {
 	Name string
 }
