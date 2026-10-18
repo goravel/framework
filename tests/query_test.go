@@ -5591,6 +5591,167 @@ func (s *QueryTestSuite) TestWhereNone() {
 	}
 }
 
+func (s *QueryTestSuite) TestWhereLike() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			users := []User{
+				{Name: "where_like_goravel_1", Avatar: "where_like_avatar_1"},
+				{Name: "where_like_goravel_2", Avatar: "where_like_avatar_2"},
+				{Name: "where_like_laravel", Avatar: "where_like_avatar_3"},
+			}
+			s.Nil(query.Query().Create(&users))
+
+			var result []User
+			s.Nil(query.Query().WhereLike("name", "where_like_goravel%").Order("id").Find(&result))
+			s.Len(result, 2)
+			s.Equal(users[0].ID, result[0].ID)
+			s.Equal(users[1].ID, result[1].ID)
+
+			result = nil
+			s.Nil(query.Query().WhereLike("name", "where_like_%").WhereNotLike("name", "%goravel%").Find(&result))
+			s.Len(result, 1)
+			s.Equal(users[2].ID, result[0].ID)
+
+			result = nil
+			s.Nil(query.Query().Where("name", "where_like_laravel").OrWhereLike("name", "where_like_goravel_1").Find(&result))
+			s.Len(result, 2)
+
+			result = nil
+			s.Nil(query.Query().WhereLike("name", "where_like_%").Where(func(q contractsorm.Query) contractsorm.Query {
+				return q.Where("name", "where_like_goravel_1").OrWhereNotLike("name", "%goravel%")
+			}).Find(&result))
+			s.Len(result, 2)
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestWhereNot() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			users := []User{
+				{Name: "where_not_user", Avatar: "where_not_avatar_1"},
+				{Name: "where_not_user", Avatar: "where_not_avatar_2"},
+				{Name: "where_not_user", Avatar: "where_not_avatar_3"},
+			}
+			s.Nil(query.Query().Create(&users))
+
+			var result []User
+			s.Nil(query.Query().Where("name", "where_not_user").WhereNot("avatar", "where_not_avatar_1").Order("id").Find(&result))
+			s.Len(result, 2)
+			s.Equal(users[1].ID, result[0].ID)
+			s.Equal(users[2].ID, result[1].ID)
+
+			// The whole group is negated: NOT (avatar = 1 OR avatar = 2)
+			result = nil
+			s.Nil(query.Query().Where("name", "where_not_user").WhereNot(func(q contractsorm.Query) contractsorm.Query {
+				return q.Where("avatar", "where_not_avatar_1").OrWhere("avatar", "where_not_avatar_2")
+			}).Find(&result))
+			s.Len(result, 1)
+			s.Equal(users[2].ID, result[0].ID)
+
+			result = nil
+			s.Nil(query.Query().Where("id", users[0].ID).OrWhereNot("name = ? OR avatar = ?", "where_not_user", "where_not_avatar_2").Where("name", "where_not_user").Find(&result))
+			s.Len(result, 1)
+			s.Equal(users[0].ID, result[0].ID)
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestWhereColumn() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			users := []User{
+				{Name: "where_column_same", Avatar: "where_column_same"},
+				{Name: "where_column_a", Avatar: "where_column_b"},
+			}
+			s.Nil(query.Query().Create(&users))
+
+			var result []User
+			s.Nil(query.Query().WhereIn("id", []any{users[0].ID, users[1].ID}).WhereColumn("name", "avatar").Find(&result))
+			s.Len(result, 1)
+			s.Equal(users[0].ID, result[0].ID)
+
+			result = nil
+			s.Nil(query.Query().WhereIn("id", []any{users[0].ID, users[1].ID}).WhereColumn("name", "<>", "avatar").Find(&result))
+			s.Len(result, 1)
+			s.Equal(users[1].ID, result[0].ID)
+
+			result = nil
+			s.Nil(query.Query().Where("id", users[1].ID).OrWhereColumn("name", "=", "avatar").WhereIn("id", []any{users[0].ID, users[1].ID}).Find(&result))
+			s.Len(result, 2)
+
+			s.EqualError(query.Query().WhereColumn("name").Find(&result), errors.DatabaseInvalidArgumentNumber.Args(0, "1 or 2").Error())
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestWhereRaw() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			users := []User{
+				{Name: "where_raw_user_1", Avatar: "where_raw_avatar"},
+				{Name: "where_raw_user_2", Avatar: "where_raw_avatar"},
+				{Name: "where_raw_user_3", Avatar: "where_raw_avatar"},
+			}
+			s.Nil(query.Query().Create(&users))
+
+			var result []User
+			s.Nil(query.Query().WhereRaw("avatar = ? AND name IN ?", []any{"where_raw_avatar", []string{"where_raw_user_1", "where_raw_user_2"}}).Find(&result))
+			s.Len(result, 2)
+
+			result = nil
+			s.Nil(query.Query().Where("name", "where_raw_user_1").OrWhereRaw("name = ?", []any{"where_raw_user_3"}).Find(&result))
+			s.Len(result, 2)
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestOrWhereNotNull() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			user := User{Name: "or_where_not_null_user", Avatar: "or_where_not_null_avatar"}
+			s.Nil(query.Query().Create(&user))
+
+			user1 := User{Name: "or_where_not_null_user_1", Avatar: "or_where_not_null_avatar_1", Bio: convert.Pointer("or_where_not_null_bio")}
+			s.Nil(query.Query().Create(&user1))
+
+			var users []User
+			s.Nil(query.Query().Where("name", "or_where_not_null_user").OrWhereNotNull("bio").Find(&users))
+			ids := make([]uint, 0, len(users))
+			for _, item := range users {
+				ids = append(ids, item.ID)
+			}
+			s.Contains(ids, user.ID)
+			s.Contains(ids, user1.ID)
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestWhereExists() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			user := User{Name: "where_exists_user", Avatar: "where_exists_avatar"}
+			s.Nil(query.Query().Create(&user))
+			user1 := User{Name: "where_exists_user", Avatar: "where_exists_avatar_1"}
+			s.Nil(query.Query().Create(&user1))
+			s.Nil(query.Query().Create(&Book{Name: "where_exists_book", UserID: user.ID}))
+
+			var users []User
+			s.Nil(query.Query().Where("name", "where_exists_user").WhereExists(func() contractsorm.Query {
+				return query.Query().Table("books").Select("1").WhereColumn("books.user_id", "users.id").Where("books.name", "where_exists_book")
+			}).Find(&users))
+			s.Len(users, 1)
+			s.Equal(user.ID, users[0].ID)
+
+			users = nil
+			s.Nil(query.Query().Where("name", "where_exists_user").WhereExists(func() contractsorm.Query {
+				return query.Query().Table("books").WhereColumn("books.user_id", "users.id").Where("books.name", "where_exists_none")
+			}).Find(&users))
+			s.Len(users, 0)
+		})
+	}
+}
+
 func Benchmark_Orm(b *testing.B) {
 	query := NewTestQueryBuilder().Postgres("", false)
 	query.CreateTable(TestTableAuthors)
