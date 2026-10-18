@@ -236,3 +236,27 @@ func TestMessageHelpers(t *testing.T) {
 	assert.True(t, message.HasAttachment("storage/invoice.pdf"))
 	assert.False(t, message.HasAttachment("invoice.pdf"))
 }
+
+func (s *FakeTestSuite) TestResetDeliversAgain() {
+	s.mockConfig.EXPECT().GetString("mail.from.address").Return("noreply@goravel.dev")
+	s.mockConfig.EXPECT().GetString("mail.from.name").Return("Goravel")
+	s.mockConfig.EXPECT().GetString("mail.host").Return("127.0.0.1")
+	s.mockConfig.EXPECT().GetInt("mail.port").Return(1)
+	s.mockConfig.EXPECT().GetString("mail.username").Return("")
+	s.mockConfig.EXPECT().GetString("mail.password").Return("")
+
+	fake := s.app.Fake()
+	fake.Reset()
+
+	// Not faking anymore: the mail goes to SMTP, which refuses it here.
+	s.Error(s.app.To([]string{"ana@example.com"}).Subject("Real").Send())
+	s.True(fake.AssertNothingSent())
+}
+
+func TestFakeOnAnApplicationWithoutState(t *testing.T) {
+	app := &Application{template: mocksmail.NewTemplate(t)}
+
+	fake := app.Fake()
+	assert.NoError(t, app.To([]string{"ana@example.com"}).From(mail.Address{Address: "a@b.c"}).Subject("Hi").Send())
+	assert.True(t, fake.AssertSentCount(1))
+}
