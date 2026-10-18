@@ -24,6 +24,11 @@ func (r *ServiceProvider) Relationship() binding.Relationship {
 }
 
 func (r *ServiceProvider) Register(app foundation.Application) {
+	// The Mail facade resolves a new Application on every call, so the fake
+	// state is shared by all of them: a Fake() call affects the next ones,
+	// including the mailer of the notification mail channel.
+	fake := NewFake()
+
 	app.Bind(binding.Mail, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
@@ -35,7 +40,13 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.QueueFacadeNotSet.SetModule(errors.ModuleMail)
 		}
 
-		return NewApplication(config, queue)
+		application, err := NewApplication(config, queue)
+		if err != nil {
+			return nil, err
+		}
+		application.fake = fake
+
+		return application, nil
 	})
 }
 

@@ -31,6 +31,7 @@ type Application struct {
 	template mail.Template
 	params   Params
 	clone    int
+	fake     *Fake
 
 	htmlView string
 	textView string
@@ -47,6 +48,7 @@ func NewApplication(config config.Config, queue contractsqueue.Queue) (*Applicat
 		config:   config,
 		queue:    queue,
 		template: templateEngine,
+		fake:     NewFake(),
 	}, nil
 }
 
@@ -104,6 +106,16 @@ func (r *Application) Queue(mailable ...mail.Mailable) error {
 
 	if err := r.renderViewTemplate(); err != nil {
 		return err
+	}
+
+	if r.fake.isEnabled() {
+		message := r.message(mailable)
+		if len(mailable) > 0 {
+			message.Queue = mailable[0].Queue()
+		}
+		r.fake.recordQueued(message)
+
+		return nil
 	}
 
 	job := r.queue.Job(NewSendMailJob(r.config), []contractsqueue.Arg{
@@ -172,7 +184,53 @@ func (r *Application) Send(mailable ...mail.Mailable) error {
 		return err
 	}
 
+	if r.fake.isEnabled() {
+		r.fake.recordSent(r.message(mailable))
+
+		return nil
+	}
+
 	return SendMail(r.config, r.params)
+}
+
+// Fake records the mails sent or queued through the Mail facade instead of
+// delivering them, until Reset is called on the returned Fake.
+func (r *Application) Fake() mail.Fake {
+	if r.fake == nil {
+		r.fake = NewFake()
+	}
+	r.fake.enable()
+
+	return r.fake
+}
+
+// message builds the mail the fake records, with the same default sender
+// SendMail would use.
+func (r *Application) message(mailable []mail.Mailable) mail.Message {
+	message := mail.Message{
+		Subject:     r.params.Subject,
+		Html:        r.params.HTML,
+		Text:        r.params.Text,
+		From:        mail.Address{Address: r.params.FromAddress, Name: r.params.FromName},
+		To:          r.params.To,
+		Cc:          r.params.CC,
+		Bcc:         r.params.BCC,
+		Attachments: r.params.Attachments,
+		Headers:     r.params.Headers,
+	}
+
+	if message.From.Address == "" && r.config != nil {
+		message.From = mail.Address{
+			Address: r.config.GetString("mail.from.address"),
+			Name:    r.config.GetString("mail.from.name"),
+		}
+	}
+
+	if len(mailable) > 0 {
+		message.Mailable = mailable[0]
+	}
+
+	return message
 }
 
 func (r *Application) Subject(subject string) mail.Mail {
@@ -196,6 +254,7 @@ func (r *Application) instance() *Application {
 			config:   r.config,
 			queue:    r.queue,
 			template: r.template,
+			fake:     r.fake,
 		}
 	}
 
