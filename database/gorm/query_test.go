@@ -1100,6 +1100,20 @@ func TestWhereClauses(t *testing.T) {
 			},
 			expectError: errors.OrmQueryInvalidSubQuery,
 		},
+		{
+			name: "WhereExists propagates the sub query error",
+			query: func() contractsorm.Query {
+				return newQuery().WhereExists(func() contractsorm.Query {
+					return newQuery().Table("orders").WhereColumn("orders.user_id")
+				})
+			},
+			expectError: errors.DatabaseInvalidArgumentNumber.Args(0, "1 or 2"),
+		},
+		{
+			name:      "WhereNot without conditions is ignored",
+			query:     func() contractsorm.Query { return newQuery().WhereNot(map[string]any{}) },
+			expectSql: "SELECT * FROM `users`",
+		},
 	}
 
 	for _, test := range tests {
