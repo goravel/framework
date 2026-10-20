@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	databasesql "database/sql"
+	"fmt"
 	"strconv"
 	"testing"
 
@@ -1338,8 +1339,22 @@ func (s *QueryTestSuite) TestPaginate() {
 		// The error is returned and the page is not queried.
 		err := s.query.Where("name", "John").Paginate(1, 10, &users, &total)
 		s.ErrorIs(err, assert.AnError)
-		s.Empty(users)
+		s.Zero(total)
 	})
+
+	for _, limit := range []int{0, -10} {
+		s.Run(fmt.Sprintf("limit is %d", limit), func() {
+			var (
+				users []TestUser
+				total int64
+			)
+
+			// No COUNT or page query: a non-positive limit would read the whole table.
+			err := s.query.Where("name", "John").Paginate(1, limit, &users, &total)
+			s.ErrorIs(err, errors.DatabaseInvalidPaginationLimit)
+			s.Zero(total)
+		})
+	}
 }
 
 func (s *QueryTestSuite) TestPluck() {
