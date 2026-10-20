@@ -83,6 +83,10 @@ func Event() event.Instance {
 	return App().MakeEvent()
 }
 
+func Fake() testing.Fake {
+	return App().MakeFake()
+}
+
 func Gate() access.Gate {
 	return App().MakeGate()
 }

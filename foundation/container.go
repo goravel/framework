@@ -211,6 +211,16 @@ func (r *Container) MakeEvent() contractsevent.Instance {
 	return instance.(contractsevent.Instance)
 }
 
+func (r *Container) MakeFake() contractstesting.Fake {
+	instance, err := r.Make(facades.FacadeToBinding[facades.Fake])
+	if err != nil {
+		logMakeErrorIfNeeded(err)
+		return nil
+	}
+
+	return instance.(contractstesting.Fake)
+}
+
 func (r *Container) MakeGate() contractsaccess.Gate {
 	instance, err := r.Make(facades.FacadeToBinding[facades.Gate])
 	if err != nil {

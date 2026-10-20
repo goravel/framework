@@ -225,6 +225,7 @@ func (s *ContainerTestSuite) TestMakeWrappers_SuppressBindingNotFoundError() {
 		{name: "crypt", run: func(container *Container) any { return container.MakeCrypt() }},
 		{name: "db", run: func(container *Container) any { return container.MakeDB() }},
 		{name: "event", run: func(container *Container) any { return container.MakeEvent() }},
+		{name: "fake", run: func(container *Container) any { return container.MakeFake() }},
 		{name: "gate", run: func(container *Container) any { return container.MakeGate() }},
 		{name: "grpc", run: func(container *Container) any { return container.MakeGrpc() }},
 		{name: "hash", run: func(container *Container) any { return container.MakeHash() }},
