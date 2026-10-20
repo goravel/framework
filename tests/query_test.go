@@ -5595,9 +5595,7 @@ func Benchmark_Orm(b *testing.B) {
 	query := NewTestQueryBuilder().Postgres("", false)
 	query.CreateTable(TestTableAuthors)
 
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		author := Author{
 			Name:   "benchmark",
 			BookID: 1,

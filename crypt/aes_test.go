@@ -79,9 +79,7 @@ func Benchmark_EncryptString(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_, err := aes.EncryptString("Goravel")
 		if err != nil {
 			b.Error(err)
@@ -101,9 +99,8 @@ func Benchmark_DecryptString(b *testing.B) {
 	if err != nil {
 		b.Error(err)
 	}
-	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_, err := aes.DecryptString(payload)
 		if err != nil {
 			b.Error(err)

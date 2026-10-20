@@ -30,11 +30,11 @@ type RotateLogs struct {
 	rotationTime  time.Duration
 	rotationCount uint
 
-	mutex         sync.Mutex
-	currentFile   *os.File
-	currentPath   string
-	lastRotation  time.Time
-	cleanupWg     sync.WaitGroup // For testing - wait for cleanup to complete
+	mutex        sync.Mutex
+	currentFile  *os.File
+	currentPath  string
+	lastRotation time.Time
+	cleanupWg    sync.WaitGroup // For testing - wait for cleanup to complete
 }
 
 // Option is a functional option for RotateLogs
@@ -97,10 +97,10 @@ func (rl *RotateLogs) Write(p []byte) (n int, err error) {
 // rotate performs the rotation if needed
 func (rl *RotateLogs) rotate() error {
 	now := rl.clock.Now()
-	
+
 	// Calculate the base time for the current rotation period
 	baseTime := now.Truncate(rl.rotationTime)
-	
+
 	// Check if we need to rotate
 	if rl.currentFile != nil && rl.lastRotation.Equal(baseTime) {
 		return nil // No rotation needed
@@ -108,7 +108,7 @@ func (rl *RotateLogs) rotate() error {
 
 	// Generate the new filename
 	newPath := rl.pattern.Format(baseTime)
-	
+
 	// Close the current file if it exists
 	if rl.currentFile != nil {
 		if err := rl.currentFile.Close(); err != nil {
@@ -135,11 +135,9 @@ func (rl *RotateLogs) rotate() error {
 
 	// Clean up old files if rotation count is set
 	if rl.rotationCount > 0 {
-		rl.cleanupWg.Add(1)
-		go func() {
-			defer rl.cleanupWg.Done()
+		rl.cleanupWg.Go(func() {
 			rl.cleanup()
-		}()
+		})
 	}
 
 	return nil
@@ -150,7 +148,7 @@ func (rl *RotateLogs) cleanup() {
 	// Generate glob pattern from the strftime pattern
 	// For example, "storage/logs/daily-%Y-%m-%d.log" becomes "storage/logs/daily-*.log"
 	globPattern := rl.generateGlobPattern()
-	
+
 	// Find all files matching the pattern
 	matches, err := filepath.Glob(globPattern)
 	if err != nil {
@@ -164,12 +162,12 @@ func (rl *RotateLogs) cleanup() {
 		if err != nil {
 			continue
 		}
-		
+
 		// Skip if not a regular file
 		if !fi.Mode().IsRegular() {
 			continue
 		}
-		
+
 		logFiles = append(logFiles, path)
 	}
 
@@ -196,7 +194,7 @@ func (rl *RotateLogs) cleanup() {
 func (rl *RotateLogs) generateGlobPattern() string {
 	// Get the pattern and replace all strftime specifiers with *
 	pattern := rl.pattern.pattern
-	
+
 	// Replace common strftime patterns with wildcards
 	replacements := []string{
 		"%Y", "*",
@@ -206,12 +204,12 @@ func (rl *RotateLogs) generateGlobPattern() string {
 		"%M", "*",
 		"%S", "*",
 	}
-	
+
 	result := pattern
 	for i := 0; i < len(replacements); i += 2 {
 		result = strings.ReplaceAll(result, replacements[i], replacements[i+1])
 	}
-	
+
 	return result
 }
 

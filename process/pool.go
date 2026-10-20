@@ -152,9 +152,7 @@ func (r *PoolBuilder) start(configurer func(contractsprocess.Pool)) (contractspr
 	}()
 
 	for i := 0; i < concurrency; i++ {
-		workersWg.Add(1)
-		go func() {
-			defer workersWg.Done()
+		workersWg.Go(func() {
 			for command := range jobCh {
 				if ctx.Err() != nil {
 					// If the pool was stopped (Stop() called or timeout reached), we skip execution.
@@ -196,7 +194,7 @@ func (r *PoolBuilder) start(configurer func(contractsprocess.Pool)) (contractspr
 					resultCh <- result{key: command.key, res: res}
 				}
 			}
-		}()
+		})
 	}
 
 	for _, command := range commands {

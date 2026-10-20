@@ -115,15 +115,13 @@ func BenchmarkFile_ReadWrite(b *testing.B) {
 	driver := f.getDriver()
 	f.Nil(driver.Write("foo", "bar"))
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		f.Nil(driver.Write("foo", "bar"))
 
 		value, err := driver.Read("foo")
 		f.Nil(err)
 		f.Equal("bar", value)
 	}
-	b.StopTimer()
 
 	f.BeforeTest()
 }

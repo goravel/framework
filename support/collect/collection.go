@@ -4,18 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"math/rand"
+	"math/rand/v2"
 	"reflect"
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
-	"time"
-)
-
-var (
-	randomMu  sync.Mutex
-	randomGen = rand.New(rand.NewSource(time.Now().UnixNano()))
 )
 
 type Collection[T any] struct {
@@ -702,10 +695,7 @@ func (c *Collection[T]) Random() *T {
 	if len(c.items) == 0 {
 		return nil
 	}
-	randomMu.Lock()
-	defer randomMu.Unlock()
-
-	return &c.items[randomGen.Intn(len(c.items))]
+	return &c.items[rand.IntN(len(c.items))]
 }
 
 func (c *Collection[T]) Reject(predicate func(T, int) bool) *Collection[T] {
@@ -769,11 +759,9 @@ func (c *Collection[T]) Shuffle() *Collection[T] {
 	shuffled := make([]T, len(c.items))
 	copy(shuffled, c.items)
 
-	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
-	for i := len(shuffled) - 1; i > 0; i-- {
-		j := rng.Intn(i + 1)
+	rand.Shuffle(len(shuffled), func(i, j int) {
 		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
-	}
+	})
 
 	return &Collection[T]{items: shuffled}
 }
