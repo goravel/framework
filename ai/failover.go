@@ -3,7 +3,7 @@ package ai
 import (
 	"context"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 
 	contractsai "github.com/goravel/framework/contracts/ai"
@@ -215,7 +215,7 @@ func NewFailoverRules(provider string, patterns map[contractsai.FailoverReason][
 			reasons = append(reasons, string(reason))
 		}
 	}
-	sort.Strings(reasons)
+	slices.Sort(reasons)
 
 	var rules []failoverRule
 	for _, reasonValue := range reasons {

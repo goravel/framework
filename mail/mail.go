@@ -87,8 +87,7 @@ func (tr *trimReader) Read(buf []byte) (int, error) {
 func handleAddressList(v []string) []string {
 	res := []string{}
 	for _, a := range v {
-		w := strings.Split(a, ",")
-		for _, addr := range w {
+		for addr := range strings.SplitSeq(a, ",") {
 			decodedAddr, err := (&mime.WordDecoder{}).DecodeHeader(strings.TrimSpace(addr))
 			if err == nil {
 				res = append(res, decodedAddr)

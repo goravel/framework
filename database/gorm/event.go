@@ -364,8 +364,7 @@ func structToMap(data any) map[string]any {
 
 func structNameToDbColumnName(structName, tag string) string {
 	if strings.Contains(tag, "column:") {
-		tags := strings.Split(tag, ";")
-		for _, item := range tags {
+		for item := range strings.SplitSeq(tag, ";") {
 			if strings.Contains(item, "column:") {
 				return strings.Trim(strings.ReplaceAll(item, "column:", ""), " ")
 			}

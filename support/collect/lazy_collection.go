@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"slices"
 	"sort"
 	"strings"
 )
@@ -493,8 +494,8 @@ func (lc *LazyCollection[T]) Reverse() *LazyCollection[T] {
 			go func() {
 				defer close(ch)
 				items := lc.All()
-				for i := len(items) - 1; i >= 0; i-- {
-					ch <- items[i]
+				for _, item := range slices.Backward(items) {
+					ch <- item
 				}
 			}()
 			return ch

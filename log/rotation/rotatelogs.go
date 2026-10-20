@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -172,13 +172,13 @@ func (rl *RotateLogs) cleanup() {
 	}
 
 	// Sort files by modification time (oldest first)
-	sort.Slice(logFiles, func(i, j int) bool {
-		infoI, errI := os.Stat(logFiles[i])
-		infoJ, errJ := os.Stat(logFiles[j])
-		if errI != nil || errJ != nil {
-			return false
+	slices.SortFunc(logFiles, func(a, b string) int {
+		infoA, errA := os.Stat(a)
+		infoB, errB := os.Stat(b)
+		if errA != nil || errB != nil {
+			return 0
 		}
-		return infoI.ModTime().Before(infoJ.ModTime())
+		return infoA.ModTime().Compare(infoB.ModTime())
 	})
 
 	// Keep only the most recent rotationCount files

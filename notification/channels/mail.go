@@ -3,7 +3,7 @@ package channels
 import (
 	"encoding/json"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 
 	contractsmail "github.com/goravel/framework/contracts/mail"
@@ -113,7 +113,7 @@ func formatAddresses(routes map[string]string) []string {
 	for address := range routes {
 		addresses = append(addresses, address)
 	}
-	sort.Strings(addresses) // deterministic order — map iteration isn't
+	slices.Sort(addresses) // deterministic order — map iteration isn't
 
 	formatted := make([]string, 0, len(addresses))
 	for _, address := range addresses {

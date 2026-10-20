@@ -2,7 +2,7 @@ package foundation
 
 import (
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/goravel/framework/contracts/binding"
@@ -340,7 +340,7 @@ func (r *ProviderRepository) detectCycle(graph map[string][]string, bindingToPro
 	for node := range graph {
 		nodes = append(nodes, node)
 	}
-	sort.Strings(nodes)
+	slices.Sort(nodes)
 
 	for _, node := range nodes {
 		if !visited[node] {

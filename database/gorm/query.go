@@ -2036,23 +2036,23 @@ func getDeletedAtColumn(model any) string {
 		t = t.Elem()
 	}
 
-	for i := 0; i < t.NumField(); i++ {
-		if !t.Field(i).IsExported() {
+	for field := range t.Fields() {
+		if !field.IsExported() {
 			continue
 		}
-		if t.Field(i).Type.Kind() == reflect.Struct {
-			if t.Field(i).Type == reflect.TypeOf(gormio.DeletedAt{}) {
-				return t.Field(i).Name
+		if field.Type.Kind() == reflect.Struct {
+			if field.Type == reflect.TypeFor[gormio.DeletedAt]() {
+				return field.Name
 			}
 
-			structField := t.Field(i).Type
-			for j := 0; j < structField.NumField(); j++ {
-				if !structField.Field(j).IsExported() {
+			structField := field.Type
+			for nested := range structField.Fields() {
+				if !nested.IsExported() {
 					continue
 				}
 
-				if structField.Field(j).Type == reflect.TypeOf(gormio.DeletedAt{}) {
-					return structField.Field(j).Name
+				if nested.Type == reflect.TypeFor[gormio.DeletedAt]() {
+					return nested.Name
 				}
 			}
 		}

@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"fmt"
+	"maps"
 	"net"
 	"strings"
 	"sync"
@@ -238,9 +239,7 @@ func (r *Application) UnaryClientInterceptorGroups(groups map[string][]grpc.Unar
 }
 
 func (r *Application) ClientCredentials(groups map[string]credentials.TransportCredentials) {
-	for key, creds := range groups {
-		r.clientCredentialsGroups[key] = creds
-	}
+	maps.Copy(r.clientCredentialsGroups, groups)
 }
 
 func (r *Application) ClientStatsHandlerGroups(groups map[string][]stats.Handler) {

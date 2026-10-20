@@ -2,6 +2,7 @@ package schema
 
 import (
 	"fmt"
+	"maps"
 	"reflect"
 	"slices"
 	"strings"
@@ -479,9 +480,7 @@ func (r *Schema) newConnection(name string) (*Schema, error) {
 	schema.goTypes = slices.Clone(r.goTypes)
 	schema.models = slices.Clone(r.models)
 	schema.modelsByFullName = make(map[string]any, len(r.modelsByFullName))
-	for name, model := range r.modelsByFullName {
-		schema.modelsByFullName[name] = model
-	}
+	maps.Copy(schema.modelsByFullName, r.modelsByFullName)
 
 	return schema, nil
 }

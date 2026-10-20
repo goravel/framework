@@ -131,8 +131,7 @@ func (r *ForeignIDColumnDefinition) Constrained(table, column, indexName string)
 
 	if table == "" {
 		name := r.GetName()
-		if strings.HasSuffix(name, "_"+column) {
-			base := strings.TrimSuffix(name, "_"+column)
+		if base, ok := strings.CutSuffix(name, "_"+column); ok {
 			table = pluralizer.Plural(base)
 		}
 	}

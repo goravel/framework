@@ -896,7 +896,7 @@ func TestModelToStruct(t *testing.T) {
 				assert.NotNil(t, result)
 				// The result should be a different instance
 				assert.NotSame(t, &TestModel{ID: 1, Name: "test"}, result)
-				assert.Equal(t, reflect.TypeOf(&TestModel{}), reflect.TypeOf(result))
+				assert.Equal(t, reflect.TypeFor[*TestModel](), reflect.TypeOf(result))
 			},
 		},
 	}

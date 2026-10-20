@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 
 	contractstranslation "github.com/goravel/framework/contracts/translation"
@@ -60,7 +60,7 @@ func (e *Engine) Validate() *Errors {
 	for field := range expandedRules {
 		sortedFields = append(sortedFields, field)
 	}
-	sort.Strings(sortedFields)
+	slices.Sort(sortedFields)
 
 	// Step 3: Validate each field
 	for _, field := range sortedFields {
@@ -248,11 +248,8 @@ func (e *Engine) handleExcludeRule(field string, rule ParsedRule) {
 		}
 
 	case "exclude_with":
-		for _, f := range rule.Parameters {
-			if e.data.Has(f) {
-				e.excludes[field] = true
-				break
-			}
+		if slices.ContainsFunc(rule.Parameters, e.data.Has) {
+			e.excludes[field] = true
 		}
 
 	case "exclude_without":

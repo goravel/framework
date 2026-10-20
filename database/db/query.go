@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"maps"
 	"reflect"
-	"sort"
+	"slices"
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
@@ -1119,7 +1119,7 @@ func (r *Query) buildInsert(data []map[string]any) (sql string, args []any, err 
 	for col := range colSet {
 		cols = append(cols, col)
 	}
-	sort.Strings(cols)
+	slices.Sort(cols)
 	builder = builder.Columns(cols...)
 
 	for _, row := range data {

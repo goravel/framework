@@ -6,6 +6,7 @@ import (
 	"math"
 	"math/rand/v2"
 	"reflect"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -59,10 +60,7 @@ func (c *Collection[T]) Chunk(size int) [][]T {
 
 	var chunks [][]T
 	for i := 0; i < len(c.items); i += size {
-		end := i + size
-		if end > len(c.items) {
-			end = len(c.items)
-		}
+		end := min(i+size, len(c.items))
 		chunks = append(chunks, c.items[i:end])
 	}
 	return chunks
@@ -104,7 +102,7 @@ func (c *Collection[T]) Collapse() *Collection[T] {
 		v := reflect.ValueOf(item)
 		if v.Kind() == reflect.Slice {
 			for i := 0; i < v.Len(); i++ {
-				if elem, ok := v.Index(i).Interface().(T); ok {
+				if elem, ok := reflect.TypeAssert[T](v.Index(i)); ok {
 					flattened = append(flattened, elem)
 				}
 			}
@@ -241,7 +239,7 @@ func (c *Collection[T]) EachSpread(fn func(...T)) *Collection[T] {
 		if v.Kind() == reflect.Slice {
 			args := make([]T, v.Len())
 			for i := 0; i < v.Len(); i++ {
-				if elem, ok := v.Index(i).Interface().(T); ok {
+				if elem, ok := reflect.TypeAssert[T](v.Index(i)); ok {
 					args[i] = elem
 				}
 			}
@@ -326,10 +324,7 @@ func (c *Collection[T]) ForPage(page, perPage int) *Collection[T] {
 		return &Collection[T]{items: []T{}}
 	}
 
-	end := start + perPage
-	if end > len(c.items) {
-		end = len(c.items)
-	}
+	end := min(start+perPage, len(c.items))
 
 	return &Collection[T]{items: c.items[start:end]}
 }
@@ -351,12 +346,7 @@ func (c *Collection[T]) Has(index int) bool {
 }
 
 func (c *Collection[T]) HasAny(indices ...int) bool {
-	for _, index := range indices {
-		if c.Has(index) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(indices, c.Has)
 }
 
 func (c *Collection[T]) Intersect(other *Collection[T]) *Collection[T] {
@@ -471,7 +461,7 @@ func (c *Collection[T]) MapSpread(fn func(...T) T) *Collection[T] {
 		if v.Kind() == reflect.Slice {
 			args := make([]T, v.Len())
 			for i := 0; i < v.Len(); i++ {
-				if elem, ok := v.Index(i).Interface().(T); ok {
+				if elem, ok := reflect.TypeAssert[T](v.Index(i)); ok {
 					args[i] = elem
 				}
 			}
@@ -804,10 +794,7 @@ func (c *Collection[T]) Slice(offset int, length ...int) *Collection[T] {
 
 	end := len(c.items)
 	if len(length) > 0 {
-		end = offset + length[0]
-		if end > len(c.items) {
-			end = len(c.items)
-		}
+		end = min(offset+length[0], len(c.items))
 		if end < offset {
 			end = offset
 		}
@@ -859,10 +846,7 @@ func (c *Collection[T]) Splice(start, deleteCount int, replacement ...T) *Collec
 		deleteCount = 0
 	}
 
-	end := start + deleteCount
-	if end > len(c.items) {
-		end = len(c.items)
-	}
+	end := min(start+deleteCount, len(c.items))
 	removed := make([]T, end-start)
 	copy(removed, c.items[start:end])
 
@@ -1095,10 +1079,7 @@ func (c *Collection[T]) WhereNull(field string) *Collection[T] {
 }
 
 func (c *Collection[T]) Zip(other *Collection[T]) [][]T {
-	maxLen := len(c.items)
-	if len(other.items) > maxLen {
-		maxLen = len(other.items)
-	}
+	maxLen := max(len(c.items), len(other.items))
 
 	var result [][]T
 	for i := 0; i < maxLen; i++ {
