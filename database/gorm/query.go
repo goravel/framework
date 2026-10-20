@@ -492,7 +492,7 @@ func (r *Query) Load(model any, relation string, args ...any) error {
 
 	t := destType.Elem()
 	v := reflect.ValueOf(model).Elem()
-	for i := 0; i < t.NumField(); i++ {
+	for i := range t.NumField() {
 		if !t.Field(i).IsExported() {
 			continue
 		}
@@ -512,7 +512,7 @@ func (r *Query) LoadMissing(model any, relation string, args ...any) error {
 
 	t := reflect.TypeOf(model).Elem()
 	v := reflect.ValueOf(model).Elem()
-	for i := 0; i < t.NumField(); i++ {
+	for i := range t.NumField() {
 		if !t.Field(i).IsExported() {
 			continue
 		}

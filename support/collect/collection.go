@@ -101,7 +101,7 @@ func (c *Collection[T]) Collapse() *Collection[T] {
 	for _, item := range c.items {
 		v := reflect.ValueOf(item)
 		if v.Kind() == reflect.Slice {
-			for i := 0; i < v.Len(); i++ {
+			for i := range v.Len() {
 				if elem, ok := reflect.TypeAssert[T](v.Index(i)); ok {
 					flattened = append(flattened, elem)
 				}
@@ -238,7 +238,7 @@ func (c *Collection[T]) EachSpread(fn func(...T)) *Collection[T] {
 		v := reflect.ValueOf(item)
 		if v.Kind() == reflect.Slice {
 			args := make([]T, v.Len())
-			for i := 0; i < v.Len(); i++ {
+			for i := range v.Len() {
 				if elem, ok := reflect.TypeAssert[T](v.Index(i)); ok {
 					args[i] = elem
 				}
@@ -460,7 +460,7 @@ func (c *Collection[T]) MapSpread(fn func(...T) T) *Collection[T] {
 		v := reflect.ValueOf(item)
 		if v.Kind() == reflect.Slice {
 			args := make([]T, v.Len())
-			for i := 0; i < v.Len(); i++ {
+			for i := range v.Len() {
 				if elem, ok := reflect.TypeAssert[T](v.Index(i)); ok {
 					args[i] = elem
 				}
@@ -1082,7 +1082,7 @@ func (c *Collection[T]) Zip(other *Collection[T]) [][]T {
 	maxLen := max(len(c.items), len(other.items))
 
 	var result [][]T
-	for i := 0; i < maxLen; i++ {
+	for i := range maxLen {
 		var pair []T
 		if i < len(c.items) {
 			pair = append(pair, c.items[i])

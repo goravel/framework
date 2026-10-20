@@ -127,7 +127,7 @@ func (e *Event) SetAttribute(key string, value any) {
 			destValue = destValueCanAddr.Elem()
 		}
 
-		for i := 0; i < destType.NumField(); i++ {
+		for i := range destType.NumField() {
 			if !destType.Field(i).IsExported() {
 				continue
 			}
@@ -301,7 +301,7 @@ func fetchColumnNames(model any) map[string]string {
 		return res
 	}
 
-	for i := 0; i < modelType.NumField(); i++ {
+	for i := range modelType.NumField() {
 		if !modelType.Field(i).IsExported() {
 			continue
 		}
@@ -335,7 +335,7 @@ func structToMap(data any) map[string]any {
 		return res
 	}
 
-	for i := 0; i < modelType.NumField(); i++ {
+	for i := range modelType.NumField() {
 		fieldType := modelType.Field(i)
 		fieldValue := modelValue.Field(i)
 

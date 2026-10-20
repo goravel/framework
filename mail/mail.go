@@ -510,7 +510,7 @@ func (e *Email) Send(addr string, a smtp.Auth) error {
 	// Merge the To, Cc, and Bcc fields
 	to := make([]string, 0, len(e.To)+len(e.Cc)+len(e.Bcc))
 	to = append(append(append(to, e.To...), e.Cc...), e.Bcc...)
-	for i := 0; i < len(to); i++ {
+	for i := range to {
 		addr, err := mail.ParseAddress(to[i])
 		if err != nil {
 			return err
@@ -557,7 +557,7 @@ func (e *Email) SendWithTLS(addr string, a smtp.Auth, t *tls.Config) error {
 	// Merge the To, Cc, and Bcc fields
 	to := make([]string, 0, len(e.To)+len(e.Cc)+len(e.Bcc))
 	to = append(append(append(to, e.To...), e.Cc...), e.Bcc...)
-	for i := 0; i < len(to); i++ {
+	for i := range to {
 		addr, err := mail.ParseAddress(to[i])
 		if err != nil {
 			return err
@@ -631,7 +631,7 @@ func (e *Email) SendWithStartTLS(addr string, a smtp.Auth, t *tls.Config) error 
 	// Merge the To, Cc, and Bcc fields
 	to := make([]string, 0, len(e.To)+len(e.Cc)+len(e.Bcc))
 	to = append(append(append(to, e.To...), e.Cc...), e.Bcc...)
-	for i := 0; i < len(to); i++ {
+	for i := range to {
 		addr, err := mail.ParseAddress(to[i])
 		if err != nil {
 			return err

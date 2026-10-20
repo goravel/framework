@@ -127,7 +127,7 @@ func getContextValues(ctx any, out map[any]any) {
 	t := v.Type()
 
 	var key, val any
-	for i := 0; i < v.NumField(); i++ {
+	for i := range v.NumField() {
 		f := v.Field(i)
 		if !f.CanAddr() {
 			continue

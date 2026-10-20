@@ -3,6 +3,7 @@ package validation
 import (
 	"context"
 	"fmt"
+	"maps"
 	"regexp"
 	"slices"
 	"strings"
@@ -56,11 +57,7 @@ func (e *Engine) Validate() *Errors {
 	expandedRules := e.expandWildcardRules()
 
 	// Step 2: Sort keys for deterministic ordering
-	sortedFields := make([]string, 0, len(expandedRules))
-	for field := range expandedRules {
-		sortedFields = append(sortedFields, field)
-	}
-	slices.Sort(sortedFields)
+	sortedFields := slices.Sorted(maps.Keys(expandedRules))
 
 	// Step 3: Validate each field
 	for _, field := range sortedFields {

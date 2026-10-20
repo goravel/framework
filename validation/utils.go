@@ -349,7 +349,7 @@ func toAnySlice(val any) ([]any, bool) {
 			return nil, false
 		}
 		out := make([]any, rv.Len())
-		for i := 0; i < rv.Len(); i++ {
+		for i := range rv.Len() {
 			out[i] = rv.Index(i).Interface()
 		}
 		return out, true
@@ -478,7 +478,7 @@ func collectKeys(data any, prefix string, keys *[]string) {
 			return
 		}
 		if rv.Kind() == reflect.Slice || rv.Kind() == reflect.Array {
-			for i := 0; i < rv.Len(); i++ {
+			for i := range rv.Len() {
 				fullKey := strconv.Itoa(i)
 				if prefix != "" {
 					fullKey = prefix + "." + strconv.Itoa(i)
@@ -547,7 +547,7 @@ func structToMap(rv reflect.Value) map[string]any {
 	result := make(map[string]any)
 	rt := rv.Type()
 
-	for i := 0; i < rt.NumField(); i++ {
+	for i := range rt.NumField() {
 		field := rt.Field(i)
 		if !field.IsExported() {
 			continue
@@ -600,7 +600,7 @@ func normalizeValue(rv reflect.Value) any {
 		return structToMap(rv)
 	case reflect.Slice, reflect.Array:
 		result := make([]any, rv.Len())
-		for i := 0; i < rv.Len(); i++ {
+		for i := range rv.Len() {
 			result[i] = normalizeValue(rv.Index(i))
 		}
 		return result

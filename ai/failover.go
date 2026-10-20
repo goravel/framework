@@ -53,7 +53,7 @@ func newFailoverProvider(providers []resolvedProvider) contractsai.Provider {
 		return providers[0].provider
 	}
 
-	return &failoverProvider{providers: append([]resolvedProvider(nil), providers...)}
+	return &failoverProvider{providers: slices.Clone(providers)}
 }
 
 func (e *failoverError) Error() string {

@@ -63,7 +63,7 @@ func LazyGenerate[T any](fn func(int) T, count int) *LazyCollection[T] {
 			ch := make(chan T)
 			go func() {
 				defer close(ch)
-				for i := 0; i < count; i++ {
+				for i := range count {
 					ch <- fn(i)
 				}
 			}()
@@ -129,7 +129,7 @@ func LazyRepeat[T any](value T, count int) *LazyCollection[T] {
 			ch := make(chan T)
 			go func() {
 				defer close(ch)
-				for i := 0; i < count; i++ {
+				for range count {
 					ch <- value
 				}
 			}()

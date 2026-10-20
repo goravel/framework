@@ -98,7 +98,7 @@ func convertToMap(data any) (map[string]any, error) {
 
 	// Handle struct
 	result := make(map[string]any)
-	for i := 0; i < typ.NumField(); i++ {
+	for i := range typ.NumField() {
 		field := typ.Field(i)
 		if !field.IsExported() {
 			continue

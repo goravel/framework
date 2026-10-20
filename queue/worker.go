@@ -254,7 +254,7 @@ func (r *Worker) run() error {
 }
 
 func (r *Worker) runWithPop(queueNames []string) error {
-	for i := 0; i < r.concurrent; i++ {
+	for range r.concurrent {
 		r.jobWg.Go(func() {
 			// TODO make the initial delay and max delay configurable
 			currentDelay := 1 * time.Second

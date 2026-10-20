@@ -144,14 +144,14 @@ func (r *PoolBuilder) start(configurer func(contractsprocess.Pool)) (contractspr
 	// It waits for all expected results before exiting.
 	resultsWg.Add(len(commands))
 	go func() {
-		for i := 0; i < len(commands); i++ {
+		for range commands {
 			rc := <-resultCh
 			runningPool.setResult(rc.key, rc.res)
 			resultsWg.Done()
 		}
 	}()
 
-	for i := 0; i < concurrency; i++ {
+	for range concurrency {
 		workersWg.Go(func() {
 			for command := range jobCh {
 				if ctx.Err() != nil {
