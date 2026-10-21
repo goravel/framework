@@ -1610,6 +1610,53 @@ func (_c *Application_MakeEvent_Call) RunAndReturn(run func() event.Instance) *A
 	return _c
 }
 
+// MakeFake provides a mock function with no fields
+func (_m *Application) MakeFake() testing.Fake {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for MakeFake")
+	}
+
+	var r0 testing.Fake
+	if rf, ok := ret.Get(0).(func() testing.Fake); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(testing.Fake)
+		}
+	}
+
+	return r0
+}
+
+// Application_MakeFake_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MakeFake'
+type Application_MakeFake_Call struct {
+	*mock.Call
+}
+
+// MakeFake is a helper method to define mock.On call
+func (_e *Application_Expecter) MakeFake() *Application_MakeFake_Call {
+	return &Application_MakeFake_Call{Call: _e.mock.On("MakeFake")}
+}
+
+func (_c *Application_MakeFake_Call) Run(run func()) *Application_MakeFake_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Application_MakeFake_Call) Return(_a0 testing.Fake) *Application_MakeFake_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Application_MakeFake_Call) RunAndReturn(run func() testing.Fake) *Application_MakeFake_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // MakeGate provides a mock function with no fields
 func (_m *Application) MakeGate() access.Gate {
 	ret := _m.Called()

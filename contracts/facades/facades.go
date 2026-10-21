@@ -12,6 +12,7 @@ const (
 	Crypt        = "Crypt"
 	DB           = "DB"
 	Event        = "Event"
+	Fake         = "Fake"
 	Gate         = "Gate"
 	Grpc         = "Grpc"
 	Hash         = "Hash"
@@ -46,6 +47,7 @@ var FacadeToBinding = map[string]string{
 	Crypt:        binding.Crypt,
 	DB:           binding.DB,
 	Event:        binding.Event,
+	Fake:         binding.Fake,
 	Gate:         binding.Gate,
 	Grpc:         binding.Grpc,
 	Hash:         binding.Hash,

@@ -26,6 +26,7 @@ func TestFactoryMakeCommand(t *testing.T) {
 	assert.True(t, file.Exists("database/factories/user_factory.go"))
 	assert.True(t, file.Contain("database/factories/user_factory.go", "package factories"))
 	assert.True(t, file.Contain("database/factories/user_factory.go", "type UserFactory struct"))
+	assert.True(t, file.Contain("database/factories/user_factory.go", "fake := facades.Fake()"))
 
 	mockContext.EXPECT().Argument(0).Return("UserFactory").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()

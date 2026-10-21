@@ -5,8 +5,10 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/support"
 	supportconsole "github.com/goravel/framework/support/console"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -65,8 +67,15 @@ func (r *FactoryMakeCommand) getStub() string {
 
 // populateStub Populate the place-holders in the command stub.
 func (r *FactoryMakeCommand) populateStub(stub string, packageName, structName string) string {
+	facadesImport := packages.Paths().Facades().Import()
+	if !env.IsBootstrapSetup() {
+		facadesImport = "github.com/goravel/framework/facades"
+	}
+
 	stub = strings.ReplaceAll(stub, "DummyFactory", structName)
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
+	stub = strings.ReplaceAll(stub, "DummyFacadesImport", facadesImport)
+	stub = strings.ReplaceAll(stub, "DummyFacadesPackage", packages.Paths().Facades().Package())
 
 	return stub
 }

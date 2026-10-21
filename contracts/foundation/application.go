@@ -162,6 +162,8 @@ type Application interface {
 	MakeDB() db.DB
 	// MakeEvent resolves the event instance.
 	MakeEvent() event.Instance
+	// MakeFake resolves the fake instance.
+	MakeFake() testing.Fake
 	// MakeGate resolves the gate instance.
 	MakeGate() access.Gate
 	// MakeGrpc resolves the grpc instance.
