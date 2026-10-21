@@ -8,7 +8,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/goravel/framework/support/carbon"
-	"github.com/goravel/framework/support/convert"
 )
 
 type Body struct {
@@ -184,20 +183,20 @@ func TestConvertToSliceMap(t *testing.T) {
 				return User{
 					ID:             1,
 					Email:          "john@example.com",
-					Avatar:         convert.Pointer("avatar.jpg"),
-					Alias:          convert.Pointer(42),
+					Avatar:         new("avatar.jpg"),
+					Alias:          new(42),
 					Body:           Body{Weight: "100kg", Head: &head, DateTime: *dateTime},
-					House:          &House{Address: "123 Main St", Size: convert.Pointer(100)},
-					Job:            Job{Title: "Engineer", Salary: convert.Pointer(50000.0)},
+					House:          &House{Address: "123 Main St", Size: new(100)},
+					Job:            Job{Title: "Engineer", Salary: new(50000.0)},
 					TestTimestamps: TestTimestamps{CreatedAt: dateTime, UpdatedAt: dateTime},
 				}
 			}(),
 			want: []map[string]any{
 				{
-					"id": 1, "email": "john@example.com", "avatar": convert.Pointer("avatar.jpg"),
-					"alias": convert.Pointer(42), "weight": "100kg", "head": &head, "date_time": *dateTime,
-					"house":      &House{Address: "123 Main St", Size: convert.Pointer(100)},
-					"job":        Job{Title: "Engineer", Salary: convert.Pointer(50000.0)},
+					"id": 1, "email": "john@example.com", "avatar": new("avatar.jpg"),
+					"alias": new(42), "weight": "100kg", "head": &head, "date_time": *dateTime,
+					"house":      &House{Address: "123 Main St", Size: new(100)},
+					"job":        Job{Title: "Engineer", Salary: new(50000.0)},
 					"created_at": dateTime, "updated_at": dateTime,
 				},
 			},

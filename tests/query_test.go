@@ -15,7 +15,6 @@ import (
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
-	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/mysql"
 	"github.com/goravel/postgres"
 	"github.com/goravel/sqlite"
@@ -4776,7 +4775,7 @@ func (s *QueryTestSuite) TestJsonWhereClauses() {
 				},
 				{
 					name: "bool key(pointer)",
-					find: query.Query().Where("data->bool", convert.Pointer(false)).Find,
+					find: query.Query().Where("data->bool", new(false)).Find,
 					assert: func(items []JsonData) {
 						s.Len(items, 1)
 						s.JSONEq(data[1].Data, items[0].Data)
@@ -4919,7 +4918,7 @@ func (s *QueryTestSuite) TestJsonColumnsUpdate() {
 				},
 				{
 					name:   "update float(pointer)",
-					update: map[string]any{"data->float": convert.Pointer(456.789)},
+					update: map[string]any{"data->float": new(456.789)},
 					assert: func(before JsonData, after JsonData) {
 						s.NotContains(before.Data, "456.789")
 						s.Contains(after.Data, "456.789")
@@ -5357,10 +5356,10 @@ func (s *QueryTestSuite) TestWhereAny() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
 			users := []User{
-				{Name: "where_any_user1", Avatar: "where_any_avatar1", Bio: convert.Pointer("bio1")},
-				{Name: "where_any_user2", Avatar: "where_any_avatar2", Bio: convert.Pointer("bio2")},
-				{Name: "where_any_user3", Avatar: "where_any_avatar3", Bio: convert.Pointer("bio3")},
-				{Name: "where_any_user4", Avatar: "where_any_avatar4", Bio: convert.Pointer("bio4")},
+				{Name: "where_any_user1", Avatar: "where_any_avatar1", Bio: new("bio1")},
+				{Name: "where_any_user2", Avatar: "where_any_avatar2", Bio: new("bio2")},
+				{Name: "where_any_user3", Avatar: "where_any_avatar3", Bio: new("bio3")},
+				{Name: "where_any_user4", Avatar: "where_any_avatar4", Bio: new("bio4")},
 			}
 			s.Nil(query.Query().Create(&users))
 
@@ -5432,10 +5431,10 @@ func (s *QueryTestSuite) TestWhereAll() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
 			users := []User{
-				{Name: "where_all_user1", Avatar: "where_all_avatar1", Bio: convert.Pointer("bio1")},
-				{Name: "where_all_user1", Avatar: "where_all_avatar2", Bio: convert.Pointer("bio2")},
-				{Name: "where_all_user2", Avatar: "where_all_avatar1", Bio: convert.Pointer("bio3")},
-				{Name: "where_all_user2", Avatar: "where_all_avatar2", Bio: convert.Pointer("bio4")},
+				{Name: "where_all_user1", Avatar: "where_all_avatar1", Bio: new("bio1")},
+				{Name: "where_all_user1", Avatar: "where_all_avatar2", Bio: new("bio2")},
+				{Name: "where_all_user2", Avatar: "where_all_avatar1", Bio: new("bio3")},
+				{Name: "where_all_user2", Avatar: "where_all_avatar2", Bio: new("bio4")},
 			}
 			s.Nil(query.Query().Create(&users))
 
@@ -5509,10 +5508,10 @@ func (s *QueryTestSuite) TestWhereNone() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
 			users := []User{
-				{Name: "where_none_user1", Avatar: "where_none_avatar1", Bio: convert.Pointer("bio1")},
-				{Name: "where_none_user2", Avatar: "where_none_avatar2", Bio: convert.Pointer("bio2")},
-				{Name: "where_none_user3", Avatar: "where_none_avatar3", Bio: convert.Pointer("bio3")},
-				{Name: "where_none_user4", Avatar: "where_none_avatar4", Bio: convert.Pointer("bio4")},
+				{Name: "where_none_user1", Avatar: "where_none_avatar1", Bio: new("bio1")},
+				{Name: "where_none_user2", Avatar: "where_none_avatar2", Bio: new("bio2")},
+				{Name: "where_none_user3", Avatar: "where_none_avatar3", Bio: new("bio3")},
+				{Name: "where_none_user4", Avatar: "where_none_avatar4", Bio: new("bio4")},
 			}
 			s.Nil(query.Query().Create(&users))
 

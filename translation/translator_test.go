@@ -181,7 +181,7 @@ func (s *TranslatorTestSuite) TestGet() {
 		"nonexistentKey": "French translation",
 	}, nil)
 	translation = translator.Get("test3.nonexistentKey", contractstranslation.Option{
-		Fallback: contractstranslation.Bool(true),
+		Fallback: new(true),
 		Locale:   "en",
 	})
 	s.Equal("French translation", translation)
@@ -191,7 +191,7 @@ func (s *TranslatorTestSuite) TestGet() {
 	s.mockLoader.On("Load", "en", "*").Once().Return(map[string]any{}, errors.LangFileNotExist)
 	s.mockLoader.On("Load", "en", "test4").Once().Return(map[string]any{}, errors.LangFileNotExist)
 	translation = translator.Get("test4.nonexistentKey", contractstranslation.Option{
-		Fallback: contractstranslation.Bool(false),
+		Fallback: new(false),
 		Locale:   "en",
 	})
 	s.Equal("test4.nonexistentKey", translation)
@@ -214,7 +214,7 @@ func (s *TranslatorTestSuite) TestGet() {
 		},
 	}, nil)
 	translation = translator.Get("fallback.nonexistentKey", contractstranslation.Option{
-		Fallback: contractstranslation.Bool(true),
+		Fallback: new(true),
 		Locale:   "en",
 	})
 	s.Equal("French translation", translation)
