@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"maps"
 	"reflect"
-	"sort"
+	"slices"
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
@@ -19,7 +19,6 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/collect"
-	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/framework/support/deep"
 	"github.com/goravel/framework/support/str"
 )
@@ -215,7 +214,7 @@ func (r *Query) Distinct(columns ...string) db.Query {
 		query = r.clone()
 	}
 
-	query.conditions.Distinct = convert.Pointer(true)
+	query.conditions.Distinct = new(true)
 
 	return query
 }
@@ -417,7 +416,7 @@ func (r *Query) Increment(column string, value ...uint64) error {
 
 func (r *Query) InRandomOrder() db.Query {
 	q := r.clone()
-	q.conditions.InRandomOrder = convert.Pointer(true)
+	q.conditions.InRandomOrder = new(true)
 
 	return q
 }
@@ -516,7 +515,7 @@ func (r *Query) Limit(limit uint64) db.Query {
 
 func (r *Query) LockForUpdate() db.Query {
 	q := r.clone()
-	q.conditions.LockForUpdate = convert.Pointer(true)
+	q.conditions.LockForUpdate = new(true)
 
 	return q
 }
@@ -739,7 +738,7 @@ func (r *Query) Select(columns ...string) db.Query {
 
 func (r *Query) SharedLock() db.Query {
 	q := r.clone()
-	q.conditions.SharedLock = convert.Pointer(true)
+	q.conditions.SharedLock = new(true)
 
 	return q
 }
@@ -1126,11 +1125,7 @@ func (r *Query) buildInsert(data []map[string]any) (sql string, args []any, err 
 		}
 	}
 
-	cols := make([]string, 0, len(colSet))
-	for col := range colSet {
-		cols = append(cols, col)
-	}
-	sort.Strings(cols)
+	cols := slices.Sorted(maps.Keys(colSet))
 	builder = builder.Columns(cols...)
 
 	for _, row := range data {

@@ -24,6 +24,8 @@ func Default[T comparable](values ...T) T {
 //
 //	Pointer("foo") // *string("foo")
 //	Pointer(1) // *int(1)
+//
+// Deprecated: Use new(value) instead, Pointer will be removed in a future version.
 func Pointer[T any](value T) *T {
 	return &value
 }

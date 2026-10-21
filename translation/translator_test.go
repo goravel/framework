@@ -181,7 +181,7 @@ func (s *TranslatorTestSuite) TestGet() {
 		"nonexistentKey": "French translation",
 	}, nil)
 	translation = translator.Get("test3.nonexistentKey", contractstranslation.Option{
-		Fallback: contractstranslation.Bool(true),
+		Fallback: new(true),
 		Locale:   "en",
 	})
 	s.Equal("French translation", translation)
@@ -191,7 +191,7 @@ func (s *TranslatorTestSuite) TestGet() {
 	s.mockLoader.On("Load", "en", "*").Once().Return(map[string]any{}, errors.LangFileNotExist)
 	s.mockLoader.On("Load", "en", "test4").Once().Return(map[string]any{}, errors.LangFileNotExist)
 	translation = translator.Get("test4.nonexistentKey", contractstranslation.Option{
-		Fallback: contractstranslation.Bool(false),
+		Fallback: new(false),
 		Locale:   "en",
 	})
 	s.Equal("test4.nonexistentKey", translation)
@@ -214,7 +214,7 @@ func (s *TranslatorTestSuite) TestGet() {
 		},
 	}, nil)
 	translation = translator.Get("fallback.nonexistentKey", contractstranslation.Option{
-		Fallback: contractstranslation.Bool(true),
+		Fallback: new(true),
 		Locale:   "en",
 	})
 	s.Equal("French translation", translation)
@@ -640,8 +640,6 @@ func Benchmark_Choice(b *testing.B) {
 	s := new(TranslatorTestSuite)
 	s.SetT(&testing.T{})
 	s.SetupTest()
-	b.StartTimer()
-	b.ResetTimer()
 
 	translator := NewTranslator(s.ctx, nil, s.mockLoader, "en", "en", s.mockLog)
 	s.mockLoader.On("Load", "en", "*").Return(map[string]any{
@@ -650,19 +648,15 @@ func Benchmark_Choice(b *testing.B) {
 		},
 	}, nil)
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		translator.Choice("test.foo", 1)
 	}
-
-	b.StopTimer()
 }
 
 func Benchmark_Get(b *testing.B) {
 	s := new(TranslatorTestSuite)
 	s.SetT(&testing.T{})
 	s.SetupTest()
-	b.StartTimer()
-	b.ResetTimer()
 
 	translator := NewTranslator(s.ctx, nil, s.mockLoader, "en", "en", s.mockLog)
 	s.mockLoader.On("Load", "en", "*").Return(map[string]any{
@@ -671,19 +665,15 @@ func Benchmark_Get(b *testing.B) {
 		},
 	}, nil)
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		translator.Get("test.foo")
 	}
-
-	b.StopTimer()
 }
 
 func Benchmark_Has(b *testing.B) {
 	s := new(TranslatorTestSuite)
 	s.SetT(&testing.T{})
 	s.SetupTest()
-	b.StartTimer()
-	b.ResetTimer()
 
 	translator := NewTranslator(s.ctx, nil, s.mockLoader, "en", "en", s.mockLog)
 	s.mockLoader.On("Load", "en", "*").Return(map[string]any{
@@ -692,9 +682,7 @@ func Benchmark_Has(b *testing.B) {
 		},
 	}, nil)
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		translator.Has("test.foo")
 	}
-
-	b.StopTimer()
 }

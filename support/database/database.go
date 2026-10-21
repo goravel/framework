@@ -22,7 +22,7 @@ func GetIDByReflect(t reflect.Type, v reflect.Value) any {
 		v = v.Elem()
 	}
 
-	for i := 0; i < t.NumField(); i++ {
+	for i := range t.NumField() {
 		if !t.Field(i).IsExported() {
 			continue
 		}

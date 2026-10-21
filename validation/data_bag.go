@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/url"
 	"reflect"
-	"sort"
+	"slices"
 	"strings"
 
 	supportjson "github.com/goravel/framework/support/json"
@@ -85,9 +86,7 @@ func NewDataBagFromRequest(r *http.Request, maxMemory int64) (*DataBag, error) {
 			var jsonData map[string]any
 			if err = supportjson.Unmarshal(body, &jsonData); err == nil {
 				// Body data overrides query data
-				for k, v := range jsonData {
-					bag.data[k] = v
-				}
+				maps.Copy(bag.data, jsonData)
 			}
 		}
 	case strings.HasPrefix(contentType, "multipart/form-data"):
@@ -187,7 +186,7 @@ func (d *DataBag) Keys() []string {
 	}
 	keys := make([]string, 0)
 	collectKeys(d.data, "", &keys)
-	sort.Strings(keys)
+	slices.Sort(keys)
 	d.cachedKeys = keys
 	return d.cachedKeys
 }

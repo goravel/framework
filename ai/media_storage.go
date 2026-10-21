@@ -3,6 +3,7 @@ package ai
 import (
 	pathpkg "path"
 	"regexp"
+	"slices"
 	"strings"
 
 	contractsfilesystem "github.com/goravel/framework/contracts/filesystem"
@@ -69,13 +70,7 @@ func storeContent(content []byte, name, path, disk string, nameRequired error) (
 }
 
 func hasParentPathSegment(path string) bool {
-	for _, segment := range strings.Split(path, "/") {
-		if segment == ".." {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(strings.Split(path, "/"), "..")
 }
 
 func isAbsoluteStoragePath(path string) bool {

@@ -1,7 +1,7 @@
 package console
 
 import (
-	"sort"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -50,7 +50,7 @@ func signaturesOf(commands []contractsconsole.Command) []string {
 	for _, c := range commands {
 		sigs = append(sigs, c.Signature())
 	}
-	sort.Strings(sigs)
+	slices.Sort(sigs)
 	return sigs
 }
 
@@ -107,7 +107,7 @@ func TestServiceProviderBootAllowlistApplies(t *testing.T) {
 	artisan.EXPECT().Register(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
 		got := signaturesOf(commands)
 		want := []string{"list", "make:command"}
-		sort.Strings(want)
+		slices.Sort(want)
 		if len(got) != len(want) {
 			return false
 		}

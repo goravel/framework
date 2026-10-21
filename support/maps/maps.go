@@ -45,7 +45,7 @@ func FromStruct(data any) map[string]any {
 		return res
 	}
 
-	for i := 0; i < dataType.NumField(); i++ {
+	for i := range dataType.NumField() {
 		fieldType := dataType.Field(i)
 		fieldValue := dataValue.Field(i)
 
