@@ -1,7 +1,8 @@
 package validation
 
 import (
-	"sort"
+	"cmp"
+	"slices"
 	"strings"
 
 	contractstranslation "github.com/goravel/framework/contracts/translation"
@@ -99,8 +100,8 @@ func formatMessage(message string, replacements map[string]string) string {
 	for k := range replacements {
 		keys = append(keys, k)
 	}
-	sort.Slice(keys, func(i, j int) bool {
-		return len(keys[i]) > len(keys[j])
+	slices.SortFunc(keys, func(a, b string) int {
+		return cmp.Compare(len(b), len(a))
 	})
 	for _, k := range keys {
 		message = strings.ReplaceAll(message, k, replacements[k])

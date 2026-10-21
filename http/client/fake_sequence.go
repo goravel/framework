@@ -149,7 +149,7 @@ func (r *FakeSequence) pushSnapshot(snapshot responseSnapshot, count ...int) cli
 		times = count[0]
 	}
 
-	for i := 0; i < times; i++ {
+	for range times {
 		r.snapshots = append(r.snapshots, snapshot)
 	}
 
