@@ -38,17 +38,17 @@ func Setup(args []string) packages.Setup {
 		if arg == "--force" || arg == "-f" {
 			st.force = true
 		}
-		if strings.HasPrefix(arg, "--facade=") {
-			st.facade = strings.TrimPrefix(arg, "--facade=")
+		if after, ok := strings.CutPrefix(arg, "--facade="); ok {
+			st.facade = after
 		}
-		if strings.HasPrefix(arg, "--driver=") {
-			st.driver = strings.TrimPrefix(arg, "--driver=")
+		if after, ok := strings.CutPrefix(arg, "--driver="); ok {
+			st.driver = after
 		}
-		if strings.HasPrefix(arg, "--main-path=") {
-			mainName = strings.TrimPrefix(arg, "--main-path=")
+		if after, ok := strings.CutPrefix(arg, "--main-path="); ok {
+			mainName = after
 		}
-		if strings.HasPrefix(arg, "--paths=") {
-			if err := json.Unmarshal([]byte(strings.TrimPrefix(arg, "--paths=")), &support.Config.Paths); err != nil {
+		if after, ok := strings.CutPrefix(arg, "--paths="); ok {
+			if err := json.Unmarshal([]byte(after), &support.Config.Paths); err != nil {
 				panic(fmt.Sprintf("failed to unmarshal paths: %s", err))
 			}
 		}

@@ -5,7 +5,6 @@ import (
 
 	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/schema"
-	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/framework/support/pluralizer"
 )
 
@@ -96,13 +95,13 @@ func (r *IndexDefinition) Algorithm(algorithm string) schema.IndexDefinition {
 }
 
 func (r *IndexDefinition) Deferrable() schema.IndexDefinition {
-	r.command.Deferrable = convert.Pointer(true)
+	r.command.Deferrable = new(true)
 
 	return r
 }
 
 func (r *IndexDefinition) InitiallyImmediate() schema.IndexDefinition {
-	r.command.InitiallyImmediate = convert.Pointer(true)
+	r.command.InitiallyImmediate = new(true)
 
 	return r
 }
@@ -131,8 +130,7 @@ func (r *ForeignIDColumnDefinition) Constrained(table, column, indexName string)
 
 	if table == "" {
 		name := r.GetName()
-		if strings.HasSuffix(name, "_"+column) {
-			base := strings.TrimSuffix(name, "_"+column)
+		if base, ok := strings.CutSuffix(name, "_"+column); ok {
 			table = pluralizer.Plural(base)
 		}
 	}

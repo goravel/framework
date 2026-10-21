@@ -92,22 +92,19 @@ func splitRules(ruleString string) []string {
 
 // extractRuleName extracts the rule name from a rule string (before the first ':').
 func extractRuleName(rule string) string {
-	idx := strings.Index(rule, ":")
-	if idx == -1 {
+	before, _, ok := strings.Cut(rule, ":")
+	if !ok {
 		return strings.TrimSpace(rule)
 	}
-	return strings.TrimSpace(rule[:idx])
+	return strings.TrimSpace(before)
 }
 
 // parseOneRule parses a single rule string "name:param1,param2" into a ParsedRule.
 func parseOneRule(raw string) ParsedRule {
-	idx := strings.Index(raw, ":")
-	if idx == -1 {
+	name, paramStr, ok := strings.Cut(raw, ":")
+	if !ok {
 		return ParsedRule{Name: raw}
 	}
-
-	name := raw[:idx]
-	paramStr := raw[idx+1:]
 
 	// For regex and not_regex, the entire parameter string is a single parameter
 	if name == "regex" || name == "not_regex" {

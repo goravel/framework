@@ -87,8 +87,7 @@ func (tr *trimReader) Read(buf []byte) (int, error) {
 func handleAddressList(v []string) []string {
 	res := []string{}
 	for _, a := range v {
-		w := strings.Split(a, ",")
-		for _, addr := range w {
+		for addr := range strings.SplitSeq(a, ",") {
 			decodedAddr, err := (&mime.WordDecoder{}).DecodeHeader(strings.TrimSpace(addr))
 			if err == nil {
 				res = append(res, decodedAddr)
@@ -511,7 +510,7 @@ func (e *Email) Send(addr string, a smtp.Auth) error {
 	// Merge the To, Cc, and Bcc fields
 	to := make([]string, 0, len(e.To)+len(e.Cc)+len(e.Bcc))
 	to = append(append(append(to, e.To...), e.Cc...), e.Bcc...)
-	for i := 0; i < len(to); i++ {
+	for i := range to {
 		addr, err := mail.ParseAddress(to[i])
 		if err != nil {
 			return err
@@ -558,7 +557,7 @@ func (e *Email) SendWithTLS(addr string, a smtp.Auth, t *tls.Config) error {
 	// Merge the To, Cc, and Bcc fields
 	to := make([]string, 0, len(e.To)+len(e.Cc)+len(e.Bcc))
 	to = append(append(append(to, e.To...), e.Cc...), e.Bcc...)
-	for i := 0; i < len(to); i++ {
+	for i := range to {
 		addr, err := mail.ParseAddress(to[i])
 		if err != nil {
 			return err
@@ -632,7 +631,7 @@ func (e *Email) SendWithStartTLS(addr string, a smtp.Auth, t *tls.Config) error 
 	// Merge the To, Cc, and Bcc fields
 	to := make([]string, 0, len(e.To)+len(e.Cc)+len(e.Bcc))
 	to = append(append(append(to, e.To...), e.Cc...), e.Bcc...)
-	for i := 0; i < len(to); i++ {
+	for i := range to {
 		addr, err := mail.ParseAddress(to[i])
 		if err != nil {
 			return err

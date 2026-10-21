@@ -16,7 +16,6 @@ import (
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/errors"
 	mocksdriver "github.com/goravel/framework/mocks/database/driver"
-	"github.com/goravel/framework/support/convert"
 )
 
 func TestAddGlobalScopes(t *testing.T) {
@@ -686,25 +685,25 @@ func TestModelToStruct(t *testing.T) {
 		},
 		{
 			name:        "pointer to string",
-			input:       convert.Pointer("test"),
+			input:       new("test"),
 			expectError: true,
 			expectedErr: errors.OrmQueryInvalidModel.Args(""),
 		},
 		{
 			name:        "pointer to int",
-			input:       convert.Pointer(123),
+			input:       new(123),
 			expectError: true,
 			expectedErr: errors.OrmQueryInvalidModel.Args(""),
 		},
 		{
 			name:        "pointer to float",
-			input:       convert.Pointer(123.45),
+			input:       new(123.45),
 			expectError: true,
 			expectedErr: errors.OrmQueryInvalidModel.Args(""),
 		},
 		{
 			name:        "pointer to bool",
-			input:       convert.Pointer(true),
+			input:       new(true),
 			expectError: true,
 			expectedErr: errors.OrmQueryInvalidModel.Args(""),
 		},
@@ -900,7 +899,7 @@ func TestModelToStruct(t *testing.T) {
 				assert.NotNil(t, result)
 				// The result should be a different instance
 				assert.NotSame(t, &TestModel{ID: 1, Name: "test"}, result)
-				assert.Equal(t, reflect.TypeOf(&TestModel{}), reflect.TypeOf(result))
+				assert.Equal(t, reflect.TypeFor[*TestModel](), reflect.TypeOf(result))
 			},
 		},
 	}

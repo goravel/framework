@@ -3,6 +3,7 @@ package log
 import (
 	"context"
 	"log/slog"
+	"slices"
 
 	"github.com/goravel/framework/contracts/log"
 )
@@ -40,12 +41,7 @@ type hookAdapter struct {
 }
 
 func (h *hookAdapter) Enabled(level log.Level) bool {
-	for _, l := range h.hook.Levels() {
-		if l == level {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(h.hook.Levels(), level)
 }
 
 func (h *hookAdapter) Handle(entry log.Entry) error {
