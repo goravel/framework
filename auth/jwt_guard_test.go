@@ -57,7 +57,8 @@ func (s *JwtGuardTestSuite) SetupTest() {
 	jwtGuard, err := NewJwtGuard(s.mockContext, testUserGuard, s.mockUserProvider)
 	s.Require().Nil(err)
 
-	now := carbon.Now()
+	// Tokens store whole seconds, so cache durations are only exact from a whole second.
+	now := carbon.FromStdTime(time.Now().Truncate(time.Second))
 	carbon.SetTestNow(now)
 	s.now = now
 	s.jwtGuard = jwtGuard.(*JwtGuard)
@@ -70,9 +71,10 @@ func (s *JwtGuardTestSuite) TestLoginUsingID_InvalidKey() {
 }
 
 func (s *JwtGuardTestSuite) TestCheck_LoginUsingID_Logout() {
+	// Blocked for ttl + refresh_ttl, so the token can't be refreshed after logout.
 	s.mockCache.EXPECT().Put(mock.MatchedBy(func(key string) bool {
 		return strings.HasPrefix(key, "jwt:disabled:")
-	}), true, 2*time.Minute).Return(nil).Once()
+	}), true, 4*time.Minute).Return(nil).Once()
 
 	s.False(s.jwtGuard.Check())
 	s.True(s.jwtGuard.Guest())
@@ -123,6 +125,23 @@ func (s *JwtGuardTestSuite) TestParse_TokenInvalid() {
 	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
 
 	payload, err := s.jwtGuard.Parse(token)
+	s.Nil(payload)
+	s.ErrorIs(err, errors.AuthInvalidToken)
+}
+
+func (s *JwtGuardTestSuite) TestParse_TokenWithChangedLastChar() {
+	token, err := s.jwtGuard.LoginUsingID(1)
+	s.Nil(err)
+
+	// A 32 byte signature leaves the 2 lowest bits of the last base64 character
+	// unused, so flipping one gives a different string with the same signature.
+	const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+	index := strings.IndexByte(alphabet, token[len(token)-1])
+	changedToken := token[:len(token)-1] + string(alphabet[index^1])
+
+	s.mockCache.EXPECT().GetBool("jwt:disabled:"+changedToken, false).Return(false).Once()
+
+	payload, err := s.jwtGuard.Parse(changedToken)
 	s.Nil(payload)
 	s.ErrorIs(err, errors.AuthInvalidToken)
 }
@@ -324,6 +343,10 @@ func (s *JwtGuardTestSuite) TestUser_Expired_Refresh() {
 	err = s.jwtGuard.User(&user)
 	s.EqualError(err, errors.AuthTokenExpired.Error())
 
+	refreshedKey := s.refreshedCacheKey()
+	s.mockCache.EXPECT().GetBool(refreshedKey, false).Return(false).Once()
+	s.mockCache.EXPECT().Put(refreshedKey, true, 2*time.Minute).Return(nil).Once()
+
 	token, err = s.jwtGuard.Refresh()
 	s.NotEmpty(token)
 	s.Nil(err)
@@ -332,6 +355,61 @@ func (s *JwtGuardTestSuite) TestUser_Expired_Refresh() {
 
 	err = s.jwtGuard.User(&user)
 	s.Nil(err)
+}
+
+func (s *JwtGuardTestSuite) TestRefresh_AlreadyRefreshed() {
+	token, err := s.jwtGuard.LoginUsingID(1)
+	s.Nil(err)
+
+	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+
+	_, err = s.jwtGuard.Parse(token)
+	s.Nil(err)
+
+	s.mockCache.EXPECT().GetBool(s.refreshedCacheKey(), false).Return(true).Once()
+
+	token, err = s.jwtGuard.Refresh()
+	s.Empty(token)
+	s.ErrorIs(err, errors.AuthTokenDisabled)
+}
+
+func (s *JwtGuardTestSuite) TestRefresh_SetRefreshedCacheError() {
+	token, err := s.jwtGuard.LoginUsingID(1)
+	s.Nil(err)
+
+	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+
+	_, err = s.jwtGuard.Parse(token)
+	s.Nil(err)
+
+	refreshedKey := s.refreshedCacheKey()
+	s.mockCache.EXPECT().GetBool(refreshedKey, false).Return(false).Once()
+	s.mockCache.EXPECT().Put(refreshedKey, true, 4*time.Minute).Return(assert.AnError).Once()
+
+	token, err = s.jwtGuard.Refresh()
+	s.Empty(token)
+	s.ErrorIs(err, assert.AnError)
+}
+
+func (s *JwtGuardTestSuite) TestGetRefreshedCacheKey() {
+	expiresAt := jwt.NewNumericDate(time.Unix(1700000000, 0))
+
+	s.Equal("jwt:refreshed:user:abc", getRefreshedCacheKey(testUserGuard, &Claims{
+		Key:              "1",
+		RegisteredClaims: jwt.RegisteredClaims{ID: "abc", ExpiresAt: expiresAt},
+	}))
+
+	// Tokens issued before the ID claim existed.
+	s.Equal("jwt:refreshed:user:1:1700000000", getRefreshedCacheKey(testUserGuard, &Claims{
+		Key:              "1",
+		RegisteredClaims: jwt.RegisteredClaims{ExpiresAt: expiresAt},
+	}))
+}
+
+func (s *JwtGuardTestSuite) refreshedCacheKey() string {
+	guards := s.jwtGuard.ctx.Value(ctxJwtKey).(Guards)
+
+	return getRefreshedCacheKey(testUserGuard, guards[testUserGuard].Claims)
 }
 
 func (s *JwtGuardTestSuite) TestUser_RefreshExpired() {
@@ -465,7 +543,7 @@ func (s *JwtGuardTestSuite) TestLogout_SetDisabledCacheError() {
 
 	s.mockCache.EXPECT().Put(mock.MatchedBy(func(key string) bool {
 		return strings.HasPrefix(key, "jwt:disabled:")
-	}), true, 2*time.Minute).Return(assert.AnError).Once()
+	}), true, 4*time.Minute).Return(assert.AnError).Once()
 
 	s.EqualError(s.jwtGuard.Logout(), assert.AnError.Error())
 }

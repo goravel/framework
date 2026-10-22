@@ -2,6 +2,7 @@ package session
 
 import (
 	"maps"
+	"regexp"
 	"slices"
 
 	"github.com/spf13/cast"
@@ -12,6 +13,8 @@ import (
 	supportmaps "github.com/goravel/framework/support/maps"
 	"github.com/goravel/framework/support/str"
 )
+
+var sessionIDRegexp = regexp.MustCompile(`^[a-zA-Z0-9]{40}$`)
 
 type Session struct {
 	driver     sessioncontract.Driver
@@ -209,8 +212,9 @@ func (s *Session) generateSessionID() string {
 	return str.Random(40)
 }
 
+// The id comes from a cookie and is used as a file name by the file driver.
 func (s *Session) isValidID(id string) bool {
-	return len(id) == 40
+	return sessionIDRegexp.MatchString(id)
 }
 
 func (s *Session) loadSession() {

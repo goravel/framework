@@ -15,6 +15,7 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/convert"
+	"github.com/goravel/framework/support/str"
 )
 
 var _ contractsauth.GuardFunc = NewJwtGuard
@@ -151,6 +152,7 @@ func (r *JwtGuard) LoginUsingID(id any) (token string, err error) {
 	claims := Claims{
 		key,
 		jwt.RegisteredClaims{
+			ID:        str.Random(32),
 			ExpiresAt: jwt.NewNumericDate(expireTime),
 			IssuedAt:  jwt.NewNumericDate(nowTime.StdTime()),
 			Subject:   r.guard,
@@ -179,9 +181,10 @@ func (r *JwtGuard) Logout() error {
 		return err
 	}
 
+	// Block the token until it can no longer be refreshed.
 	if err := r.cache.Put(getDisabledCacheKey(guard.Token),
 		true,
-		time.Duration(r.ttl)*time.Minute,
+		r.refreshTimeLeft(guard.Claims),
 	); err != nil {
 		return err
 	}
@@ -198,11 +201,12 @@ func (r *JwtGuard) Parse(token string) (*contractsauth.Payload, error) {
 		return nil, errors.AuthTokenDisabled
 	}
 
+	// The blacklist matches the exact token string, so other spellings of it must fail.
 	tokenClaims, err := jwt.ParseWithClaims(token, &Claims{}, func(token *jwt.Token) (any, error) {
 		return convert.UnsafeBytes(r.secret), nil
 	}, jwt.WithTimeFunc(func() time.Time {
 		return carbon.Now().StdTime()
-	}))
+	}), jwt.WithStrictDecoding())
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) && tokenClaims != nil {
 			claims, ok := tokenClaims.Claims.(*Claims)
@@ -259,12 +263,22 @@ func (r *JwtGuard) Refresh() (token string, err error) {
 		return "", errors.AuthParseTokenFirst
 	}
 
-	expireTime := carbon.FromStdTime(guards[r.guard].Claims.ExpiresAt.Time).AddMinutes(r.refreshTtl)
-	if carbon.Now().Gt(expireTime) {
+	claims := guards[r.guard].Claims
+	timeLeft := r.refreshTimeLeft(claims)
+	if timeLeft <= 0 {
 		return "", errors.AuthRefreshTimeExceeded
 	}
 
-	return r.LoginUsingID(guards[r.guard].Claims.Key)
+	// Each token can be refreshed only once.
+	refreshedKey := getRefreshedCacheKey(r.guard, claims)
+	if r.cache.GetBool(refreshedKey, false) {
+		return "", errors.AuthTokenDisabled
+	}
+	if err := r.cache.Put(refreshedKey, true, timeLeft); err != nil {
+		return "", err
+	}
+
+	return r.LoginUsingID(claims.Key)
 }
 
 // User need parse token first.
@@ -315,10 +329,24 @@ func (r *JwtGuard) makeAuthContext(claims *Claims, token string) {
 	r.ctx.WithValue(ctxJwtKey, guards)
 }
 
+func (r *JwtGuard) refreshTimeLeft(claims *Claims) time.Duration {
+	return claims.ExpiresAt.Add(time.Duration(r.refreshTtl) * time.Minute).Sub(carbon.Now().StdTime())
+}
+
 func (r *JwtGuard) tokenIsDisabled(token string) bool {
 	return r.cache.GetBool(getDisabledCacheKey(token), false)
 }
 
 func getDisabledCacheKey(token string) string {
 	return "jwt:disabled:" + token
+}
+
+// Parse doesn't keep the string of an expired token, so the key comes from the
+// claims. Tokens issued before the ID claim existed fall back to user and expiry.
+func getRefreshedCacheKey(guard string, claims *Claims) string {
+	if claims.ID != "" {
+		return fmt.Sprintf("jwt:refreshed:%s:%s", guard, claims.ID)
+	}
+
+	return fmt.Sprintf("jwt:refreshed:%s:%s:%d", guard, claims.Key, claims.ExpiresAt.Unix())
 }
