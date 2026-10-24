@@ -337,3 +337,37 @@ func parseAll(t *testing.T, appDir string, view *View) *template.Template {
 }
 
 var defineRe = regexp.MustCompile(`\{\{\s*define\s+"([^"]+)"`)
+
+func TestAddFuncs(t *testing.T) {
+	view := NewView()
+	assert.Nil(t, view.Funcs())
+
+	view.AddFuncs(nil)
+	view.AddFuncs(template.FuncMap{})
+	assert.Nil(t, view.Funcs(), "empty registrations must not create an empty map")
+
+	view.AddFuncs(template.FuncMap{
+		"a":      func() string { return "pkg a" },
+		"shared": func() string { return "pkg" },
+	})
+	view.AddFuncs(template.FuncMap{
+		"b":      func() string { return "pkg b" },
+		"shared": func() string { return "app" },
+	})
+
+	funcs := view.Funcs()
+	require.Len(t, funcs, 3)
+	assert.Equal(t, "pkg a", funcs["a"].(func() string)())
+	assert.Equal(t, "pkg b", funcs["b"].(func() string)())
+	assert.Equal(t, "app", funcs["shared"].(func() string)(), "a later registration must override an earlier one")
+
+	funcs["mutated"] = func() string { return "" }
+	assert.Len(t, view.Funcs(), 3, "Funcs must return a copy")
+
+	// The returned map is what a driver hands to html/template before parsing.
+	tmpl, err := template.New("t").Funcs(view.Funcs()).Parse(`{{ shared }}-{{ a }}-{{ b }}`)
+	require.NoError(t, err)
+	var buf bytes.Buffer
+	require.NoError(t, tmpl.Execute(&buf, nil))
+	assert.Equal(t, "app-pkg a-pkg b", buf.String())
+}

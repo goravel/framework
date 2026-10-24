@@ -375,5 +375,6 @@ var (
 	ViewFSRequired         = New("view filesystem is required")
 	ViewFSRootNotDirectory = New("view filesystem root %q is not a directory")
 	ViewInvalidFSRoot      = New("invalid view filesystem root %q: %v")
+	ViewCompileFailed      = New("failed to compile views: %v")
 	ViewTemplateNotExist   = New("view template %s does not exist")
 )
