@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"regexp"
 	"testing"
 	"testing/fstest"
 
@@ -204,7 +203,7 @@ func TestExists(t *testing.T) {
 // then filesystem packages, then embedded packages, with nested define/template/partials
 // resolved within the same template set.
 func TestResolveTemplates(t *testing.T) {
-	appDir := setupAppViews(t, map[string]string{
+	setupAppViews(t, map[string]string{
 		"foo.tmpl":  `{{ define "foo.tmpl" }}app foo{{ end }}`,
 		"only.tmpl": `{{ define "only.tmpl" }}app only{{ end }}`,
 	})
@@ -224,7 +223,9 @@ func TestResolveTemplates(t *testing.T) {
 	view.LoadViewsFromFS(testViews, "testdata/views")
 	view.LoadViewsFromFS(pkgB, "views")
 
-	tmpl := parseAll(t, appDir, view)
+	tmpl, err := Compile(CompileOptions{Paths: view.RegisteredViews(), FS: view.RegisteredViewFS()})
+	require.NoError(t, err)
+	require.NotNil(t, tmpl)
 
 	tests := []struct {
 		name     string
@@ -287,56 +288,6 @@ func setupAppViews(t *testing.T, files map[string]string) string {
 
 	return dir
 }
-
-// parseAll mirrors a route driver: it parses every source into one template set, in precedence
-// order, skipping any file whose define name was already claimed by an earlier source.
-func parseAll(t *testing.T, appDir string, view *View) *template.Template {
-	t.Helper()
-
-	tmpl := template.New("")
-	seen := map[string]bool{}
-
-	sources := []fs.FS{os.DirFS(appDir)}
-	for _, dir := range view.RegisteredViews() {
-		sources = append(sources, os.DirFS(dir))
-	}
-	sources = append(sources, view.RegisteredViewFS()...)
-
-	for _, fsys := range sources {
-		var files []string
-		require.NoError(t, fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
-			if err != nil || d.IsDir() {
-				return err
-			}
-
-			content, err := fs.ReadFile(fsys, p)
-			if err != nil {
-				return err
-			}
-
-			name := defineRe.FindStringSubmatch(string(content))
-			if len(name) > 1 {
-				if seen[name[1]] {
-					return nil
-				}
-				seen[name[1]] = true
-			}
-
-			files = append(files, p)
-
-			return nil
-		}))
-
-		if len(files) > 0 {
-			_, err := tmpl.ParseFS(fsys, files...)
-			require.NoError(t, err)
-		}
-	}
-
-	return tmpl
-}
-
-var defineRe = regexp.MustCompile(`\{\{\s*define\s+"([^"]+)"`)
 
 func TestAddFuncs(t *testing.T) {
 	view := NewView()
