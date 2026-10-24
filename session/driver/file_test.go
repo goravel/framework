@@ -108,6 +108,16 @@ func (f *FileTestSuite) TestWrite() {
 	f.Nil(file.Remove(f.getPath()))
 }
 
+func (f *FileTestSuite) TestWrite_IDWithPath() {
+	driver := f.getDriver()
+	f.Nil(driver.Write("../escaped", "bar"))
+
+	f.False(file.Exists("escaped"))
+	f.True(file.Exists(f.getPath() + "/escaped"))
+
+	f.Nil(file.Remove(f.getPath()))
+}
+
 func BenchmarkFile_ReadWrite(b *testing.B) {
 	f := new(FileTestSuite)
 	f.SetT(&testing.T{})

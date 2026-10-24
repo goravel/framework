@@ -344,8 +344,6 @@ func (s *JwtGuardTestSuite) TestUser_Expired_Refresh() {
 	err = s.jwtGuard.User(&user)
 	s.EqualError(err, errors.AuthTokenExpired.Error())
 
-	s.mockCache.EXPECT().Add(s.refreshedCacheKey(), true, 3*time.Minute).Return(true).Once()
-
 	token, err = s.jwtGuard.Refresh()
 	s.NotEmpty(token)
 	s.Nil(err)
@@ -354,22 +352,6 @@ func (s *JwtGuardTestSuite) TestUser_Expired_Refresh() {
 
 	err = s.jwtGuard.User(&user)
 	s.Nil(err)
-}
-
-func (s *JwtGuardTestSuite) TestRefresh_AlreadyRefreshed() {
-	token, err := s.jwtGuard.LoginUsingID(1)
-	s.Nil(err)
-
-	s.mockCache.EXPECT().GetBool(s.disabledCacheKey(testUserGuard), false).Return(false).Once()
-
-	_, err = s.jwtGuard.Parse(token)
-	s.Nil(err)
-
-	s.mockCache.EXPECT().Add(s.refreshedCacheKey(), true, 5*time.Minute).Return(false).Once()
-
-	token, err = s.jwtGuard.Refresh()
-	s.Empty(token)
-	s.ErrorIs(err, errors.AuthTokenDisabled)
 }
 
 func (s *JwtGuardTestSuite) TestParse_TokenWithoutID() {
@@ -409,12 +391,6 @@ func (s *JwtGuardTestSuite) disabledCacheKey(guard string) string {
 	guards := s.jwtGuard.ctx.Value(ctxJwtKey).(Guards)
 
 	return getDisabledCacheKey(guard, guards[guard].Claims)
-}
-
-func (s *JwtGuardTestSuite) refreshedCacheKey() string {
-	guards := s.jwtGuard.ctx.Value(ctxJwtKey).(Guards)
-
-	return getRefreshedCacheKey(testUserGuard, guards[testUserGuard].Claims)
 }
 
 func (s *JwtGuardTestSuite) TestUser_RefreshExpired() {
@@ -539,16 +515,23 @@ func (s *JwtGuardTestSuite) TestLogout_ExpiredToken() {
 	token, err := s.jwtGuard.LoginUsingID(1)
 	s.Nil(err)
 
-	carbon.SetTestNow(s.now.Copy().AddMinutes(3))
-	s.mockCache.EXPECT().GetBool(s.disabledCacheKey(testUserGuard), false).Return(false).Once()
+	carbon.SetTestNow(s.now.Copy().AddMinutes(4))
+	disabledKey := s.disabledCacheKey(testUserGuard)
+	s.mockCache.EXPECT().GetBool(disabledKey, false).Return(false).Once()
 
 	_, err = s.jwtGuard.Parse(token)
 	s.ErrorIs(err, errors.AuthTokenExpired)
 
-	s.mockCache.EXPECT().Put(s.disabledCacheKey(testUserGuard), true, 2*time.Minute).Return(nil).Once()
+	// Blocked for the 1 minute left of the refresh window.
+	s.mockCache.EXPECT().Put(disabledKey, true, time.Minute).Return(nil).Once()
 
 	s.NoError(s.jwtGuard.Logout())
 	s.True(s.jwtGuard.Guest())
+
+	s.mockCache.EXPECT().GetBool(disabledKey, false).Return(true).Once()
+
+	_, err = s.jwtGuard.Parse(token)
+	s.ErrorIs(err, errors.AuthTokenDisabled)
 }
 
 func (s *JwtGuardTestSuite) TestLogout_ExpiredTokenPastRefreshTime() {

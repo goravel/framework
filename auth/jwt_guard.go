@@ -261,19 +261,12 @@ func (r *JwtGuard) Refresh() (token string, err error) {
 		return "", errors.AuthParseTokenFirst
 	}
 
-	claims := guards[r.guard].Claims
-	timeLeft := r.refreshTimeLeft(claims)
-	if timeLeft <= 0 {
+	expireTime := carbon.FromStdTime(guards[r.guard].Claims.ExpiresAt.Time).AddMinutes(r.refreshTtl)
+	if carbon.Now().Gt(expireTime) {
 		return "", errors.AuthRefreshTimeExceeded
 	}
 
-	// Each token can be refreshed only once.
-	refreshedKey := getRefreshedCacheKey(r.guard, claims)
-	if !r.cache.Add(refreshedKey, true, timeLeft) {
-		return "", errors.AuthTokenDisabled
-	}
-
-	return r.LoginUsingID(claims.Key)
+	return r.LoginUsingID(guards[r.guard].Claims.Key)
 }
 
 // User need parse token first.
@@ -330,8 +323,4 @@ func (r *JwtGuard) refreshTimeLeft(claims *Claims) time.Duration {
 
 func getDisabledCacheKey(guard string, claims *Claims) string {
 	return fmt.Sprintf("jwt:disabled:%s:%s", guard, claims.ID)
-}
-
-func getRefreshedCacheKey(guard string, claims *Claims) string {
-	return fmt.Sprintf("jwt:refreshed:%s:%s", guard, claims.ID)
 }

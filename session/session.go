@@ -212,7 +212,8 @@ func (s *Session) generateSessionID() string {
 	return str.Random(40)
 }
 
-// The id comes from a cookie and is used as a file name by the file driver.
+// isValidID reports whether id is a 40 character alphanumeric session id. The id
+// comes from a cookie and is used as a file name by the file driver.
 func (s *Session) isValidID(id string) bool {
 	return sessionIDRegexp.MatchString(id)
 }
