@@ -176,17 +176,24 @@ func (r *JwtGuard) Logout() error {
 		return errors.AuthParseTokenFirst
 	}
 
+	var key string
 	guard, err := r.jwtToken(guards)
-	if err != nil {
+	switch {
+	case err == nil:
+		key = getDisabledCacheKey(guard.Token)
+	case errors.Is(err, errors.AuthTokenExpired):
+		// Parse keeps no string for an expired token, so block its refresh instead.
+		guard = guards[r.guard]
+		key = getRefreshedCacheKey(r.guard, guard.Claims)
+	default:
 		return err
 	}
 
 	// Block the token until it can no longer be refreshed.
-	if err := r.cache.Put(getDisabledCacheKey(guard.Token),
-		true,
-		r.refreshTimeLeft(guard.Claims),
-	); err != nil {
-		return err
+	if timeLeft := r.refreshTimeLeft(guard.Claims); timeLeft > 0 {
+		if err := r.cache.Put(key, true, timeLeft); err != nil {
+			return err
+		}
 	}
 
 	delete(guards, r.guard)
@@ -271,11 +278,8 @@ func (r *JwtGuard) Refresh() (token string, err error) {
 
 	// Each token can be refreshed only once.
 	refreshedKey := getRefreshedCacheKey(r.guard, claims)
-	if r.cache.GetBool(refreshedKey, false) {
+	if !r.cache.Add(refreshedKey, true, timeLeft) {
 		return "", errors.AuthTokenDisabled
-	}
-	if err := r.cache.Put(refreshedKey, true, timeLeft); err != nil {
-		return "", err
 	}
 
 	return r.LoginUsingID(claims.Key)

@@ -313,6 +313,7 @@ func (s *SessionTestSuite) TestSetID() {
 		"wrongId",
 		strings.Repeat("/", 27) + "../../../.env",
 		strings.Repeat("a", 39) + "-",
+		strings.Repeat("a", 41),
 	} {
 		s.session.SetID(id)
 		s.NotEqual(id, s.session.GetID())
