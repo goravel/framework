@@ -202,6 +202,10 @@ func (r *Query) DB() (*sql.DB, error) {
 	return r.instance.DB()
 }
 
+func (r *Query) Decrement(column string, value ...uint64) error {
+	return r.incrementOrDecrement(column, "-", value...)
+}
+
 func (r *Query) Delete(dests ...any) (*contractsdb.Result, error) {
 	var (
 		dest  any
@@ -449,6 +453,10 @@ func (r *Query) Having(query any, args ...any) contractsorm.Query {
 	}
 
 	return r.setConditions(conditions)
+}
+
+func (r *Query) Increment(column string, value ...uint64) error {
+	return r.incrementOrDecrement(column, "+", value...)
 }
 
 func (r *Query) Join(query string, args ...any) contractsorm.Query {
@@ -1760,6 +1768,80 @@ func (r *Query) getObserver(dest any) contractsorm.Observer {
 		}
 		if destType.PkgPath() == modelType.PkgPath() && destType.Name() == modelType.Name() {
 			return observer.Observer
+		}
+	}
+
+	return nil
+}
+
+// incrementOrDecrement runs "UPDATE ... SET column = column <operator> amount" through Update, so it shares
+// its behavior: global scopes and soft deletes are applied, updated_at is touched, and the
+// Saving/Updating/Updated/Saved events are fired when the query has a model with a primary key.
+// In that case the column of the model is also synced in memory, as Laravel does.
+func (r *Query) incrementOrDecrement(column, operator string, value ...uint64) error {
+	amount := uint64(1)
+	if len(value) > 0 {
+		amount = value[0]
+	}
+
+	values := map[string]any{
+		column: gormio.Expr(fmt.Sprintf("? %s ?", operator), clause.Column{Name: column}, amount),
+	}
+	result, err := r.Update(values)
+	if err != nil {
+		return err
+	}
+
+	// Skip the in-memory sync if no row was updated, or if an event has replaced the expression with a concrete value.
+	if _, ok := values[column].(clause.Expr); !ok || result.RowsAffected == 0 {
+		return nil
+	}
+
+	model := r.conditions.model
+	if model == nil || database.GetID(model) == nil {
+		return nil
+	}
+
+	statement := &gormio.Statement{DB: r.instance}
+	if err := statement.Parse(model); err != nil {
+		return nil
+	}
+
+	field := statement.Schema.LookUpField(column)
+	modelValue := reflect.ValueOf(model)
+	if field == nil || modelValue.Kind() != reflect.Pointer || modelValue.Elem().Kind() != reflect.Struct {
+		return nil
+	}
+
+	fieldValue := field.ReflectValueOf(r.ctx, modelValue.Elem())
+	if fieldValue.Kind() == reflect.Pointer {
+		if fieldValue.IsNil() {
+			return nil
+		}
+		fieldValue = fieldValue.Elem()
+	}
+	if !fieldValue.CanSet() {
+		return nil
+	}
+
+	switch fieldValue.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		if operator == "+" {
+			fieldValue.SetInt(fieldValue.Int() + int64(amount))
+		} else {
+			fieldValue.SetInt(fieldValue.Int() - int64(amount))
+		}
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		if operator == "+" {
+			fieldValue.SetUint(fieldValue.Uint() + amount)
+		} else {
+			fieldValue.SetUint(fieldValue.Uint() - amount)
+		}
+	case reflect.Float32, reflect.Float64:
+		if operator == "+" {
+			fieldValue.SetFloat(fieldValue.Float() + float64(amount))
+		} else {
+			fieldValue.SetFloat(fieldValue.Float() - float64(amount))
 		}
 	}
 
