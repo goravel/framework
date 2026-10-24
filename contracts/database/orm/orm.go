@@ -51,6 +51,8 @@ type Query interface {
 	Count() (int64, error)
 	// Create inserts new record into the database.
 	Create(value any) error
+	// CrossJoin specifies CROSS JOIN conditions for the query.
+	CrossJoin(query string, args ...any) Query
 	// Cursor returns a cursor, use scan to iterate over the returned rows.
 	Cursor() chan db.Row
 	// DB gets the underlying database connection.
@@ -99,6 +101,8 @@ type Query interface {
 	InTransaction() bool
 	// Join specifying JOIN conditions for the query.
 	Join(query string, args ...any) Query
+	// LeftJoin specifies LEFT JOIN conditions for the query.
+	LeftJoin(query string, args ...any) Query
 	// Limit the number of records returned.
 	Limit(limit int) Query
 	// Load loads a relationship for the model.
@@ -152,6 +156,8 @@ type Query interface {
 	Raw(sql string, values ...any) Query
 	// Restore restores a soft deleted model.
 	Restore(model ...any) (*db.Result, error)
+	// RightJoin specifies RIGHT JOIN conditions for the query.
+	RightJoin(query string, args ...any) Query
 	// Rollback rolls back the changes in a transaction.
 	Rollback() error
 	// Save updates value in a database
