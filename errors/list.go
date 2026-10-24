@@ -324,6 +324,9 @@ var (
 	SchemaModelNotFound        = New("model %s not found in registered models")
 	SchemaTableNotFound        = New("table %s not found")
 
+	ScheduleEventFailed   = New("schedule event %s failed: %v").SetModule(ModuleSchedule)
+	ScheduleEventPanicked = New("schedule event %s panicked: %v").SetModule(ModuleSchedule)
+
 	SessionDriverAlreadyExists        = New("session driver [%s] already exists")
 	SessionDriverExtensionFailed      = New("session failed to extend session [%s] driver [%v]")
 	SessionDriverIsNotSet             = New("session driver is not set")

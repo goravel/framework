@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
@@ -174,4 +175,131 @@ func (s *ApplicationTestSuite) TestShutdownWithContext() {
 
 	s.EqualError(app.Shutdown(ctx), "context deadline exceeded")
 	s.Equal(0, immediatelyCall)
+}
+
+func (s *ApplicationTestSuite) TestRunDue() {
+	location := time.FixedZone("UTC-3", -3*60*60)
+	// 12:05:37 UTC is 09:05 in the schedule's location.
+	at := time.Date(2026, 10, 18, 12, 5, 37, 0, time.UTC)
+
+	mockArtisan := mocksconsole.NewArtisan(s.T())
+	mockArtisan.EXPECT().Call("every-five-minutes").Return(nil).Once()
+	mockArtisan.EXPECT().Call("daily-at-09:05").Return(nil).Once()
+
+	callbackCall := 0
+	app := NewApplication(mockArtisan, nil, nil, false)
+	app.location = location
+	app.Register([]schedule.Event{
+		app.Command("every-five-minutes").EveryFiveMinutes(),
+		app.Command("daily-at-09:05").DailyAt("09:05"),
+		app.Command("daily-at-12:05").DailyAt("12:05"),
+		app.Command("every-ten-minutes").EveryTenMinutes(),
+		// Runs once per tick even though it fires every 10 seconds.
+		app.Call(func() { callbackCall++ }).Cron("*/10 * * * * *"),
+	})
+
+	s.NoError(app.RunDue(context.Background(), at))
+	s.Equal(1, callbackCall)
+}
+
+func (s *ApplicationTestSuite) TestRunDueOnOneServer() {
+	at := time.Date(2026, 10, 18, 12, 30, 0, 0, time.UTC)
+
+	mockArtisan := mocksconsole.NewArtisan(s.T())
+	mockArtisan.EXPECT().Call("reconcile").Return(nil).Once()
+
+	mockCache := mockscache.NewCache(s.T())
+	mockLock := mockscache.NewLock(s.T())
+	mockCache.EXPECT().Lock("reconcile1230", 1*time.Hour).Return(mockLock).Twice()
+	mockLock.EXPECT().Get().Return(true).Once()
+	// A duplicate trigger in the same minute doesn't run it again.
+	mockLock.EXPECT().Get().Return(false).Once()
+
+	app := NewApplication(mockArtisan, mockCache, nil, false)
+	app.location = time.UTC
+	app.Register([]schedule.Event{
+		app.Command("reconcile").EveryThirtyMinutes().OnOneServer(),
+	})
+
+	s.NoError(app.RunDue(context.Background(), at))
+	s.NoError(app.RunDue(context.Background(), at.Add(20*time.Second)))
+}
+
+func (s *ApplicationTestSuite) TestRunDueSkipIfStillRunning() {
+	mockArtisan := mocksconsole.NewArtisan(s.T())
+	mockArtisan.EXPECT().Call("long").Return(nil).Once()
+
+	mockCache := mockscache.NewCache(s.T())
+	mockLock := mockscache.NewLock(s.T())
+	mockCache.EXPECT().Lock("long:running", 24*time.Hour).Return(mockLock).Twice()
+	// Another process is still running it: skipped.
+	mockLock.EXPECT().Get().Return(false).Once()
+	// Then it is free: it runs and releases the lock.
+	mockLock.EXPECT().Get().Return(true).Once()
+	mockLock.EXPECT().Release().Return(true).Once()
+
+	app := NewApplication(mockArtisan, mockCache, nil, false)
+	app.Register([]schedule.Event{
+		app.Command("long").EveryMinute().SkipIfStillRunning(),
+	})
+
+	s.NoError(app.RunDue(context.Background(), time.Now()))
+	s.NoError(app.RunDue(context.Background(), time.Now()))
+}
+
+func (s *ApplicationTestSuite) TestRunDueDelayIfStillRunning() {
+	mockArtisan := mocksconsole.NewArtisan(s.T())
+	mockArtisan.EXPECT().Call("long").Return(nil).Once()
+
+	mockCache := mockscache.NewCache(s.T())
+	mockLock := mockscache.NewLock(s.T())
+	mockCache.EXPECT().Lock("long:running", 24*time.Hour).Return(mockLock).Twice()
+	// Waits for the previous run, bounded by the context deadline.
+	mockLock.EXPECT().Block(mock.MatchedBy(func(wait time.Duration) bool {
+		return wait > 0 && wait <= 10*time.Second
+	})).Return(true).Once()
+	mockLock.EXPECT().Release().Return(true).Once()
+	// Without a deadline it waits at most a minute, then skips.
+	mockLock.EXPECT().Block(maxDelayIfStillRunning).Return(false).Once()
+
+	app := NewApplication(mockArtisan, mockCache, nil, false)
+	app.Register([]schedule.Event{
+		app.Command("long").EveryMinute().DelayIfStillRunning(),
+	})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	s.NoError(app.RunDue(ctx, time.Now()))
+	s.NoError(app.RunDue(context.Background(), time.Now()))
+}
+
+func (s *ApplicationTestSuite) TestRunDueErrors() {
+	mockArtisan := mocksconsole.NewArtisan(s.T())
+	mockArtisan.EXPECT().Call("broken").Return(assert.AnError).Once()
+	mockArtisan.EXPECT().Call("fine").Return(nil).Once()
+
+	mockLog := mockslog.NewLog(s.T())
+	mockLog.EXPECT().Error(mock.Anything).Return().Twice()
+
+	app := NewApplication(mockArtisan, nil, mockLog, false)
+	app.Register([]schedule.Event{
+		app.Command("broken").EveryMinute(),
+		app.Call(func() { panic("boom") }).EveryMinute().Name("panicking"),
+		app.Command("fine").EveryMinute(),
+	})
+
+	// A failing event doesn't stop the others, and every failure is returned.
+	err := app.RunDue(context.Background(), time.Now())
+	s.ErrorContains(err, "schedule event broken failed: "+assert.AnError.Error())
+	s.ErrorContains(err, "schedule event panicking panicked: boom")
+}
+
+func (s *ApplicationTestSuite) TestRunDueSkipsInvalidCron() {
+	// Register drops events with an invalid expression; RunDue ignores them
+	// too if one gets into the list another way.
+	app := NewApplication(mocksconsole.NewArtisan(s.T()), nil, nil, false)
+	app.events = append(app.events, app.Command("invalid").Cron("not a cron"))
+
+	s.NoError(app.RunDue(context.Background(), time.Now()))
 }
