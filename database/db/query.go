@@ -229,8 +229,11 @@ func (r *Query) DoesntExist() (bool, error) {
 	return count == 0, nil
 }
 
+// eachChunkSize is the number of rows fetched per query by Each, the same default as Laravel's each.
+const eachChunkSize = 1000
+
 func (r *Query) Each(callback func(row db.Row) error) error {
-	return r.Chunk(1, func(rows []db.Row) error {
+	return r.Chunk(eachChunkSize, func(rows []db.Row) error {
 		for _, row := range rows {
 			if err := callback(row); err != nil {
 				return err
