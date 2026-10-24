@@ -126,6 +126,8 @@ type Query interface {
 	OrWhere(query any, args ...any) Query
 	// OrWhereBetween adds an "or where column between x and y" clause to the query.
 	OrWhereBetween(column string, x, y any) Query
+	// OrWhereColumn adds an "or where" clause comparing two columns to the query.
+	OrWhereColumn(column1 string, column2 ...string) Query
 	// OrWhereIn adds an "or where column in" clause to the query.
 	OrWhereIn(column string, values []any) Query
 	// OrWhereJsonContains adds an "or where JSON contains" clause to the query.
@@ -138,12 +140,22 @@ type Query interface {
 	OrWhereJsonDoesntContainKey(column string) Query
 	// OrWhereJsonLength add an "or where JSON length" clause to the query.
 	OrWhereJsonLength(column string, length int) Query
+	// OrWhereLike adds an "or where column like" clause to the query.
+	OrWhereLike(column string, value string) Query
+	// OrWhereNot adds an "or where not" clause to the query.
+	OrWhereNot(query any, args ...any) Query
 	// OrWhereNotBetween adds an "or where column not between x and y" clause to the query.
 	OrWhereNotBetween(column string, x, y any) Query
 	// OrWhereNotIn adds an "or where column not in" clause to the query.
 	OrWhereNotIn(column string, values []any) Query
+	// OrWhereNotLike adds an "or where column not like" clause to the query.
+	OrWhereNotLike(column string, value string) Query
+	// OrWhereNotNull adds an "or where column is not null" clause to the query.
+	OrWhereNotNull(column string) Query
 	// OrWhereNull adds a "or where column is null" clause to the query.
 	OrWhereNull(column string) Query
+	// OrWhereRaw adds a raw "or where" clause to the query.
+	OrWhereRaw(raw string, args []any) Query
 	// Paginate the given query into a simple paginator.
 	Paginate(page, limit int, dest any, total *int64) error
 	// Pluck retrieves a single column from the database.
@@ -197,6 +209,10 @@ type Query interface {
 	WhereAny(columns []string, args ...any) Query
 	// WhereBetween adds a "where column between x and y" clause to the query.
 	WhereBetween(column string, x, y any) Query
+	// WhereColumn adds a "where" clause comparing two columns to the query.
+	WhereColumn(column1 string, column2 ...string) Query
+	// WhereExists adds an exists clause to the query.
+	WhereExists(query func() Query) Query
 	// WhereIn adds a "where column in" clause to the query.
 	WhereIn(column string, values []any) Query
 	// WhereJsonContains add a "where JSON contains" clause to the query.
@@ -209,16 +225,24 @@ type Query interface {
 	WhereJsonDoesntContainKey(column string) Query
 	// WhereJsonLength add a "where JSON length" clause to the query.
 	WhereJsonLength(column string, length int) Query
+	// WhereLike adds a "where like" clause to the query.
+	WhereLike(column string, value string) Query
 	// WhereNone adds a "where none of columns match" clause to the query.
 	WhereNone(columns []string, args ...any) Query
+	// WhereNot adds a basic "where not" clause to the query.
+	WhereNot(query any, args ...any) Query
 	// WhereNotBetween adds a "where column not between x and y" clause to the query.
 	WhereNotBetween(column string, x, y any) Query
 	// WhereNotIn adds a "where column not in" clause to the query.
 	WhereNotIn(column string, values []any) Query
+	// WhereNotLike adds a "where not like" clause to the query.
+	WhereNotLike(column string, value string) Query
 	// WhereNotNull adds a "where column is not null" clause to the query.
 	WhereNotNull(column string) Query
 	// WhereNull adds a "where column is null" clause to the query.
 	WhereNull(column string) Query
+	// WhereRaw adds a raw where clause to the query.
+	WhereRaw(raw string, args []any) Query
 	// WithoutEvents disables event firing for the query.
 	WithoutEvents() Query
 	// WithoutGlobalScopes disables all global scopes for the query.

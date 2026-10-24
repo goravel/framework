@@ -1132,6 +1132,41 @@ func (r *Query) OrWhereNull(column string) contractsorm.Query {
 	return r.OrWhere(fmt.Sprintf("%s IS NULL", column))
 }
 
+func (r *Query) OrWhereColumn(column1 string, column2 ...string) contractsorm.Query {
+	query, err := buildWhereColumn(column1, column2...)
+	if err != nil {
+		return r.withError(err)
+	}
+
+	return r.OrWhere(query)
+}
+
+func (r *Query) OrWhereLike(column string, value string) contractsorm.Query {
+	return r.OrWhere(fmt.Sprintf("%s LIKE ?", column), value)
+}
+
+func (r *Query) OrWhereNot(query any, args ...any) contractsorm.Query {
+	return r.addWhere(contractsdriver.Where{
+		Query: query,
+		Args:  args,
+		Or:    true,
+		IsNot: true,
+	})
+}
+
+func (r *Query) OrWhereNotLike(column string, value string) contractsorm.Query {
+	return r.OrWhere(fmt.Sprintf("%s NOT LIKE ?", column), value)
+}
+
+func (r *Query) OrWhereNotNull(column string) contractsorm.Query {
+	return r.OrWhere(fmt.Sprintf("%s IS NOT NULL", column))
+}
+
+func (r *Query) OrWhereRaw(raw string, args []any) contractsorm.Query {
+	// Use an expression so the raw SQL is passed through untouched (e.g. JSON "->" selectors are not compiled).
+	return r.OrWhere(gormio.Expr(raw, args...))
+}
+
 func (r *Query) WhereNone(columns []string, args ...any) contractsorm.Query {
 	op, value, err := utils.PrepareWhereOperatorAndValue(args...)
 	if err != nil {
@@ -1166,6 +1201,50 @@ func (r *Query) WhereNotNull(column string) contractsorm.Query {
 
 func (r *Query) WhereNull(column string) contractsorm.Query {
 	return r.Where(fmt.Sprintf("%s IS NULL", column))
+}
+
+func (r *Query) WhereColumn(column1 string, column2 ...string) contractsorm.Query {
+	query, err := buildWhereColumn(column1, column2...)
+	if err != nil {
+		return r.withError(err)
+	}
+
+	return r.Where(query)
+}
+
+func (r *Query) WhereExists(query func() contractsorm.Query) contractsorm.Query {
+	subQuery, ok := query().(*Query)
+	if !ok || subQuery == nil {
+		return r.withError(errors.OrmQueryInvalidSubQuery)
+	}
+
+	sub := subQuery.addGlobalScopes().buildConditions()
+	if sub.instance.Error != nil {
+		return r.withError(sub.instance.Error)
+	}
+
+	return r.Where("EXISTS (?)", sub.instance)
+}
+
+func (r *Query) WhereLike(column string, value string) contractsorm.Query {
+	return r.Where(fmt.Sprintf("%s LIKE ?", column), value)
+}
+
+func (r *Query) WhereNot(query any, args ...any) contractsorm.Query {
+	return r.addWhere(contractsdriver.Where{
+		Query: query,
+		Args:  args,
+		IsNot: true,
+	})
+}
+
+func (r *Query) WhereNotLike(column string, value string) contractsorm.Query {
+	return r.Where(fmt.Sprintf("%s NOT LIKE ?", column), value)
+}
+
+func (r *Query) WhereRaw(raw string, args []any) contractsorm.Query {
+	// Use an expression so the raw SQL is passed through untouched (e.g. JSON "->" selectors are not compiled).
+	return r.Where(gormio.Expr(raw, args...))
 }
 
 func (r *Query) With(query string, args ...any) contractsorm.Query {
@@ -1245,6 +1324,14 @@ func (r *Query) addGlobalScopes() *Query {
 	}
 
 	return r.Scopes(globalScopes...).(*Query)
+}
+
+// withError returns a new query carrying the given error, it will be returned when the query is executed.
+func (r *Query) withError(err error) contractsorm.Query {
+	query := r.new(r.instance.Session(&gormio.Session{}))
+	_ = query.instance.AddError(err)
+
+	return query
 }
 
 func (r *Query) addWhere(where contractsdriver.Where) contractsorm.Query {
@@ -1525,6 +1612,16 @@ func (r *Query) buildWhere(db *gormio.DB) *gormio.DB {
 					item.Query = r.buildWherePlaceholder(strings.Join(segments, " "), item.Args...)
 					item.Args = r.grammar.CompileJsonValues(item.Args...)
 				}
+			}
+
+			if item.IsNot {
+				conditions := db.Statement.BuildCondition(item.Query, item.Args...)
+				if len(conditions) == 0 {
+					continue
+				}
+
+				item.Query = notExpression{exprs: conditions}
+				item.Args = nil
 			}
 		}
 

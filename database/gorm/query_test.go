@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	gormio "gorm.io/gorm"
+	gormtests "gorm.io/gorm/utils/tests"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
@@ -954,6 +955,200 @@ func TestWhen(t *testing.T) {
 	assert.Same(t, trueQuery, query.When(true, callback, falseCallback))
 	assert.Same(t, query, query.When(false, callback))
 	assert.Same(t, falseQuery, query.When(false, callback, falseCallback))
+}
+
+func TestWhereClauses(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	newQuery := func() contractsorm.Query {
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, nil, nil, nil, nil, nil).Table("users")
+	}
+
+	tests := []struct {
+		name        string
+		query       func() contractsorm.Query
+		expectSql   string
+		expectVars  []any
+		expectError error
+	}{
+		{
+			name:       "WhereLike",
+			query:      func() contractsorm.Query { return newQuery().WhereLike("name", "%goravel%") },
+			expectSql:  "SELECT * FROM `users` WHERE name LIKE ?",
+			expectVars: []any{"%goravel%"},
+		},
+		{
+			name:       "OrWhereLike",
+			query:      func() contractsorm.Query { return newQuery().Where("id", 1).OrWhereLike("name", "%goravel%") },
+			expectSql:  "SELECT * FROM `users` WHERE `id` = ? OR name LIKE ?",
+			expectVars: []any{1, "%goravel%"},
+		},
+		{
+			name:       "WhereNotLike",
+			query:      func() contractsorm.Query { return newQuery().WhereNotLike("name", "%goravel%") },
+			expectSql:  "SELECT * FROM `users` WHERE name NOT LIKE ?",
+			expectVars: []any{"%goravel%"},
+		},
+		{
+			name:       "OrWhereNotLike",
+			query:      func() contractsorm.Query { return newQuery().Where("id", 1).OrWhereNotLike("name", "%goravel%") },
+			expectSql:  "SELECT * FROM `users` WHERE `id` = ? OR name NOT LIKE ?",
+			expectVars: []any{1, "%goravel%"},
+		},
+		{
+			name:      "WhereColumn with one column",
+			query:     func() contractsorm.Query { return newQuery().WhereColumn("created_at", "updated_at") },
+			expectSql: "SELECT * FROM `users` WHERE created_at = updated_at",
+		},
+		{
+			name:      "WhereColumn with operator",
+			query:     func() contractsorm.Query { return newQuery().WhereColumn("updated_at", ">", "created_at") },
+			expectSql: "SELECT * FROM `users` WHERE updated_at > created_at",
+		},
+		{
+			name:        "WhereColumn with invalid argument number",
+			query:       func() contractsorm.Query { return newQuery().WhereColumn("updated_at") },
+			expectError: errors.DatabaseInvalidArgumentNumber.Args(0, "1 or 2"),
+		},
+		{
+			name: "OrWhereColumn",
+			query: func() contractsorm.Query {
+				return newQuery().Where("id", 1).OrWhereColumn("updated_at", ">", "created_at")
+			},
+			expectSql:  "SELECT * FROM `users` WHERE `id` = ? OR updated_at > created_at",
+			expectVars: []any{1},
+		},
+		{
+			name:        "OrWhereColumn with invalid argument number",
+			query:       func() contractsorm.Query { return newQuery().OrWhereColumn("a", "b", "c", "d") },
+			expectError: errors.DatabaseInvalidArgumentNumber.Args(3, "1 or 2"),
+		},
+		{
+			name: "WhereRaw",
+			query: func() contractsorm.Query {
+				return newQuery().WhereRaw("age > ? AND data->>'role' = ?", []any{18, "admin"})
+			},
+			expectSql:  "SELECT * FROM `users` WHERE age > ? AND data->>'role' = ?",
+			expectVars: []any{18, "admin"},
+		},
+		{
+			name: "OrWhereRaw",
+			query: func() contractsorm.Query {
+				return newQuery().Where("id", 1).OrWhereRaw("age IN ?", []any{[]any{18, 19}})
+			},
+			expectSql:  "SELECT * FROM `users` WHERE `id` = ? OR age IN (?,?)",
+			expectVars: []any{1, 18, 19},
+		},
+		{
+			name:       "OrWhereNotNull",
+			query:      func() contractsorm.Query { return newQuery().Where("id", 1).OrWhereNotNull("bio") },
+			expectSql:  "SELECT * FROM `users` WHERE `id` = ? OR bio IS NOT NULL",
+			expectVars: []any{1},
+		},
+		{
+			name:       "WhereNot with column and value",
+			query:      func() contractsorm.Query { return newQuery().WhereNot("status", "banned") },
+			expectSql:  "SELECT * FROM `users` WHERE NOT (`status` = ?)",
+			expectVars: []any{"banned"},
+		},
+		{
+			name: "WhereNot with placeholder",
+			query: func() contractsorm.Query {
+				return newQuery().Where("id > ?", 1).WhereNot("age > ? OR name = ?", 18, "goravel")
+			},
+			expectSql:  "SELECT * FROM `users` WHERE id > ? AND NOT (age > ? OR name = ?)",
+			expectVars: []any{1, 18, "goravel"},
+		},
+		{
+			name:       "WhereNot with map negates the whole group",
+			query:      func() contractsorm.Query { return newQuery().WhereNot(map[string]any{"name": "goravel", "age": 18}) },
+			expectSql:  "SELECT * FROM `users` WHERE NOT (`users`.`age` = ? AND `users`.`name` = ?)",
+			expectVars: []any{18, "goravel"},
+		},
+		{
+			name: "WhereNot with nested closure",
+			query: func() contractsorm.Query {
+				return newQuery().WhereNot(func(query contractsorm.Query) contractsorm.Query {
+					return query.Where("name", "goravel").OrWhere("age", 18)
+				})
+			},
+			expectSql:  "SELECT * FROM `users` WHERE NOT (`name` = ? OR `age` = ?)",
+			expectVars: []any{"goravel", 18},
+		},
+		{
+			name:       "OrWhereNot",
+			query:      func() contractsorm.Query { return newQuery().Where("id", 1).OrWhereNot("status", "banned") },
+			expectSql:  "SELECT * FROM `users` WHERE `id` = ? OR NOT (`status` = ?)",
+			expectVars: []any{1, "banned"},
+		},
+		{
+			name: "WhereExists",
+			query: func() contractsorm.Query {
+				return newQuery().Where("active", true).WhereExists(func() contractsorm.Query {
+					return newQuery().Table("posts").Select("1").WhereColumn("posts.user_id", "users.id").Where("posts.published", true)
+				})
+			},
+			expectSql:  "SELECT * FROM `users` WHERE `active` = ? AND EXISTS (SELECT 1 FROM `posts` WHERE posts.user_id = users.id AND `posts`.`published` = ?)",
+			expectVars: []any{true, true},
+		},
+		{
+			name: "WhereExists with invalid sub query",
+			query: func() contractsorm.Query {
+				return newQuery().WhereExists(func() contractsorm.Query { return nil })
+			},
+			expectError: errors.OrmQueryInvalidSubQuery,
+		},
+		{
+			name: "WhereExists propagates the sub query error",
+			query: func() contractsorm.Query {
+				return newQuery().WhereExists(func() contractsorm.Query {
+					return newQuery().Table("orders").WhereColumn("orders.user_id")
+				})
+			},
+			expectError: errors.DatabaseInvalidArgumentNumber.Args(0, "1 or 2"),
+		},
+		{
+			name:      "WhereNot without conditions is ignored",
+			query:     func() contractsorm.Query { return newQuery().WhereNot(map[string]any{}) },
+			expectSql: "SELECT * FROM `users`",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			query := test.query().(*Query).buildConditions()
+			if test.expectError != nil {
+				assert.EqualError(t, query.instance.Error, test.expectError.Error())
+				return
+			}
+
+			statement := query.instance.Find(&[]map[string]any{}).Statement
+			assert.NoError(t, statement.Error)
+			assert.Equal(t, test.expectSql, statement.SQL.String())
+			if len(test.expectVars) == 0 {
+				assert.Empty(t, statement.Vars)
+			} else {
+				assert.Equal(t, test.expectVars, statement.Vars)
+			}
+		})
+	}
+}
+
+func TestBuildWhereColumn(t *testing.T) {
+	query, err := buildWhereColumn("a", "b")
+	assert.NoError(t, err)
+	assert.Equal(t, "a = b", query)
+
+	query, err = buildWhereColumn("a", "<>", "b")
+	assert.NoError(t, err)
+	assert.Equal(t, "a <> b", query)
+
+	_, err = buildWhereColumn("a")
+	assert.EqualError(t, err, errors.DatabaseInvalidArgumentNumber.Args(0, "1 or 2").Error())
+
+	_, err = buildWhereColumn("a", "b", "c", "d")
+	assert.EqualError(t, err, errors.DatabaseInvalidArgumentNumber.Args(3, "1 or 2").Error())
 }
 
 type User struct {
