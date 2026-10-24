@@ -250,6 +250,35 @@ func (s *DBTestSuite) TestCursor() {
 	}
 }
 
+func (s *DBTestSuite) TestCursor_BreakWithCanceledContext() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			_, err := query.DB().Table("products").Insert([]Product{
+				{Name: "cursor_break_product1"},
+				{Name: "cursor_break_product2"},
+				{Name: "cursor_break_product3"},
+			})
+			s.NoError(err)
+
+			function := "framework/database/db.(*Query).Cursor"
+			before := countGoroutines(function)
+
+			for range 3 {
+				ctx, cancel := context.WithCancel(context.Background())
+				for row := range query.DB().WithContext(ctx).Table("products").Cursor() {
+					s.NoError(row.Err())
+					break
+				}
+				cancel()
+			}
+
+			s.Eventually(func() bool {
+				return countGoroutines(function) <= before
+			}, 5*time.Second, 10*time.Millisecond, "the Cursor goroutine should exit once the context is canceled")
+		})
+	}
+}
+
 func (s *DBTestSuite) Test_DB_Select_Insert_Update_Delete_Statement() {
 	for driver, query := range s.queries {
 		insertSql := "INSERT INTO products (name) VALUES (?)"

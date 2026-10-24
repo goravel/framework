@@ -642,6 +642,32 @@ func (s *QueryTestSuite) TestCursor() {
 	}
 }
 
+func (s *QueryTestSuite) TestCursor_BreakWithCanceledContext() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			for range 3 {
+				s.Nil(query.Query().Create(&User{Name: "cursor_break_user"}))
+			}
+
+			function := "framework/database/gorm.(*Query).Cursor"
+			before := countGoroutines(function)
+
+			for range 3 {
+				ctx, cancel := context.WithCancel(context.Background())
+				for row := range query.Query().(contractsorm.QueryWithContext).WithContext(ctx).Model(&User{}).Where("name", "cursor_break_user").Cursor() {
+					s.Nil(row.Err())
+					break
+				}
+				cancel()
+			}
+
+			s.Eventually(func() bool {
+				return countGoroutines(function) <= before
+			}, 5*time.Second, 10*time.Millisecond, "the Cursor goroutine should exit once the context is canceled")
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestCursor_WithJson_ScanMap() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {

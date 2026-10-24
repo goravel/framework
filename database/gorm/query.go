@@ -164,7 +164,24 @@ func (r *Query) Cursor() chan contractsdb.Row {
 	query := r.addGlobalScopes().buildConditions()
 	r.conditions.with = with
 
+	ctx := query.instance.Statement.Context
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	cursorChan := make(chan contractsdb.Row)
+	// send blocks until the consumer receives the row or the query context is done. It allows the goroutine
+	// to exit (and release the rows and the connection) when the consumer stops ranging over the channel
+	// early (e.g. break) and cancels the context passed to WithContext.
+	send := func(row contractsdb.Row) bool {
+		select {
+		case cursorChan <- row:
+			return true
+		case <-ctx.Done():
+			return false
+		}
+	}
+
 	go func() {
 		var (
 			err  error
@@ -172,7 +189,7 @@ func (r *Query) Cursor() chan contractsdb.Row {
 		)
 		defer func() {
 			if err != nil {
-				cursorChan <- &Row{query: r, err: err}
+				send(&Row{query: r, err: err})
 			}
 
 			close(cursorChan)
@@ -188,7 +205,9 @@ func (r *Query) Cursor() chan contractsdb.Row {
 			if err = query.instance.ScanRows(rows, val); err != nil {
 				return
 			}
-			cursorChan <- &Row{query: r, row: val}
+			if !send(&Row{query: r, row: val}) {
+				return
+			}
 		}
 
 		if err = rows.Err(); err != nil {

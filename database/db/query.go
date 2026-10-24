@@ -115,7 +115,24 @@ func (r *Query) CrossJoin(query string, args ...any) db.Query {
 }
 
 func (r *Query) Cursor() chan db.Row {
+	ctx := r.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	ch := make(chan db.Row)
+	// send blocks until the consumer receives the row or the query context is done. It allows the goroutine
+	// to exit (and release the rows and the connection) when the consumer stops ranging over the channel
+	// early (e.g. break) and cancels the context passed to WithContext.
+	send := func(row db.Row) bool {
+		select {
+		case ch <- row:
+			return true
+		case <-ctx.Done():
+			return false
+		}
+	}
+
 	go func() {
 		var (
 			args  []any
@@ -128,7 +145,7 @@ func (r *Query) Cursor() chan db.Row {
 
 		defer func() {
 			if err != nil {
-				ch <- NewRow(nil, err)
+				send(NewRow(nil, err))
 			}
 
 			if len(sql) > 0 {
@@ -153,7 +170,9 @@ func (r *Query) Cursor() chan db.Row {
 				return
 			}
 
-			ch <- NewRow(row, nil)
+			if !send(NewRow(row, nil)) {
+				return
+			}
 			count++
 		}
 
