@@ -9,7 +9,6 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	contractsauth "github.com/goravel/framework/contracts/auth"
@@ -80,11 +79,6 @@ func (s *JwtGuardTestSuite) TestLoginUsingID_SameSecond() {
 }
 
 func (s *JwtGuardTestSuite) TestCheck_LoginUsingID_Logout() {
-	// Blocked for ttl + refresh_ttl, so the token can't be refreshed after logout.
-	s.mockCache.EXPECT().Put(mock.MatchedBy(func(key string) bool {
-		return strings.HasPrefix(key, "jwt:disabled:")
-	}), true, 5*time.Minute).Return(nil).Once()
-
 	s.False(s.jwtGuard.Check())
 	s.True(s.jwtGuard.Guest())
 
@@ -94,6 +88,10 @@ func (s *JwtGuardTestSuite) TestCheck_LoginUsingID_Logout() {
 
 	s.True(s.jwtGuard.Check())
 	s.False(s.jwtGuard.Guest())
+
+	// Blocked for ttl + refresh_ttl, so the token can't be refreshed after logout.
+	s.mockCache.EXPECT().Put(s.disabledCacheKey(testUserGuard), true, 5*time.Minute).Return(nil).Once()
+
 	s.NoError(s.jwtGuard.Logout())
 	s.True(s.jwtGuard.Guest())
 }
@@ -121,8 +119,10 @@ func (s *JwtGuardTestSuite) TestLogin_Failed() {
 }
 
 func (s *JwtGuardTestSuite) TestParse_TokenDisabled() {
-	token := "1"
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(true).Once()
+	token, err := s.jwtGuard.LoginUsingID(1)
+	s.Nil(err)
+
+	s.mockCache.EXPECT().GetBool(s.disabledCacheKey(testUserGuard), false).Return(true).Once()
 
 	payload, err := s.jwtGuard.Parse(token)
 	s.Nil(payload)
@@ -131,7 +131,6 @@ func (s *JwtGuardTestSuite) TestParse_TokenDisabled() {
 
 func (s *JwtGuardTestSuite) TestParse_TokenInvalid() {
 	token := "1"
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
 
 	payload, err := s.jwtGuard.Parse(token)
 	s.Nil(payload)
@@ -147,8 +146,6 @@ func (s *JwtGuardTestSuite) TestParse_TokenWithChangedLastChar() {
 	const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
 	index := strings.IndexByte(alphabet, token[len(token)-1])
 	changedToken := token[:len(token)-1] + string(alphabet[index^1])
-
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+changedToken, false).Return(false).Once()
 
 	payload, err := s.jwtGuard.Parse(changedToken)
 	s.Nil(payload)
@@ -168,7 +165,7 @@ func (s *JwtGuardTestSuite) TestParse_TokenExpired() {
 	guardInfo, err := s.jwtGuard.GetJwtToken()
 	s.Nil(err)
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+guardInfo.Token, false).Return(false).Once()
+	s.mockCache.EXPECT().GetBool(s.disabledCacheKey(testUserGuard), false).Return(false).Once()
 
 	payload, err := s.jwtGuard.Parse(guardInfo.Token)
 	s.Equal(&contractsauth.Payload{
@@ -187,7 +184,7 @@ func (s *JwtGuardTestSuite) TestParse_Success() {
 	s.Nil(err)
 	s.NotEmpty(token)
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+	s.mockCache.EXPECT().GetBool(s.disabledCacheKey(testUserGuard), false).Return(false).Once()
 
 	payload, err := s.jwtGuard.Parse(token)
 	s.NoError(err)
@@ -213,8 +210,6 @@ func (s *JwtGuardTestSuite) TestParse_GuardMismatch() {
 	userToken, err := s.jwtGuard.LoginUsingID(1)
 	s.NoError(err)
 	s.NotEmpty(userToken)
-
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+userToken, false).Return(false).Once()
 
 	payload, err := adminJwtGuard.Parse(userToken)
 	s.Nil(payload)
@@ -243,8 +238,6 @@ func (s *JwtGuardTestSuite) TestParse_GuardMismatch_Expired() {
 	carbon.SetTestNow(s.now.Copy().AddMinutes(3))
 	defer carbon.ClearTestNow()
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+userToken, false).Return(false).Once()
-
 	payload, err := adminJwtGuard.Parse(userToken)
 	s.Nil(payload)
 	s.ErrorIs(err, errors.AuthGuardMismatch)
@@ -270,7 +263,7 @@ func (s *JwtGuardTestSuite) TestID_Success() {
 	s.Nil(err)
 	s.NotEmpty(token)
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+	s.mockCache.EXPECT().GetBool(s.disabledCacheKey(testUserGuard), false).Return(false).Once()
 
 	payload, err := s.jwtGuard.Parse(token)
 	s.Nil(err)
@@ -289,7 +282,7 @@ func (s *JwtGuardTestSuite) TestID_TokenExpired() {
 	// Set the token as expired
 	carbon.SetTestNow(s.now.AddMinutes(3))
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+	s.mockCache.EXPECT().GetBool(s.disabledCacheKey(testUserGuard), false).Return(false).Once()
 
 	// Parse the token
 	_, err = s.jwtGuard.Parse(token)
@@ -305,7 +298,6 @@ func (s *JwtGuardTestSuite) TestID_TokenExpired() {
 
 func (s *JwtGuardTestSuite) TestID_TokenInvalid() {
 	token := "invalidToken"
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
 
 	payload, err := s.jwtGuard.Parse(token)
 	s.Nil(payload)
@@ -321,7 +313,7 @@ func (s *JwtGuardTestSuite) TestUser_Failed() {
 	s.Nil(err)
 	s.NotEmpty(token)
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+	s.mockCache.EXPECT().GetBool(s.disabledCacheKey(testUserGuard), false).Return(false).Once()
 
 	payload, err := s.jwtGuard.Parse(token)
 	s.NotNil(payload)
@@ -340,7 +332,7 @@ func (s *JwtGuardTestSuite) TestUser_Expired_Refresh() {
 	s.Nil(err)
 	s.NotEmpty(token)
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+	s.mockCache.EXPECT().GetBool(s.disabledCacheKey(testUserGuard), false).Return(false).Once()
 
 	carbon.SetTestNow(s.now.Copy().AddMinutes(2))
 
@@ -368,7 +360,7 @@ func (s *JwtGuardTestSuite) TestRefresh_AlreadyRefreshed() {
 	token, err := s.jwtGuard.LoginUsingID(1)
 	s.Nil(err)
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+	s.mockCache.EXPECT().GetBool(s.disabledCacheKey(testUserGuard), false).Return(false).Once()
 
 	_, err = s.jwtGuard.Parse(token)
 	s.Nil(err)
@@ -380,19 +372,43 @@ func (s *JwtGuardTestSuite) TestRefresh_AlreadyRefreshed() {
 	s.ErrorIs(err, errors.AuthTokenDisabled)
 }
 
-func (s *JwtGuardTestSuite) TestGetRefreshedCacheKey() {
-	expiresAt := jwt.NewNumericDate(time.Unix(1700000000, 0))
+func (s *JwtGuardTestSuite) TestParse_TokenWithoutID() {
+	// Tokens issued by older versions have no ID claim.
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
+		Key: "1",
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(s.now.Copy().AddMinutes(2).StdTime()),
+			IssuedAt:  jwt.NewNumericDate(s.now.StdTime()),
+			Subject:   testUserGuard,
+		},
+	}).SignedString([]byte("a"))
+	s.Nil(err)
 
-	s.Equal("jwt:refreshed:user:abc", getRefreshedCacheKey(testUserGuard, &Claims{
-		Key:              "1",
-		RegisteredClaims: jwt.RegisteredClaims{ID: "abc", ExpiresAt: expiresAt},
-	}))
+	s.Run("blocked by an older version", func() {
+		s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(true).Once()
 
-	// Tokens issued before the ID claim existed.
-	s.Equal("jwt:refreshed:user:1:1700000000", getRefreshedCacheKey(testUserGuard, &Claims{
-		Key:              "1",
-		RegisteredClaims: jwt.RegisteredClaims{ExpiresAt: expiresAt},
-	}))
+		payload, err := s.jwtGuard.Parse(token)
+		s.Nil(payload)
+		s.ErrorIs(err, errors.AuthTokenDisabled)
+	})
+
+	s.Run("uses the signature as ID", func() {
+		disabledKey := "jwt:disabled:user:" + token[strings.LastIndex(token, ".")+1:]
+		s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+		s.mockCache.EXPECT().GetBool(disabledKey, false).Return(false).Once()
+
+		_, err := s.jwtGuard.Parse(token)
+		s.Nil(err)
+
+		s.mockCache.EXPECT().Put(disabledKey, true, 5*time.Minute).Return(nil).Once()
+		s.NoError(s.jwtGuard.Logout())
+	})
+}
+
+func (s *JwtGuardTestSuite) disabledCacheKey(guard string) string {
+	guards := s.jwtGuard.ctx.Value(ctxJwtKey).(Guards)
+
+	return getDisabledCacheKey(guard, guards[guard].Claims)
 }
 
 func (s *JwtGuardTestSuite) refreshedCacheKey() string {
@@ -406,7 +422,7 @@ func (s *JwtGuardTestSuite) TestUser_RefreshExpired() {
 	s.Nil(err)
 	s.NotEmpty(token)
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+	s.mockCache.EXPECT().GetBool(s.disabledCacheKey(testUserGuard), false).Return(false).Once()
 
 	carbon.SetTestNow(s.now.Copy().AddMinutes(2))
 
@@ -432,7 +448,7 @@ func (s *JwtGuardTestSuite) TestUser_Success() {
 	s.Nil(err)
 	s.NotEmpty(token)
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+	s.mockCache.EXPECT().GetBool(s.disabledCacheKey(testUserGuard), false).Return(false).Once()
 
 	payload, err := s.jwtGuard.Parse(token)
 	s.NotNil(payload)
@@ -468,7 +484,7 @@ func (s *JwtGuardTestSuite) TestUser_Success_MultipleParse() {
 	s.NoError(err)
 	s.NotEmpty(adminToken)
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+userToken, false).Return(false).Once()
+	s.mockCache.EXPECT().GetBool(s.disabledCacheKey(testUserGuard), false).Return(false).Once()
 
 	payload, err := s.jwtGuard.Parse(userToken)
 	s.NoError(err)
@@ -476,7 +492,7 @@ func (s *JwtGuardTestSuite) TestUser_Success_MultipleParse() {
 	s.Equal(testUserGuard, payload.Guard)
 	s.Equal("1", payload.Key)
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+adminToken, false).Return(false).Once()
+	s.mockCache.EXPECT().GetBool(s.disabledCacheKey(testAdminGuard), false).Return(false).Once()
 
 	payload, err = adminJwtGuard.Parse(adminToken)
 	s.NoError(err)
@@ -524,12 +540,12 @@ func (s *JwtGuardTestSuite) TestLogout_ExpiredToken() {
 	s.Nil(err)
 
 	carbon.SetTestNow(s.now.Copy().AddMinutes(3))
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+	s.mockCache.EXPECT().GetBool(s.disabledCacheKey(testUserGuard), false).Return(false).Once()
 
 	_, err = s.jwtGuard.Parse(token)
 	s.ErrorIs(err, errors.AuthTokenExpired)
 
-	s.mockCache.EXPECT().Put(s.refreshedCacheKey(), true, 2*time.Minute).Return(nil).Once()
+	s.mockCache.EXPECT().Put(s.disabledCacheKey(testUserGuard), true, 2*time.Minute).Return(nil).Once()
 
 	s.NoError(s.jwtGuard.Logout())
 	s.True(s.jwtGuard.Guest())
@@ -540,7 +556,7 @@ func (s *JwtGuardTestSuite) TestLogout_ExpiredTokenPastRefreshTime() {
 	s.Nil(err)
 
 	carbon.SetTestNow(s.now.Copy().AddMinutes(6))
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+	s.mockCache.EXPECT().GetBool(s.disabledCacheKey(testUserGuard), false).Return(false).Once()
 
 	_, err = s.jwtGuard.Parse(token)
 	s.ErrorIs(err, errors.AuthTokenExpired)
@@ -554,15 +570,13 @@ func (s *JwtGuardTestSuite) TestLogout_SetDisabledCacheError() {
 	s.NoError(err)
 	s.NotEmpty(token)
 
-	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
+	s.mockCache.EXPECT().GetBool(s.disabledCacheKey(testUserGuard), false).Return(false).Once()
 
 	payload, err := s.jwtGuard.Parse(token)
 	s.NotNil(payload)
 	s.Nil(err)
 
-	s.mockCache.EXPECT().Put(mock.MatchedBy(func(key string) bool {
-		return strings.HasPrefix(key, "jwt:disabled:")
-	}), true, 5*time.Minute).Return(assert.AnError).Once()
+	s.mockCache.EXPECT().Put(s.disabledCacheKey(testUserGuard), true, 5*time.Minute).Return(assert.AnError).Once()
 
 	s.EqualError(s.jwtGuard.Logout(), assert.AnError.Error())
 }

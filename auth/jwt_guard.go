@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"encoding/base64"
 	"fmt"
 	"strings"
 	"time"
@@ -176,22 +177,15 @@ func (r *JwtGuard) Logout() error {
 		return errors.AuthParseTokenFirst
 	}
 
-	var key string
-	guard, err := r.jwtToken(guards)
-	switch {
-	case err == nil:
-		key = getDisabledCacheKey(guard.Token)
-	case errors.Is(err, errors.AuthTokenExpired):
-		// Parse keeps no string for an expired token, so block its refresh instead.
-		guard = guards[r.guard]
-		key = getRefreshedCacheKey(r.guard, guard.Claims)
-	default:
-		return err
+	// Expired tokens are blocked too, because they can still be refreshed.
+	guard, ok := guards[r.guard]
+	if !ok || guard == nil || guard.Claims == nil {
+		return errors.AuthParseTokenFirst
 	}
 
 	// Block the token until it can no longer be refreshed.
 	if timeLeft := r.refreshTimeLeft(guard.Claims); timeLeft > 0 {
-		if err := r.cache.Put(key, true, timeLeft); err != nil {
+		if err := r.cache.Put(getDisabledCacheKey(r.guard, guard.Claims), true, timeLeft); err != nil {
 			return err
 		}
 	}
@@ -204,40 +198,13 @@ func (r *JwtGuard) Logout() error {
 
 func (r *JwtGuard) Parse(token string) (*contractsauth.Payload, error) {
 	token = strings.ReplaceAll(token, "Bearer ", "")
-	if r.tokenIsDisabled(token) {
-		return nil, errors.AuthTokenDisabled
-	}
-
-	// The blacklist matches the exact token string, so other spellings of it must fail.
 	tokenClaims, err := jwt.ParseWithClaims(token, &Claims{}, func(token *jwt.Token) (any, error) {
 		return convert.UnsafeBytes(r.secret), nil
 	}, jwt.WithTimeFunc(func() time.Time {
 		return carbon.Now().StdTime()
 	}), jwt.WithStrictDecoding())
-	if err != nil {
-		if errors.Is(err, jwt.ErrTokenExpired) && tokenClaims != nil {
-			claims, ok := tokenClaims.Claims.(*Claims)
-			if !ok {
-				return nil, errors.AuthInvalidClaims
-			}
-
-			if claims.Subject != r.guard {
-				return nil, errors.AuthGuardMismatch.Args(r.guard, claims.Subject)
-			}
-
-			r.makeAuthContext(claims, "")
-
-			return &contractsauth.Payload{
-				Guard:    claims.Subject,
-				Key:      claims.Key,
-				ExpireAt: claims.ExpiresAt.Local(),
-				IssuedAt: claims.IssuedAt.Local(),
-			}, errors.AuthTokenExpired
-		}
-
-		return nil, errors.AuthInvalidToken
-	}
-	if tokenClaims == nil || !tokenClaims.Valid {
+	expired := errors.Is(err, jwt.ErrTokenExpired)
+	if (err != nil && !expired) || tokenClaims == nil {
 		return nil, errors.AuthInvalidToken
 	}
 
@@ -248,6 +215,30 @@ func (r *JwtGuard) Parse(token string) (*contractsauth.Payload, error) {
 
 	if claims.Subject != r.guard {
 		return nil, errors.AuthGuardMismatch.Args(r.guard, claims.Subject)
+	}
+
+	if claims.ID == "" {
+		// Older versions issued tokens without an ID and blocked them by their string.
+		if r.cache.GetBool("jwt:disabled:"+token, false) {
+			return nil, errors.AuthTokenDisabled
+		}
+		// The signature is unique to each token, so it can stand in for the ID.
+		claims.ID = base64.RawURLEncoding.EncodeToString(tokenClaims.Signature)
+	}
+
+	if r.cache.GetBool(getDisabledCacheKey(r.guard, claims), false) {
+		return nil, errors.AuthTokenDisabled
+	}
+
+	if expired {
+		r.makeAuthContext(claims, "")
+
+		return &contractsauth.Payload{
+			Guard:    claims.Subject,
+			Key:      claims.Key,
+			ExpireAt: claims.ExpiresAt.Local(),
+			IssuedAt: claims.IssuedAt.Local(),
+		}, errors.AuthTokenExpired
 	}
 
 	r.makeAuthContext(claims, token)
@@ -337,20 +328,10 @@ func (r *JwtGuard) refreshTimeLeft(claims *Claims) time.Duration {
 	return claims.ExpiresAt.Add(time.Duration(r.refreshTtl) * time.Minute).Sub(carbon.Now().StdTime())
 }
 
-func (r *JwtGuard) tokenIsDisabled(token string) bool {
-	return r.cache.GetBool(getDisabledCacheKey(token), false)
+func getDisabledCacheKey(guard string, claims *Claims) string {
+	return fmt.Sprintf("jwt:disabled:%s:%s", guard, claims.ID)
 }
 
-func getDisabledCacheKey(token string) string {
-	return "jwt:disabled:" + token
-}
-
-// Parse doesn't keep the string of an expired token, so the key comes from the
-// claims. Tokens issued before the ID claim existed fall back to user and expiry.
 func getRefreshedCacheKey(guard string, claims *Claims) string {
-	if claims.ID != "" {
-		return fmt.Sprintf("jwt:refreshed:%s:%s", guard, claims.ID)
-	}
-
-	return fmt.Sprintf("jwt:refreshed:%s:%s:%d", guard, claims.Key, claims.ExpiresAt.Unix())
+	return fmt.Sprintf("jwt:refreshed:%s:%s", guard, claims.ID)
 }
