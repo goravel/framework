@@ -6,6 +6,7 @@ import (
 	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/errors"
 )
 
 type Application struct {
@@ -13,6 +14,7 @@ type Application struct {
 	config   config.Config
 	log      log.Log
 	driver   *Driver
+	store    string
 	storesMu sync.RWMutex
 	stores   map[string]cache.Driver
 }
@@ -29,6 +31,7 @@ func NewApplication(config config.Config, log log.Log, store string) (*Applicati
 		config: config,
 		log:    log,
 		driver: driver,
+		store:  store,
 		stores: map[string]cache.Driver{
 			store: instance,
 		},
@@ -60,4 +63,14 @@ func (app *Application) Store(name string) cache.Driver {
 	app.stores[name] = instance
 
 	return instance
+}
+
+// Tags begins a tagged cache operation on the default store.
+func (app *Application) Tags(names ...string) (cache.TaggedCache, error) {
+	driver, ok := app.Driver.(cache.DriverWithTags)
+	if !ok {
+		return nil, errors.CacheTagsNotSupported.Args(app.store)
+	}
+
+	return driver.Tags(names...)
 }

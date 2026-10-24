@@ -19,6 +19,12 @@ type Memory struct {
 	prefix    string
 	instance  sync.Map
 	lastSweep atomic.Int64
+
+	// tagsMu guards tags and serialises tagged writes with tag flushes, so an
+	// item can't be stored after its tag was flushed without being registered.
+	tagsMu sync.Mutex
+	// tags maps a tag name to the set of (unprefixed) item keys stored under it.
+	tags map[string]map[string]struct{}
 }
 
 // sweepInterval bounds how often a write may start a sweep of expired items.
@@ -27,6 +33,7 @@ const sweepInterval = time.Minute
 func NewMemory(config config.Config) (*Memory, error) {
 	memory := &Memory{
 		prefix: prefix(config),
+		tags:   make(map[string]map[string]struct{}),
 	}
 	// Start the sweep clock now: a cache that has just been built has nothing
 	// to reclaim.
@@ -114,7 +121,12 @@ func (r *Memory) Forget(key string) bool {
 // Flush Remove all items from the cache.
 // Clear in place: replacing the sync.Map would swap out the mutex held by concurrent readers.
 func (r *Memory) Flush() bool {
+	r.tagsMu.Lock()
+	defer r.tagsMu.Unlock()
+
 	r.instance.Clear()
+	clear(r.tags)
+
 	return true
 }
 
@@ -318,14 +330,17 @@ func (r *Memory) sweepExpired() {
 		return
 	}
 
-	go r.instance.Range(func(key, stored any) bool {
-		if cached, ok := stored.(*item); !ok || cached.expired() {
-			// Delete this item only, a fresh one may have taken its place already.
-			r.instance.CompareAndDelete(key, stored)
-		}
+	go func() {
+		r.instance.Range(func(key, stored any) bool {
+			if cached, ok := stored.(*item); !ok || cached.expired() {
+				// Delete this item only, a fresh one may have taken its place already.
+				r.instance.CompareAndDelete(key, stored)
+			}
 
-		return true
-	})
+			return true
+		})
+		r.pruneTags()
+	}()
 }
 
 func (r *Memory) key(key string) string {
