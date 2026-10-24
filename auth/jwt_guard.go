@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"encoding/base64"
 	"fmt"
 	"strings"
 	"time"
@@ -16,7 +15,6 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/convert"
-	"github.com/goravel/framework/support/str"
 )
 
 var _ contractsauth.GuardFunc = NewJwtGuard
@@ -153,7 +151,6 @@ func (r *JwtGuard) LoginUsingID(id any) (token string, err error) {
 	claims := Claims{
 		key,
 		jwt.RegisteredClaims{
-			ID:        str.Random(32),
 			ExpiresAt: jwt.NewNumericDate(expireTime),
 			IssuedAt:  jwt.NewNumericDate(nowTime.StdTime()),
 			Subject:   r.guard,
@@ -177,17 +174,15 @@ func (r *JwtGuard) Logout() error {
 		return errors.AuthParseTokenFirst
 	}
 
-	// Expired tokens are blocked too, because they can still be refreshed.
-	guard, ok := guards[r.guard]
-	if !ok || guard == nil || guard.Claims == nil {
-		return errors.AuthParseTokenFirst
+	guard, err := r.jwtToken(guards)
+	if err != nil {
+		return err
 	}
 
 	// Block the token until it can no longer be refreshed.
-	if timeLeft := r.refreshTimeLeft(guard.Claims); timeLeft > 0 {
-		if err := r.cache.Put(getDisabledCacheKey(r.guard, guard.Claims), true, timeLeft); err != nil {
-			return err
-		}
+	expireTime := guard.Claims.ExpiresAt.Add(time.Duration(r.refreshTtl) * time.Minute)
+	if err := r.cache.Put(getDisabledCacheKey(guard.Token), true, expireTime.Sub(carbon.Now().StdTime())); err != nil {
+		return err
 	}
 
 	delete(guards, r.guard)
@@ -198,13 +193,40 @@ func (r *JwtGuard) Logout() error {
 
 func (r *JwtGuard) Parse(token string) (*contractsauth.Payload, error) {
 	token = strings.ReplaceAll(token, "Bearer ", "")
+	if r.tokenIsDisabled(token) {
+		return nil, errors.AuthTokenDisabled
+	}
+
+	// The blacklist matches the exact token string, so other spellings of it must fail.
 	tokenClaims, err := jwt.ParseWithClaims(token, &Claims{}, func(token *jwt.Token) (any, error) {
 		return convert.UnsafeBytes(r.secret), nil
 	}, jwt.WithTimeFunc(func() time.Time {
 		return carbon.Now().StdTime()
 	}), jwt.WithStrictDecoding())
-	expired := errors.Is(err, jwt.ErrTokenExpired)
-	if (err != nil && !expired) || tokenClaims == nil {
+	if err != nil {
+		if errors.Is(err, jwt.ErrTokenExpired) && tokenClaims != nil {
+			claims, ok := tokenClaims.Claims.(*Claims)
+			if !ok {
+				return nil, errors.AuthInvalidClaims
+			}
+
+			if claims.Subject != r.guard {
+				return nil, errors.AuthGuardMismatch.Args(r.guard, claims.Subject)
+			}
+
+			r.makeAuthContext(claims, "")
+
+			return &contractsauth.Payload{
+				Guard:    claims.Subject,
+				Key:      claims.Key,
+				ExpireAt: claims.ExpiresAt.Local(),
+				IssuedAt: claims.IssuedAt.Local(),
+			}, errors.AuthTokenExpired
+		}
+
+		return nil, errors.AuthInvalidToken
+	}
+	if tokenClaims == nil || !tokenClaims.Valid {
 		return nil, errors.AuthInvalidToken
 	}
 
@@ -215,30 +237,6 @@ func (r *JwtGuard) Parse(token string) (*contractsauth.Payload, error) {
 
 	if claims.Subject != r.guard {
 		return nil, errors.AuthGuardMismatch.Args(r.guard, claims.Subject)
-	}
-
-	if claims.ID == "" {
-		// Older versions issued tokens without an ID and blocked them by their string.
-		if r.cache.GetBool("jwt:disabled:"+token, false) {
-			return nil, errors.AuthTokenDisabled
-		}
-		// The signature is unique to each token, so it can stand in for the ID.
-		claims.ID = base64.RawURLEncoding.EncodeToString(tokenClaims.Signature)
-	}
-
-	if r.cache.GetBool(getDisabledCacheKey(r.guard, claims), false) {
-		return nil, errors.AuthTokenDisabled
-	}
-
-	if expired {
-		r.makeAuthContext(claims, "")
-
-		return &contractsauth.Payload{
-			Guard:    claims.Subject,
-			Key:      claims.Key,
-			ExpireAt: claims.ExpiresAt.Local(),
-			IssuedAt: claims.IssuedAt.Local(),
-		}, errors.AuthTokenExpired
 	}
 
 	r.makeAuthContext(claims, token)
@@ -317,10 +315,10 @@ func (r *JwtGuard) makeAuthContext(claims *Claims, token string) {
 	r.ctx.WithValue(ctxJwtKey, guards)
 }
 
-func (r *JwtGuard) refreshTimeLeft(claims *Claims) time.Duration {
-	return claims.ExpiresAt.Add(time.Duration(r.refreshTtl) * time.Minute).Sub(carbon.Now().StdTime())
+func (r *JwtGuard) tokenIsDisabled(token string) bool {
+	return r.cache.GetBool(getDisabledCacheKey(token), false)
 }
 
-func getDisabledCacheKey(guard string, claims *Claims) string {
-	return fmt.Sprintf("jwt:disabled:%s:%s", guard, claims.ID)
+func getDisabledCacheKey(token string) string {
+	return "jwt:disabled:" + token
 }
