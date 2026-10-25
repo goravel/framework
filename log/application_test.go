@@ -227,7 +227,7 @@ func TestGetHandlers(t *testing.T) {
 		mockConfig.EXPECT().GetString("logging.channels.test-otel-print.driver").Return("otel").Once()
 		mockConfig.EXPECT().GetString("logging.channels.test-otel-print.instrument_name", telemetrylog.DefaultInstrumentationName).
 			Return("goravel").Once()
-		mockConfig.EXPECT().GetString("logging.channels.test-otel-print.level").Return("debug").Twice()
+		mockConfig.EXPECT().GetString("logging.channels.test-otel-print.level").Return("debug").Times(2) // otel handler + console
 		mockConfig.EXPECT().GetBool("logging.channels.test-otel-print.print").Return(true).Once()
 		mockConfig.EXPECT().GetString("logging.channels.test-otel-print.formatter", "text").
 			Return("text").Once()

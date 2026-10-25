@@ -76,7 +76,10 @@ func (s *TelemetryChannelTestSuite) TestHandle() {
 			s.NoError(err)
 			s.NotNil(channelHandler)
 
-			s.Equal(tt.shouldBeEnabled, channelHandler.Enabled(contractslog.LevelError))
+			s.Equal(tt.shouldBeEnabled, channelHandler.Enabled(tt.expectedLevel))
+			if tt.shouldBeEnabled {
+				s.False(channelHandler.Enabled(tt.expectedLevel - 1))
+			}
 
 			if tt.shouldBeEnabled {
 				impl, ok := channelHandler.(*handler)
