@@ -4,6 +4,7 @@ import (
 	contractsconfig "github.com/goravel/framework/contracts/config"
 	contractslog "github.com/goravel/framework/contracts/log"
 	contractstelemetry "github.com/goravel/framework/contracts/telemetry"
+	"github.com/goravel/framework/log/logger"
 )
 
 const DefaultInstrumentationName = "github.com/goravel/framework/telemetry/instrumentation/log"
@@ -36,5 +37,6 @@ func (r *TelemetryChannel) Handle(channelPath string) (contractslog.Handler, err
 		resolver:       r.resolver,
 		enabled:        true,
 		instrumentName: instrumentName,
+		level:          logger.GetLevelFromString(r.config.GetString(channelPath + ".level")),
 	}, nil
 }
