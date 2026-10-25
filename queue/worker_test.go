@@ -738,17 +738,24 @@ func (s *WorkerTestSuite) Test_runWithReceive() {
 		s.worker.connection = connection
 
 		// First call returns empty, second call blocks until context canceled (simulating shutdown)
+		called := make(chan struct{})
 		mockDriverWithReceive.EXPECT().Receive(mock.Anything, queue, s.worker.concurrent).
 			Return(nil, nil).Once()
 		mockDriverWithReceive.EXPECT().Receive(mock.Anything, queue, s.worker.concurrent).
 			RunAndReturn(func(ctx context.Context, _ string, _ int) ([]contractsqueue.ReservedJob, error) {
+				close(called)
 				<-ctx.Done()
 				return nil, ctx.Err()
 			}).Once()
 
 		runErrChan := s.startWorker()
 
-		time.Sleep(200 * time.Millisecond)
+		// Wait for the second call instead of a fixed sleep, which is too short on slow runners.
+		select {
+		case <-called:
+		case <-time.After(5 * time.Second):
+			s.Fail("worker did not call Receive again")
+		}
 		s.shutdownWorker(runErrChan)
 	})
 
