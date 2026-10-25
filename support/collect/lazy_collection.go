@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"slices"
 	"sort"
 	"strings"
 )
@@ -62,7 +63,7 @@ func LazyGenerate[T any](fn func(int) T, count int) *LazyCollection[T] {
 			ch := make(chan T)
 			go func() {
 				defer close(ch)
-				for i := 0; i < count; i++ {
+				for i := range count {
 					ch <- fn(i)
 				}
 			}()
@@ -128,7 +129,7 @@ func LazyRepeat[T any](value T, count int) *LazyCollection[T] {
 			ch := make(chan T)
 			go func() {
 				defer close(ch)
-				for i := 0; i < count; i++ {
+				for range count {
 					ch <- value
 				}
 			}()
@@ -493,8 +494,8 @@ func (lc *LazyCollection[T]) Reverse() *LazyCollection[T] {
 			go func() {
 				defer close(ch)
 				items := lc.All()
-				for i := len(items) - 1; i >= 0; i-- {
-					ch <- items[i]
+				for _, item := range slices.Backward(items) {
+					ch <- item
 				}
 			}()
 			return ch

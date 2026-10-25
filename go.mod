@@ -12,12 +12,12 @@ require (
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/dave/dst v0.28.0
 	github.com/dromara/carbon/v2 v2.6.17
-	github.com/gabriel-vasile/mimetype v1.4.15
+	github.com/gabriel-vasile/mimetype v1.4.16
 	github.com/go-viper/mapstructure/v2 v2.5.0
-	github.com/goforj/godump v1.9.1
+	github.com/goforj/godump v1.10.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
-	github.com/gookit/color v1.6.1
+	github.com/gookit/color v1.6.3
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/pterm/pterm v0.12.84
 	github.com/robfig/cron/v3 v3.0.1
@@ -49,8 +49,8 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.47.0
 	go.opentelemetry.io/otel/trace v1.47.0
 	golang.org/x/crypto v0.58.0
-	golang.org/x/exp v0.0.0-20261011100332-faecfb24eb49
-	google.golang.org/grpc v1.86.0-dev.0.20261012190323-de20bed5c055
+	golang.org/x/exp v0.0.0-20261014143641-f0251eb4aa3e
+	google.golang.org/grpc v1.86.0-dev.0.20261016230555-3d85ab3cf6bf
 	google.golang.org/protobuf v1.36.12
 	gorm.io/gorm v1.31.2
 	gorm.io/plugin/dbresolver v1.6.2
@@ -127,7 +127,7 @@ require (
 	github.com/stretchr/objx v0.5.3 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
-	github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342
+	github.com/xrash/smetrics v0.0.0-20261013231157-39c47d93efba
 	golang.org/x/mod v0.42.0 // indirect
 	golang.org/x/net v0.61.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect

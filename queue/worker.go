@@ -240,13 +240,11 @@ func (r *Worker) run() error {
 		color.Infoln(errors.QueueProcessingJobs.Args(r.connection, strings.Join(queueNames, ",")).Error())
 	}
 
-	r.failedJobWg.Add(1)
-	go func() {
-		defer r.failedJobWg.Done()
+	r.failedJobWg.Go(func() {
 		for job := range r.failedJobChan {
 			r.logFailedJob(job)
 		}
-	}()
+	})
 
 	if receiver, ok := r.driver.(queue.DriverWithReceive); ok && len(queueNames) == 1 {
 		return r.runWithReceive(receiver, queueNames[0])
@@ -256,11 +254,8 @@ func (r *Worker) run() error {
 }
 
 func (r *Worker) runWithPop(queueNames []string) error {
-	for i := 0; i < r.concurrent; i++ {
-		r.jobWg.Add(1)
-		go func() {
-			defer r.jobWg.Done()
-
+	for range r.concurrent {
+		r.jobWg.Go(func() {
 			// TODO make the initial delay and max delay configurable
 			currentDelay := 1 * time.Second
 			maxDelay := 32 * time.Second
@@ -293,7 +288,7 @@ func (r *Worker) runWithPop(queueNames []string) error {
 				currentDelay = 1 * time.Second
 				r.processReservedJob(reservedJob, queueName)
 			}
-		}()
+		})
 	}
 
 	r.jobWg.Wait()
@@ -352,11 +347,9 @@ func (r *Worker) runWithReceive(receiver queue.DriverWithReceive, queueName stri
 
 		var wg sync.WaitGroup
 		for _, reservedJob := range jobs {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
+			wg.Go(func() {
 				r.processReservedJob(reservedJob, queueName)
-			}()
+			})
 		}
 		wg.Wait()
 	}

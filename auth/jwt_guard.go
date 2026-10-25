@@ -179,10 +179,9 @@ func (r *JwtGuard) Logout() error {
 		return err
 	}
 
-	if err := r.cache.Put(getDisabledCacheKey(guard.Token),
-		true,
-		time.Duration(r.ttl)*time.Minute,
-	); err != nil {
+	// Block the token until it can no longer be refreshed.
+	expireTime := guard.Claims.ExpiresAt.Add(time.Duration(r.refreshTtl) * time.Minute)
+	if err := r.cache.Put(getDisabledCacheKey(guard.Token), true, expireTime.Sub(carbon.Now().StdTime())); err != nil {
 		return err
 	}
 
@@ -198,11 +197,12 @@ func (r *JwtGuard) Parse(token string) (*contractsauth.Payload, error) {
 		return nil, errors.AuthTokenDisabled
 	}
 
+	// The blacklist matches the exact token string, so other spellings of it must fail.
 	tokenClaims, err := jwt.ParseWithClaims(token, &Claims{}, func(token *jwt.Token) (any, error) {
 		return convert.UnsafeBytes(r.secret), nil
 	}, jwt.WithTimeFunc(func() time.Time {
 		return carbon.Now().StdTime()
-	}))
+	}), jwt.WithStrictDecoding())
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) && tokenClaims != nil {
 			claims, ok := tokenClaims.Claims.(*Claims)

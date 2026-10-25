@@ -44,12 +44,10 @@ func TestRun_Concurrent(t *testing.T) {
 
 	var wg sync.WaitGroup
 	for i := 0; i < 100; i++ {
-		wg.Add(1)
-		go func() {
+		wg.Go(func() {
 			_ = cliApp.Call("test1")
 			_ = cliApp.Call("test2")
-			wg.Done()
-		}()
+		})
 	}
 
 	wg.Wait()
@@ -698,7 +696,7 @@ type filterTestCommand struct {
 	signature string
 }
 
-func (f *filterTestCommand) Signature() string  { return f.signature }
+func (f *filterTestCommand) Signature() string   { return f.signature }
 func (f *filterTestCommand) Description() string { return f.signature }
 func (f *filterTestCommand) Extend() command.Extend {
 	return command.Extend{}
