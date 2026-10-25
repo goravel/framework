@@ -169,7 +169,7 @@ func (r *Query) Cursor() chan contractsdb.Row {
 		ctx = context.Background()
 	}
 
-	cursorChan := make(chan contractsdb.Row)
+	cursorChan := make(chan contractsdb.Row, 1)
 	// send blocks until the consumer receives the row or the query context is done. It allows the goroutine
 	// to exit (and release the rows and the connection) when the consumer stops ranging over the channel
 	// early (e.g. break) and cancels the context passed to WithContext.
@@ -188,8 +188,14 @@ func (r *Query) Cursor() chan contractsdb.Row {
 			rows *sql.Rows
 		)
 		defer func() {
-			if err != nil {
-				send(&Row{query: r, err: err})
+			// The buffer keeps the error for a consumer that is still reading after the context is done,
+			// replacing a row that it has not received yet.
+			if err != nil && !send(&Row{query: r, err: err}) {
+				select {
+				case <-cursorChan:
+				default:
+				}
+				cursorChan <- &Row{query: r, err: err}
 			}
 
 			close(cursorChan)
@@ -206,6 +212,7 @@ func (r *Query) Cursor() chan contractsdb.Row {
 				return
 			}
 			if !send(&Row{query: r, row: val}) {
+				err = ctx.Err()
 				return
 			}
 		}
