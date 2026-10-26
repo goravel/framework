@@ -1,6 +1,8 @@
 package foundation
 
 import (
+	"html/template"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/stats"
@@ -44,6 +46,7 @@ type ApplicationBuilder struct {
 	runners                    func() []foundation.Runner
 	schedule                   func() []schedule.Event
 	seeders                    func() []seeder.Seeder
+	viewFuncs                  func() template.FuncMap
 }
 
 func NewApplicationBuilder(app foundation.Application) *ApplicationBuilder {
@@ -199,6 +202,12 @@ func (r *ApplicationBuilder) WithSchedule(fn func() []schedule.Event) foundation
 
 func (r *ApplicationBuilder) WithSeeders(fn func() []seeder.Seeder) foundation.ApplicationBuilder {
 	r.seeders = fn
+
+	return r
+}
+
+func (r *ApplicationBuilder) WithViewFuncs(fn func() template.FuncMap) foundation.ApplicationBuilder {
+	r.viewFuncs = fn
 
 	return r
 }
