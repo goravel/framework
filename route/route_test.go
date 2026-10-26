@@ -98,3 +98,42 @@ func TestNewRoute(t *testing.T) {
 		assert.Contains(t, err.Error(), "init gin route driver fail")
 	})
 }
+
+// compilerDriver is a route driver that implements view.Compiler.
+type compilerDriver struct {
+	contractsroute.Route
+	err    error
+	called int
+}
+
+func (d *compilerDriver) CompileViews() error {
+	d.called++
+
+	return d.err
+}
+
+func TestCompileViews(t *testing.T) {
+	t.Run("no driver", func(t *testing.T) {
+		route := &Route{}
+		assert.NoError(t, route.CompileViews())
+	})
+
+	t.Run("driver without view.Compiler", func(t *testing.T) {
+		route := &Route{Route: mocksroute.NewRoute(t)}
+		assert.NoError(t, route.CompileViews())
+	})
+
+	t.Run("driver with view.Compiler is forwarded to once per call", func(t *testing.T) {
+		driver := &compilerDriver{Route: mocksroute.NewRoute(t)}
+		route := &Route{Route: driver}
+		assert.NoError(t, route.CompileViews())
+		assert.NoError(t, route.CompileViews())
+		assert.Equal(t, 2, driver.called)
+	})
+
+	t.Run("driver error is returned", func(t *testing.T) {
+		driver := &compilerDriver{Route: mocksroute.NewRoute(t), err: assert.AnError}
+		route := &Route{Route: driver}
+		assert.ErrorIs(t, route.CompileViews(), assert.AnError)
+	})
+}

@@ -8,12 +8,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	gormio "gorm.io/gorm"
 	gormtests "gorm.io/gorm/utils/tests"
+	"gorm.io/gorm/clause"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/support/convert"
 )
 
 func TestAddGlobalScopes(t *testing.T) {
@@ -683,25 +683,25 @@ func TestModelToStruct(t *testing.T) {
 		},
 		{
 			name:        "pointer to string",
-			input:       convert.Pointer("test"),
+			input:       new("test"),
 			expectError: true,
 			expectedErr: errors.OrmQueryInvalidModel.Args(""),
 		},
 		{
 			name:        "pointer to int",
-			input:       convert.Pointer(123),
+			input:       new(123),
 			expectError: true,
 			expectedErr: errors.OrmQueryInvalidModel.Args(""),
 		},
 		{
 			name:        "pointer to float",
-			input:       convert.Pointer(123.45),
+			input:       new(123.45),
 			expectError: true,
 			expectedErr: errors.OrmQueryInvalidModel.Args(""),
 		},
 		{
 			name:        "pointer to bool",
-			input:       convert.Pointer(true),
+			input:       new(true),
 			expectError: true,
 			expectedErr: errors.OrmQueryInvalidModel.Args(""),
 		},
@@ -897,7 +897,7 @@ func TestModelToStruct(t *testing.T) {
 				assert.NotNil(t, result)
 				// The result should be a different instance
 				assert.NotSame(t, &TestModel{ID: 1, Name: "test"}, result)
-				assert.Equal(t, reflect.TypeOf(&TestModel{}), reflect.TypeOf(result))
+				assert.Equal(t, reflect.TypeFor[*TestModel](), reflect.TypeOf(result))
 			},
 		},
 	}
@@ -938,6 +938,198 @@ func TestObserverEvent(t *testing.T) {
 	assert.Nil(t, getObserverEvent("error", &UserObserver{}))
 }
 
+func TestQuoteColumns(t *testing.T) {
+	group := clause.Column{Name: "group"}
+	order := clause.Column{Name: "order"}
+
+	tests := []struct {
+		name          string
+		query         func(contractsorm.Query) contractsorm.Query
+		expectedWhere []contractsdriver.Where
+		expectedOrder []any
+	}{
+		{
+			name: "WhereIn",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereIn("group", []any{"a"})
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? IN ?", Args: []any{group, []any{"a"}}}},
+		},
+		{
+			name: "OrWhereIn",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrWhereIn("group", []any{"a"})
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? IN ?", Args: []any{group, []any{"a"}}, Or: true}},
+		},
+		{
+			name: "WhereNotIn",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNotIn("group", []any{"a"})
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? NOT IN ?", Args: []any{group, []any{"a"}}}},
+		},
+		{
+			name: "OrWhereNotIn",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrWhereNotIn("group", []any{"a"})
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? NOT IN ?", Args: []any{group, []any{"a"}}, Or: true}},
+		},
+		{
+			name: "WhereBetween",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereBetween("order", 1, 2)
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? BETWEEN ? AND ?", Args: []any{order, 1, 2}}},
+		},
+		{
+			name: "WhereNotBetween",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNotBetween("order", 1, 2)
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? NOT BETWEEN ? AND ?", Args: []any{order, 1, 2}}},
+		},
+		{
+			name: "OrWhereBetween",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrWhereBetween("order", 1, 2)
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? BETWEEN ? AND ?", Args: []any{order, 1, 2}, Or: true}},
+		},
+		{
+			name: "OrWhereNotBetween",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrWhereNotBetween("order", 1, 2)
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? NOT BETWEEN ? AND ?", Args: []any{order, 1, 2}, Or: true}},
+		},
+		{
+			name: "WhereNull",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNull("group")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? IS NULL", Args: []any{group}}},
+		},
+		{
+			name: "OrWhereNull",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrWhereNull("group")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? IS NULL", Args: []any{group}, Or: true}},
+		},
+		{
+			name: "WhereNotNull",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNotNull("group")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? IS NOT NULL", Args: []any{group}}},
+		},
+		{
+			name: "WhereAll",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereAll([]string{"group", "order"}, "a")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? = ? AND ? = ?", Args: []any{group, "a", order, "a"}}},
+		},
+		{
+			name: "WhereAny",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereAny([]string{"group", "order"}, "a")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "(? = ? OR ? = ?)", Args: []any{group, "a", order, "a"}}},
+		},
+		{
+			name: "WhereNone",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNone([]string{"group", "order"}, "LIKE", "a")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "NOT (? LIKE ?) AND NOT (? LIKE ?)", Args: []any{group, "a", order, "a"}}},
+		},
+		{
+			name: "WhereNone with equal operator",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNone([]string{"group"}, "a")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? <> ?", Args: []any{group, "a"}}},
+		},
+		{
+			name: "OrderBy",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrderBy("order")
+			},
+			expectedOrder: []any{clause.OrderByColumn{Column: order}},
+		},
+		{
+			name: "OrderBy with lower case direction",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrderBy("order", "desc")
+			},
+			expectedOrder: []any{clause.OrderByColumn{Column: order, Desc: true}},
+		},
+		{
+			name: "OrderBy with custom direction is not quoted",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrderBy("order", "DESC NULLS LAST")
+			},
+			expectedOrder: []any{"order DESC NULLS LAST"},
+		},
+		{
+			name: "OrderByDesc",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrderByDesc("order")
+			},
+			expectedOrder: []any{clause.OrderByColumn{Column: order, Desc: true}},
+		},
+		{
+			name: "table qualified column",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNull("users.group")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? IS NULL", Args: []any{clause.Column{Name: "users.group"}}}},
+		},
+		{
+			name: "expression is not quoted",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNull("LOWER(name)")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "LOWER(name) IS NULL"}},
+		},
+		{
+			name: "json selector is not quoted",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNull("data->name")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "data->name IS NULL"}},
+		},
+		{
+			name: "quoted column is not quoted again",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNull("`group`")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "`group` IS NULL"}},
+		},
+		{
+			name: "expression in OrderBy is not quoted",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrderByDesc("LOWER(name)")
+			},
+			expectedOrder: []any{"LOWER(name) DESC"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// No gorm instance: the column is quoted when the query is built, by the connection that runs it,
+			// so these methods must not need one (e.g. when the database is not configured).
+			query := test.query(NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, nil, nil)).(*Query)
+
+			assert.Equal(t, test.expectedWhere, query.conditions.where)
+			assert.Equal(t, test.expectedOrder, query.conditions.order)
+		})
+	}
+}
+
 func TestWhen(t *testing.T) {
 	query := &Query{}
 	trueQuery := &Query{}
@@ -974,22 +1166,22 @@ func TestLatest(t *testing.T) {
 		{
 			name:      "default column",
 			query:     func() contractsorm.Query { return newQuery().Latest() },
-			expectSql: "SELECT * FROM `users` ORDER BY created_at DESC",
+			expectSql: "SELECT * FROM `users` ORDER BY `created_at` DESC",
 		},
 		{
 			name:      "empty column falls back to default",
 			query:     func() contractsorm.Query { return newQuery().Latest("") },
-			expectSql: "SELECT * FROM `users` ORDER BY created_at DESC",
+			expectSql: "SELECT * FROM `users` ORDER BY `created_at` DESC",
 		},
 		{
 			name:      "custom column",
 			query:     func() contractsorm.Query { return newQuery().Latest("id") },
-			expectSql: "SELECT * FROM `users` ORDER BY id DESC",
+			expectSql: "SELECT * FROM `users` ORDER BY `id` DESC",
 		},
 		{
 			name:      "combined with other orders",
 			query:     func() contractsorm.Query { return newQuery().Latest("updated_at").OrderBy("id") },
-			expectSql: "SELECT * FROM `users` ORDER BY updated_at DESC,id ASC",
+			expectSql: "SELECT * FROM `users` ORDER BY `updated_at` DESC,`id`",
 		},
 	}
 

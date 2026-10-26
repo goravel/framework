@@ -3,7 +3,8 @@ package channels
 import (
 	"encoding/json"
 	"fmt"
-	"sort"
+	"maps"
+	"slices"
 	"strings"
 
 	contractsmail "github.com/goravel/framework/contracts/mail"
@@ -109,11 +110,7 @@ func (c *MailChannel) resolveAddresses(
 // ordered list of "Name <address>" (or bare "address" when name is
 // empty) strings.
 func formatAddresses(routes map[string]string) []string {
-	addresses := make([]string, 0, len(routes))
-	for address := range routes {
-		addresses = append(addresses, address)
-	}
-	sort.Strings(addresses) // deterministic order — map iteration isn't
+	addresses := slices.Sorted(maps.Keys(routes)) // deterministic order — map iteration isn't
 
 	formatted := make([]string, 0, len(addresses))
 	for _, address := range addresses {

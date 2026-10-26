@@ -1,7 +1,9 @@
 package view
 
 import (
+	"html/template"
 	"io/fs"
+	"maps"
 	"os"
 	"path"
 	"strings"
@@ -16,6 +18,7 @@ type View struct {
 	mu          sync.RWMutex
 	paths       []string
 	filesystems []fs.FS
+	funcs       template.FuncMap
 	shared      sync.Map
 }
 
@@ -128,6 +131,34 @@ func (r *View) GetShared() map[string]any {
 	})
 
 	return shared
+}
+
+// AddFuncs merges funcs into the registry. A later registration overrides an
+// earlier one with the same name, so the application's functions, which the
+// framework adds after every provider has booted, win over package functions.
+func (r *View) AddFuncs(funcs template.FuncMap) {
+	if len(funcs) == 0 {
+		return
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.funcs == nil {
+		r.funcs = make(template.FuncMap, len(funcs))
+	}
+	maps.Copy(r.funcs, funcs)
+}
+
+// Funcs returns a copy of the registered functions, so callers may hand it to
+// html/template.Funcs without affecting later registrations.
+func (r *View) Funcs() template.FuncMap {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	if len(r.funcs) == 0 {
+		return nil
+	}
+
+	return maps.Clone(r.funcs)
 }
 
 func isFile(p string) bool {
