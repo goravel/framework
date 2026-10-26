@@ -26,6 +26,8 @@ import (
 
 	stats "google.golang.org/grpc/stats"
 
+	template "text/template"
+
 	validation "github.com/goravel/framework/contracts/validation"
 )
 
@@ -1141,6 +1143,54 @@ func (_c *ApplicationBuilder_WithSeeders_Call) Return(_a0 foundation.Application
 }
 
 func (_c *ApplicationBuilder_WithSeeders_Call) RunAndReturn(run func(func() []seeder.Seeder) foundation.ApplicationBuilder) *ApplicationBuilder_WithSeeders_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithViewFuncs provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithViewFuncs(_a0 func() template.FuncMap) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithViewFuncs")
+	}
+
+	var r0 foundation.ApplicationBuilder
+	if rf, ok := ret.Get(0).(func(func() template.FuncMap) foundation.ApplicationBuilder); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(foundation.ApplicationBuilder)
+		}
+	}
+
+	return r0
+}
+
+// ApplicationBuilder_WithViewFuncs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithViewFuncs'
+type ApplicationBuilder_WithViewFuncs_Call struct {
+	*mock.Call
+}
+
+// WithViewFuncs is a helper method to define mock.On call
+//   - _a0 func() template.FuncMap
+func (_e *ApplicationBuilder_Expecter) WithViewFuncs(_a0 interface{}) *ApplicationBuilder_WithViewFuncs_Call {
+	return &ApplicationBuilder_WithViewFuncs_Call{Call: _e.mock.On("WithViewFuncs", _a0)}
+}
+
+func (_c *ApplicationBuilder_WithViewFuncs_Call) Run(run func(_a0 func() template.FuncMap)) *ApplicationBuilder_WithViewFuncs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func() template.FuncMap))
+	})
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithViewFuncs_Call) Return(_a0 foundation.ApplicationBuilder) *ApplicationBuilder_WithViewFuncs_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithViewFuncs_Call) RunAndReturn(run func(func() template.FuncMap) foundation.ApplicationBuilder) *ApplicationBuilder_WithViewFuncs_Call {
 	_c.Call.Return(run)
 	return _c
 }

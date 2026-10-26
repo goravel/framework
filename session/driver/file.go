@@ -90,5 +90,6 @@ func (f *File) Write(id string, data string) error {
 }
 
 func (f *File) getFilePath(id string) string {
-	return filepath.Join(f.path, id)
+	// Keep the file inside the sessions folder whatever id is given.
+	return filepath.Join(f.path, filepath.Base(id))
 }

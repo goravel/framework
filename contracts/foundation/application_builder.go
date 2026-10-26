@@ -1,6 +1,8 @@
 package foundation
 
 import (
+	"html/template"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/stats"
@@ -78,4 +80,9 @@ type ApplicationBuilder interface {
 	WithSchedule(func() []schedule.Event) ApplicationBuilder
 	// WithSeeders registers the database seeders.
 	WithSeeders(func() []seeder.Seeder) ApplicationBuilder
+	// WithViewFuncs registers template functions for the application's views. The
+	// callback runs once at Build() time, after every service provider has booted,
+	// so it may use facades. Its functions are added to the view registry last and
+	// therefore override functions of the same name registered by packages.
+	WithViewFuncs(func() template.FuncMap) ApplicationBuilder
 }

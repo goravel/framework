@@ -113,7 +113,7 @@ func toReflectedValue(v any) attribute.Value {
 	switch t.Kind() {
 	case reflect.Slice, reflect.Array:
 		items := make([]attribute.Value, val.Len())
-		for i := 0; i < val.Len(); i++ {
+		for i := range val.Len() {
 			items[i] = toValue(val.Index(i).Interface())
 		}
 		return attribute.SliceValue(items...)

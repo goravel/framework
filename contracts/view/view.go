@@ -1,6 +1,9 @@
 package view
 
-import "io/fs"
+import (
+	"html/template"
+	"io/fs"
+)
 
 type View interface {
 	// Exists checks if a view with the specified name exists.
@@ -37,4 +40,23 @@ type View interface {
 	Shared(key string, def ...any) any
 	// GetShared returns a map containing all the shared data associated with the current view context.
 	GetShared() map[string]any
+	// AddFuncs registers template functions that the route driver installs on the
+	// template set before parsing. Functions registered later override earlier ones
+	// with the same name. The application's functions, supplied through
+	// ApplicationBuilder.WithViewFuncs, are added after every service provider has
+	// booted and therefore take precedence over functions registered by packages.
+	AddFuncs(funcs template.FuncMap)
+	// Funcs returns a copy of every registered template function.
+	Funcs() template.FuncMap
+}
+
+// Compiler is implemented by route drivers that compile the registered view
+// sources into their renderer. The framework calls CompileViews once every
+// service provider has booted, so the compiled set contains every view and
+// function registered during Boot regardless of provider order. Implementations
+// must be idempotent: the driver is asked to compile again on its first serve
+// call and must neither parse twice nor lose its renderer.
+type Compiler interface {
+	// CompileViews parses the registered view sources into the driver's renderer.
+	CompileViews() error
 }
