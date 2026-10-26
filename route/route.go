@@ -3,6 +3,7 @@ package route
 import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/route"
+	contractsview "github.com/goravel/framework/contracts/view"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/color"
 )
@@ -36,6 +37,18 @@ func NewRoute(config config.Config) (*Route, error) {
 		Route:  driver,
 		config: config,
 	}, nil
+}
+
+// CompileViews forwards to the driver when it implements view.Compiler, so the
+// framework can compile the view set after every provider has booted without
+// knowing which driver is installed. A driver that does not implement the bridge
+// compiles on its first serve call instead, so there is nothing to do here.
+func (r *Route) CompileViews() error {
+	if compiler, ok := r.Route.(contractsview.Compiler); ok {
+		return compiler.CompileViews()
+	}
+
+	return nil
 }
 
 func NewDriver(config config.Config, driver string) (route.Route, error) {
