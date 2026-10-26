@@ -494,7 +494,7 @@ func (r *Query) Load(model any, relation string, args ...any) error {
 
 	t := destType.Elem()
 	v := reflect.ValueOf(model).Elem()
-	for i := 0; i < t.NumField(); i++ {
+	for i := range t.NumField() {
 		if !t.Field(i).IsExported() {
 			continue
 		}
@@ -514,7 +514,7 @@ func (r *Query) LoadMissing(model any, relation string, args ...any) error {
 
 	t := reflect.TypeOf(model).Elem()
 	v := reflect.ValueOf(model).Elem()
-	for i := 0; i < t.NumField(); i++ {
+	for i := range t.NumField() {
 		if !t.Field(i).IsExported() {
 			continue
 		}
@@ -593,20 +593,27 @@ func (r *Query) OrderBy(column string, direction ...string) contractsorm.Query {
 	} else {
 		orderDirection = "ASC"
 	}
+
+	// A plain column is passed to gorm as a column, so the connection that builds the query quotes it.
+	// gorm can only express ASC and DESC for it, any other direction keeps the raw form.
+	if isPlainIdentifier(column) {
+		switch strings.ToUpper(strings.TrimSpace(orderDirection)) {
+		case "ASC":
+			return r.addOrder(clause.OrderByColumn{Column: clause.Column{Name: column}})
+		case "DESC":
+			return r.addOrder(clause.OrderByColumn{Column: clause.Column{Name: column}, Desc: true})
+		}
+	}
+
 	return r.OrderByRaw(fmt.Sprintf("%s %s", column, orderDirection))
 }
 
 func (r *Query) OrderByDesc(column string) contractsorm.Query {
-	return r.OrderByRaw(fmt.Sprintf("%s DESC", column))
+	return r.OrderBy(column, "DESC")
 }
 
 func (r *Query) OrderByRaw(raw string) contractsorm.Query {
-	var rawAny any = raw
-
-	conditions := r.conditions
-	conditions.order = deep.Append(r.conditions.order, rawAny)
-
-	return r.setConditions(conditions)
+	return r.addOrder(raw)
 }
 
 func (r *Query) Instance() *gormio.DB {
@@ -980,8 +987,9 @@ func (r *Query) WhereAll(columns []string, args ...any) contractsorm.Query {
 	var conditions []string
 	var conditionArgs []any
 	for _, column := range columns {
-		conditions = append(conditions, fmt.Sprintf("%s %v ?", column, op))
-		conditionArgs = append(conditionArgs, value)
+		columnQuery, columnArgs := columnCondition(column)
+		conditions = append(conditions, fmt.Sprintf("%s %v ?", columnQuery, op))
+		conditionArgs = append(append(conditionArgs, columnArgs...), value)
 	}
 
 	query := strings.Join(conditions, " AND ")
@@ -1004,8 +1012,9 @@ func (r *Query) WhereAny(columns []string, args ...any) contractsorm.Query {
 	var conditions []string
 	var conditionArgs []any
 	for _, column := range columns {
-		conditions = append(conditions, fmt.Sprintf("%s %v ?", column, op))
-		conditionArgs = append(conditionArgs, value)
+		columnQuery, columnArgs := columnCondition(column)
+		conditions = append(conditions, fmt.Sprintf("%s %v ?", columnQuery, op))
+		conditionArgs = append(append(conditionArgs, columnArgs...), value)
 	}
 
 	query := fmt.Sprintf("(%s)", strings.Join(conditions, " OR "))
@@ -1018,7 +1027,9 @@ func (r *Query) WhereAny(columns []string, args ...any) contractsorm.Query {
 }
 
 func (r *Query) WhereIn(column string, values []any) contractsorm.Query {
-	return r.Where(fmt.Sprintf("%s IN ?", column), values)
+	query, args := columnCondition(column)
+
+	return r.Where(fmt.Sprintf("%s IN ?", query), append(args, values)...)
 }
 
 func (r *Query) WhereJsonContains(column string, value any) contractsorm.Query {
@@ -1062,7 +1073,9 @@ func (r *Query) WhereJsonLength(column string, length int) contractsorm.Query {
 }
 
 func (r *Query) OrWhereIn(column string, values []any) contractsorm.Query {
-	return r.OrWhere(fmt.Sprintf("%s IN ?", column), values)
+	query, args := columnCondition(column)
+
+	return r.OrWhere(fmt.Sprintf("%s IN ?", query), append(args, values)...)
 }
 
 func (r *Query) OrWhereJsonContains(column string, value any) contractsorm.Query {
@@ -1111,31 +1124,45 @@ func (r *Query) OrWhereJsonLength(column string, length int) contractsorm.Query 
 }
 
 func (r *Query) WhereNotIn(column string, values []any) contractsorm.Query {
-	return r.Where(fmt.Sprintf("%s NOT IN ?", column), values)
+	query, args := columnCondition(column)
+
+	return r.Where(fmt.Sprintf("%s NOT IN ?", query), append(args, values)...)
 }
 
 func (r *Query) OrWhereNotIn(column string, values []any) contractsorm.Query {
-	return r.OrWhere(fmt.Sprintf("%s NOT IN ?", column), values)
+	query, args := columnCondition(column)
+
+	return r.OrWhere(fmt.Sprintf("%s NOT IN ?", query), append(args, values)...)
 }
 
 func (r *Query) WhereBetween(column string, x, y any) contractsorm.Query {
-	return r.Where(fmt.Sprintf("%s BETWEEN ? AND ?", column), x, y)
+	query, args := columnCondition(column)
+
+	return r.Where(fmt.Sprintf("%s BETWEEN ? AND ?", query), append(args, x, y)...)
 }
 
 func (r *Query) WhereNotBetween(column string, x, y any) contractsorm.Query {
-	return r.Where(fmt.Sprintf("%s NOT BETWEEN ? AND ?", column), x, y)
+	query, args := columnCondition(column)
+
+	return r.Where(fmt.Sprintf("%s NOT BETWEEN ? AND ?", query), append(args, x, y)...)
 }
 
 func (r *Query) OrWhereBetween(column string, x, y any) contractsorm.Query {
-	return r.OrWhere(fmt.Sprintf("%s BETWEEN ? AND ?", column), x, y)
+	query, args := columnCondition(column)
+
+	return r.OrWhere(fmt.Sprintf("%s BETWEEN ? AND ?", query), append(args, x, y)...)
 }
 
 func (r *Query) OrWhereNotBetween(column string, x, y any) contractsorm.Query {
-	return r.OrWhere(fmt.Sprintf("%s NOT BETWEEN ? AND ?", column), x, y)
+	query, args := columnCondition(column)
+
+	return r.OrWhere(fmt.Sprintf("%s NOT BETWEEN ? AND ?", query), append(args, x, y)...)
 }
 
 func (r *Query) OrWhereNull(column string) contractsorm.Query {
-	return r.OrWhere(fmt.Sprintf("%s IS NULL", column))
+	query, args := columnCondition(column)
+
+	return r.OrWhere(fmt.Sprintf("%s IS NULL", query), args...)
 }
 
 func (r *Query) WhereNone(columns []string, args ...any) contractsorm.Query {
@@ -1149,12 +1176,13 @@ func (r *Query) WhereNone(columns []string, args ...any) contractsorm.Query {
 	var conditions []string
 	var conditionArgs []any
 	for _, column := range columns {
+		columnQuery, columnArgs := columnCondition(column)
 		if op == "=" {
-			conditions = append(conditions, fmt.Sprintf("%s <> ?", column))
+			conditions = append(conditions, fmt.Sprintf("%s <> ?", columnQuery))
 		} else {
-			conditions = append(conditions, fmt.Sprintf("NOT (%s %v ?)", column, op))
+			conditions = append(conditions, fmt.Sprintf("NOT (%s %v ?)", columnQuery, op))
 		}
-		conditionArgs = append(conditionArgs, value)
+		conditionArgs = append(append(conditionArgs, columnArgs...), value)
 	}
 
 	query := strings.Join(conditions, " AND ")
@@ -1167,11 +1195,15 @@ func (r *Query) WhereNone(columns []string, args ...any) contractsorm.Query {
 }
 
 func (r *Query) WhereNotNull(column string) contractsorm.Query {
-	return r.Where(fmt.Sprintf("%s IS NOT NULL", column))
+	query, args := columnCondition(column)
+
+	return r.Where(fmt.Sprintf("%s IS NOT NULL", query), args...)
 }
 
 func (r *Query) WhereNull(column string) contractsorm.Query {
-	return r.Where(fmt.Sprintf("%s IS NULL", column))
+	query, args := columnCondition(column)
+
+	return r.Where(fmt.Sprintf("%s IS NULL", query), args...)
 }
 
 func (r *Query) With(query string, args ...any) contractsorm.Query {
@@ -1260,6 +1292,13 @@ func (r *Query) addJoin(query string, args ...any) contractsorm.Query {
 		Query: query,
 		Args:  args,
 	})
+
+	return r.setConditions(conditions)
+}
+
+func (r *Query) addOrder(order any) contractsorm.Query {
+	conditions := r.conditions
+	conditions.order = deep.Append(r.conditions.order, order)
 
 	return r.setConditions(conditions)
 }
@@ -2053,23 +2092,23 @@ func getDeletedAtColumn(model any) string {
 		t = t.Elem()
 	}
 
-	for i := 0; i < t.NumField(); i++ {
-		if !t.Field(i).IsExported() {
+	for field := range t.Fields() {
+		if !field.IsExported() {
 			continue
 		}
-		if t.Field(i).Type.Kind() == reflect.Struct {
-			if t.Field(i).Type == reflect.TypeOf(gormio.DeletedAt{}) {
-				return t.Field(i).Name
+		if field.Type.Kind() == reflect.Struct {
+			if field.Type == reflect.TypeFor[gormio.DeletedAt]() {
+				return field.Name
 			}
 
-			structField := t.Field(i).Type
-			for j := 0; j < structField.NumField(); j++ {
-				if !structField.Field(j).IsExported() {
+			structField := field.Type
+			for nested := range structField.Fields() {
+				if !nested.IsExported() {
 					continue
 				}
 
-				if structField.Field(j).Type == reflect.TypeOf(gormio.DeletedAt{}) {
-					return structField.Field(j).Name
+				if nested.Type == reflect.TypeFor[gormio.DeletedAt]() {
+					return nested.Name
 				}
 			}
 		}

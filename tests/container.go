@@ -75,7 +75,7 @@ func (r *Container) Build() (docker.DatabaseDriver, error) {
 
 func (r *Container) Builds(num int) ([]docker.DatabaseDriver, error) {
 	var databaseDrivers []docker.DatabaseDriver
-	for i := 0; i < num; i++ {
+	for range num {
 		databaseDriver, err := r.Build()
 		if err != nil {
 			return nil, err

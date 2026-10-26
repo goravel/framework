@@ -9,7 +9,6 @@ import (
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
 	"github.com/goravel/framework/support/carbon"
-	"github.com/goravel/framework/support/convert"
 )
 
 func TestTaskToJson(t *testing.T) {
@@ -100,7 +99,7 @@ func TestTaskToJson(t *testing.T) {
 					UUID: "test-uuid",
 					Job: Job{
 						Signature: "test_job_one",
-						Delay:     convert.Pointer(carbon.Now().StdTime()),
+						Delay:     new(carbon.Now().StdTime()),
 					},
 				}
 				mockJson.EXPECT().MarshalString(expectedTask).Return("{\"test\":true}", nil).Once()

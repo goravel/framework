@@ -16,7 +16,6 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/support/color"
-	"github.com/goravel/framework/support/convert"
 )
 
 func TestArgumentString(t *testing.T) {
@@ -2094,10 +2093,10 @@ func TestTable(t *testing.T) {
 		{
 			name: "compact style using boolean flags",
 			option: console.TableOption{
-				BorderTop:    convert.Pointer(false),
-				BorderBottom: convert.Pointer(false),
-				BorderLeft:   convert.Pointer(false),
-				BorderRight:  convert.Pointer(false),
+				BorderTop:    new(false),
+				BorderBottom: new(false),
+				BorderLeft:   new(false),
+				BorderRight:  new(false),
 			},
 			contains: []string{"ID", "Name", "│"},
 		},

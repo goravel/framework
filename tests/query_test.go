@@ -15,7 +15,6 @@ import (
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
-	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/mysql"
 	"github.com/goravel/postgres"
 	"github.com/goravel/sqlite"
@@ -4879,7 +4878,7 @@ func (s *QueryTestSuite) TestJsonWhereClauses() {
 				},
 				{
 					name: "bool key(pointer)",
-					find: query.Query().Where("data->bool", convert.Pointer(false)).Find,
+					find: query.Query().Where("data->bool", new(false)).Find,
 					assert: func(items []JsonData) {
 						s.Len(items, 1)
 						s.JSONEq(data[1].Data, items[0].Data)
@@ -5022,7 +5021,7 @@ func (s *QueryTestSuite) TestJsonColumnsUpdate() {
 				},
 				{
 					name:   "update float(pointer)",
-					update: map[string]any{"data->float": convert.Pointer(456.789)},
+					update: map[string]any{"data->float": new(456.789)},
 					assert: func(before JsonData, after JsonData) {
 						s.NotContains(before.Data, "456.789")
 						s.Contains(after.Data, "456.789")
@@ -5120,6 +5119,71 @@ func TestCustomConnection(t *testing.T) {
 	docker, err := sqliteTestQuery.Driver().Docker()
 	assert.NoError(t, err)
 	assert.NoError(t, docker.Shutdown())
+}
+
+// Columns must be quoted by the connection that runs the query, not by the default one:
+// MySQL quotes with backticks, which Postgres rejects.
+func TestCustomConnectionQuotesColumns(t *testing.T) {
+	mysqlTestQuery := NewTestQueryBuilder().Mysql("", false)
+	mysqlTestQuery.CreateTable(TestTableProducts)
+
+	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
+	postgresTestQuery.CreateTable(TestTableProducts)
+
+	config := postgresTestQuery.Driver().Pool().Writers[0]
+	config.Connection = "postgres"
+	mockDatabaseConfig(mysqlTestQuery.MockConfig(), config)
+
+	query := mysqlTestQuery.Query()
+	light := PostgresProduct{Product: Product{Name: "quote_light", Weight: convert.Pointer(1)}}
+	heavy := PostgresProduct{Product: Product{Name: "quote_heavy", Weight: convert.Pointer(10)}}
+	assert.NoError(t, query.Create(&light))
+	assert.NoError(t, query.Create(&heavy))
+
+	tests := []struct {
+		name     string
+		query    contractsorm.Query
+		expected []string
+	}{
+		{
+			name:     "WhereIn",
+			query:    query.WhereIn("name", []any{"quote_light", "quote_heavy"}).OrderBy("id"),
+			expected: []string{"quote_light", "quote_heavy"},
+		},
+		{
+			name:     "WhereBetween",
+			query:    query.WhereBetween("weight", 5, 15),
+			expected: []string{"quote_heavy"},
+		},
+		{
+			name:     "WhereNotNull",
+			query:    query.WhereIn("name", []any{"quote_light", "quote_heavy"}).WhereNotNull("height"),
+			expected: nil,
+		},
+		{
+			name:     "WhereAny",
+			query:    query.WhereAny([]string{"name", "name"}, "quote_light"),
+			expected: []string{"quote_light"},
+		},
+		{
+			name:     "OrderByDesc",
+			query:    query.WhereIn("name", []any{"quote_light", "quote_heavy"}).OrderByDesc("weight"),
+			expected: []string{"quote_heavy", "quote_light"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var products []PostgresProduct
+			assert.NoError(t, test.query.Find(&products))
+
+			var names []string
+			for _, product := range products {
+				names = append(names, product.Name)
+			}
+			assert.Equal(t, test.expected, names)
+		})
+	}
 }
 
 func TestOrmReadWriteSeparate(t *testing.T) {
@@ -5460,10 +5524,10 @@ func (s *QueryTestSuite) TestWhereAny() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
 			users := []User{
-				{Name: "where_any_user1", Avatar: "where_any_avatar1", Bio: convert.Pointer("bio1")},
-				{Name: "where_any_user2", Avatar: "where_any_avatar2", Bio: convert.Pointer("bio2")},
-				{Name: "where_any_user3", Avatar: "where_any_avatar3", Bio: convert.Pointer("bio3")},
-				{Name: "where_any_user4", Avatar: "where_any_avatar4", Bio: convert.Pointer("bio4")},
+				{Name: "where_any_user1", Avatar: "where_any_avatar1", Bio: new("bio1")},
+				{Name: "where_any_user2", Avatar: "where_any_avatar2", Bio: new("bio2")},
+				{Name: "where_any_user3", Avatar: "where_any_avatar3", Bio: new("bio3")},
+				{Name: "where_any_user4", Avatar: "where_any_avatar4", Bio: new("bio4")},
 			}
 			s.Nil(query.Query().Create(&users))
 
@@ -5535,10 +5599,10 @@ func (s *QueryTestSuite) TestWhereAll() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
 			users := []User{
-				{Name: "where_all_user1", Avatar: "where_all_avatar1", Bio: convert.Pointer("bio1")},
-				{Name: "where_all_user1", Avatar: "where_all_avatar2", Bio: convert.Pointer("bio2")},
-				{Name: "where_all_user2", Avatar: "where_all_avatar1", Bio: convert.Pointer("bio3")},
-				{Name: "where_all_user2", Avatar: "where_all_avatar2", Bio: convert.Pointer("bio4")},
+				{Name: "where_all_user1", Avatar: "where_all_avatar1", Bio: new("bio1")},
+				{Name: "where_all_user1", Avatar: "where_all_avatar2", Bio: new("bio2")},
+				{Name: "where_all_user2", Avatar: "where_all_avatar1", Bio: new("bio3")},
+				{Name: "where_all_user2", Avatar: "where_all_avatar2", Bio: new("bio4")},
 			}
 			s.Nil(query.Query().Create(&users))
 
@@ -5612,10 +5676,10 @@ func (s *QueryTestSuite) TestWhereNone() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
 			users := []User{
-				{Name: "where_none_user1", Avatar: "where_none_avatar1", Bio: convert.Pointer("bio1")},
-				{Name: "where_none_user2", Avatar: "where_none_avatar2", Bio: convert.Pointer("bio2")},
-				{Name: "where_none_user3", Avatar: "where_none_avatar3", Bio: convert.Pointer("bio3")},
-				{Name: "where_none_user4", Avatar: "where_none_avatar4", Bio: convert.Pointer("bio4")},
+				{Name: "where_none_user1", Avatar: "where_none_avatar1", Bio: new("bio1")},
+				{Name: "where_none_user2", Avatar: "where_none_avatar2", Bio: new("bio2")},
+				{Name: "where_none_user3", Avatar: "where_none_avatar3", Bio: new("bio3")},
+				{Name: "where_none_user4", Avatar: "where_none_avatar4", Bio: new("bio4")},
 			}
 			s.Nil(query.Query().Create(&users))
 
@@ -5698,9 +5762,7 @@ func Benchmark_Orm(b *testing.B) {
 	query := NewTestQueryBuilder().Postgres("", false)
 	query.CreateTable(TestTableAuthors)
 
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		author := Author{
 			Name:   "benchmark",
 			BookID: 1,

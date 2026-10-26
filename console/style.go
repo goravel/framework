@@ -7,7 +7,6 @@ import (
 	"github.com/pterm/pterm"
 
 	"github.com/goravel/framework/contracts/console"
-	"github.com/goravel/framework/support/convert"
 )
 
 var (
@@ -40,13 +39,13 @@ var (
 
 		StyleFunc: DefaultTableStyleFunc,
 
-		BorderTop:    convert.Pointer(true),
-		BorderBottom: convert.Pointer(true),
-		BorderLeft:   convert.Pointer(true),
-		BorderRight:  convert.Pointer(true),
-		BorderHeader: convert.Pointer(true),
-		BorderColumn: convert.Pointer(true),
-		BorderRow:    convert.Pointer(false),
+		BorderTop:    new(true),
+		BorderBottom: new(true),
+		BorderLeft:   new(true),
+		BorderRight:  new(true),
+		BorderHeader: new(true),
+		BorderColumn: new(true),
+		BorderRow:    new(false),
 	}
 
 	GlobalHuhTheme = func() *huh.Theme {
