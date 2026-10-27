@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"testing"
+	"testing/synctest"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/stretchr/testify/assert"
@@ -191,6 +192,71 @@ func (s *QueryTestSuite) TestCrossJoin() {
 
 	err := s.query.CrossJoin("posts as p").Where("age", 25).Get(&users)
 	s.Nil(err)
+}
+
+func (s *QueryTestSuite) TestCursor() {
+	sql := "SELECT * FROM users"
+
+	s.Run("query error", func() {
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().QueryxContext(s.ctx, sql).Return(nil, assert.AnError).Once()
+		s.mockReadBuilder.EXPECT().Explain(sql).Return(sql).Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, sql, int64(-1), assert.AnError).Return().Once()
+
+		var errs []error
+		for row := range s.query.Cursor() {
+			errs = append(errs, row.Err())
+		}
+
+		s.Equal([]error{assert.AnError}, errs)
+	})
+
+	// The consumer receives one row and cancels the context. When it is canceled, the producer is blocked
+	// sending the third row, and the second one is in the buffer: the producer replaces it with the error.
+	cancelAfterFirstRow := func(t *testing.T) (chan db.Row, *eachDriver, func()) {
+		rows, fake, closeDB := newEachRows(t, 3)
+		ctx, cancel := context.WithCancel(context.Background())
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().QueryxContext(ctx, sql).Return(rows, nil).Once()
+		s.mockReadBuilder.EXPECT().Explain(sql).Return(sql).Once()
+		s.mockLogger.EXPECT().Trace(ctx, s.now, sql, int64(1), context.Canceled).Return().Once()
+
+		ch := NewQuery(ctx, s.mockReadBuilder, s.mockWriteBuilder, s.mockGrammar, s.mockLogger, "users", nil).Cursor()
+		first := <-ch
+		s.NoError(first.Err())
+
+		synctest.Wait()
+		cancel()
+		synctest.Wait()
+
+		return ch, fake, closeDB
+	}
+
+	s.Run("stop reading after canceling the context", func() {
+		// synctest fails if the producer goroutine is still blocked when the test ends.
+		synctest.Test(s.T(), func(t *testing.T) {
+			_, fake, closeDB := cancelAfterFirstRow(t)
+			defer closeDB()
+
+			s.True(fake.closed.Load())
+		})
+	})
+
+	s.Run("keep reading after canceling the context", func() {
+		synctest.Test(s.T(), func(t *testing.T) {
+			ch, fake, closeDB := cancelAfterFirstRow(t)
+			defer closeDB()
+
+			var errs []error
+			for row := range ch {
+				errs = append(errs, row.Err())
+			}
+
+			s.Equal([]error{context.Canceled}, errs)
+			s.True(fake.closed.Load())
+		})
+	})
 }
 
 func (s *QueryTestSuite) TestDecrement() {

@@ -19,8 +19,12 @@ import (
 	mockslogger "github.com/goravel/framework/mocks/database/logger"
 )
 
-// eachDriver is a database/sql driver whose queries return `rows` rows with an "id" column.
-type eachDriver struct{ rows int }
+// eachDriver is a database/sql driver whose queries return `rows` rows with an "id" column, and that
+// records when the rows are closed.
+type eachDriver struct {
+	rows   int
+	closed atomic.Bool
+}
 
 func (r *eachDriver) Open(string) (driver.Conn, error) { return &eachConn{driver: r}, nil }
 
@@ -47,7 +51,10 @@ type eachRows struct {
 }
 
 func (r *eachRows) Columns() []string { return []string{"id"} }
-func (r *eachRows) Close() error      { return nil }
+func (r *eachRows) Close() error {
+	r.driver.closed.Store(true)
+	return nil
+}
 func (r *eachRows) Next(dest []driver.Value) error {
 	if r.next >= r.driver.rows {
 		return io.EOF
@@ -59,17 +66,25 @@ func (r *eachRows) Next(dest []driver.Value) error {
 
 var eachDriverID atomic.Int64
 
-// newEachQuery expects a single query fetching the first chunk of 1000 rows.
-func newEachQuery(t *testing.T, rows int) *Query {
+// newEachRows returns the result of a query on a new eachDriver, and a function that closes its database.
+func newEachRows(t *testing.T, rows int) (*sqlx.Rows, *eachDriver, func()) {
+	fake := &eachDriver{rows: rows}
 	name := fmt.Sprintf("goravel-db-each-%d", eachDriverID.Add(1))
-	sql.Register(name, &eachDriver{rows: rows})
+	sql.Register(name, fake)
 
 	sqlDB, err := sql.Open(name, "")
 	assert.NoError(t, err)
-	t.Cleanup(func() { _ = sqlDB.Close() })
 
 	result, err := sqlx.NewDb(sqlDB, name).Queryx("SELECT id FROM users")
 	assert.NoError(t, err)
+
+	return result, fake, func() { _ = sqlDB.Close() }
+}
+
+// newEachQuery expects a single query fetching the first chunk of 1000 rows.
+func newEachQuery(t *testing.T, rows int) *Query {
+	result, _, closeDB := newEachRows(t, rows)
+	t.Cleanup(closeDB)
 
 	ctx := context.Background()
 	query := "SELECT * FROM users LIMIT 1000 OFFSET 0"
