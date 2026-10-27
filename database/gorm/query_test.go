@@ -2,14 +2,22 @@ package gorm
 
 import (
 	"context"
+	"database/sql"
+	"database/sql/driver"
+	"fmt"
+	"io"
 	"reflect"
+	"sync/atomic"
 	"testing"
+	"testing/synctest"
 
 	"github.com/stretchr/testify/assert"
 	gormio "gorm.io/gorm"
+	gormtests "gorm.io/gorm/utils/tests"
 	"gorm.io/gorm/clause"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
+	contractsdb "github.com/goravel/framework/contracts/database/db"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/errors"
@@ -273,6 +281,50 @@ func TestAddWhere(t *testing.T) {
 		{Query: "name2", Args: []any{"test2"}},
 		{Query: "name3", Args: []any{"test3"}},
 	}, query1.conditions.where)
+}
+
+func TestCursor(t *testing.T) {
+	// The consumer receives one row and cancels the context. When it is canceled, the producer is blocked
+	// sending the third row, and the second one is in the buffer: the producer replaces it with the error.
+	cancelAfterFirstRow := func(t *testing.T) (chan contractsdb.Row, *cursorDriver, func()) {
+		ctx, cancel := context.WithCancel(context.Background())
+		query, fake, closeDB := newCursorQuery(t, ctx, 3)
+
+		ch := query.Cursor()
+		first := <-ch
+		assert.NoError(t, first.Err())
+
+		synctest.Wait()
+		cancel()
+		synctest.Wait()
+
+		return ch, fake, closeDB
+	}
+
+	t.Run("stop reading after canceling the context", func(t *testing.T) {
+		// synctest fails if the producer goroutine is still blocked when the test ends.
+		synctest.Test(t, func(t *testing.T) {
+			_, fake, closeDB := cancelAfterFirstRow(t)
+			defer closeDB()
+
+			assert.True(t, fake.closed.Load())
+		})
+	})
+
+	t.Run("keep reading after canceling the context", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			ch, fake, closeDB := cancelAfterFirstRow(t)
+			defer closeDB()
+
+			var errs []error
+			for row := range ch {
+				errs = append(errs, row.Err())
+			}
+
+			assert.Equal(t, []error{context.Canceled}, errs)
+			assert.True(t, fake.closed.Load())
+		})
+	})
 }
 
 func TestFilterFindConditions(t *testing.T) {
@@ -1277,4 +1329,68 @@ type ModelWithEmptyGlobalScopes struct {
 
 func (m *ModelWithEmptyGlobalScopes) GlobalScopes() map[string]func(contractsorm.Query) contractsorm.Query {
 	return map[string]func(contractsorm.Query) contractsorm.Query{}
+}
+
+// cursorDriver is a database/sql driver whose queries return `rows` rows with an "id" column, and that
+// records when the rows are closed.
+type cursorDriver struct {
+	rows   int
+	closed atomic.Bool
+}
+
+func (r *cursorDriver) Open(string) (driver.Conn, error) { return &cursorConn{driver: r}, nil }
+
+type cursorConn struct{ driver *cursorDriver }
+
+func (r *cursorConn) Prepare(string) (driver.Stmt, error) { return &cursorStmt{driver: r.driver}, nil }
+func (r *cursorConn) Close() error                        { return nil }
+func (r *cursorConn) Begin() (driver.Tx, error)           { return nil, fmt.Errorf("not supported") }
+
+type cursorStmt struct{ driver *cursorDriver }
+
+func (r *cursorStmt) Close() error  { return nil }
+func (r *cursorStmt) NumInput() int { return -1 }
+func (r *cursorStmt) Exec([]driver.Value) (driver.Result, error) {
+	return nil, fmt.Errorf("not supported")
+}
+func (r *cursorStmt) Query([]driver.Value) (driver.Rows, error) {
+	return &cursorRows{driver: r.driver}, nil
+}
+
+type cursorRows struct {
+	driver *cursorDriver
+	next   int
+}
+
+func (r *cursorRows) Columns() []string { return []string{"id"} }
+func (r *cursorRows) Close() error {
+	r.driver.closed.Store(true)
+	return nil
+}
+func (r *cursorRows) Next(dest []driver.Value) error {
+	if r.next >= r.driver.rows {
+		return io.EOF
+	}
+	r.next++
+	dest[0] = int64(r.next)
+	return nil
+}
+
+var cursorDriverID atomic.Int64
+
+// newCursorQuery returns a query on a new cursorDriver, and a function that closes its database.
+func newCursorQuery(t *testing.T, ctx context.Context, rows int) (*Query, *cursorDriver, func()) {
+	fake := &cursorDriver{rows: rows}
+	name := fmt.Sprintf("goravel-orm-cursor-%d", cursorDriverID.Add(1))
+	sql.Register(name, fake)
+
+	sqlDB, err := sql.Open(name, "")
+	assert.NoError(t, err)
+
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{ConnPool: sqlDB})
+	assert.NoError(t, err)
+
+	query := NewQuery(ctx, nil, contractsdatabase.Config{}, db.WithContext(ctx), nil, nil, nil, nil, nil)
+
+	return query.Table("users").(*Query), fake, func() { _ = sqlDB.Close() }
 }
