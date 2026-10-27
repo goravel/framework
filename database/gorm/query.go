@@ -270,6 +270,15 @@ func (r *Query) Distinct(columns ...string) contractsorm.Query {
 	return r.setConditions(query.conditions)
 }
 
+func (r *Query) DoesntExist() (bool, error) {
+	exists, err := r.Exists()
+	if err != nil {
+		return false, err
+	}
+
+	return !exists, nil
+}
+
 func (r *Query) Driver() string {
 	return r.dbConfig.Driver
 }
@@ -485,6 +494,15 @@ func (r *Query) Join(query string, args ...any) contractsorm.Query {
 	})
 
 	return r.setConditions(conditions)
+}
+
+func (r *Query) Latest(column ...string) contractsorm.Query {
+	col := "created_at"
+	if len(column) > 0 && column[0] != "" {
+		col = column[0]
+	}
+
+	return r.OrderByDesc(col)
 }
 
 func (r *Query) Limit(limit int) contractsorm.Query {
@@ -975,6 +993,16 @@ func (r *Query) UpdateOrCreate(dest any, attributes any, values any) error {
 	}
 
 	return r.Create(dest)
+}
+
+func (r *Query) Value(column string, dest any) error {
+	destValue := reflect.ValueOf(dest)
+	if destValue.Kind() != reflect.Pointer {
+		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
+	}
+
+	query := r.addGlobalScopes().buildConditions()
+	return query.instance.Select(column).Limit(1).Scan(dest).Error
 }
 
 func (r *Query) When(condition bool, callback func(query contractsorm.Query) contractsorm.Query, falseCallback ...func(query contractsorm.Query) contractsorm.Query) contractsorm.Query {

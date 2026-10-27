@@ -1008,6 +1008,36 @@ func (s *QueryTestSuite) TestDelete() {
 	}
 }
 
+func (s *QueryTestSuite) TestDoesntExist() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			user := User{Name: "doesnt_exist_user", Avatar: "doesnt_exist_avatar"}
+			s.Nil(query.Query().Create(&user))
+			s.True(user.ID > 0)
+
+			doesntExist, err := query.Query().Model(&User{}).Where("name", "doesnt_exist_user").DoesntExist()
+			s.Nil(err)
+			s.False(doesntExist)
+
+			doesntExist, err = query.Query().Model(&User{}).Where("name", "no_doesnt_exist_user").DoesntExist()
+			s.Nil(err)
+			s.True(doesntExist)
+
+			// Soft deleted records are excluded unless WithTrashed is used.
+			_, err = query.Query().Delete(&user)
+			s.Nil(err)
+
+			doesntExist, err = query.Query().Model(&User{}).Where("name", "doesnt_exist_user").DoesntExist()
+			s.Nil(err)
+			s.True(doesntExist)
+
+			doesntExist, err = query.Query().Model(&User{}).WithTrashed().Where("name", "doesnt_exist_user").DoesntExist()
+			s.Nil(err)
+			s.False(doesntExist)
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestDistinct() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
@@ -2587,6 +2617,23 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 				s.Equal(0, len(globalScopes))
 			})
 
+			s.Run("DoesntExist", func() {
+				query.CreateTable(TestTableGlobalScopes)
+				prepareData(query.Query())
+
+				doesntExist, err := query.Query().Model(&GlobalScope{}).DoesntExist()
+				s.Nil(err)
+				s.False(doesntExist)
+
+				doesntExist, err = query.Query().Model(&GlobalScope{}).Where("avatar", "avatar_scope1").DoesntExist()
+				s.Nil(err)
+				s.True(doesntExist)
+
+				doesntExist, err = query.Query().Model(&GlobalScope{}).WithoutGlobalScopes().Where("avatar", "avatar_scope1").DoesntExist()
+				s.Nil(err)
+				s.False(doesntExist)
+			})
+
 			s.Run("Exists", func() {
 				query.CreateTable(TestTableGlobalScopes)
 				prepareData(query.Query())
@@ -2838,6 +2885,18 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 				var globalScopes []GlobalScope
 				s.Nil(query.Query().Get(&globalScopes))
 				s.Equal(0, len(globalScopes))
+			})
+
+			s.Run("Value", func() {
+				query.CreateTable(TestTableGlobalScopes)
+				prepareData(query.Query())
+
+				var avatar string
+				s.Nil(query.Query().Model(&GlobalScope{}).OrderByDesc("id").Value("avatar", &avatar))
+				s.Equal("avatar_scope", avatar)
+
+				s.Nil(query.Query().Model(&GlobalScope{}).WithoutGlobalScopes().OrderByDesc("id").Value("avatar", &avatar))
+				s.Equal("avatar_scope1", avatar)
 			})
 		})
 	}
@@ -3348,6 +3407,44 @@ func (s *QueryTestSuite) TestManyToManyUpdateWithAssociations() {
 					test.setup()
 				})
 			}
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestLatest() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			older := User{Name: "latest_user", Avatar: "latest_avatar_older", Model: Model{Timestamps: Timestamps{
+				CreatedAt: carbon.NewDateTime(carbon.FromDateTime(2025, 1, 2, 3, 4, 5)),
+			}}}
+			s.Nil(query.Query().Create(&older))
+			s.True(older.ID > 0)
+
+			newer := User{Name: "latest_user", Avatar: "latest_avatar_newer", Model: Model{Timestamps: Timestamps{
+				CreatedAt: carbon.NewDateTime(carbon.FromDateTime(2025, 1, 3, 3, 4, 5)),
+			}}}
+			s.Nil(query.Query().Create(&newer))
+			s.True(newer.ID > 0)
+
+			oldest := User{Name: "latest_user", Avatar: "latest_avatar_oldest", Model: Model{Timestamps: Timestamps{
+				CreatedAt: carbon.NewDateTime(carbon.FromDateTime(2025, 1, 1, 3, 4, 5)),
+			}}}
+			s.Nil(query.Query().Create(&oldest))
+			s.True(oldest.ID > 0)
+
+			var users []User
+			s.Nil(query.Query().Where("name", "latest_user").Latest().Get(&users))
+			s.Len(users, 3)
+			s.Equal(newer.ID, users[0].ID)
+			s.Equal(older.ID, users[1].ID)
+			s.Equal(oldest.ID, users[2].ID)
+
+			users = nil
+			s.Nil(query.Query().Where("name", "latest_user").Latest("id").Get(&users))
+			s.Len(users, 3)
+			s.Equal(oldest.ID, users[0].ID)
+			s.Equal(newer.ID, users[1].ID)
+			s.Equal(older.ID, users[2].ID)
 		})
 	}
 }
@@ -4225,6 +4322,55 @@ func (s *QueryTestSuite) TestUpdateOrCreate() {
 			count, err := query.Query().Model(User{}).Where("name", "update_or_create_user").Count()
 			s.Nil(err)
 			s.Equal(int64(1), count)
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestValue() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			users := []User{
+				{Name: "value_user", Avatar: "value_avatar_1"},
+				{Name: "value_user", Avatar: "value_avatar_2"},
+			}
+			s.Nil(query.Query().Create(&users))
+
+			var avatar string
+			s.Nil(query.Query().Model(&User{}).Where("name", "value_user").OrderBy("id").Value("avatar", &avatar))
+			s.Equal("value_avatar_1", avatar)
+
+			s.Nil(query.Query().Model(&User{}).Where("name", "value_user").Latest("id").Value("avatar", &avatar))
+			s.Equal("value_avatar_2", avatar)
+
+			var id uint
+			s.Nil(query.Query().Table("users").Where("avatar", "value_avatar_2").Value("id", &id))
+			s.Equal(users[1].ID, id)
+
+			// No matching record leaves dest untouched without returning an error.
+			missing := "untouched"
+			s.Nil(query.Query().Model(&User{}).Where("name", "value_user_missing").Value("avatar", &missing))
+			s.Equal("untouched", missing)
+
+			// Soft deleted records are excluded unless WithTrashed is used.
+			_, err := query.Query().Delete(&users[0])
+			s.Nil(err)
+
+			avatar = ""
+			s.Nil(query.Query().Model(&User{}).Where("name", "value_user").OrderBy("id").Value("avatar", &avatar))
+			s.Equal("value_avatar_2", avatar)
+
+			s.Nil(query.Query().Model(&User{}).WithTrashed().Where("name", "value_user").OrderBy("id").Value("avatar", &avatar))
+			s.Equal("value_avatar_1", avatar)
+
+			// Value reads a raw column, so model events such as Retrieved are not dispatched.
+			retrieved := User{Name: "event_retrieved_name"}
+			s.Nil(query.Query().Create(&retrieved))
+
+			var name string
+			s.Nil(query.Query().Model(&User{}).Where("id", retrieved.ID).Value("name", &name))
+			s.Equal("event_retrieved_name", name)
+
+			s.ErrorIs(query.Query().Model(&User{}).Value("name", name), errors.DatabaseUnsupportedType)
 		})
 	}
 }
