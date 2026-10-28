@@ -48,7 +48,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (r *ServiceProvider) Boot(app foundation.Application) {
-	app.MakeArtisan().Register([]console.Command{
+	app.Commands([]console.Command{
 		scheduleconsole.NewList(app.MakeSchedule()),
 		scheduleconsole.NewRun(app.MakeSchedule()),
 	})

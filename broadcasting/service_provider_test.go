@@ -6,9 +6,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
+	contractsconsole "github.com/goravel/framework/contracts/console"
 	contractshttp "github.com/goravel/framework/contracts/http"
 	mocksconfig "github.com/goravel/framework/mocks/config"
-	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mockshttp "github.com/goravel/framework/mocks/http"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
@@ -20,7 +20,6 @@ func TestBroadcastServiceProviderBoot_Middleware(t *testing.T) {
 	mockConfig := mocksconfig.NewConfig(t)
 	mockQueue := mocksqueue.NewQueue(t)
 	mockRoute := mocksroute.NewRoute(t)
-	mockArtisan := mocksconsole.NewArtisan(t)
 	testMiddleware := mockshttp.NewMiddleware(t)
 
 	mockApp.EXPECT().MakeConfig().Return(mockConfig).Once()
@@ -37,8 +36,9 @@ func TestBroadcastServiceProviderBoot_Middleware(t *testing.T) {
 
 	mockApp.EXPECT().MakeRoute().Return(mockRoute).Once()
 	mockApp.EXPECT().MakeBroadcast().Return(&Application{config: &Config{Default: "log"}}).Once()
-	mockApp.EXPECT().MakeArtisan().Return(mockArtisan).Once()
-	mockArtisan.EXPECT().Register(mock.Anything).Once()
+	mockApp.EXPECT().Commands(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
+		return len(commands) == 1 && commands[0].Signature() == "make:channel"
+	})).Once()
 
 	mockRoute.EXPECT().Middleware(testMiddleware).Return(mockRoute).Once()
 	mockRoute.EXPECT().Post("/broadcasting/auth", mock.Anything).Return(mocksroute.NewAction(t)).Once()
@@ -51,7 +51,6 @@ func TestBroadcastServiceProviderBoot_AuthDisabled(t *testing.T) {
 	mockApp := mocksfoundation.NewApplication(t)
 	mockConfig := mocksconfig.NewConfig(t)
 	mockQueue := mocksqueue.NewQueue(t)
-	mockArtisan := mocksconsole.NewArtisan(t)
 
 	mockApp.EXPECT().MakeConfig().Return(mockConfig).Once()
 	mockApp.EXPECT().MakeQueue().Return(mockQueue).Once()
@@ -63,8 +62,9 @@ func TestBroadcastServiceProviderBoot_AuthDisabled(t *testing.T) {
 		return true
 	})).Return(nil).Once()
 
-	mockApp.EXPECT().MakeArtisan().Return(mockArtisan).Once()
-	mockArtisan.EXPECT().Register(mock.Anything).Once()
+	mockApp.EXPECT().Commands(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
+		return len(commands) == 1 && commands[0].Signature() == "make:channel"
+	})).Once()
 
 	provider := &ServiceProvider{}
 	assert.NotPanics(t, func() { provider.Boot(mockApp) })
