@@ -190,7 +190,7 @@ func TestHandleEach(t *testing.T) {
 	}{
 		{name: "runs makeOne for every name", arguments: []string{"User", "Post"}, wantNames: []string{"User", "Post"}},
 		{name: "continues after a failure", arguments: []string{"User", "Post", "Comment"}, failOn: "Post", wantNames: []string{"User", "Post", "Comment"}},
-		{name: "falls back to the prompt when no name is given", wantNames: []string{""}},
+		{name: "returns a single empty name when no arguments are given", wantNames: []string{""}},
 	}
 
 	for _, test := range tests {
@@ -202,7 +202,7 @@ func TestHandleEach(t *testing.T) {
 			}
 
 			var names []string
-			HandleEach(mockCtx, func(ctx console.Context, name string) error {
+			HandleEach(mockCtx, func(_ console.Context, name string) error {
 				names = append(names, name)
 				if test.failOn != "" && name == test.failOn {
 					return assert.AnError

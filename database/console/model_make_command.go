@@ -73,6 +73,9 @@ func (r *ModelMakeCommand) Extend() command.Extend {
 
 func (r *ModelMakeCommand) Handle(ctx console.Context) error {
 	table := ctx.Option("table")
+	if table != "" && len(supportconsole.MakeNames(ctx)) > 1 {
+		return errors.ConsoleTableOptionSingleName
+	}
 
 	var columns []driver.Column
 	if table != "" {

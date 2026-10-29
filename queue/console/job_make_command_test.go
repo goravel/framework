@@ -364,4 +364,6 @@ func TestJobMakeCommand_MultipleNames(t *testing.T) {
 
 	assert.FileExists(t, "app/jobs/send_email.go")
 	assert.FileExists(t, "app/jobs/process_image.go")
+	assert.True(t, file.Contain("app/providers/queue_service_provider.go", "&jobs.SendEmail{}"))
+	assert.True(t, file.Contain("app/providers/queue_service_provider.go", "&jobs.ProcessImage{}"))
 }

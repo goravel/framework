@@ -366,4 +366,6 @@ func TestRuleMakeCommand_MultipleNames(t *testing.T) {
 
 	assert.FileExists(t, "app/rules/uppercase.go")
 	assert.FileExists(t, "app/rules/lowercase.go")
+	assert.True(t, file.Contain("app/providers/validation_service_provider.go", "&rules.Uppercase{}"))
+	assert.True(t, file.Contain("app/providers/validation_service_provider.go", "&rules.Lowercase{}"))
 }

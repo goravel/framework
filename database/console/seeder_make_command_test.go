@@ -181,4 +181,6 @@ func TestSeederMakeCommand_MultipleNames(t *testing.T) {
 
 	assert.FileExists(t, "database/seeders/user_seeder.go")
 	assert.FileExists(t, "database/seeders/post_seeder.go")
+	assert.True(t, file.Contain("database/kernel.go", "&seeders.UserSeeder{}"))
+	assert.True(t, file.Contain("database/kernel.go", "&seeders.PostSeeder{}"))
 }

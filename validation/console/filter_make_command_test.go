@@ -373,6 +373,8 @@ func TestFilterMakeCommand_MultipleNames(t *testing.T) {
 
 	assert.FileExists(t, "app/filters/uppercase.go")
 	assert.FileExists(t, "app/filters/lowercase.go")
+	assert.True(t, file.Contain("app/providers/validation_service_provider.go", "&filters.Uppercase{}"))
+	assert.True(t, file.Contain("app/providers/validation_service_provider.go", "&filters.Lowercase{}"))
 }
 
 // TestFilterMakeCommand_MultipleNamesPartialFailure covers a failure in the

@@ -51,17 +51,23 @@ func (r *MigrateMakeCommand) Extend() command.Extend {
 
 // Handle Executes the console command.
 func (r *MigrateMakeCommand) Handle(ctx console.Context) error {
-	supportconsole.HandleEach(ctx, r.makeOne)
+	modelName := ctx.Option("model")
+	if modelName != "" && len(supportconsole.MakeNames(ctx)) > 1 {
+		return errors.MigrationModelOptionSingleName
+	}
+
+	supportconsole.HandleEach(ctx, func(ctx console.Context, name string) error {
+		return r.makeOne(ctx, name, modelName)
+	})
 
 	return nil
 }
 
-func (r *MigrateMakeCommand) makeOne(ctx console.Context, name string) error {
+func (r *MigrateMakeCommand) makeOne(ctx console.Context, name, modelName string) error {
 	makeMigration, err := supportconsole.NewMake(ctx, "migration", name, support.Config.Paths.Migrations)
 	if err != nil {
 		return err
 	}
-	modelName := ctx.Option("model")
 
 	fileName, err := r.migrator.Create(makeMigration.GetName(), modelName)
 	if err != nil {

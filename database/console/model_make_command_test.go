@@ -10,6 +10,7 @@ import (
 
 	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/schema"
+	frameworkerrors "github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	"github.com/goravel/framework/support/file"
@@ -86,9 +87,9 @@ type Phone struct {
 	assert.Equal(t, expectedPhoneContent, phoneModel)
 
 	// Test: Create model from table schema
-	mockContext.EXPECT().Arguments().Return([]string{"Product"}).Once()
-	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Option("table").Return("products").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"Product"}).Times(2)
+	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 
 	// Table exists
 	mockSchema.EXPECT().HasTable("products").Return(true).Once()
@@ -143,12 +144,14 @@ func (r *Product) TableName() string {
 
 	// Test: Table doesn't exist
 	mockContext.EXPECT().Option("table").Return("nonexistent").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"Invalid"}).Once()
 	mockSchema.EXPECT().HasTable("nonexistent").Return(false).Once()
 	mockContext.EXPECT().Error("table nonexistent not found").Once()
 	assert.Nil(t, modelMakeCommand.Handle(mockContext))
 
 	//Test: Error fetching columns
 	mockContext.EXPECT().Option("table").Return("error_table").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"Error"}).Once()
 	mockSchema.EXPECT().HasTable("error_table").Return(true).Once()
 	mockSchema.EXPECT().GetColumns("error_table").Return(nil, errors.New("database connection error")).Once()
 	mockContext.EXPECT().Error("database connection error").Once()
@@ -561,7 +564,7 @@ func TestModelMakeCommand_MultipleNames(t *testing.T) {
 	assert.FileExists(t, "app/models/post.go")
 }
 
-func TestModelMakeCommand_MultipleNamesWithTable(t *testing.T) {
+func TestModelMakeCommand_TableOptionRequiresSingleName(t *testing.T) {
 	t.Cleanup(func() {
 		_ = file.Remove("app")
 	})
@@ -572,31 +575,12 @@ func TestModelMakeCommand_MultipleNamesWithTable(t *testing.T) {
 	modelMakeCommand := NewModelMakeCommand(mockArtisan, mockSchema)
 	mockContext := mocksconsole.NewContext(t)
 
-	columns := []driver.Column{
-		{Name: "id", Type: "bigint", Nullable: false, Autoincrement: true},
-		{Name: "name", Type: "varchar", Nullable: false},
-		{Name: "created_at", Type: "timestamp", Nullable: true},
-		{Name: "updated_at", Type: "timestamp", Nullable: true},
-	}
-	goTypes := []schema.GoType{
-		{Pattern: "bigint", Type: "uint", NullType: "sql.NullInt64", NullImport: "database/sql"},
-		{Pattern: "varchar", Type: "string", NullType: "sql.NullString", NullImport: "database/sql"},
-		{Pattern: "timestamp", Type: "time.Time", NullType: "sql.NullTime", NullImport: "database/sql", Import: "time"},
-	}
-
-	// The schema is read once for the whole invocation, not once per name.
 	mockContext.EXPECT().Option("table").Return("users").Once()
-	mockSchema.EXPECT().HasTable("users").Return(true).Once()
-	mockSchema.EXPECT().GetColumns("users").Return(columns, nil).Once()
-	mockSchema.EXPECT().GoTypes().Return(goTypes).Times(2)
-
 	mockContext.EXPECT().Arguments().Return([]string{"User", "Post"}).Once()
-	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
-	mockContext.EXPECT().Success("Model created successfully").Times(2)
-	assert.Nil(t, modelMakeCommand.Handle(mockContext))
 
-	assert.FileExists(t, "app/models/user.go")
-	assert.FileExists(t, "app/models/post.go")
+	assert.Equal(t, frameworkerrors.ConsoleTableOptionSingleName, modelMakeCommand.Handle(mockContext))
+	assert.NoFileExists(t, "app/models/user.go")
+	assert.NoFileExists(t, "app/models/post.go")
 }
 
 // TestModelMakeCommand_MultipleNamesPartialFailure verifies that a failure for
