@@ -52,11 +52,7 @@ func (r *ViewMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *ViewMakeCommand) Handle(ctx console.Context) error {
-	for _, viewName := range supportconsole.MakeNames(ctx) {
-		if err := r.makeOne(ctx, viewName); err != nil {
-			ctx.Error(err.Error())
-		}
-	}
+	supportconsole.HandleEach(ctx, r.makeOne)
 
 	return nil
 }

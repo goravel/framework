@@ -52,7 +52,7 @@ func TestFactoryMakeCommand_MultipleNames(t *testing.T) {
 	mockContext.EXPECT().Success("Factory created successfully").Times(2)
 	assert.NoError(t, factoryMakeCommand.Handle(mockContext))
 
-	assert.True(t, file.Exists("database/factories/user_factory.go"))
-	assert.True(t, file.Exists("database/factories/post_factory.go"))
+	assert.FileExists(t, "database/factories/user_factory.go")
+	assert.FileExists(t, "database/factories/post_factory.go")
 	assert.NoError(t, file.Remove("database"))
 }

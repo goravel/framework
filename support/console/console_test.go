@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/color"
@@ -176,6 +177,41 @@ func TestNewMake(t *testing.T) {
 				assert.NotNil(t, m)
 				assert.Nil(t, file.Remove("app"))
 			}
+		})
+	}
+}
+
+func TestHandleEach(t *testing.T) {
+	tests := []struct {
+		name      string
+		arguments []string
+		failOn    string
+		wantNames []string
+	}{
+		{name: "runs makeOne for every name", arguments: []string{"User", "Post"}, wantNames: []string{"User", "Post"}},
+		{name: "continues after a failure", arguments: []string{"User", "Post", "Comment"}, failOn: "Post", wantNames: []string{"User", "Post", "Comment"}},
+		{name: "falls back to the prompt when no name is given", wantNames: []string{""}},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mockCtx := mocksconsole.NewContext(t)
+			mockCtx.EXPECT().Arguments().Return(test.arguments).Once()
+			if test.failOn != "" {
+				mockCtx.EXPECT().Error(assert.AnError.Error()).Once()
+			}
+
+			var names []string
+			HandleEach(mockCtx, func(ctx console.Context, name string) error {
+				names = append(names, name)
+				if test.failOn != "" && name == test.failOn {
+					return assert.AnError
+				}
+
+				return nil
+			})
+
+			assert.Equal(t, test.wantNames, names)
 		})
 	}
 }

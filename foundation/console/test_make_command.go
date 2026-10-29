@@ -46,11 +46,7 @@ func (r *TestMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *TestMakeCommand) Handle(ctx console.Context) error {
-	for _, filePath := range supportconsole.MakeNames(ctx) {
-		if err := r.makeOne(ctx, filePath); err != nil {
-			ctx.Error(err.Error())
-		}
-	}
+	supportconsole.HandleEach(ctx, r.makeOne)
 
 	return nil
 }

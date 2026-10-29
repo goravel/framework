@@ -85,6 +85,6 @@ func TestAgentMakeCommand_MultipleNames(t *testing.T) {
 	mockContext.EXPECT().Success("Agent created successfully").Times(2)
 	assert.NoError(t, agentMakeCommand.Handle(mockContext))
 
-	assert.True(t, file.Exists("app/ai/agents/support_agent.go"))
-	assert.True(t, file.Exists("app/ai/agents/billing_agent.go"))
+	assert.FileExists(t, "app/ai/agents/support_agent.go")
+	assert.FileExists(t, "app/ai/agents/billing_agent.go")
 }

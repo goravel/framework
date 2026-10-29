@@ -55,6 +55,6 @@ func TestChannelMakeCommand_MultipleNames(t *testing.T) {
 	mockContext.EXPECT().Success("Channel created successfully").Times(2)
 	assert.Nil(t, cmd.Handle(mockContext))
 
-	assert.True(t, file.Exists(filepath.Join("app", "broadcasting", "order_channel.go")))
-	assert.True(t, file.Exists(filepath.Join("app", "broadcasting", "user_channel.go")))
+	assert.FileExists(t, filepath.Join("app", "broadcasting", "order_channel.go"))
+	assert.FileExists(t, filepath.Join("app", "broadcasting", "user_channel.go"))
 }

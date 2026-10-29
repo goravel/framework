@@ -46,11 +46,7 @@ func (r *PackageMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *PackageMakeCommand) Handle(ctx console.Context) error {
-	for _, pkg := range supportconsole.MakeNames(ctx) {
-		if err := r.makeOne(ctx, pkg); err != nil {
-			ctx.Error(err.Error())
-		}
-	}
+	supportconsole.HandleEach(ctx, r.makeOne)
 
 	return nil
 }

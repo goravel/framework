@@ -101,7 +101,11 @@ func (s *TestMakeCommandTestSuite) TestTestHandle() {
 	s.NoError(file.Remove("tests"))
 }
 
-func (s *TestMakeCommandTestSuite) TestTestHandleMultipleNames() {
+func (s *TestMakeCommandTestSuite) TestHandleMultipleNames() {
+	s.T().Cleanup(func() {
+		_ = file.Remove("tests")
+	})
+
 	cmd := NewTestMakeCommand()
 	mockContext := mocksconsole.NewContext(s.T())
 
@@ -110,7 +114,6 @@ func (s *TestMakeCommandTestSuite) TestTestHandleMultipleNames() {
 	mockContext.EXPECT().Success("Test created successfully").Times(2)
 	s.NoError(cmd.Handle(mockContext))
 
-	s.True(file.Exists("tests/user_test.go"))
-	s.True(file.Exists("tests/post_test.go"))
-	s.NoError(file.Remove("tests"))
+	s.FileExists("tests/user_test.go")
+	s.FileExists("tests/post_test.go")
 }

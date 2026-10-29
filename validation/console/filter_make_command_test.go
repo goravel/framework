@@ -371,6 +371,29 @@ func TestFilterMakeCommand_MultipleNames(t *testing.T) {
 	mockContext.EXPECT().Success("Filter registered successfully").Times(2)
 	assert.NoError(t, filterMakeCommand.Handle(mockContext))
 
-	assert.True(t, file.Exists("app/filters/uppercase.go"))
-	assert.True(t, file.Exists("app/filters/lowercase.go"))
+	assert.FileExists(t, "app/filters/uppercase.go")
+	assert.FileExists(t, "app/filters/lowercase.go")
+}
+
+// TestFilterMakeCommand_MultipleNamesPartialFailure covers a failure in the
+// registration step: the filter is written but never registered, and the next
+// name is still processed.
+func TestFilterMakeCommand_MultipleNamesPartialFailure(t *testing.T) {
+	defer func() {
+		assert.NoError(t, file.Remove("app"))
+	}()
+
+	filterMakeCommand := &FilterMakeCommand{}
+	mockContext := mocksconsole.NewContext(t)
+
+	mockContext.EXPECT().Arguments().Return([]string{"Uppercase", "Lowercase"}).Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
+	mockContext.EXPECT().Success("Filter created successfully").Times(2)
+	mockContext.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
+		return strings.Contains(msg, "filter register failed:")
+	})).Times(2)
+	assert.NoError(t, filterMakeCommand.Handle(mockContext))
+
+	assert.FileExists(t, "app/filters/uppercase.go")
+	assert.FileExists(t, "app/filters/lowercase.go")
 }

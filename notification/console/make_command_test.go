@@ -84,7 +84,7 @@ func TestNotificationMakeCommand_MultipleNames(t *testing.T) {
 	mockContext.EXPECT().Success("Notification created successfully").Times(2)
 	assert.NoError(t, notificationMakeCommand.Handle(mockContext))
 
-	assert.True(t, file.Exists("app/notifications/invoice_paid.go"))
-	assert.True(t, file.Exists("app/notifications/invoice_refunded.go"))
+	assert.FileExists(t, "app/notifications/invoice_paid.go")
+	assert.FileExists(t, "app/notifications/invoice_refunded.go")
 	assert.Nil(t, file.Remove("app"))
 }

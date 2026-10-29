@@ -362,6 +362,6 @@ func TestJobMakeCommand_MultipleNames(t *testing.T) {
 	mockContext.EXPECT().Success("Job registered successfully").Times(2)
 	assert.NoError(t, jobMakeCommand.Handle(mockContext))
 
-	assert.True(t, file.Exists("app/jobs/send_email.go"))
-	assert.True(t, file.Exists("app/jobs/process_image.go"))
+	assert.FileExists(t, "app/jobs/send_email.go")
+	assert.FileExists(t, "app/jobs/process_image.go")
 }

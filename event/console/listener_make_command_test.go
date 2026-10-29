@@ -49,7 +49,7 @@ func TestListenerMakeCommand_MultipleNames(t *testing.T) {
 	mockContext.EXPECT().Success("Listener created successfully").Times(2)
 	assert.Nil(t, listenerMakeCommand.Handle(mockContext))
 
-	assert.True(t, file.Exists("app/listeners/send_order_email.go"))
-	assert.True(t, file.Exists("app/listeners/send_receipt_email.go"))
+	assert.FileExists(t, "app/listeners/send_order_email.go")
+	assert.FileExists(t, "app/listeners/send_receipt_email.go")
 	assert.Nil(t, file.Remove("app"))
 }

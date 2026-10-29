@@ -51,7 +51,7 @@ func TestMailMakeCommand_MultipleNames(t *testing.T) {
 	mockContext.EXPECT().Success("Mail created successfully").Times(2)
 	assert.NoError(t, mailMakeCommand.Handle(mockContext))
 
-	assert.True(t, file.Exists("app/mails/verify_email.go"))
-	assert.True(t, file.Exists("app/mails/reset_password.go"))
+	assert.FileExists(t, "app/mails/verify_email.go")
+	assert.FileExists(t, "app/mails/reset_password.go")
 	assert.Nil(t, file.Remove("app"))
 }

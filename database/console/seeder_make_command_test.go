@@ -162,6 +162,10 @@ func Boot() {
 }
 
 func TestSeederMakeCommand_MultipleNames(t *testing.T) {
+	defer func() {
+		assert.NoError(t, file.Remove("database"))
+	}()
+
 	mockApp := mocksfoundation.NewApplication(t)
 	seederMakeCommand := &SeederMakeCommand{app: mockApp}
 	mockContext := mocksconsole.NewContext(t)
@@ -175,7 +179,6 @@ func TestSeederMakeCommand_MultipleNames(t *testing.T) {
 	mockContext.EXPECT().Success("Seeder registered successfully").Times(2)
 	assert.NoError(t, seederMakeCommand.Handle(mockContext))
 
-	assert.True(t, file.Exists("database/seeders/user_seeder.go"))
-	assert.True(t, file.Exists("database/seeders/post_seeder.go"))
-	assert.NoError(t, file.Remove("database"))
+	assert.FileExists(t, "database/seeders/user_seeder.go")
+	assert.FileExists(t, "database/seeders/post_seeder.go")
 }

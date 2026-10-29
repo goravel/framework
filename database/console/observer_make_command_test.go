@@ -43,6 +43,10 @@ func TestObserverMakeCommand(t *testing.T) {
 }
 
 func TestObserverMakeCommand_MultipleNames(t *testing.T) {
+	t.Cleanup(func() {
+		_ = file.Remove("app")
+	})
+
 	observerMakeCommand := &ObserverMakeCommand{}
 	mockContext := mocksconsole.NewContext(t)
 
@@ -51,7 +55,6 @@ func TestObserverMakeCommand_MultipleNames(t *testing.T) {
 	mockContext.EXPECT().Success("Observer created successfully").Times(2)
 	assert.NoError(t, observerMakeCommand.Handle(mockContext))
 
-	assert.True(t, file.Exists("app/observers/user_observer.go"))
-	assert.True(t, file.Exists("app/observers/post_observer.go"))
-	assert.Nil(t, file.Remove("app"))
+	assert.FileExists(t, "app/observers/user_observer.go")
+	assert.FileExists(t, "app/observers/post_observer.go")
 }

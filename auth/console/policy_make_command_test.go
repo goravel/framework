@@ -42,6 +42,10 @@ func TestPolicyMakeCommand(t *testing.T) {
 }
 
 func TestPolicyMakeCommand_MultipleNames(t *testing.T) {
+	t.Cleanup(func() {
+		_ = file.Remove("app")
+	})
+
 	policyMakeCommand := &PolicyMakeCommand{}
 	mockContext := mocksconsole.NewContext(t)
 
@@ -50,7 +54,6 @@ func TestPolicyMakeCommand_MultipleNames(t *testing.T) {
 	mockContext.EXPECT().Success("Policy created successfully").Times(2)
 	assert.Nil(t, policyMakeCommand.Handle(mockContext))
 
-	assert.True(t, file.Exists("app/policies/post_policy.go"))
-	assert.True(t, file.Exists("app/policies/comment_policy.go"))
-	assert.Nil(t, file.Remove("app"))
+	assert.FileExists(t, "app/policies/post_policy.go")
+	assert.FileExists(t, "app/policies/comment_policy.go")
 }

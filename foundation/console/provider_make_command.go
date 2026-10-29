@@ -47,11 +47,7 @@ func (r *ProviderMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *ProviderMakeCommand) Handle(ctx console.Context) error {
-	for _, name := range supportconsole.MakeNames(ctx) {
-		if err := r.makeOne(ctx, name); err != nil {
-			ctx.Error(err.Error())
-		}
-	}
+	supportconsole.HandleEach(ctx, r.makeOne)
 
 	return nil
 }

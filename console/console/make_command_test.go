@@ -131,8 +131,8 @@ func TestMakeCommand_MultipleNames(t *testing.T) {
 
 	cleanCachePath := filepath.Join("app", "console", "commands", "Goravel", "clean_cache.go")
 	syncUsersPath := filepath.Join("app", "console", "commands", "Bar", "sync_users.go")
-	assert.True(t, file.Exists(cleanCachePath))
-	assert.True(t, file.Exists(syncUsersPath))
+	assert.FileExists(t, cleanCachePath)
+	assert.FileExists(t, syncUsersPath)
 	assert.True(t, file.Contain(cleanCachePath, "app:goravel-clean-cache"))
 	assert.True(t, file.Contain(syncUsersPath, "app:bar-sync-users"))
 	assert.True(t, file.Contain(kernelPath, "&Goravel.CleanCache{}"))

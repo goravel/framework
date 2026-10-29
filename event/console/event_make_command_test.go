@@ -75,6 +75,10 @@ func TestEventMakeCommand(t *testing.T) {
 }
 
 func TestEventMakeCommand_MultipleNames(t *testing.T) {
+	t.Cleanup(func() {
+		_ = file.Remove("app")
+	})
+
 	eventMakeCommand := &EventMakeCommand{}
 	mockContext := mocksconsole.NewContext(t)
 
@@ -84,7 +88,6 @@ func TestEventMakeCommand_MultipleNames(t *testing.T) {
 	mockContext.EXPECT().Success("Event created successfully").Times(2)
 	assert.Nil(t, eventMakeCommand.Handle(mockContext))
 
-	assert.True(t, file.Exists("app/events/order_shipped.go"))
-	assert.True(t, file.Exists("app/events/order_paid.go"))
-	assert.Nil(t, file.Remove("app"))
+	assert.FileExists(t, "app/events/order_shipped.go")
+	assert.FileExists(t, "app/events/order_paid.go")
 }

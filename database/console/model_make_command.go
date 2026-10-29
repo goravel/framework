@@ -72,37 +72,41 @@ func (r *ModelMakeCommand) Extend() command.Extend {
 }
 
 func (r *ModelMakeCommand) Handle(ctx console.Context) error {
-	for _, name := range supportconsole.MakeNames(ctx) {
-		if err := r.makeOne(ctx, name); err != nil {
+	table := ctx.Option("table")
+
+	var columns []driver.Column
+	if table != "" {
+		if !r.schema.HasTable(table) {
+			ctx.Error(errors.SchemaTableNotFound.Args(table).Error())
+			return nil
+		}
+
+		var err error
+		if columns, err = r.schema.GetColumns(table); err != nil {
 			ctx.Error(err.Error())
+			return nil
 		}
 	}
+
+	supportconsole.HandleEach(ctx, func(ctx console.Context, name string) error {
+		return r.makeOne(ctx, name, table, columns)
+	})
 
 	return nil
 }
 
-func (r *ModelMakeCommand) makeOne(ctx console.Context, name string) error {
+func (r *ModelMakeCommand) makeOne(ctx console.Context, name, table string, columns []driver.Column) error {
 	m, err := supportconsole.NewMake(ctx, "model", name, support.Config.Paths.Models)
 	if err != nil {
 		return err
 	}
 
-	table := ctx.Option("table")
 	model := modelDefinition{
 		Imports: make(map[string]struct{}),
 	}
 	structName := m.GetStructName()
 
 	if table != "" {
-		if !r.schema.HasTable(table) {
-			return errors.SchemaTableNotFound.Args(table)
-		}
-
-		columns, err := r.schema.GetColumns(table)
-		if err != nil {
-			return err
-		}
-
 		model, err = r.generateModelInfo(columns, structName, table)
 		if err != nil {
 			return err

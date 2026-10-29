@@ -364,6 +364,6 @@ func TestRuleMakeCommand_MultipleNames(t *testing.T) {
 	mockContext.EXPECT().Success("Rule registered successfully").Times(2)
 	assert.NoError(t, ruleMakeCommand.Handle(mockContext))
 
-	assert.True(t, file.Exists("app/rules/uppercase.go"))
-	assert.True(t, file.Exists("app/rules/lowercase.go"))
+	assert.FileExists(t, "app/rules/uppercase.go")
+	assert.FileExists(t, "app/rules/lowercase.go")
 }

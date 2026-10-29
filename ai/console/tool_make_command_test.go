@@ -89,6 +89,6 @@ func TestToolMakeCommand_MultipleNames(t *testing.T) {
 	mockContext.EXPECT().Success("Tool created successfully").Times(2)
 	assert.NoError(t, toolMakeCommand.Handle(mockContext))
 
-	assert.True(t, file.Exists("app/ai/tools/weather_tool.go"))
-	assert.True(t, file.Exists("app/ai/tools/currency_tool.go"))
+	assert.FileExists(t, "app/ai/tools/weather_tool.go")
+	assert.FileExists(t, "app/ai/tools/currency_tool.go")
 }

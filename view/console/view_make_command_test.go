@@ -114,7 +114,11 @@ func (s *ViewMakeCommandTestSuite) TestPopulateStub() {
 	}
 }
 
-func (s *ViewMakeCommandTestSuite) TestMultipleNames() {
+func (s *ViewMakeCommandTestSuite) TestHandleMultipleNames() {
+	s.T().Cleanup(func() {
+		_ = file.Remove("resources")
+	})
+
 	viewMakeCommand := &ViewMakeCommand{}
 	mockContext := mocksconsole.NewContext(s.T())
 
@@ -122,7 +126,6 @@ func (s *ViewMakeCommandTestSuite) TestMultipleNames() {
 	mockContext.EXPECT().Success("View created successfully").Times(2)
 
 	s.Nil(viewMakeCommand.Handle(mockContext))
-	s.True(file.Exists(filepath.Join("resources", "views", "welcome.tmpl")))
-	s.True(file.Exists(filepath.Join("resources", "views", "dashboard.tmpl")))
-	s.Nil(file.Remove("resources"))
+	s.FileExists(filepath.Join("resources", "views", "welcome.tmpl"))
+	s.FileExists(filepath.Join("resources", "views", "dashboard.tmpl"))
 }
