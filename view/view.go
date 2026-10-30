@@ -8,11 +8,15 @@ import (
 	"path"
 	"strings"
 	"sync"
+	"sync/atomic"
 
+	contractsview "github.com/goravel/framework/contracts/view"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages/paths"
 	"github.com/goravel/framework/support"
 )
+
+var _ contractsview.View = (*View)(nil)
 
 type View struct {
 	mu          sync.RWMutex
@@ -20,6 +24,9 @@ type View struct {
 	filesystems []fs.FS
 	funcs       template.FuncMap
 	shared      sync.Map
+
+	compileMu sync.Mutex
+	compiled  atomic.Pointer[compiled]
 }
 
 func NewView() *View {
@@ -55,10 +62,37 @@ func (r *View) Exists(view string) bool {
 	return false
 }
 
+// First returns a template for the first view in the list that can be rendered.
+func (r *View) First(views []string, data ...any) contractsview.Template {
+	for _, name := range views {
+		// Exists answers for the file, which is not the same question: a file that only holds
+		// define blocks exists without being addressable under its own name. Picking a candidate
+		// that cannot be rendered would stop First from falling through to the next one.
+		if r.renderable(name) {
+			return r.Make(name, data...)
+		}
+	}
+
+	// Nothing matched, so the template has no name, but a data error still names the views it
+	// was meant for.
+	label := strings.Join(views, ", ")
+	if label == "" {
+		label = "the candidates"
+	}
+	values, err := toMap(label, data...)
+	if err == nil {
+		err = errors.ViewNoneExist.Args(views)
+	}
+
+	return newTemplateWithError(r, "", values, err)
+}
+
 func (r *View) LoadViewsFrom(path string) {
 	r.mu.Lock()
-	defer r.mu.Unlock()
 	r.paths = append(r.paths, path)
+	r.mu.Unlock()
+
+	r.resetCompiled()
 }
 
 func (r *View) LoadViewsFromFS(fsys fs.FS, root string) {
@@ -86,8 +120,15 @@ func (r *View) LoadViewsFromFS(fsys fs.FS, root string) {
 	}
 
 	r.mu.Lock()
-	defer r.mu.Unlock()
 	r.filesystems = append(r.filesystems, sub)
+	r.mu.Unlock()
+
+	r.resetCompiled()
+}
+
+// Make returns a template for the view, bound to the given data.
+func (r *View) Make(view string, data ...any) contractsview.Template {
+	return newTemplate(r, view, data...)
 }
 
 func (r *View) RegisteredViews() []string {
@@ -142,11 +183,14 @@ func (r *View) AddFuncs(funcs template.FuncMap) {
 	}
 
 	r.mu.Lock()
-	defer r.mu.Unlock()
 	if r.funcs == nil {
 		r.funcs = make(template.FuncMap, len(funcs))
 	}
 	maps.Copy(r.funcs, funcs)
+	r.mu.Unlock()
+
+	// Registered functions change which templates parse, so drop the compiled set.
+	r.resetCompiled()
 }
 
 // Funcs returns a copy of the registered functions, so callers may hand it to

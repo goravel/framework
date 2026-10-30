@@ -54,6 +54,8 @@ type Query interface {
 	// CrossJoin specifies CROSS JOIN conditions for the query.
 	CrossJoin(query string, args ...any) Query
 	// Cursor returns a cursor, use scan to iterate over the returned rows.
+	// If the iteration is stopped before the channel is closed (e.g. break), cancel the context passed to
+	// WithContext, otherwise the underlying goroutine, rows and connection are not released.
 	Cursor() chan db.Row
 	// DB gets the underlying database connection.
 	DB() (*sql.DB, error)
@@ -61,6 +63,8 @@ type Query interface {
 	Delete(value ...any) (*db.Result, error)
 	// Distinct specifies distinct fields to query.
 	Distinct(columns ...string) Query
+	// DoesntExist determines if no rows exist for the current query.
+	DoesntExist() (bool, error)
 	// Driver gets the driver for the query.
 	Driver() string
 	// Exec executes raw sql
@@ -101,6 +105,8 @@ type Query interface {
 	InTransaction() bool
 	// Join specifying JOIN conditions for the query.
 	Join(query string, args ...any) Query
+	// Latest orders the query by the given column descending, default column is "created_at".
+	Latest(column ...string) Query
 	// LeftJoin specifies LEFT JOIN conditions for the query.
 	LeftJoin(query string, args ...any) Query
 	// Limit the number of records returned.
@@ -193,6 +199,8 @@ type Query interface {
 	// UpdateOrCreate finds the first record that matches the given attributes
 	// or create a new one with those attributes if none was found.
 	UpdateOrCreate(dest any, attributes any, values any) error
+	// Value gets a single column's value from the first result of a query.
+	Value(column string, dest any) error
 	// When executes the callback if the condition is true, otherwise the falseCallback if it is given.
 	When(condition bool, callback func(query Query) Query, falseCallback ...func(query Query) Query) Query
 	// Where add a "where" clause to the query.
