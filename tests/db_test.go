@@ -16,7 +16,6 @@ import (
 	"github.com/goravel/framework/errors"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/support/carbon"
-	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/framework/support/str"
 	"github.com/goravel/framework/testing/utils"
 	"github.com/goravel/postgres"
@@ -167,7 +166,7 @@ func (s *DBTestSuite) TestCursor() {
 		s.Run(driver, func() {
 			query.DB().Table("products").Insert([]Product{
 				{
-					Name: "cursor_product1", Weight: convert.Pointer(100), Model: Model{
+					Name: "cursor_product1", Weight: new(100), Model: Model{
 						Timestamps: Timestamps{
 							CreatedAt: s.now,
 							UpdatedAt: s.now,
@@ -175,7 +174,7 @@ func (s *DBTestSuite) TestCursor() {
 					},
 				},
 				{
-					Name: "cursor_product2", Weight: convert.Pointer(200), Model: Model{
+					Name: "cursor_product2", Weight: new(200), Model: Model{
 						Timestamps: Timestamps{
 							CreatedAt: s.now,
 							UpdatedAt: s.now,
@@ -310,7 +309,7 @@ func (s *DBTestSuite) Test_DB_Select_Insert_Update_Delete_Statement() {
 func (s *DBTestSuite) TestDecrement() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			query.DB().Table("products").Insert(Product{Name: "decrement_product", Weight: convert.Pointer(100)})
+			query.DB().Table("products").Insert(Product{Name: "decrement_product", Weight: new(100)})
 
 			s.Run("decrement", func() {
 				err := query.DB().Table("products").Where("name", "decrement_product").Decrement("weight", 1)
@@ -339,7 +338,7 @@ func (s *DBTestSuite) TestDistinct() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
 			query.DB().Table("products").Insert([]Product{
-				{Name: "distinct_product", Weight: convert.Pointer(1)},
+				{Name: "distinct_product", Weight: new(1)},
 				{Name: "distinct_product"},
 				{Name: "distinct_product"},
 			})
@@ -394,6 +393,46 @@ func (s *DBTestSuite) TestDistinct() {
 	}
 }
 
+func (s *DBTestSuite) TestEach() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			_, err := query.DB().Table("products").Insert([]Product{
+				{Name: "each_product1"},
+				{Name: "each_product2"},
+				{Name: "each_product3"},
+			})
+			s.NoError(err)
+
+			s.Run("iterates all rows with a single query", func() {
+				ctx := databasedb.EnableQueryLog(context.Background())
+
+				var names []string
+				err := query.DB().WithContext(ctx).Table("products").OrderBy("id").Each(func(row db.Row) error {
+					var product Product
+					s.NoError(row.Scan(&product))
+					names = append(names, product.Name)
+
+					return nil
+				})
+				s.NoError(err)
+				s.Equal([]string{"each_product1", "each_product2", "each_product3"}, names)
+				s.Len(databasedb.GetQueryLog(ctx), 1)
+			})
+
+			s.Run("stops when the callback returns an error", func() {
+				var count int
+				err := query.DB().Table("products").OrderBy("id").Each(func(row db.Row) error {
+					count++
+
+					return assert.AnError
+				})
+				s.Equal(assert.AnError, err)
+				s.Equal(1, count)
+			})
+		})
+	}
+}
+
 func (s *DBTestSuite) TestExists() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
@@ -441,7 +480,7 @@ func (s *DBTestSuite) TestGroupBy_Having() {
 func (s *DBTestSuite) TestIncrement() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			query.DB().Table("products").Insert(Product{Name: "increment_product", Weight: convert.Pointer(100)})
+			query.DB().Table("products").Insert(Product{Name: "increment_product", Weight: new(100)})
 
 			s.Run("increment", func() {
 				err := query.DB().Table("products").Where("name", "increment_product").Increment("weight", 1)
@@ -548,7 +587,7 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 					},
 					{
 						Name:   "multiple structs2",
-						Weight: convert.Pointer(1),
+						Weight: new(1),
 					},
 				})
 				s.NoError(err)
@@ -743,9 +782,9 @@ func (s *DBTestSuite) TestLeftJoin() {
 
 			s.NoError(err)
 			s.Equal(3, len(temps))
-			s.Contains(temps, Temp{P1Name: convert.Pointer("join_product1"), P1Weight: convert.Pointer(100), P2Name: convert.Pointer("join_product2"), P2Weight: convert.Pointer(50)})
-			s.Contains(temps, Temp{P1Name: convert.Pointer("join_product2"), P1Weight: convert.Pointer(50)})
-			s.Contains(temps, Temp{P1Name: convert.Pointer("join_product3"), P1Weight: convert.Pointer(50)})
+			s.Contains(temps, Temp{P1Name: new("join_product1"), P1Weight: new(100), P2Name: new("join_product2"), P2Weight: new(50)})
+			s.Contains(temps, Temp{P1Name: new("join_product2"), P1Weight: new(50)})
+			s.Contains(temps, Temp{P1Name: new("join_product3"), P1Weight: new(50)})
 		})
 	}
 }
@@ -897,13 +936,13 @@ func (s *DBTestSuite) TestOrWhereColumn() {
 			query.DB().Table("products").Insert([]Product{
 				{
 					Name:   "or where column model",
-					Height: convert.Pointer(100),
-					Weight: convert.Pointer(100),
+					Height: new(100),
+					Weight: new(100),
 				},
 				{
 					Name:   "or where column model1",
-					Height: convert.Pointer(100),
-					Weight: convert.Pointer(110),
+					Height: new(100),
+					Weight: new(110),
 				},
 			})
 
@@ -1110,9 +1149,9 @@ func (s *DBTestSuite) TestRightJoin() {
 
 			s.NoError(err)
 			s.Equal(3, len(temps))
-			s.Contains(temps, Temp{P1Name: convert.Pointer("join_product1"), P1Weight: convert.Pointer(100), P2Name: convert.Pointer("join_product2"), P2Weight: convert.Pointer(50)})
-			s.Contains(temps, Temp{P2Name: convert.Pointer("join_product1"), P2Weight: convert.Pointer(100)})
-			s.Contains(temps, Temp{P2Name: convert.Pointer("join_product3"), P2Weight: convert.Pointer(50)})
+			s.Contains(temps, Temp{P1Name: new("join_product1"), P1Weight: new(100), P2Name: new("join_product2"), P2Weight: new(50)})
+			s.Contains(temps, Temp{P2Name: new("join_product1"), P2Weight: new(100)})
+			s.Contains(temps, Temp{P2Name: new("join_product3"), P2Weight: new(50)})
 		})
 	}
 }
@@ -1167,8 +1206,8 @@ func (s *DBTestSuite) TestSum() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
 			query.DB().Table("products").Insert([]Product{
-				{Name: "sum_product1", Weight: convert.Pointer(100)},
-				{Name: "sum_product2", Weight: convert.Pointer(200)},
+				{Name: "sum_product1", Weight: new(100)},
+				{Name: "sum_product2", Weight: new(200)},
 			})
 
 			var sum int64
@@ -1186,8 +1225,8 @@ func (s *DBTestSuite) TestAvg() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
 			query.DB().Table("products").Insert([]Product{
-				{Name: "sum_product1", Weight: convert.Pointer(100)},
-				{Name: "sum_product2", Weight: convert.Pointer(200)},
+				{Name: "sum_product1", Weight: new(100)},
+				{Name: "sum_product2", Weight: new(200)},
 			})
 
 			var avg float64
@@ -1205,8 +1244,8 @@ func (s *DBTestSuite) TestMin() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
 			query.DB().Table("products").Insert([]Product{
-				{Name: "sum_product1", Weight: convert.Pointer(100)},
-				{Name: "sum_product2", Weight: convert.Pointer(200)},
+				{Name: "sum_product1", Weight: new(100)},
+				{Name: "sum_product2", Weight: new(200)},
 			})
 
 			var min int64
@@ -1224,8 +1263,8 @@ func (s *DBTestSuite) TestMax() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
 			query.DB().Table("products").Insert([]Product{
-				{Name: "sum_product1", Weight: convert.Pointer(100)},
-				{Name: "sum_product2", Weight: convert.Pointer(200)},
+				{Name: "sum_product1", Weight: new(100)},
+				{Name: "sum_product2", Weight: new(200)},
 			})
 
 			var max int64
@@ -1439,7 +1478,7 @@ func (s *DBTestSuite) TestUpdateOrInsert() {
 				result, err := query.DB().Table("products").Where("height", 100).UpdateOrInsert(Product{
 					Name: "update or insert product2",
 				}, Product{
-					Weight: convert.Pointer(200),
+					Weight: new(200),
 				})
 				s.NoError(err)
 				s.Equal(int64(1), result.RowsAffected)
@@ -1455,7 +1494,7 @@ func (s *DBTestSuite) TestUpdateOrInsert() {
 				result, err = query.DB().Table("products").UpdateOrInsert(Product{
 					Name: "update or insert product2",
 				}, Product{
-					Weight: convert.Pointer(300),
+					Weight: new(300),
 				})
 				s.NoError(err)
 				s.Equal(int64(1), result.RowsAffected)
@@ -1538,10 +1577,10 @@ func (s *DBTestSuite) TestWhereAny() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
 			data := []Product{
-				{Name: "where any product1", Weight: convert.Pointer(100), Height: convert.Pointer(50)},
-				{Name: "where any product2", Weight: convert.Pointer(200), Height: convert.Pointer(100)},
-				{Name: "where any product3", Weight: convert.Pointer(300), Height: convert.Pointer(150)},
-				{Name: "where any product4", Weight: convert.Pointer(400), Height: convert.Pointer(200)},
+				{Name: "where any product1", Weight: new(100), Height: new(50)},
+				{Name: "where any product2", Weight: new(200), Height: new(100)},
+				{Name: "where any product3", Weight: new(300), Height: new(150)},
+				{Name: "where any product4", Weight: new(400), Height: new(200)},
 			}
 			result, err := query.DB().Table("products").Insert(&data)
 			s.Equal(int64(4), result.RowsAffected)
@@ -1683,10 +1722,10 @@ func (s *DBTestSuite) TestWhereAll() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
 			data := []Product{
-				{Name: "where all product1", Weight: convert.Pointer(100), Height: convert.Pointer(100)},
-				{Name: "where all product2", Weight: convert.Pointer(200), Height: convert.Pointer(200)},
-				{Name: "where all product3", Weight: convert.Pointer(150), Height: convert.Pointer(200)},
-				{Name: "where all product4", Weight: convert.Pointer(200), Height: convert.Pointer(150)},
+				{Name: "where all product1", Weight: new(100), Height: new(100)},
+				{Name: "where all product2", Weight: new(200), Height: new(200)},
+				{Name: "where all product3", Weight: new(150), Height: new(200)},
+				{Name: "where all product4", Weight: new(200), Height: new(150)},
 			}
 			result, err := query.DB().Table("products").Insert(&data)
 			s.Equal(int64(4), result.RowsAffected)
@@ -1841,10 +1880,10 @@ func (s *DBTestSuite) TestWhereNone() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
 			data := []Product{
-				{Name: "where none product1", Weight: convert.Pointer(100), Height: convert.Pointer(50)},
-				{Name: "where none product2", Weight: convert.Pointer(200), Height: convert.Pointer(100)},
-				{Name: "where none product3", Weight: convert.Pointer(300), Height: convert.Pointer(150)},
-				{Name: "where none product4", Weight: convert.Pointer(400), Height: convert.Pointer(200)},
+				{Name: "where none product1", Weight: new(100), Height: new(50)},
+				{Name: "where none product2", Weight: new(200), Height: new(100)},
+				{Name: "where none product3", Weight: new(300), Height: new(150)},
+				{Name: "where none product4", Weight: new(400), Height: new(200)},
 			}
 			result, err := query.DB().Table("products").Insert(&data)
 			s.Equal(int64(4), result.RowsAffected)
@@ -2010,13 +2049,13 @@ func (s *DBTestSuite) TestWhereColumn() {
 			query.DB().Table("products").Insert([]Product{
 				{
 					Name:   "where column model",
-					Weight: convert.Pointer(100),
-					Height: convert.Pointer(100),
+					Weight: new(100),
+					Height: new(100),
 				},
 				{
 					Name:   "where column model1",
-					Weight: convert.Pointer(100),
-					Height: convert.Pointer(110),
+					Weight: new(100),
+					Height: new(110),
 				},
 			})
 
@@ -2057,13 +2096,13 @@ func (s *DBTestSuite) TestWhereExists() {
 			result, err := query.DB().Table("products").Insert([]Product{
 				{
 					Name:   "where exists model1",
-					Height: convert.Pointer(100),
-					Weight: convert.Pointer(100),
+					Height: new(100),
+					Weight: new(100),
 				},
 				{
 					Name:   "where exists model2",
-					Height: convert.Pointer(100),
-					Weight: convert.Pointer(110),
+					Height: new(100),
+					Weight: new(110),
 				},
 			})
 			s.NoError(err)
@@ -2188,7 +2227,7 @@ func (s *DBTestSuite) TestJsonWhereClauses() {
 				},
 				{
 					name: "bool key(pointer)",
-					find: query.DB().Table("json_data").Where("data->bool", convert.Pointer(false)).Find,
+					find: query.DB().Table("json_data").Where("data->bool", new(false)).Find,
 					assert: func(items []JsonData) {
 						s.Len(items, 1)
 						s.JSONEq(data[1].Data, items[0].Data)
@@ -2333,7 +2372,7 @@ func (s *DBTestSuite) TestJsonColumnsUpdate() {
 				},
 				{
 					name:   "update float(pointer)",
-					update: map[string]any{"data->float": convert.Pointer(456.789)},
+					update: map[string]any{"data->float": new(456.789)},
 					assert: func(before JsonData, after JsonData) {
 						s.NotContains(before.Data, "456.789")
 						s.Contains(after.Data, "456.789")
@@ -2538,9 +2577,7 @@ func Benchmark_DB(b *testing.B) {
 	query := NewTestQueryBuilder().Postgres("", false)
 	query.CreateTable(TestTableAuthors)
 
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_, err := query.DB().Table("authors").Insert(Author{
 			BookID: 1,
 			Name:   "benchmark",

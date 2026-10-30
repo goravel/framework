@@ -18,7 +18,6 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation/json"
 	"github.com/goravel/framework/support/carbon"
-	"github.com/goravel/framework/support/convert"
 )
 
 func TestBind_Rule(t *testing.T) {
@@ -756,7 +755,7 @@ func TestCastValue(t *testing.T) {
 		PointerTimestampMilli: carbon.NewTimestampMilli(carbon.FromTimestampMilli(timestampMilli)),
 		PointerTimestampMicro: carbon.NewTimestampMicro(carbon.FromTimestampMicro(timestampMicro)),
 		PointerTimestampNano:  carbon.NewTimestampNano(carbon.FromTimestampNano(timestampNano)),
-		PointerTime:           convert.Pointer(carbon.NewDateTime(carbon.Parse(dateTime)).StdTime()),
+		PointerTime:           new(carbon.NewDateTime(carbon.Parse(dateTime)).StdTime()),
 		Carbon:                *carbon.Parse(dateTime),
 		DateTime:              *carbon.NewDateTime(carbon.Parse(dateTime)),
 		DateTimeMilli:         *carbon.NewDateTimeMilli(carbon.Parse(dateTime)),
@@ -814,7 +813,7 @@ func TestCastValue(t *testing.T) {
 					PointerTimestampMilli: carbon.NewTimestampMilli(carbon.Parse(dateTime)),
 					PointerTimestampMicro: carbon.NewTimestampMicro(carbon.Parse(dateTime)),
 					PointerTimestampNano:  carbon.NewTimestampNano(carbon.Parse(dateTime)),
-					PointerTime:           convert.Pointer(carbon.NewDateTime(carbon.Parse(dateTime)).StdTime()),
+					PointerTime:           new(carbon.NewDateTime(carbon.Parse(dateTime)).StdTime()),
 					Carbon:                *carbon.Parse(dateTime),
 					DateTime:              *carbon.NewDateTime(carbon.Parse(dateTime)),
 					DateTimeMilli:         *carbon.NewDateTimeMilli(carbon.Parse(dateTime)),
