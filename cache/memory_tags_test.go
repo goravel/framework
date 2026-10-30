@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	contractscache "github.com/goravel/framework/contracts/cache"
-	frameworkerrors "github.com/goravel/framework/errors"
 )
 
 type MemoryTagsTestSuite struct {
@@ -29,17 +28,42 @@ func (s *MemoryTagsTestSuite) SetupTest() {
 	s.memory = memory
 }
 
-func (s *MemoryTagsTestSuite) tags(names ...string) contractscache.TaggedCache {
-	tagged, err := s.memory.Tags(names...)
-	s.Require().NoError(err)
-
-	return tagged
+func (s *MemoryTagsTestSuite) tags(names ...string) contractscache.Repository {
+	return s.memory.Tags(names...)
 }
 
-func (s *MemoryTagsTestSuite) TestTagsRequired() {
-	tagged, err := s.memory.Tags()
-	s.Nil(tagged)
-	s.ErrorIs(err, frameworkerrors.CacheTagsRequired)
+func (s *MemoryTagsTestSuite) TestWithoutTags() {
+	s.True(s.tags().Forever("key", "value"))
+	s.Equal("value", s.tags().Get("key"))
+	s.Nil(s.memory.Get("key"))
+
+	// No tag indexes the item, so a flush of the empty set removes nothing.
+	s.True(s.tags().Flush())
+	s.Equal("value", s.tags().Get("key"))
+}
+
+func (s *MemoryTagsTestSuite) TestTagNamesDoNotAlias() {
+	s.True(s.tags("a|b").Forever("key", "joined"))
+	s.True(s.tags("a", "b").Forever("key", "split"))
+
+	s.Equal("joined", s.tags("a|b").Get("key"))
+	s.Equal("split", s.tags("a", "b").Get("key"))
+
+	s.True(s.tags("a").Flush())
+	s.Equal("joined", s.tags("a|b").Get("key"))
+	s.Nil(s.tags("a", "b").Get("key"))
+}
+
+func (s *MemoryTagsTestSuite) TestTagNamesAreCopied() {
+	names := []string{"a", "b"}
+	tagged := s.memory.Tags(names...)
+	names[0] = "c"
+
+	s.True(tagged.Forever("key", "value"))
+	s.Equal("value", s.tags("a", "b").Get("key"))
+
+	s.True(s.tags("a").Flush())
+	s.Nil(tagged.Get("key"))
 }
 
 func (s *MemoryTagsTestSuite) TestPutAndGet() {
@@ -204,17 +228,37 @@ func (s *MemoryTagsTestSuite) TestPruneTags() {
 	s.Len(s.memory.tags["c"], 1)
 }
 
+func (s *MemoryTagsTestSuite) TestSweepPrunesTags() {
+	s.NoError(s.tags("a").Put("expired", "value", -time.Second))
+	s.True(s.tags("b").Forever("kept", "value"))
+
+	// The next write is the first one past the sweep interval.
+	s.memory.lastSweep.Store(0)
+	s.NoError(s.memory.Put("trigger", "value", NoExpiration))
+
+	s.Eventually(func() bool {
+		s.memory.tagsMu.Lock()
+		defer s.memory.tagsMu.Unlock()
+
+		_, exist := s.memory.tags["a"]
+		return !exist
+	}, time.Second, 10*time.Millisecond, "the tag index was not pruned")
+	s.memory.tagsMu.Lock()
+	defer s.memory.tagsMu.Unlock()
+	s.Len(s.memory.tags["b"], 1)
+}
+
 func (s *MemoryTagsTestSuite) TestConcurrentPutAndFlush() {
 	var wg sync.WaitGroup
 	for i := range 100 {
 		wg.Add(2)
 		go func() {
 			defer wg.Done()
-			s.NoError(s.tags("a", "b").Put("key", i, time.Minute))
+			assert.NoError(s.T(), s.tags("a", "b").Put("key", i, time.Minute))
 		}()
 		go func() {
 			defer wg.Done()
-			s.True(s.tags("b").Flush())
+			assert.True(s.T(), s.tags("b").Flush())
 		}()
 	}
 	wg.Wait()
@@ -228,20 +272,12 @@ func TestApplicationTags(t *testing.T) {
 	memory, err := getMemoryStore()
 	require.NoError(t, err)
 
-	app := &Application{Driver: memory, store: "memory"}
-	tagged, err := app.Tags("a")
-	require.NoError(t, err)
+	app := &Application{Driver: memory}
+	tagged := app.Tags("a")
 	assert.NoError(t, tagged.Put("key", "value", time.Minute))
 	assert.Equal(t, "value", tagged.Get("key"))
+	assert.Equal(t, "value", memory.Tags("a").Get("key"))
 
-	app = &Application{Driver: driverWithoutTags{Driver: memory}, store: "custom"}
-	tagged, err = app.Tags("a")
-	assert.Nil(t, tagged)
-	assert.ErrorIs(t, err, frameworkerrors.CacheTagsNotSupported)
-	assert.EqualError(t, err, "cache store custom doesn't support tags")
-}
-
-// driverWithoutTags hides Tags to stand for a third-party driver that doesn't support tags.
-type driverWithoutTags struct {
-	contractscache.Driver
+	assert.True(t, app.Tags("a").Flush())
+	assert.Nil(t, tagged.Get("key"))
 }

@@ -3,30 +3,22 @@ package cache
 import (
 	"crypto/sha1"
 	"encoding/hex"
-	"strings"
+	"slices"
+	"strconv"
 	"time"
 
-	"github.com/spf13/cast"
-
 	contractscache "github.com/goravel/framework/contracts/cache"
-	"github.com/goravel/framework/errors"
 )
-
-var _ contractscache.DriverWithTags = (*Memory)(nil)
 
 // Tags begins a tagged cache operation. Like Laravel, an item is namespaced by
 // its tags, so it is only reachable through the same tags in the same order,
 // while flushing any one of the tags removes it.
-func (r *Memory) Tags(names ...string) (contractscache.TaggedCache, error) {
-	if len(names) == 0 {
-		return nil, errors.CacheTagsRequired
-	}
-
-	return &MemoryTaggedCache{
+func (r *Memory) Tags(names ...string) contractscache.Repository {
+	return &memoryTaggedCache{
 		memory:    r,
-		names:     names,
+		names:     slices.Clone(names),
 		namespace: tagNamespace(names),
-	}, nil
+	}
 }
 
 // pruneTags drops keys whose item is gone (expired or removed) from the tag index.
@@ -46,21 +38,26 @@ func (r *Memory) pruneTags() {
 	}
 }
 
-// tagNamespace builds the key namespace of a tag set, it matches the one Laravel uses.
+// tagNamespace builds the key namespace of a tag set. Every name is prefixed by
+// its length, so no two different tag lists hash the same input.
 func tagNamespace(names []string) string {
-	sum := sha1.Sum([]byte(strings.Join(names, "|")))
+	hash := sha1.New()
+	for _, name := range names {
+		hash.Write([]byte(strconv.Itoa(len(name)) + ":" + name))
+	}
 
-	return hex.EncodeToString(sum[:])
+	return hex.EncodeToString(hash.Sum(nil))
 }
 
-type MemoryTaggedCache struct {
+// memoryTaggedCache is the tagged view of Memory returned by Tags.
+type memoryTaggedCache struct {
 	memory    *Memory
 	names     []string
 	namespace string
 }
 
 // Add an item in the cache if the key does not exist.
-func (r *MemoryTaggedCache) Add(key string, value any, t time.Duration) bool {
+func (r *memoryTaggedCache) Add(key string, value any, t time.Duration) bool {
 	r.memory.tagsMu.Lock()
 	defer r.memory.tagsMu.Unlock()
 
@@ -74,7 +71,7 @@ func (r *MemoryTaggedCache) Add(key string, value any, t time.Duration) bool {
 }
 
 // Decrement decrements the value of an item in the cache.
-func (r *MemoryTaggedCache) Decrement(key string, value ...int64) (int64, error) {
+func (r *memoryTaggedCache) Decrement(key string, value ...int64) (int64, error) {
 	r.memory.tagsMu.Lock()
 	defer r.memory.tagsMu.Unlock()
 
@@ -85,12 +82,12 @@ func (r *MemoryTaggedCache) Decrement(key string, value ...int64) (int64, error)
 }
 
 // Forever add an item in the cache indefinitely.
-func (r *MemoryTaggedCache) Forever(key string, value any) bool {
+func (r *memoryTaggedCache) Forever(key string, value any) bool {
 	return r.Put(key, value, NoExpiration) == nil
 }
 
 // Forget removes an item from the cache.
-func (r *MemoryTaggedCache) Forget(key string) bool {
+func (r *memoryTaggedCache) Forget(key string) bool {
 	r.memory.tagsMu.Lock()
 	defer r.memory.tagsMu.Unlock()
 
@@ -103,7 +100,7 @@ func (r *MemoryTaggedCache) Forget(key string) bool {
 }
 
 // Flush removes every item stored under any of the tags.
-func (r *MemoryTaggedCache) Flush() bool {
+func (r *memoryTaggedCache) Flush() bool {
 	r.memory.tagsMu.Lock()
 	defer r.memory.tagsMu.Unlock()
 
@@ -118,53 +115,37 @@ func (r *MemoryTaggedCache) Flush() bool {
 }
 
 // Get retrieve an item from the cache by key.
-func (r *MemoryTaggedCache) Get(key string, def ...any) any {
+func (r *memoryTaggedCache) Get(key string, def ...any) any {
 	return r.memory.Get(r.itemKey(key), def...)
 }
 
 // GetBool retrieves an item from the cache by key as a boolean.
-func (r *MemoryTaggedCache) GetBool(key string, def ...bool) bool {
-	if len(def) == 0 {
-		def = append(def, false)
-	}
-
-	return cast.ToBool(r.Get(key, def[0]))
+func (r *memoryTaggedCache) GetBool(key string, def ...bool) bool {
+	return r.memory.GetBool(r.itemKey(key), def...)
 }
 
 // GetInt retrieves an item from the cache by key as an integer.
-func (r *MemoryTaggedCache) GetInt(key string, def ...int) int {
-	if len(def) == 0 {
-		def = append(def, 0)
-	}
-
-	return cast.ToInt(r.Get(key, def[0]))
+func (r *memoryTaggedCache) GetInt(key string, def ...int) int {
+	return r.memory.GetInt(r.itemKey(key), def...)
 }
 
 // GetInt64 retrieves an item from the cache by key as a 64-bit integer.
-func (r *MemoryTaggedCache) GetInt64(key string, def ...int64) int64 {
-	if len(def) == 0 {
-		def = append(def, 0)
-	}
-
-	return cast.ToInt64(r.Get(key, def[0]))
+func (r *memoryTaggedCache) GetInt64(key string, def ...int64) int64 {
+	return r.memory.GetInt64(r.itemKey(key), def...)
 }
 
 // GetString retrieves an item from the cache by key as a string.
-func (r *MemoryTaggedCache) GetString(key string, def ...string) string {
-	if len(def) == 0 {
-		def = append(def, "")
-	}
-
-	return cast.ToString(r.Get(key, def[0]))
+func (r *memoryTaggedCache) GetString(key string, def ...string) string {
+	return r.memory.GetString(r.itemKey(key), def...)
 }
 
 // Has check an item exists in the cache.
-func (r *MemoryTaggedCache) Has(key string) bool {
+func (r *memoryTaggedCache) Has(key string) bool {
 	return r.memory.Has(r.itemKey(key))
 }
 
 // Increment increments the value of an item in the cache.
-func (r *MemoryTaggedCache) Increment(key string, value ...int64) (int64, error) {
+func (r *memoryTaggedCache) Increment(key string, value ...int64) (int64, error) {
 	r.memory.tagsMu.Lock()
 	defer r.memory.tagsMu.Unlock()
 
@@ -175,7 +156,7 @@ func (r *MemoryTaggedCache) Increment(key string, value ...int64) (int64, error)
 }
 
 // Put an item in the cache for a given time.
-func (r *MemoryTaggedCache) Put(key string, value any, t time.Duration) error {
+func (r *memoryTaggedCache) Put(key string, value any, t time.Duration) error {
 	r.memory.tagsMu.Lock()
 	defer r.memory.tagsMu.Unlock()
 
@@ -189,7 +170,7 @@ func (r *MemoryTaggedCache) Put(key string, value any, t time.Duration) error {
 }
 
 // Pull retrieve an item from the cache and delete it.
-func (r *MemoryTaggedCache) Pull(key string, def ...any) any {
+func (r *memoryTaggedCache) Pull(key string, def ...any) any {
 	res := r.Get(key, def...)
 	r.Forget(key)
 
@@ -197,7 +178,7 @@ func (r *MemoryTaggedCache) Pull(key string, def ...any) any {
 }
 
 // Remember gets an item from the cache, or execute the given Closure and store the result.
-func (r *MemoryTaggedCache) Remember(key string, ttl time.Duration, callback func() (any, error)) (any, error) {
+func (r *memoryTaggedCache) Remember(key string, ttl time.Duration, callback func() (any, error)) (any, error) {
 	if val := r.Get(key); val != nil {
 		return val, nil
 	}
@@ -215,16 +196,16 @@ func (r *MemoryTaggedCache) Remember(key string, ttl time.Duration, callback fun
 }
 
 // RememberForever get an item from the cache, or execute the given Closure and store the result forever.
-func (r *MemoryTaggedCache) RememberForever(key string, callback func() (any, error)) (any, error) {
+func (r *memoryTaggedCache) RememberForever(key string, callback func() (any, error)) (any, error) {
 	return r.Remember(key, NoExpiration, callback)
 }
 
-func (r *MemoryTaggedCache) itemKey(key string) string {
+func (r *memoryTaggedCache) itemKey(key string) string {
 	return r.namespace + ":" + key
 }
 
 // register adds the item key to the index of every tag, the caller must hold tagsMu.
-func (r *MemoryTaggedCache) register(itemKey string) {
+func (r *memoryTaggedCache) register(itemKey string) {
 	for _, name := range r.names {
 		keys, exist := r.memory.tags[name]
 		if !exist {

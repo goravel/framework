@@ -1099,7 +1099,7 @@ func (_c *Cache_Store_Call) RunAndReturn(run func(string) cache.Driver) *Cache_S
 }
 
 // Tags provides a mock function with given fields: names
-func (_m *Cache) Tags(names ...string) (cache.TaggedCache, error) {
+func (_m *Cache) Tags(names ...string) cache.Repository {
 	_va := make([]interface{}, len(names))
 	for _i := range names {
 		_va[_i] = names[_i]
@@ -1112,26 +1112,16 @@ func (_m *Cache) Tags(names ...string) (cache.TaggedCache, error) {
 		panic("no return value specified for Tags")
 	}
 
-	var r0 cache.TaggedCache
-	var r1 error
-	if rf, ok := ret.Get(0).(func(...string) (cache.TaggedCache, error)); ok {
-		return rf(names...)
-	}
-	if rf, ok := ret.Get(0).(func(...string) cache.TaggedCache); ok {
+	var r0 cache.Repository
+	if rf, ok := ret.Get(0).(func(...string) cache.Repository); ok {
 		r0 = rf(names...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(cache.TaggedCache)
+			r0 = ret.Get(0).(cache.Repository)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(...string) error); ok {
-		r1 = rf(names...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // Cache_Tags_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Tags'
@@ -1159,12 +1149,12 @@ func (_c *Cache_Tags_Call) Run(run func(names ...string)) *Cache_Tags_Call {
 	return _c
 }
 
-func (_c *Cache_Tags_Call) Return(_a0 cache.TaggedCache, _a1 error) *Cache_Tags_Call {
-	_c.Call.Return(_a0, _a1)
+func (_c *Cache_Tags_Call) Return(_a0 cache.Repository) *Cache_Tags_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Cache_Tags_Call) RunAndReturn(run func(...string) (cache.TaggedCache, error)) *Cache_Tags_Call {
+func (_c *Cache_Tags_Call) RunAndReturn(run func(...string) cache.Repository) *Cache_Tags_Call {
 	_c.Call.Return(run)
 	return _c
 }
