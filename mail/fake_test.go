@@ -134,8 +134,8 @@ func (s *FakeTestSuite) TestQueue() {
 }
 
 func (s *FakeTestSuite) TestFilters() {
-	s.mockConfig.EXPECT().GetString("mail.from.address").Return("noreply@goravel.dev")
-	s.mockConfig.EXPECT().GetString("mail.from.name").Return("Goravel")
+	s.mockConfig.EXPECT().GetString("mail.from.address").Return("noreply@goravel.dev").Times(3)
+	s.mockConfig.EXPECT().GetString("mail.from.name").Return("Goravel").Times(3)
 
 	fake := s.app.Fake()
 	for _, subject := range []string{"a", "b", "a"} {
@@ -146,11 +146,56 @@ func (s *FakeTestSuite) TestFilters() {
 	s.Len(fake.Sent(nil), 3)
 	s.Len(fake.Sent(func(message mail.Message) bool { return message.Subject == "a" }), 2)
 	s.Empty(fake.Queued(func(message mail.Message) bool { return true }))
+
+	// Every filter applies.
+	isA := func(message mail.Message) bool { return message.Subject == "a" }
+	isB := func(message mail.Message) bool { return message.Subject == "b" }
+	s.Len(fake.Sent(isA, nil), 2)
+	s.Empty(fake.Sent(isA, isB))
+
+	// A filter may call the fake again: it runs without the lock.
+	s.Len(fake.Sent(func(message mail.Message) bool {
+		return fake.AssertSentCount(3) && message.Subject == "b"
+	}), 1)
+}
+
+func (s *FakeTestSuite) TestRecordsAreCopies() {
+	s.mockConfig.EXPECT().GetString("mail.from.address").Return("noreply@goravel.dev").Once()
+	s.mockConfig.EXPECT().GetString("mail.from.name").Return("Goravel").Once()
+
+	to := []string{"ana@example.com"}
+	headers := map[string]string{"X-Tag": "welcome"}
+
+	fake := s.app.Fake()
+	s.NoError(s.app.To(to).Headers(headers).Subject("Welcome").Send())
+
+	to[0] = "changed@example.com"
+	headers["X-Tag"] = "changed"
+	sent := fake.Sent()
+	s.Require().Len(sent, 1)
+	sent[0].To[0] = "changed@example.com"
+	sent[0].Headers["X-Tag"] = "changed"
+
+	s.Equal([]string{"ana@example.com"}, fake.Sent()[0].To)
+	s.Equal(map[string]string{"X-Tag": "welcome"}, fake.Sent()[0].Headers)
+}
+
+func (s *FakeTestSuite) TestFakeAgainKeepsTheRecords() {
+	s.mockConfig.EXPECT().GetString("mail.from.address").Return("noreply@goravel.dev").Once()
+	s.mockConfig.EXPECT().GetString("mail.from.name").Return("Goravel").Once()
+
+	fake := s.app.Fake()
+	s.NoError(s.app.Subject("one").Send())
+
+	// A helper faking again must not hide the mail already sent.
+	s.Same(fake, s.app.Fake())
+	s.False(fake.AssertNothingSent())
+	s.True(fake.AssertSentCount(1))
 }
 
 func (s *FakeTestSuite) TestResetAndFakeAgain() {
-	s.mockConfig.EXPECT().GetString("mail.from.address").Return("")
-	s.mockConfig.EXPECT().GetString("mail.from.name").Return("")
+	s.mockConfig.EXPECT().GetString("mail.from.address").Return("").Twice()
+	s.mockConfig.EXPECT().GetString("mail.from.name").Return("").Twice()
 
 	fake := s.app.Fake()
 	s.NoError(s.app.Subject("one").Send())
@@ -168,8 +213,8 @@ func (s *FakeTestSuite) TestResetAndFakeAgain() {
 }
 
 func (s *FakeTestSuite) TestConcurrentSends() {
-	s.mockConfig.EXPECT().GetString("mail.from.address").Return("")
-	s.mockConfig.EXPECT().GetString("mail.from.name").Return("")
+	s.mockConfig.EXPECT().GetString("mail.from.address").Return("").Times(50)
+	s.mockConfig.EXPECT().GetString("mail.from.name").Return("").Times(50)
 
 	fake := s.app.Fake()
 
@@ -198,13 +243,14 @@ func TestServiceProviderSharesTheFake(t *testing.T) {
 	(&ServiceProvider{}).Register(mockApp)
 
 	mockConfig := mocksconfig.NewConfig(t)
-	mockConfig.EXPECT().GetString("mail.template.default", "html").Return("html")
+	mockConfig.EXPECT().GetString("mail.template.default", "html").Return("html").Times(3)
 	mockConfig.EXPECT().GetString("mail.template.engines.html.driver", "html").Return("html").Maybe()
 	mockConfig.EXPECT().GetString("mail.template.engines.html.path", "resources/views/mail").Return("resources/views/mail").Maybe()
-	mockConfig.EXPECT().GetString("mail.from.address").Return("noreply@goravel.dev")
-	mockConfig.EXPECT().GetString("mail.from.name").Return("Goravel")
-	mockApp.EXPECT().MakeConfig().Return(mockConfig).Twice()
-	mockApp.EXPECT().MakeQueue().Return(mocksqueue.NewQueue(t)).Twice()
+	mockConfig.EXPECT().GetString("mail.from.address").Return("noreply@goravel.dev").Once()
+	mockConfig.EXPECT().GetString("mail.from.name").Return("Goravel").Once()
+	mockApp.EXPECT().MakeConfig().Return(mockConfig).Times(3)
+	mockQueue := mocksqueue.NewQueue(t)
+	mockApp.EXPECT().MakeQueue().Return(mockQueue).Times(3)
 
 	first, err := resolve(mockApp)
 	assert.NoError(t, err)
@@ -218,7 +264,18 @@ func TestServiceProviderSharesTheFake(t *testing.T) {
 	assert.True(t, fake.AssertSent(func(message mail.Message) bool {
 		return message.Subject == "Shared" && message.HasTo("ana@example.com")
 	}))
+
+	// Reset stops faking for the Applications resolved afterwards too: the
+	// mail is dispatched to the queue again and nothing is recorded.
 	fake.Reset()
+	mockPendingJob := mocksqueue.NewPendingJob(t)
+	mockQueue.EXPECT().Job(mock.Anything, mock.Anything).Return(mockPendingJob).Once()
+	mockPendingJob.EXPECT().Dispatch().Return(nil).Once()
+
+	third, err := resolve(mockApp)
+	assert.NoError(t, err)
+	assert.NoError(t, third.(mail.Mail).To([]string{"ana@example.com"}).From(mail.Address{Address: "team@goravel.dev"}).Subject("After").Queue())
+	assert.True(t, fake.AssertNothingOutgoing())
 }
 
 func TestMessageHelpers(t *testing.T) {
@@ -231,6 +288,13 @@ func TestMessageHelpers(t *testing.T) {
 
 	assert.True(t, message.HasTo("ana@example.com"))
 	assert.False(t, message.HasTo("cc@example.com"))
+
+	// Recipients with a display name, as recorded for mail notifications.
+	named := mail.Message{To: []string{"Ana <Ana@Example.com>"}, Cc: []string{`"Doe, John" <john@example.com>`}}
+	assert.True(t, named.HasTo("ana@example.com"))
+	assert.True(t, named.HasTo("Someone <ana@example.com>"))
+	assert.False(t, named.HasTo("Ana"))
+	assert.True(t, named.HasCc("john@example.com"))
 	assert.True(t, message.HasCc("CC@example.com"))
 	assert.True(t, message.HasBcc("bcc@example.com"))
 	assert.True(t, message.HasAttachment("storage/invoice.pdf"))
@@ -238,19 +302,19 @@ func TestMessageHelpers(t *testing.T) {
 }
 
 func (s *FakeTestSuite) TestResetDeliversAgain() {
-	s.mockConfig.EXPECT().GetString("mail.from.address").Return("noreply@goravel.dev")
-	s.mockConfig.EXPECT().GetString("mail.from.name").Return("Goravel")
-	s.mockConfig.EXPECT().GetString("mail.host").Return("127.0.0.1")
-	s.mockConfig.EXPECT().GetInt("mail.port").Return(1)
-	s.mockConfig.EXPECT().GetString("mail.username").Return("")
-	s.mockConfig.EXPECT().GetString("mail.password").Return("")
+	mockQueue := mocksqueue.NewQueue(s.T())
+	mockPendingJob := mocksqueue.NewPendingJob(s.T())
+	s.app.queue = mockQueue
 
 	fake := s.app.Fake()
 	fake.Reset()
 
-	// Not faking anymore: the mail goes to SMTP, which refuses it here.
-	s.Error(s.app.To([]string{"ana@example.com"}).Subject("Real").Send())
-	s.True(fake.AssertNothingSent())
+	// Not faking anymore: the mail is dispatched to the queue for delivery.
+	mockQueue.EXPECT().Job(mock.Anything, mock.Anything).Return(mockPendingJob).Once()
+	mockPendingJob.EXPECT().Dispatch().Return(nil).Once()
+
+	s.NoError(s.app.To([]string{"ana@example.com"}).From(mail.Address{Address: "team@goravel.dev"}).Subject("Real").Queue())
+	s.True(fake.AssertNothingOutgoing())
 }
 
 func TestFakeOnAnApplicationWithoutState(t *testing.T) {

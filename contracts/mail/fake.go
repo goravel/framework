@@ -1,6 +1,9 @@
 package mail
 
-import "strings"
+import (
+	netmail "net/mail"
+	"strings"
+)
 
 type Fake interface {
 	// AssertNotQueued reports whether no queued mail matches the assertion.
@@ -21,11 +24,11 @@ type Fake interface {
 	AssertSent(assertion func(message Message) bool) bool
 	// AssertSentCount reports whether exactly count mails were sent.
 	AssertSentCount(count int) bool
-	// Queued returns the queued mails, only those matching the filter if given.
+	// Queued returns the queued mails, only those matching every given filter.
 	Queued(filter ...func(message Message) bool) []Message
 	// Reset stops faking: mails are delivered again and the records are cleared.
 	Reset()
-	// Sent returns the sent mails, only those matching the filter if given.
+	// Sent returns the sent mails, only those matching every given filter.
 	Sent(filter ...func(message Message) bool) []Message
 }
 
@@ -49,7 +52,9 @@ type Message struct {
 	Queue *Queue
 }
 
-// HasTo reports whether the address is one of the recipients.
+// HasTo reports whether the address is one of the recipients. Addresses are
+// compared case-insensitively and a display name is ignored, so
+// "ana@example.com" matches a recipient recorded as "Ana <ana@example.com>".
 func (r Message) HasTo(address string) bool {
 	return containsAddress(r.To, address)
 }
@@ -76,11 +81,22 @@ func (r Message) HasAttachment(file string) bool {
 }
 
 func containsAddress(addresses []string, address string) bool {
+	address = bareAddress(address)
 	for _, item := range addresses {
-		if strings.EqualFold(strings.TrimSpace(item), strings.TrimSpace(address)) {
+		if strings.EqualFold(bareAddress(item), address) {
 			return true
 		}
 	}
 
 	return false
+}
+
+// bareAddress returns the address without its display name, falling back to
+// the trimmed input when it is not a valid RFC 5322 address.
+func bareAddress(address string) string {
+	if parsed, err := netmail.ParseAddress(address); err == nil {
+		return parsed.Address
+	}
+
+	return strings.TrimSpace(address)
 }

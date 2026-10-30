@@ -48,7 +48,6 @@ func NewApplication(config config.Config, queue contractsqueue.Queue) (*Applicat
 		config:   config,
 		queue:    queue,
 		template: templateEngine,
-		fake:     NewFake(),
 	}, nil
 }
 
@@ -194,7 +193,12 @@ func (r *Application) Send(mailable ...mail.Mailable) error {
 }
 
 // Fake records the mails sent or queued through the Mail facade instead of
-// delivering them, until Reset is called on the returned Fake.
+// delivering them, until Reset is called on the returned Fake. Calling it
+// again while faking keeps the mails recorded so far.
+//
+// The service provider gives every Application it resolves the same Fake;
+// an Application built directly with NewApplication gets its own on the
+// first call.
 func (r *Application) Fake() mail.Fake {
 	if r.fake == nil {
 		r.fake = NewFake()
@@ -211,19 +215,12 @@ func (r *Application) message(mailable []mail.Mailable) mail.Message {
 		Subject:     r.params.Subject,
 		Html:        r.params.HTML,
 		Text:        r.params.Text,
-		From:        mail.Address{Address: r.params.FromAddress, Name: r.params.FromName},
+		From:        sender(r.config, r.params),
 		To:          r.params.To,
 		Cc:          r.params.CC,
 		Bcc:         r.params.BCC,
 		Attachments: r.params.Attachments,
 		Headers:     r.params.Headers,
-	}
-
-	if message.From.Address == "" && r.config != nil {
-		message.From = mail.Address{
-			Address: r.config.GetString("mail.from.address"),
-			Name:    r.config.GetString("mail.from.name"),
-		}
 	}
 
 	if len(mailable) > 0 {
@@ -322,14 +319,24 @@ func (r *Application) renderViewTemplate() error {
 	return nil
 }
 
-func SendMail(config config.Config, params Params) error {
-	e := NewEmail()
-	fromAddress, fromName := params.FromAddress, params.FromName
-	if fromAddress == "" {
-		fromAddress, fromName = config.GetString("mail.from.address"), config.GetString("mail.from.name")
+// sender returns the sender of the mail, falling back to mail.from.* when
+// none was set.
+func sender(config config.Config, params Params) mail.Address {
+	if params.FromAddress != "" || config == nil {
+		return mail.Address{Address: params.FromAddress, Name: params.FromName}
 	}
 
-	e.From = fmt.Sprintf("%s <%s>", fromName, fromAddress)
+	return mail.Address{
+		Address: config.GetString("mail.from.address"),
+		Name:    config.GetString("mail.from.name"),
+	}
+}
+
+func SendMail(config config.Config, params Params) error {
+	e := NewEmail()
+	from := sender(config, params)
+
+	e.From = fmt.Sprintf("%s <%s>", from.Name, from.Address)
 	e.To = params.To
 	if len(params.BCC) > 0 {
 		e.Bcc = params.BCC

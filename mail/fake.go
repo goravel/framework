@@ -1,8 +1,10 @@
 package mail
 
 import (
+	"maps"
 	"slices"
 	"sync"
+	"sync/atomic"
 
 	"github.com/goravel/framework/contracts/mail"
 )
@@ -14,7 +16,7 @@ var _ mail.Fake = &Fake{}
 // Mail facade resolves a new Application on each call.
 type Fake struct {
 	mu      sync.RWMutex
-	enabled bool
+	enabled atomic.Bool
 	sent    []mail.Message
 	queued  []mail.Message
 }
@@ -61,49 +63,44 @@ func (r *Fake) AssertSentCount(count int) bool {
 
 func (r *Fake) Queued(filter ...func(message mail.Message) bool) []mail.Message {
 	r.mu.RLock()
-	defer r.mu.RUnlock()
+	messages := slices.Clone(r.queued)
+	r.mu.RUnlock()
 
-	return filterMessages(r.queued, filter)
+	// Filters run without the lock, so they may call the fake again.
+	return filterMessages(messages, filter)
 }
 
 func (r *Fake) Reset() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.enabled = false
+	r.enabled.Store(false)
 	r.sent = nil
 	r.queued = nil
 }
 
 func (r *Fake) Sent(filter ...func(message mail.Message) bool) []mail.Message {
 	r.mu.RLock()
-	defer r.mu.RUnlock()
+	messages := slices.Clone(r.sent)
+	r.mu.RUnlock()
 
-	return filterMessages(r.sent, filter)
+	// Filters run without the lock, so they may call the fake again.
+	return filterMessages(messages, filter)
 }
 
-// enable starts faking with empty records.
+// enable starts faking. It is idempotent: while faking, the records are kept,
+// so calling Fake again does not hide mails that were already recorded.
 func (r *Fake) enable() {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	r.enabled = true
-	r.sent = nil
-	r.queued = nil
+	r.enabled.Store(true)
 }
 
 func (r *Fake) isEnabled() bool {
-	if r == nil {
-		return false
-	}
-
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	return r.enabled
+	return r != nil && r.enabled.Load()
 }
 
 func (r *Fake) recordSent(message mail.Message) {
+	message = cloneMessage(message)
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -111,19 +108,49 @@ func (r *Fake) recordSent(message mail.Message) {
 }
 
 func (r *Fake) recordQueued(message mail.Message) {
+	message = cloneMessage(message)
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	r.queued = append(r.queued, message)
 }
 
-func filterMessages(messages []mail.Message, filter []func(message mail.Message) bool) []mail.Message {
+// cloneMessage copies the slices and the map of the message, so the records
+// and the messages handed out never share them with the caller.
+func cloneMessage(message mail.Message) mail.Message {
+	message.To = slices.Clone(message.To)
+	message.Cc = slices.Clone(message.Cc)
+	message.Bcc = slices.Clone(message.Bcc)
+	message.Attachments = slices.Clone(message.Attachments)
+	message.Headers = maps.Clone(message.Headers)
+	if message.Queue != nil {
+		queue := *message.Queue
+		message.Queue = &queue
+	}
+
+	return message
+}
+
+// filterMessages returns copies of the messages matching every non-nil filter.
+func filterMessages(messages []mail.Message, filters []func(message mail.Message) bool) []mail.Message {
 	result := make([]mail.Message, 0, len(messages))
 	for _, message := range messages {
-		if len(filter) == 0 || filter[0] == nil || filter[0](message) {
+		message = cloneMessage(message)
+		if matchesAll(message, filters) {
 			result = append(result, message)
 		}
 	}
 
 	return slices.Clip(result)
+}
+
+func matchesAll(message mail.Message, filters []func(message mail.Message) bool) bool {
+	for _, filter := range filters {
+		if filter != nil && !filter(message) {
+			return false
+		}
+	}
+
+	return true
 }

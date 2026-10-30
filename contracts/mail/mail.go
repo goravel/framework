@@ -11,6 +11,7 @@ type Mail interface {
 	Content(content Content) Mail
 	// Fake records every mail sent or queued through the Mail facade,
 	// including mail notifications, instead of delivering it, until Reset.
+	// Calling it again while faking keeps the mails recorded so far.
 	Fake() Fake
 	// From set the sender of Mail.
 	From(address Address) Mail
