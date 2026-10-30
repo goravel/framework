@@ -43,10 +43,15 @@ func (r *ObserverMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *ObserverMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "observer", ctx.Argument(0), support.Config.Paths.Observers)
+	supportconsole.HandleEach(ctx, r.makeOne)
+
+	return nil
+}
+
+func (r *ObserverMakeCommand) makeOne(ctx console.Context, name string) error {
+	m, err := supportconsole.NewMake(ctx, "observer", name, support.Config.Paths.Observers)
 	if err != nil {
-		ctx.Error(err.Error())
-		return nil
+		return err
 	}
 
 	if err := file.PutContent(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
