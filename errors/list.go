@@ -240,6 +240,7 @@ var (
 	OrmQueryEmptyRelation          = New("relation can't be empty")
 	OrmQueryInvalidModel           = New("invalid model %s")
 	OrmQueryInvalidParameter       = New("parameter error, please check the document")
+	OrmQueryInvalidSubQuery        = New("invalid sub query, the callback must return a query created by the orm")
 	OrmQueryModelNotPointer        = New("model must be pointer")
 	OrmQuerySelectAndOmitsConflict = New("cannot set Select and Omits at the same time")
 	OrmRecordNotFound              = New("record not found")
