@@ -1422,12 +1422,13 @@ func (r *Query) addGlobalScopes() *Query {
 	return r.Scopes(globalScopes...).(*Query)
 }
 
-// withError returns a new query carrying the given error, it will be returned when the query is executed.
+// withError returns a copy of the query with err attached; executing the query returns err.
+// The error is kept on the conditions so it survives switching to the model's connection.
 func (r *Query) withError(err error) contractsorm.Query {
-	query := r.new(r.instance.Session(&gormio.Session{}))
-	_ = query.instance.AddError(err)
+	conditions := r.conditions
+	conditions.err = errors.Join(conditions.err, err)
 
-	return query
+	return r.setConditions(conditions)
 }
 
 func (r *Query) addOrder(order any) contractsorm.Query {
@@ -1455,6 +1456,7 @@ func (r *Query) buildConditions() *Query {
 
 	query = query.buildModel()
 	db := query.instance
+	db = query.buildError(db)
 	db = query.buildDistinct(db)
 	db = query.buildGroup(db)
 	db = query.buildHaving(db)
@@ -1482,6 +1484,18 @@ func (r *Query) buildDistinct(db *gormio.DB) *gormio.DB {
 
 	db = db.Distinct()
 	r.conditions.distinct = false
+
+	return db
+}
+
+func (r *Query) buildError(db *gormio.DB) *gormio.DB {
+	if r.conditions.err == nil {
+		return db
+	}
+
+	db = db.Session(&gormio.Session{})
+	_ = db.AddError(r.conditions.err)
+	r.conditions.err = nil
 
 	return db
 }
