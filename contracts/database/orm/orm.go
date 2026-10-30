@@ -51,6 +51,9 @@ type Query interface {
 	Count() (int64, error)
 	// Create inserts new record into the database.
 	Create(value any) error
+	// CrossJoin adds a CROSS JOIN to the query. Pass only the table expression, e.g. "roles", the
+	// "CROSS JOIN" keyword is added automatically. args only fill "?" placeholders in that expression.
+	CrossJoin(query string, args ...any) Query
 	// Cursor returns a cursor, use scan to iterate over the returned rows.
 	// If the iteration is stopped before the channel is closed (e.g. break), cancel the context passed to
 	// WithContext, otherwise the underlying goroutine, rows and connection are not released.
@@ -105,6 +108,9 @@ type Query interface {
 	Join(query string, args ...any) Query
 	// Latest orders the query by the given column descending, default column is "created_at".
 	Latest(column ...string) Query
+	// LeftJoin adds a LEFT JOIN to the query. Pass the table and its condition without the keyword,
+	// e.g. "posts ON posts.user_id = users.id", the "LEFT JOIN" keyword is added automatically.
+	LeftJoin(query string, args ...any) Query
 	// Limit the number of records returned.
 	Limit(limit int) Query
 	// Load loads a relationship for the model.
@@ -158,6 +164,9 @@ type Query interface {
 	Raw(sql string, values ...any) Query
 	// Restore restores a soft deleted model.
 	Restore(model ...any) (*db.Result, error)
+	// RightJoin adds a RIGHT JOIN to the query. Pass the table and its condition without the keyword,
+	// e.g. "posts ON posts.user_id = users.id", the "RIGHT JOIN" keyword is added automatically.
+	RightJoin(query string, args ...any) Query
 	// Rollback rolls back the changes in a transaction.
 	Rollback() error
 	// Save updates value in a database
