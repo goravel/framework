@@ -12,18 +12,17 @@ type Cache interface {
 	Store(name string) Driver
 }
 
-type Driver interface {
+// Repository holds the item operations shared by a cache store and a tagged view of it.
+type Repository interface {
 	// Add an item in the cache if the key does not exist.
 	Add(key string, value any, t time.Duration) bool
 	// Decrement decrements the value of an item in the cache.
 	Decrement(key string, value ...int64) (int64, error)
-	// Docker gets the docker driver.
-	Docker() (docker.CacheDriver, error)
 	// Forever add an item in the cache indefinitely.
 	Forever(key string, value any) bool
 	// Forget removes an item from the cache.
 	Forget(key string) bool
-	// Flush remove all items from the cache.
+	// Flush remove all items from the cache, a tagged view only removes the items stored under any of its tags.
 	Flush() bool
 	// Get retrieve an item from the cache by key.
 	Get(key string, def ...any) any
@@ -39,8 +38,6 @@ type Driver interface {
 	Has(key string) bool
 	// Increment increments the value of an item in the cache.
 	Increment(key string, value ...int64) (int64, error)
-	// Lock get a lock instance, the lock will not be expired if the second parameter is not set.
-	Lock(key string, t ...time.Duration) Lock
 	// Put Driver an item in the cache for a given time.
 	Put(key string, value any, t time.Duration) error
 	// Pull retrieve an item from the cache and delete it.
@@ -49,6 +46,17 @@ type Driver interface {
 	Remember(key string, ttl time.Duration, callback func() (any, error)) (any, error)
 	// RememberForever get an item from the cache, or execute the given Closure and store the result forever.
 	RememberForever(key string, callback func() (any, error)) (any, error)
+}
+
+type Driver interface {
+	Repository
+	// Docker gets the docker driver.
+	Docker() (docker.CacheDriver, error)
+	// Lock get a lock instance, the lock will not be expired if the second parameter is not set.
+	Lock(key string, t ...time.Duration) Lock
+	// Tags begins a tagged cache operation. Items are only reachable through the same tags
+	// in the same order, and flushing any one of the tags removes them.
+	Tags(names ...string) Repository
 	// WithContext returns a new Cache instance with the given context.
 	WithContext(ctx context.Context) Driver
 }
