@@ -3,6 +3,7 @@ package gorm
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	"maps"
 	"reflect"
@@ -13,6 +14,7 @@ import (
 	"github.com/spf13/cast"
 	gormio "gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"gorm.io/gorm/schema"
 
 	"github.com/goravel/framework/contracts/config"
 	contractsdatabase "github.com/goravel/framework/contracts/database"
@@ -226,6 +228,10 @@ func (r *Query) Cursor() chan contractsdb.Row {
 
 func (r *Query) DB() (*sql.DB, error) {
 	return r.instance.DB()
+}
+
+func (r *Query) Decrement(column string, value ...uint64) error {
+	return r.incrementOrDecrement(column, "-", value...)
 }
 
 func (r *Query) Delete(dests ...any) (*contractsdb.Result, error) {
@@ -484,6 +490,10 @@ func (r *Query) Having(query any, args ...any) contractsorm.Query {
 	}
 
 	return r.setConditions(conditions)
+}
+
+func (r *Query) Increment(column string, value ...uint64) error {
+	return r.incrementOrDecrement(column, "+", value...)
 }
 
 func (r *Query) Join(query string, args ...any) contractsorm.Query {
@@ -1857,6 +1867,162 @@ func (r *Query) getObserver(dest any) contractsorm.Observer {
 	}
 
 	return nil
+}
+
+// incrementOrDecrement runs "UPDATE ... SET column = column <operator> amount" through Update, so it shares
+// its behavior: global scopes and soft deletes are applied, updated_at is touched, and the
+// Saving/Updating/Updated/Saved events are fired when the query has a model with a primary key.
+// In that case the column of the model is also synced in memory, as Laravel does.
+func (r *Query) incrementOrDecrement(column, operator string, value ...uint64) error {
+	// Update compiles "->" keys into a JSON update of a marshaled value, which can't express column + amount.
+	if strings.Contains(column, "->") {
+		return errors.OrmQueryIncrementJsonColumn.Args(column)
+	}
+
+	amount := uint64(1)
+	if len(value) > 0 {
+		amount = value[0]
+	}
+
+	// Read the current value before updating: GORM assigns the update expression to the model,
+	// which resets sql.Scanner fields.
+	field, current := r.incrementField(column)
+	restore := r.snapshotField(column)
+
+	columnSQL, vars := columnCondition(column)
+	values := map[string]any{
+		column: gormio.Expr(fmt.Sprintf("%s %s ?", columnSQL, operator), append(vars, amount)...),
+	}
+	result, err := r.Update(values)
+	if err != nil {
+		restore()
+		return err
+	}
+
+	// Skip the in-memory sync if no row was updated, or if an event has replaced the expression with a concrete value.
+	if _, ok := values[column].(clause.Expr); !ok || result.RowsAffected == 0 || field == nil {
+		restore()
+		return nil
+	}
+
+	var next any
+	switch current.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		if operator == "+" {
+			next = current.Int() + int64(amount)
+		} else {
+			next = current.Int() - int64(amount)
+		}
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		if operator == "+" {
+			next = current.Uint() + amount
+		} else if current.Uint() >= amount {
+			next = current.Uint() - amount
+		} else {
+			// The database rejects or clamps the underflow, don't wrap around in memory.
+			restore()
+			return nil
+		}
+	case reflect.Float32, reflect.Float64:
+		if operator == "+" {
+			next = current.Float() + float64(amount)
+		} else {
+			next = current.Float() - float64(amount)
+		}
+	default:
+		restore()
+		return nil
+	}
+
+	_ = field.Set(r.ctx, reflect.ValueOf(r.conditions.model).Elem(), next)
+
+	return nil
+}
+
+// snapshotField copies the model field of the column and returns a function that puts the copy back.
+// GORM assigns the update expression to the model, and how a field (e.g. sql.Null*) handles that
+// depends on its type and the Go version, so a field that isn't synced is restored as it was.
+func (r *Query) snapshotField(column string) func() {
+	model := r.conditions.model
+	modelValue := reflect.ValueOf(model)
+	if model == nil || modelValue.Kind() != reflect.Pointer || modelValue.IsNil() || modelValue.Elem().Kind() != reflect.Struct {
+		return func() {}
+	}
+
+	statement := &gormio.Statement{DB: r.instance}
+	if err := statement.Parse(model); err != nil {
+		return func() {}
+	}
+
+	field := statement.Schema.LookUpField(column)
+	if field == nil {
+		return func() {}
+	}
+
+	fieldValue := field.ReflectValueOf(r.ctx, modelValue.Elem())
+	if !fieldValue.CanSet() {
+		return func() {}
+	}
+	original := reflect.New(fieldValue.Type()).Elem()
+	original.Set(fieldValue)
+
+	return func() {
+		fieldValue.Set(original)
+	}
+}
+
+// incrementField returns the schema field of the query model for the column and its current numeric value,
+// or a nil field when the model has no primary key, or the value is NULL or not numeric. The field is set
+// through GORM later, so pointers and sql.Null* types are supported.
+func (r *Query) incrementField(column string) (*schema.Field, reflect.Value) {
+	model := r.conditions.model
+	if model == nil || database.GetID(model) == nil {
+		return nil, reflect.Value{}
+	}
+
+	modelValue := reflect.ValueOf(model)
+	if modelValue.Kind() != reflect.Pointer || modelValue.Elem().Kind() != reflect.Struct {
+		return nil, reflect.Value{}
+	}
+
+	statement := &gormio.Statement{DB: r.instance}
+	if err := statement.Parse(model); err != nil {
+		return nil, reflect.Value{}
+	}
+
+	field := statement.Schema.LookUpField(column)
+	if field == nil || field.Serializer != nil {
+		return nil, reflect.Value{}
+	}
+
+	current, _ := field.ValueOf(r.ctx, modelValue.Elem())
+	currentValue := reflect.ValueOf(current)
+	if currentValue.Kind() == reflect.Pointer && currentValue.IsNil() {
+		return nil, reflect.Value{}
+	}
+	if valuer, ok := current.(driver.Valuer); ok {
+		var err error
+		if current, err = valuer.Value(); err != nil {
+			return nil, reflect.Value{}
+		}
+		currentValue = reflect.ValueOf(current)
+	}
+	for currentValue.Kind() == reflect.Pointer {
+		if currentValue.IsNil() {
+			return nil, reflect.Value{}
+		}
+		currentValue = currentValue.Elem()
+	}
+
+	switch currentValue.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+		reflect.Float32, reflect.Float64:
+		// Copy the value, the update may change the field it points to.
+		return field, reflect.ValueOf(currentValue.Interface())
+	default:
+		return nil, reflect.Value{}
+	}
 }
 
 func (r *Query) new(db *gormio.DB) *Query {
