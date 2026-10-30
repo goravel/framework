@@ -164,14 +164,37 @@ func (r *Query) Cursor() chan contractsdb.Row {
 	query := r.addGlobalScopes().buildConditions()
 	r.conditions.with = with
 
-	cursorChan := make(chan contractsdb.Row)
+	ctx := query.instance.Statement.Context
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	cursorChan := make(chan contractsdb.Row, 1)
+	// send blocks until the consumer receives the row or the query context is done. It allows the goroutine
+	// to exit (and release the rows and the connection) when the consumer stops ranging over the channel
+	// early (e.g. break) and cancels the context passed to WithContext.
+	send := func(row contractsdb.Row) bool {
+		select {
+		case cursorChan <- row:
+			return true
+		case <-ctx.Done():
+			return false
+		}
+	}
+
 	go func() {
 		var (
 			err  error
 			rows *sql.Rows
 		)
 		defer func() {
-			if err != nil {
+			// The buffer keeps the error for a consumer that is still reading after the context is done,
+			// replacing a row that it has not received yet.
+			if err != nil && !send(&Row{query: r, err: err}) {
+				select {
+				case <-cursorChan:
+				default:
+				}
 				cursorChan <- &Row{query: r, err: err}
 			}
 
@@ -188,7 +211,10 @@ func (r *Query) Cursor() chan contractsdb.Row {
 			if err = query.instance.ScanRows(rows, val); err != nil {
 				return
 			}
-			cursorChan <- &Row{query: r, row: val}
+			if !send(&Row{query: r, row: val}) {
+				err = ctx.Err()
+				return
+			}
 		}
 
 		if err = rows.Err(); err != nil {
@@ -242,6 +268,15 @@ func (r *Query) Distinct(columns ...string) contractsorm.Query {
 	query.conditions.distinct = true
 
 	return r.setConditions(query.conditions)
+}
+
+func (r *Query) DoesntExist() (bool, error) {
+	exists, err := r.Exists()
+	if err != nil {
+		return false, err
+	}
+
+	return !exists, nil
 }
 
 func (r *Query) Driver() string {
@@ -459,6 +494,15 @@ func (r *Query) Join(query string, args ...any) contractsorm.Query {
 	})
 
 	return r.setConditions(conditions)
+}
+
+func (r *Query) Latest(column ...string) contractsorm.Query {
+	col := "created_at"
+	if len(column) > 0 && column[0] != "" {
+		col = column[0]
+	}
+
+	return r.OrderByDesc(col)
 }
 
 func (r *Query) Limit(limit int) contractsorm.Query {
@@ -949,6 +993,16 @@ func (r *Query) UpdateOrCreate(dest any, attributes any, values any) error {
 	}
 
 	return r.Create(dest)
+}
+
+func (r *Query) Value(column string, dest any) error {
+	destValue := reflect.ValueOf(dest)
+	if destValue.Kind() != reflect.Pointer {
+		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
+	}
+
+	query := r.addGlobalScopes().buildConditions()
+	return query.instance.Select(column).Limit(1).Scan(dest).Error
 }
 
 func (r *Query) When(condition bool, callback func(query contractsorm.Query) contractsorm.Query, falseCallback ...func(query contractsorm.Query) contractsorm.Query) contractsorm.Query {

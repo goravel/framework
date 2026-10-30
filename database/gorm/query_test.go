@@ -2,8 +2,14 @@ package gorm
 
 import (
 	"context"
+	"database/sql"
+	"database/sql/driver"
+	"fmt"
+	"io"
 	"reflect"
+	"sync/atomic"
 	"testing"
+	"testing/synctest"
 
 	"github.com/stretchr/testify/assert"
 	gormio "gorm.io/gorm"
@@ -11,6 +17,7 @@ import (
 	"gorm.io/gorm/clause"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
+	contractsdb "github.com/goravel/framework/contracts/database/db"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/errors"
@@ -274,6 +281,50 @@ func TestAddWhere(t *testing.T) {
 		{Query: "name2", Args: []any{"test2"}},
 		{Query: "name3", Args: []any{"test3"}},
 	}, query1.conditions.where)
+}
+
+func TestCursor(t *testing.T) {
+	// The consumer receives one row and cancels the context. When it is canceled, the producer is blocked
+	// sending the third row, and the second one is in the buffer: the producer replaces it with the error.
+	cancelAfterFirstRow := func(t *testing.T) (chan contractsdb.Row, *cursorDriver, func()) {
+		ctx, cancel := context.WithCancel(context.Background())
+		query, fake, closeDB := newCursorQuery(t, ctx, 3)
+
+		ch := query.Cursor()
+		first := <-ch
+		assert.NoError(t, first.Err())
+
+		synctest.Wait()
+		cancel()
+		synctest.Wait()
+
+		return ch, fake, closeDB
+	}
+
+	t.Run("stop reading after canceling the context", func(t *testing.T) {
+		// synctest fails if the producer goroutine is still blocked when the test ends.
+		synctest.Test(t, func(t *testing.T) {
+			_, fake, closeDB := cancelAfterFirstRow(t)
+			defer closeDB()
+
+			assert.True(t, fake.closed.Load())
+		})
+	})
+
+	t.Run("keep reading after canceling the context", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			ch, fake, closeDB := cancelAfterFirstRow(t)
+			defer closeDB()
+
+			var errs []error
+			for row := range ch {
+				errs = append(errs, row.Err())
+			}
+
+			assert.Equal(t, []error{context.Canceled}, errs)
+			assert.True(t, fake.closed.Load())
+		})
+	})
 }
 
 func TestFilterFindConditions(t *testing.T) {
@@ -1328,6 +1379,51 @@ func TestWhereClauses(t *testing.T) {
 	}
 }
 
+func TestLatest(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	newQuery := func() contractsorm.Query {
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, nil, nil, nil, nil, nil).Table("users")
+	}
+
+	tests := []struct {
+		name      string
+		query     func() contractsorm.Query
+		expectSql string
+	}{
+		{
+			name:      "default column",
+			query:     func() contractsorm.Query { return newQuery().Latest() },
+			expectSql: "SELECT * FROM `users` ORDER BY `created_at` DESC",
+		},
+		{
+			name:      "empty column falls back to default",
+			query:     func() contractsorm.Query { return newQuery().Latest("") },
+			expectSql: "SELECT * FROM `users` ORDER BY `created_at` DESC",
+		},
+		{
+			name:      "custom column",
+			query:     func() contractsorm.Query { return newQuery().Latest("id") },
+			expectSql: "SELECT * FROM `users` ORDER BY `id` DESC",
+		},
+		{
+			name:      "combined with other orders",
+			query:     func() contractsorm.Query { return newQuery().Latest("updated_at").OrderBy("id") },
+			expectSql: "SELECT * FROM `users` ORDER BY `updated_at` DESC,`id`",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			query := test.query().(*Query).buildConditions()
+			statement := query.instance.Find(&[]map[string]any{}).Statement
+			assert.NoError(t, statement.Error)
+			assert.Equal(t, test.expectSql, statement.SQL.String())
+		})
+	}
+}
+
 func TestBuildWhereColumn(t *testing.T) {
 	query, args, err := buildWhereColumn("a", "b")
 	assert.NoError(t, err)
@@ -1344,6 +1440,42 @@ func TestBuildWhereColumn(t *testing.T) {
 
 	_, _, err = buildWhereColumn("a", "b", "c", "d")
 	assert.EqualError(t, err, errors.DatabaseInvalidArgumentNumber.Args(3, "1 or 2").Error())
+}
+
+func TestValueWithNonPointerDest(t *testing.T) {
+	var name string
+	err := (&Query{}).Value("name", name)
+
+	assert.EqualError(t, err, errors.DatabaseUnsupportedType.Args(reflect.String, "pointer").Error())
+}
+
+func TestValueAndDoesntExist(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	newQuery := func(db *gormio.DB) contractsorm.Query {
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, nil, nil, nil, nil, nil).Table("users")
+	}
+
+	// Value scans, which GORM refuses in dry run mode: the query is built and
+	// the error is returned without touching dest.
+	name := "unchanged"
+	assert.ErrorIs(t, newQuery(db).Where("id", 1).Value("name", &name), gormio.ErrDryRunModeUnsupported)
+	assert.Equal(t, "unchanged", name)
+
+	doesntExist, err := newQuery(db).Where("id", 1).DoesntExist()
+	assert.NoError(t, err)
+	assert.True(t, doesntExist)
+
+	// Errors of the underlying query are returned.
+	failing := db.Session(&gormio.Session{})
+	_ = failing.AddError(assert.AnError)
+
+	assert.ErrorIs(t, newQuery(failing).Value("name", &name), assert.AnError)
+
+	doesntExist, err = newQuery(failing).DoesntExist()
+	assert.ErrorIs(t, err, assert.AnError)
+	assert.False(t, doesntExist)
 }
 
 type User struct {
@@ -1474,4 +1606,68 @@ type ModelWithEmptyGlobalScopes struct {
 
 func (m *ModelWithEmptyGlobalScopes) GlobalScopes() map[string]func(contractsorm.Query) contractsorm.Query {
 	return map[string]func(contractsorm.Query) contractsorm.Query{}
+}
+
+// cursorDriver is a database/sql driver whose queries return `rows` rows with an "id" column, and that
+// records when the rows are closed.
+type cursorDriver struct {
+	rows   int
+	closed atomic.Bool
+}
+
+func (r *cursorDriver) Open(string) (driver.Conn, error) { return &cursorConn{driver: r}, nil }
+
+type cursorConn struct{ driver *cursorDriver }
+
+func (r *cursorConn) Prepare(string) (driver.Stmt, error) { return &cursorStmt{driver: r.driver}, nil }
+func (r *cursorConn) Close() error                        { return nil }
+func (r *cursorConn) Begin() (driver.Tx, error)           { return nil, fmt.Errorf("not supported") }
+
+type cursorStmt struct{ driver *cursorDriver }
+
+func (r *cursorStmt) Close() error  { return nil }
+func (r *cursorStmt) NumInput() int { return -1 }
+func (r *cursorStmt) Exec([]driver.Value) (driver.Result, error) {
+	return nil, fmt.Errorf("not supported")
+}
+func (r *cursorStmt) Query([]driver.Value) (driver.Rows, error) {
+	return &cursorRows{driver: r.driver}, nil
+}
+
+type cursorRows struct {
+	driver *cursorDriver
+	next   int
+}
+
+func (r *cursorRows) Columns() []string { return []string{"id"} }
+func (r *cursorRows) Close() error {
+	r.driver.closed.Store(true)
+	return nil
+}
+func (r *cursorRows) Next(dest []driver.Value) error {
+	if r.next >= r.driver.rows {
+		return io.EOF
+	}
+	r.next++
+	dest[0] = int64(r.next)
+	return nil
+}
+
+var cursorDriverID atomic.Int64
+
+// newCursorQuery returns a query on a new cursorDriver, and a function that closes its database.
+func newCursorQuery(t *testing.T, ctx context.Context, rows int) (*Query, *cursorDriver, func()) {
+	fake := &cursorDriver{rows: rows}
+	name := fmt.Sprintf("goravel-orm-cursor-%d", cursorDriverID.Add(1))
+	sql.Register(name, fake)
+
+	sqlDB, err := sql.Open(name, "")
+	assert.NoError(t, err)
+
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{ConnPool: sqlDB})
+	assert.NoError(t, err)
+
+	query := NewQuery(ctx, nil, contractsdatabase.Config{}, db.WithContext(ctx), nil, nil, nil, nil, nil)
+
+	return query.Table("users").(*Query), fake, func() { _ = sqlDB.Close() }
 }
