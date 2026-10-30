@@ -2,17 +2,24 @@ package gorm
 
 import (
 	"context"
+	"database/sql"
+	"database/sql/driver"
+	"fmt"
+	"io"
 	"reflect"
+	"sync/atomic"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	gormio "gorm.io/gorm"
-	gormtests "gorm.io/gorm/utils/tests"
 	"gorm.io/gorm/clause"
+	gormtests "gorm.io/gorm/utils/tests"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
+	contractsdb "github.com/goravel/framework/contracts/database/db"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/errors"
@@ -279,6 +286,50 @@ func TestAddWhere(t *testing.T) {
 	}, query1.conditions.where)
 }
 
+func TestCursor(t *testing.T) {
+	// The consumer receives one row and cancels the context. When it is canceled, the producer is blocked
+	// sending the third row, and the second one is in the buffer: the producer replaces it with the error.
+	cancelAfterFirstRow := func(t *testing.T) (chan contractsdb.Row, *cursorDriver, func()) {
+		ctx, cancel := context.WithCancel(context.Background())
+		query, fake, closeDB := newCursorQuery(t, ctx, 3)
+
+		ch := query.Cursor()
+		first := <-ch
+		assert.NoError(t, first.Err())
+
+		synctest.Wait()
+		cancel()
+		synctest.Wait()
+
+		return ch, fake, closeDB
+	}
+
+	t.Run("stop reading after canceling the context", func(t *testing.T) {
+		// synctest fails if the producer goroutine is still blocked when the test ends.
+		synctest.Test(t, func(t *testing.T) {
+			_, fake, closeDB := cancelAfterFirstRow(t)
+			defer closeDB()
+
+			assert.True(t, fake.closed.Load())
+		})
+	})
+
+	t.Run("keep reading after canceling the context", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			ch, fake, closeDB := cancelAfterFirstRow(t)
+			defer closeDB()
+
+			var errs []error
+			for row := range ch {
+				errs = append(errs, row.Err())
+			}
+
+			assert.Equal(t, []error{context.Canceled}, errs)
+			assert.True(t, fake.closed.Load())
+		})
+	})
+}
+
 func TestFilterFindConditions(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -409,6 +460,200 @@ func TestGetObserver(t *testing.T) {
 
 	assert.Nil(t, query.getObserver(Product{}))
 	assert.Equal(t, &UserObserver{}, query.getObserver(User{}))
+}
+
+func TestIncrementAndDecrement(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	var (
+		sql  string
+		vars []any
+	)
+	assert.NoError(t, db.Callback().Update().After("gorm:update").Register("test:capture", func(tx *gormio.DB) {
+		sql = tx.Statement.SQL.String()
+		vars = tx.Statement.Vars
+	}))
+
+	newQuery := func(t *testing.T) contractsorm.Query {
+		mockGrammar := mocksdriver.NewGrammar(t)
+		mockGrammar.EXPECT().CompileJsonColumnsUpdate(mock.Anything).RunAndReturn(func(values map[string]any) (map[string]any, error) {
+			return values, nil
+		}).Maybe()
+
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, mockGrammar, nil, nil, nil, nil)
+	}
+
+	tests := []struct {
+		name        string
+		run         func(query contractsorm.Query) error
+		expectSql   string
+		expectVars  []any
+		expectError error
+	}{
+		{
+			name: "Increment with default amount",
+			run: func(query contractsorm.Query) error {
+				return query.Table("users").Where("id", 1).Increment("votes")
+			},
+			expectSql:  "UPDATE `users` SET `votes`=`votes` + ? WHERE `id` = ?",
+			expectVars: []any{uint64(1), 1},
+		},
+		{
+			name: "Increment with amount",
+			run: func(query contractsorm.Query) error {
+				return query.Table("users").Where("id", 1).Increment("votes", 5)
+			},
+			expectSql:  "UPDATE `users` SET `votes`=`votes` + ? WHERE `id` = ?",
+			expectVars: []any{uint64(5), 1},
+		},
+		{
+			name: "Decrement with default amount",
+			run: func(query contractsorm.Query) error {
+				return query.Table("users").Where("id", 1).Decrement("votes")
+			},
+			expectSql:  "UPDATE `users` SET `votes`=`votes` - ? WHERE `id` = ?",
+			expectVars: []any{uint64(1), 1},
+		},
+		{
+			name: "Decrement with amount",
+			run: func(query contractsorm.Query) error {
+				return query.Table("users").Where("id", 1).Decrement("votes", 3)
+			},
+			expectSql:  "UPDATE `users` SET `votes`=`votes` - ? WHERE `id` = ?",
+			expectVars: []any{uint64(3), 1},
+		},
+		{
+			name: "Increment applies global scopes and soft deletes",
+			run: func(query contractsorm.Query) error {
+				return query.Model(&IncrementModel{}).Where("id", 1).Increment("votes")
+			},
+			expectSql:  "UPDATE `increment_models` SET `votes`=`votes` + ? WHERE `id` = ? AND `active` = ? AND `increment_models`.`deleted_at` IS NULL",
+			expectVars: []any{uint64(1), 1, true},
+		},
+		{
+			name: "Increment does not apply global scopes when they are disabled",
+			run: func(query contractsorm.Query) error {
+				return query.Model(&IncrementModel{}).WithoutGlobalScopes().WithTrashed().Where("id", 1).Increment("votes")
+			},
+			expectSql:  "UPDATE `increment_models` SET `votes`=`votes` + ? WHERE `id` = ?",
+			expectVars: []any{uint64(1), 1},
+		},
+		{
+			name: "Increment fires the updating event on a model with primary key",
+			run: func(query contractsorm.Query) error {
+				return query.Model(&IncrementEventModel{ID: 1}).Increment("votes")
+			},
+			expectError: errors.New("updating"),
+		},
+		{
+			name: "Increment does not fire events on a model without primary key",
+			run: func(query contractsorm.Query) error {
+				return query.Model(&IncrementEventModel{}).Where("id", 1).Increment("votes")
+			},
+			expectSql:  "UPDATE `increment_event_models` SET `votes`=`votes` + ? WHERE `id` = ?",
+			expectVars: []any{uint64(1), 1},
+		},
+		{
+			name: "Decrement does not fire events when they are disabled",
+			run: func(query contractsorm.Query) error {
+				return query.Model(&IncrementEventModel{ID: 1}).WithoutEvents().Decrement("votes")
+			},
+			expectSql:  "UPDATE `increment_event_models` SET `votes`=`votes` - ? WHERE `id` = ?",
+			expectVars: []any{uint64(1), uint(1)},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			sql, vars = "", nil
+
+			err := test.run(newQuery(t))
+			if test.expectError != nil {
+				assert.EqualError(t, err, test.expectError.Error())
+				return
+			}
+
+			assert.NoError(t, err)
+			assert.Equal(t, test.expectSql, sql)
+			assert.Equal(t, test.expectVars, vars)
+		})
+	}
+}
+
+func TestIncrementAndDecrementTouchUpdatedAt(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	var sql string
+	assert.NoError(t, db.Callback().Update().After("gorm:update").Register("test:capture", func(tx *gormio.DB) {
+		sql = tx.Statement.SQL.String()
+	}))
+
+	mockGrammar := mocksdriver.NewGrammar(t)
+	mockGrammar.EXPECT().CompileJsonColumnsUpdate(mock.Anything).RunAndReturn(func(values map[string]any) (map[string]any, error) {
+		return values, nil
+	}).Once()
+
+	model := &IncrementTimestampModel{ID: 1, Votes: 1}
+	query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, mockGrammar, nil, nil, nil, nil)
+
+	assert.NoError(t, query.Model(model).Increment("votes"))
+	assert.Equal(t, "UPDATE `increment_timestamp_models` SET `votes`=`votes` + ?,`updated_at`=? WHERE `id` = ?", sql)
+	assert.False(t, model.UpdatedAt.IsZero())
+	// No row is affected in DryRun mode, so the column is not synced in memory.
+	assert.Equal(t, 1, model.Votes)
+}
+
+func TestIncrementAndDecrementSyncTheModel(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+	// DryRun affects no rows: pretend one row was updated so the in-memory sync runs.
+	assert.NoError(t, db.Callback().Update().After("gorm:update").Register("test:rows", func(tx *gormio.DB) {
+		tx.RowsAffected = 1
+	}))
+
+	newQuery := func() contractsorm.Query {
+		mockGrammar := mocksdriver.NewGrammar(t)
+		mockGrammar.EXPECT().CompileJsonColumnsUpdate(mock.Anything).RunAndReturn(func(values map[string]any) (map[string]any, error) {
+			return values, nil
+		}).Maybe()
+
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, mockGrammar, nil, nil, nil, nil)
+	}
+
+	ptr := 10
+	model := &IncrementSyncModel{ID: 1, Int: 5, Uint: 5, Float: 1.5, Ptr: &ptr, Name: "goravel"}
+
+	assert.NoError(t, newQuery().Model(model).Increment("int", 2))
+	assert.NoError(t, newQuery().Model(model).Decrement("uint"))
+	assert.NoError(t, newQuery().Model(model).Increment("float", 3))
+	assert.NoError(t, newQuery().Model(model).Decrement("ptr", 4))
+	// Nil pointers, non numeric and unknown fields are left alone.
+	assert.NoError(t, newQuery().Model(model).Increment("nil_ptr"))
+	assert.NoError(t, newQuery().Model(model).Increment("name"))
+	assert.NoError(t, newQuery().Model(model).Increment("unknown"))
+
+	assert.Equal(t, 7, model.Int)
+	assert.Equal(t, uint(4), model.Uint)
+	assert.Equal(t, 4.5, model.Float)
+	assert.Equal(t, 6, *model.Ptr)
+	assert.Nil(t, model.NilPtr)
+	assert.Equal(t, "goravel", model.Name)
+
+	// Decrementing the other numeric kinds.
+	assert.NoError(t, newQuery().Model(model).Decrement("int"))
+	assert.NoError(t, newQuery().Model(model).Increment("uint", 6))
+	assert.NoError(t, newQuery().Model(model).Decrement("float", 2))
+	assert.Equal(t, 6, model.Int)
+	assert.Equal(t, uint(10), model.Uint)
+	assert.Equal(t, 2.5, model.Float)
+
+	// A model without a primary key value has no condition to update by: GORM
+	// refuses the update and the struct isn't touched.
+	unsaved := &IncrementSyncModel{Int: 1}
+	assert.ErrorIs(t, newQuery().Model(unsaved).Increment("int"), gormio.ErrMissingWhereClause)
+	assert.Equal(t, 1, unsaved.Int)
 }
 
 func TestModelToStruct(t *testing.T) {
@@ -1153,241 +1398,85 @@ func TestWhen(t *testing.T) {
 	assert.Same(t, falseQuery, query.When(false, callback, falseCallback))
 }
 
-func TestIncrementAndDecrement(t *testing.T) {
+func TestLatest(t *testing.T) {
 	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
 	assert.NoError(t, err)
 
-	var (
-		sql  string
-		vars []any
-	)
-	assert.NoError(t, db.Callback().Update().After("gorm:update").Register("test:capture", func(tx *gormio.DB) {
-		sql = tx.Statement.SQL.String()
-		vars = tx.Statement.Vars
-	}))
-
-	newQuery := func(t *testing.T) contractsorm.Query {
-		mockGrammar := mocksdriver.NewGrammar(t)
-		mockGrammar.EXPECT().CompileJsonColumnsUpdate(mock.Anything).RunAndReturn(func(values map[string]any) (map[string]any, error) {
-			return values, nil
-		}).Maybe()
-
-		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, mockGrammar, nil, nil, nil, nil)
+	newQuery := func() contractsorm.Query {
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, nil, nil, nil, nil, nil).Table("users")
 	}
 
 	tests := []struct {
-		name        string
-		run         func(query contractsorm.Query) error
-		expectSql   string
-		expectVars  []any
-		expectError error
+		name      string
+		query     func() contractsorm.Query
+		expectSql string
 	}{
 		{
-			name: "Increment with default amount",
-			run: func(query contractsorm.Query) error {
-				return query.Table("users").Where("id", 1).Increment("votes")
-			},
-			expectSql:  "UPDATE `users` SET `votes`=`votes` + ? WHERE `id` = ?",
-			expectVars: []any{uint64(1), 1},
+			name:      "default column",
+			query:     func() contractsorm.Query { return newQuery().Latest() },
+			expectSql: "SELECT * FROM `users` ORDER BY `created_at` DESC",
 		},
 		{
-			name: "Increment with amount",
-			run: func(query contractsorm.Query) error {
-				return query.Table("users").Where("id", 1).Increment("votes", 5)
-			},
-			expectSql:  "UPDATE `users` SET `votes`=`votes` + ? WHERE `id` = ?",
-			expectVars: []any{uint64(5), 1},
+			name:      "empty column falls back to default",
+			query:     func() contractsorm.Query { return newQuery().Latest("") },
+			expectSql: "SELECT * FROM `users` ORDER BY `created_at` DESC",
 		},
 		{
-			name: "Decrement with default amount",
-			run: func(query contractsorm.Query) error {
-				return query.Table("users").Where("id", 1).Decrement("votes")
-			},
-			expectSql:  "UPDATE `users` SET `votes`=`votes` - ? WHERE `id` = ?",
-			expectVars: []any{uint64(1), 1},
+			name:      "custom column",
+			query:     func() contractsorm.Query { return newQuery().Latest("id") },
+			expectSql: "SELECT * FROM `users` ORDER BY `id` DESC",
 		},
 		{
-			name: "Decrement with amount",
-			run: func(query contractsorm.Query) error {
-				return query.Table("users").Where("id", 1).Decrement("votes", 3)
-			},
-			expectSql:  "UPDATE `users` SET `votes`=`votes` - ? WHERE `id` = ?",
-			expectVars: []any{uint64(3), 1},
-		},
-		{
-			name: "Increment applies global scopes and soft deletes",
-			run: func(query contractsorm.Query) error {
-				return query.Model(&IncrementModel{}).Where("id", 1).Increment("votes")
-			},
-			expectSql:  "UPDATE `increment_models` SET `votes`=`votes` + ? WHERE `id` = ? AND `active` = ? AND `increment_models`.`deleted_at` IS NULL",
-			expectVars: []any{uint64(1), 1, true},
-		},
-		{
-			name: "Increment does not apply global scopes when they are disabled",
-			run: func(query contractsorm.Query) error {
-				return query.Model(&IncrementModel{}).WithoutGlobalScopes().WithTrashed().Where("id", 1).Increment("votes")
-			},
-			expectSql:  "UPDATE `increment_models` SET `votes`=`votes` + ? WHERE `id` = ?",
-			expectVars: []any{uint64(1), 1},
-		},
-		{
-			name: "Increment fires the updating event on a model with primary key",
-			run: func(query contractsorm.Query) error {
-				return query.Model(&IncrementEventModel{ID: 1}).Increment("votes")
-			},
-			expectError: errors.New("updating"),
-		},
-		{
-			name: "Increment does not fire events on a model without primary key",
-			run: func(query contractsorm.Query) error {
-				return query.Model(&IncrementEventModel{}).Where("id", 1).Increment("votes")
-			},
-			expectSql:  "UPDATE `increment_event_models` SET `votes`=`votes` + ? WHERE `id` = ?",
-			expectVars: []any{uint64(1), 1},
-		},
-		{
-			name: "Decrement does not fire events when they are disabled",
-			run: func(query contractsorm.Query) error {
-				return query.Model(&IncrementEventModel{ID: 1}).WithoutEvents().Decrement("votes")
-			},
-			expectSql:  "UPDATE `increment_event_models` SET `votes`=`votes` - ? WHERE `id` = ?",
-			expectVars: []any{uint64(1), uint(1)},
+			name:      "combined with other orders",
+			query:     func() contractsorm.Query { return newQuery().Latest("updated_at").OrderBy("id") },
+			expectSql: "SELECT * FROM `users` ORDER BY `updated_at` DESC,`id`",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			sql, vars = "", nil
-
-			err := test.run(newQuery(t))
-			if test.expectError != nil {
-				assert.EqualError(t, err, test.expectError.Error())
-				return
-			}
-
-			assert.NoError(t, err)
-			assert.Equal(t, test.expectSql, sql)
-			assert.Equal(t, test.expectVars, vars)
+			query := test.query().(*Query).buildConditions()
+			statement := query.instance.Find(&[]map[string]any{}).Statement
+			assert.NoError(t, statement.Error)
+			assert.Equal(t, test.expectSql, statement.SQL.String())
 		})
 	}
 }
 
-func TestIncrementAndDecrementTouchUpdatedAt(t *testing.T) {
+func TestValueWithNonPointerDest(t *testing.T) {
+	var name string
+	err := (&Query{}).Value("name", name)
+
+	assert.EqualError(t, err, errors.DatabaseUnsupportedType.Args(reflect.String, "pointer").Error())
+}
+
+func TestValueAndDoesntExist(t *testing.T) {
 	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
 	assert.NoError(t, err)
 
-	var sql string
-	assert.NoError(t, db.Callback().Update().After("gorm:update").Register("test:capture", func(tx *gormio.DB) {
-		sql = tx.Statement.SQL.String()
-	}))
+	newQuery := func(db *gormio.DB) contractsorm.Query {
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, nil, nil, nil, nil, nil).Table("users")
+	}
 
-	mockGrammar := mocksdriver.NewGrammar(t)
-	mockGrammar.EXPECT().CompileJsonColumnsUpdate(mock.Anything).RunAndReturn(func(values map[string]any) (map[string]any, error) {
-		return values, nil
-	}).Once()
+	// Value scans, which GORM refuses in dry run mode: the query is built and
+	// the error is returned without touching dest.
+	name := "unchanged"
+	assert.ErrorIs(t, newQuery(db).Where("id", 1).Value("name", &name), gormio.ErrDryRunModeUnsupported)
+	assert.Equal(t, "unchanged", name)
 
-	model := &IncrementTimestampModel{ID: 1, Votes: 1}
-	query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, mockGrammar, nil, nil, nil, nil)
-
-	assert.NoError(t, query.Model(model).Increment("votes"))
-	assert.Equal(t, "UPDATE `increment_timestamp_models` SET `votes`=`votes` + ?,`updated_at`=? WHERE `id` = ?", sql)
-	assert.False(t, model.UpdatedAt.IsZero())
-	// No row is affected in DryRun mode, so the column is not synced in memory.
-	assert.Equal(t, 1, model.Votes)
-}
-
-func TestIncrementAndDecrementSyncTheModel(t *testing.T) {
-	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	doesntExist, err := newQuery(db).Where("id", 1).DoesntExist()
 	assert.NoError(t, err)
-	// DryRun affects no rows: pretend one row was updated so the in-memory sync runs.
-	assert.NoError(t, db.Callback().Update().After("gorm:update").Register("test:rows", func(tx *gormio.DB) {
-		tx.RowsAffected = 1
-	}))
+	assert.True(t, doesntExist)
 
-	newQuery := func() contractsorm.Query {
-		mockGrammar := mocksdriver.NewGrammar(t)
-		mockGrammar.EXPECT().CompileJsonColumnsUpdate(mock.Anything).RunAndReturn(func(values map[string]any) (map[string]any, error) {
-			return values, nil
-		}).Maybe()
+	// Errors of the underlying query are returned.
+	failing := db.Session(&gormio.Session{})
+	_ = failing.AddError(assert.AnError)
 
-		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, mockGrammar, nil, nil, nil, nil)
-	}
+	assert.ErrorIs(t, newQuery(failing).Value("name", &name), assert.AnError)
 
-	ptr := 10
-	model := &IncrementSyncModel{ID: 1, Int: 5, Uint: 5, Float: 1.5, Ptr: &ptr, Name: "goravel"}
-
-	assert.NoError(t, newQuery().Model(model).Increment("int", 2))
-	assert.NoError(t, newQuery().Model(model).Decrement("uint"))
-	assert.NoError(t, newQuery().Model(model).Increment("float", 3))
-	assert.NoError(t, newQuery().Model(model).Decrement("ptr", 4))
-	// Nil pointers, non numeric and unknown fields are left alone.
-	assert.NoError(t, newQuery().Model(model).Increment("nil_ptr"))
-	assert.NoError(t, newQuery().Model(model).Increment("name"))
-	assert.NoError(t, newQuery().Model(model).Increment("unknown"))
-
-	assert.Equal(t, 7, model.Int)
-	assert.Equal(t, uint(4), model.Uint)
-	assert.Equal(t, 4.5, model.Float)
-	assert.Equal(t, 6, *model.Ptr)
-	assert.Nil(t, model.NilPtr)
-	assert.Equal(t, "goravel", model.Name)
-
-	// Decrementing the other numeric kinds.
-	assert.NoError(t, newQuery().Model(model).Decrement("int"))
-	assert.NoError(t, newQuery().Model(model).Increment("uint", 6))
-	assert.NoError(t, newQuery().Model(model).Decrement("float", 2))
-	assert.Equal(t, 6, model.Int)
-	assert.Equal(t, uint(10), model.Uint)
-	assert.Equal(t, 2.5, model.Float)
-
-	// A model without a primary key value has no condition to update by: GORM
-	// refuses the update and the struct isn't touched.
-	unsaved := &IncrementSyncModel{Int: 1}
-	assert.ErrorIs(t, newQuery().Model(unsaved).Increment("int"), gormio.ErrMissingWhereClause)
-	assert.Equal(t, 1, unsaved.Int)
-}
-
-type IncrementSyncModel struct {
-	ID     uint `gorm:"primaryKey"`
-	Int    int
-	Uint   uint
-	Float  float64
-	Ptr    *int
-	NilPtr *int
-	Name   string
-}
-
-type IncrementModel struct {
-	ID        uint `gorm:"primaryKey"`
-	Votes     int
-	DeletedAt gormio.DeletedAt
-}
-
-func (m *IncrementModel) GlobalScopes() map[string]func(contractsorm.Query) contractsorm.Query {
-	return map[string]func(contractsorm.Query) contractsorm.Query{
-		"active": func(query contractsorm.Query) contractsorm.Query {
-			return query.Where("active", true)
-		},
-	}
-}
-
-type IncrementEventModel struct {
-	ID    uint `gorm:"primaryKey"`
-	Votes int
-}
-
-func (m *IncrementEventModel) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.Event) error {
-	return map[contractsorm.EventType]func(contractsorm.Event) error{
-		contractsorm.EventUpdating: func(event contractsorm.Event) error {
-			return errors.New("updating")
-		},
-	}
-}
-
-type IncrementTimestampModel struct {
-	ID        uint `gorm:"primaryKey"`
-	Votes     int
-	UpdatedAt time.Time
+	doesntExist, err = newQuery(failing).DoesntExist()
+	assert.ErrorIs(t, err, assert.AnError)
+	assert.False(t, doesntExist)
 }
 
 type User struct {
@@ -1518,4 +1607,111 @@ type ModelWithEmptyGlobalScopes struct {
 
 func (m *ModelWithEmptyGlobalScopes) GlobalScopes() map[string]func(contractsorm.Query) contractsorm.Query {
 	return map[string]func(contractsorm.Query) contractsorm.Query{}
+}
+
+// cursorDriver is a database/sql driver whose queries return `rows` rows with an "id" column, and that
+// records when the rows are closed.
+type cursorDriver struct {
+	rows   int
+	closed atomic.Bool
+}
+
+func (r *cursorDriver) Open(string) (driver.Conn, error) { return &cursorConn{driver: r}, nil }
+
+type cursorConn struct{ driver *cursorDriver }
+
+func (r *cursorConn) Prepare(string) (driver.Stmt, error) { return &cursorStmt{driver: r.driver}, nil }
+func (r *cursorConn) Close() error                        { return nil }
+func (r *cursorConn) Begin() (driver.Tx, error)           { return nil, fmt.Errorf("not supported") }
+
+type cursorStmt struct{ driver *cursorDriver }
+
+func (r *cursorStmt) Close() error  { return nil }
+func (r *cursorStmt) NumInput() int { return -1 }
+func (r *cursorStmt) Exec([]driver.Value) (driver.Result, error) {
+	return nil, fmt.Errorf("not supported")
+}
+func (r *cursorStmt) Query([]driver.Value) (driver.Rows, error) {
+	return &cursorRows{driver: r.driver}, nil
+}
+
+type cursorRows struct {
+	driver *cursorDriver
+	next   int
+}
+
+func (r *cursorRows) Columns() []string { return []string{"id"} }
+func (r *cursorRows) Close() error {
+	r.driver.closed.Store(true)
+	return nil
+}
+func (r *cursorRows) Next(dest []driver.Value) error {
+	if r.next >= r.driver.rows {
+		return io.EOF
+	}
+	r.next++
+	dest[0] = int64(r.next)
+	return nil
+}
+
+var cursorDriverID atomic.Int64
+
+// newCursorQuery returns a query on a new cursorDriver, and a function that closes its database.
+func newCursorQuery(t *testing.T, ctx context.Context, rows int) (*Query, *cursorDriver, func()) {
+	fake := &cursorDriver{rows: rows}
+	name := fmt.Sprintf("goravel-orm-cursor-%d", cursorDriverID.Add(1))
+	sql.Register(name, fake)
+
+	sqlDB, err := sql.Open(name, "")
+	assert.NoError(t, err)
+
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{ConnPool: sqlDB})
+	assert.NoError(t, err)
+
+	query := NewQuery(ctx, nil, contractsdatabase.Config{}, db.WithContext(ctx), nil, nil, nil, nil, nil)
+
+	return query.Table("users").(*Query), fake, func() { _ = sqlDB.Close() }
+}
+
+type IncrementSyncModel struct {
+	ID     uint `gorm:"primaryKey"`
+	Int    int
+	Uint   uint
+	Float  float64
+	Ptr    *int
+	NilPtr *int
+	Name   string
+}
+
+type IncrementModel struct {
+	ID        uint `gorm:"primaryKey"`
+	Votes     int
+	DeletedAt gormio.DeletedAt
+}
+
+func (m *IncrementModel) GlobalScopes() map[string]func(contractsorm.Query) contractsorm.Query {
+	return map[string]func(contractsorm.Query) contractsorm.Query{
+		"active": func(query contractsorm.Query) contractsorm.Query {
+			return query.Where("active", true)
+		},
+	}
+}
+
+type IncrementEventModel struct {
+	ID    uint `gorm:"primaryKey"`
+	Votes int
+}
+
+func (m *IncrementEventModel) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.Event) error {
+	return map[contractsorm.EventType]func(contractsorm.Event) error{
+		contractsorm.EventUpdating: func(event contractsorm.Event) error {
+			return errors.New("updating")
+		},
+	}
+}
+
+type IncrementTimestampModel struct {
+	ID        uint `gorm:"primaryKey"`
+	Votes     int
+	UpdatedAt time.Time
 }
