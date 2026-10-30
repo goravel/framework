@@ -238,6 +238,7 @@ var (
 	OrmQueryConditionRequired      = New("query condition is required")
 	OrmQueryEmptyId                = New("id can't be empty")
 	OrmQueryEmptyRelation          = New("relation can't be empty")
+	OrmQueryIncrementJsonColumn    = New("increment and decrement do not support JSON path column %s")
 	OrmQueryInvalidModel           = New("invalid model %s")
 	OrmQueryInvalidParameter       = New("parameter error, please check the document")
 	OrmQueryModelNotPointer        = New("model must be pointer")

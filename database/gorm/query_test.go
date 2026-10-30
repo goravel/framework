@@ -524,6 +524,28 @@ func TestIncrementAndDecrement(t *testing.T) {
 			expectVars: []any{uint64(3), 1},
 		},
 		{
+			name: "Increment with qualified column",
+			run: func(query contractsorm.Query) error {
+				return query.Table("users").Where("id", 1).Increment("users.votes")
+			},
+			expectSql:  "UPDATE `users` SET `users`.`votes`=`users`.`votes` + ? WHERE `id` = ?",
+			expectVars: []any{uint64(1), 1},
+		},
+		{
+			name: "Increment rejects JSON path columns",
+			run: func(query contractsorm.Query) error {
+				return query.Table("users").Where("id", 1).Increment("data->views")
+			},
+			expectError: errors.OrmQueryIncrementJsonColumn.Args("data->views"),
+		},
+		{
+			name: "Decrement rejects JSON path columns",
+			run: func(query contractsorm.Query) error {
+				return query.Table("users").Where("id", 1).Decrement("data->stats->views", 2)
+			},
+			expectError: errors.OrmQueryIncrementJsonColumn.Args("data->stats->views"),
+		},
+		{
 			name: "Increment applies global scopes and soft deletes",
 			run: func(query contractsorm.Query) error {
 				return query.Model(&IncrementModel{}).Where("id", 1).Increment("votes")
@@ -623,7 +645,7 @@ func TestIncrementAndDecrementSyncTheModel(t *testing.T) {
 	}
 
 	ptr := 10
-	model := &IncrementSyncModel{ID: 1, Int: 5, Uint: 5, Float: 1.5, Ptr: &ptr, Name: "goravel"}
+	model := &IncrementSyncModel{ID: 1, Int: 5, Uint: 5, Float: 1.5, Ptr: &ptr, Name: "goravel", NullInt: sql.NullInt64{Int64: 2, Valid: true}}
 
 	assert.NoError(t, newQuery().Model(model).Increment("int", 2))
 	assert.NoError(t, newQuery().Model(model).Decrement("uint"))
@@ -648,6 +670,16 @@ func TestIncrementAndDecrementSyncTheModel(t *testing.T) {
 	assert.Equal(t, 6, model.Int)
 	assert.Equal(t, uint(10), model.Uint)
 	assert.Equal(t, 2.5, model.Float)
+
+	// Unsigned values that would underflow are left untouched instead of wrapping around.
+	assert.NoError(t, newQuery().Model(model).Decrement("uint", 11))
+	assert.Equal(t, uint(10), model.Uint)
+
+	// sql.Null* fields are set through GORM, NULL values are left alone.
+	assert.NoError(t, newQuery().Model(model).Increment("null_int", 3))
+	assert.Equal(t, sql.NullInt64{Int64: 5, Valid: true}, model.NullInt)
+	assert.NoError(t, newQuery().Model(model).Increment("null_int_invalid"))
+	assert.Equal(t, sql.NullInt64{}, model.NullIntInvalid)
 
 	// A model without a primary key value has no condition to update by: GORM
 	// refuses the update and the struct isn't touched.
@@ -1681,6 +1713,9 @@ type IncrementSyncModel struct {
 	Ptr    *int
 	NilPtr *int
 	Name   string
+
+	NullInt        sql.NullInt64
+	NullIntInvalid sql.NullInt64
 }
 
 type IncrementModel struct {
