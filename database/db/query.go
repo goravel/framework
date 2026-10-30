@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"maps"
 	"reflect"
-	"sort"
+	"slices"
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
@@ -19,7 +19,6 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/collect"
-	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/framework/support/deep"
 	"github.com/goravel/framework/support/str"
 )
@@ -116,7 +115,19 @@ func (r *Query) CrossJoin(query string, args ...any) db.Query {
 }
 
 func (r *Query) Cursor() chan db.Row {
-	ch := make(chan db.Row)
+	ch := make(chan db.Row, 1)
+	// send blocks until the consumer receives the row or the query context is done. It allows the goroutine
+	// to exit (and release the rows and the connection) when the consumer stops ranging over the channel
+	// early (e.g. break) and cancels the context passed to WithContext.
+	send := func(row db.Row) bool {
+		select {
+		case ch <- row:
+			return true
+		case <-r.ctx.Done():
+			return false
+		}
+	}
+
 	go func() {
 		var (
 			args  []any
@@ -128,7 +139,13 @@ func (r *Query) Cursor() chan db.Row {
 		)
 
 		defer func() {
-			if err != nil {
+			// The buffer keeps the error for a consumer that is still reading after the context is done,
+			// replacing a row that it has not received yet.
+			if err != nil && !send(NewRow(nil, err)) {
+				select {
+				case <-ch:
+				default:
+				}
 				ch <- NewRow(nil, err)
 			}
 
@@ -154,7 +171,10 @@ func (r *Query) Cursor() chan db.Row {
 				return
 			}
 
-			ch <- NewRow(row, nil)
+			if !send(NewRow(row, nil)) {
+				err = r.ctx.Err()
+				return
+			}
 			count++
 		}
 
@@ -215,7 +235,7 @@ func (r *Query) Distinct(columns ...string) db.Query {
 		query = r.clone()
 	}
 
-	query.conditions.Distinct = convert.Pointer(true)
+	query.conditions.Distinct = new(true)
 
 	return query
 }
@@ -229,8 +249,11 @@ func (r *Query) DoesntExist() (bool, error) {
 	return count == 0, nil
 }
 
+// eachChunkSize is the number of rows fetched per query by Each, the same default as Laravel's each.
+const eachChunkSize = 1000
+
 func (r *Query) Each(callback func(row db.Row) error) error {
-	return r.Chunk(1, func(rows []db.Row) error {
+	return r.Chunk(eachChunkSize, func(rows []db.Row) error {
 		for _, row := range rows {
 			if err := callback(row); err != nil {
 				return err
@@ -417,7 +440,7 @@ func (r *Query) Increment(column string, value ...uint64) error {
 
 func (r *Query) InRandomOrder() db.Query {
 	q := r.clone()
-	q.conditions.InRandomOrder = convert.Pointer(true)
+	q.conditions.InRandomOrder = new(true)
 
 	return q
 }
@@ -516,7 +539,7 @@ func (r *Query) Limit(limit uint64) db.Query {
 
 func (r *Query) LockForUpdate() db.Query {
 	q := r.clone()
-	q.conditions.LockForUpdate = convert.Pointer(true)
+	q.conditions.LockForUpdate = new(true)
 
 	return q
 }
@@ -682,15 +705,26 @@ func (r *Query) OrWhereRaw(raw string, args []any) db.Query {
 }
 
 func (r *Query) Paginate(page, limit int, dest any, total *int64) error {
-	offset := (page - 1) * limit
-
-	q := r.clone()
-	count, err := q.Count()
-	if err != nil {
-		return err
+	// A non-positive limit would become a huge LIMIT after the uint64 conversion
+	// and read the whole table, so it is rejected.
+	if limit < 1 {
+		return errors.DatabaseInvalidPaginationLimit.Args(limit)
 	}
 
-	*total = count
+	// A page lower than 1 returns the first page, the same as the ORM Paginate
+	// method. It is normalized before the arithmetic so an overflowing product
+	// isn't mistaken for the first page.
+	page = max(page, 1)
+	offset := (page - 1) * limit
+
+	if total != nil {
+		count, err := r.clone().Count()
+		if err != nil {
+			return err
+		}
+
+		*total = count
+	}
 
 	return r.Offset(uint64(offset)).Limit(uint64(limit)).Get(dest)
 }
@@ -728,7 +762,7 @@ func (r *Query) Select(columns ...string) db.Query {
 
 func (r *Query) SharedLock() db.Query {
 	q := r.clone()
-	q.conditions.SharedLock = convert.Pointer(true)
+	q.conditions.SharedLock = new(true)
 
 	return q
 }
@@ -1115,11 +1149,7 @@ func (r *Query) buildInsert(data []map[string]any) (sql string, args []any, err 
 		}
 	}
 
-	cols := make([]string, 0, len(colSet))
-	for col := range colSet {
-		cols = append(cols, col)
-	}
-	sort.Strings(cols)
+	cols := slices.Sorted(maps.Keys(colSet))
 	builder = builder.Columns(cols...)
 
 	for _, row := range data {

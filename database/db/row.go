@@ -54,7 +54,7 @@ func (r *Row) Scan(value any) error {
 // Mysql returns []uint8 for String type when scanning the rows.
 func ToStringHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
-		if t != reflect.TypeOf("") {
+		if t != reflect.TypeFor[string]() {
 			return data, nil
 		}
 
@@ -69,7 +69,7 @@ func ToStringHookFunc() mapstructure.DecodeHookFunc {
 
 func ToTimeHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
-		if t != reflect.TypeOf(time.Time{}) {
+		if t != reflect.TypeFor[time.Time]() {
 			return data, nil
 		}
 
@@ -88,11 +88,11 @@ func ToTimeHookFunc() mapstructure.DecodeHookFunc {
 
 func ToDeletedAtHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
-		if t != reflect.TypeOf(gorm.DeletedAt{}) {
+		if t != reflect.TypeFor[gorm.DeletedAt]() {
 			return data, nil
 		}
 
-		if f == reflect.TypeOf(time.Time{}) {
+		if f == reflect.TypeFor[time.Time]() {
 			return gorm.DeletedAt{Time: data.(time.Time), Valid: true}, nil
 		}
 
@@ -109,7 +109,7 @@ func ToDeletedAtHookFunc() mapstructure.DecodeHookFunc {
 func ToScannerHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
 		// Skip types that are handled by other specific hooks
-		if t == reflect.TypeOf(time.Time{}) || t == reflect.TypeOf(gorm.DeletedAt{}) {
+		if t == reflect.TypeFor[time.Time]() || t == reflect.TypeFor[gorm.DeletedAt]() {
 			return data, nil
 		}
 
@@ -119,7 +119,7 @@ func ToScannerHookFunc() mapstructure.DecodeHookFunc {
 		}
 
 		// Only process database types (string, []byte, []uint8, time.Time)
-		if f.Kind() != reflect.String && f != reflect.TypeOf([]byte(nil)) && f != reflect.TypeOf([]uint8(nil)) && f != reflect.TypeOf(time.Time{}) {
+		if f.Kind() != reflect.String && f != reflect.TypeFor[[]byte]() && f != reflect.TypeFor[[]uint8]() && f != reflect.TypeFor[time.Time]() {
 			return data, nil
 		}
 

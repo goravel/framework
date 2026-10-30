@@ -16,6 +16,7 @@ import (
 	"net/url"
 	"reflect"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -358,10 +359,8 @@ func rulePresentUnless(ctx *RuleContext) bool {
 }
 
 func rulePresentWith(ctx *RuleContext) bool {
-	for _, field := range ctx.Parameters {
-		if ctx.Data.Has(field) {
-			return ctx.Data.Has(ctx.Attribute)
-		}
+	if slices.ContainsFunc(ctx.Parameters, ctx.Data.Has) {
+		return ctx.Data.Has(ctx.Attribute)
 	}
 	return true
 }
@@ -396,10 +395,8 @@ func ruleMissingUnless(ctx *RuleContext) bool {
 }
 
 func ruleMissingWith(ctx *RuleContext) bool {
-	for _, field := range ctx.Parameters {
-		if ctx.Data.Has(field) {
-			return !ctx.Data.Has(ctx.Attribute)
-		}
+	if slices.ContainsFunc(ctx.Parameters, ctx.Data.Has) {
+		return !ctx.Data.Has(ctx.Attribute)
 	}
 	return true
 }
@@ -1250,22 +1247,12 @@ func ruleUint(ctx *RuleContext) bool {
 
 func ruleIn(ctx *RuleContext) bool {
 	s := fmt.Sprintf("%v", ctx.Value)
-	for _, allowed := range ctx.Parameters {
-		if s == allowed {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(ctx.Parameters, s)
 }
 
 func ruleNotIn(ctx *RuleContext) bool {
 	s := fmt.Sprintf("%v", ctx.Value)
-	for _, disallowed := range ctx.Parameters {
-		if s == disallowed {
-			return false
-		}
-	}
-	return true
+	return !slices.Contains(ctx.Parameters, s)
 }
 
 func ruleInArray(ctx *RuleContext) bool {
@@ -1286,10 +1273,8 @@ func ruleInArray(ctx *RuleContext) bool {
 			}
 		}
 	case []string:
-		for _, item := range arr {
-			if item == s {
-				return true
-			}
+		if slices.Contains(arr, s) {
+			return true
 		}
 	}
 	return false
@@ -1432,12 +1417,7 @@ func ruleImage(ctx *RuleContext) bool {
 			return false
 		}
 		imageTypes := []string{"image/jpeg", "image/png", "image/gif", "image/bmp", "image/svg+xml", "image/webp"}
-		for _, t := range imageTypes {
-			if mtype.Is(t) {
-				return true
-			}
-		}
-		return false
+		return slices.ContainsFunc(imageTypes, mtype.Is)
 	}
 
 	if fh, ok := ctx.Value.(*multipart.FileHeader); ok {
@@ -1489,12 +1469,7 @@ func ruleMimetypes(ctx *RuleContext) bool {
 		if err != nil {
 			return false
 		}
-		for _, allowed := range ctx.Parameters {
-			if mtype.Is(allowed) {
-				return true
-			}
-		}
-		return false
+		return slices.ContainsFunc(ctx.Parameters, mtype.Is)
 	}
 
 	if fh, ok := ctx.Value.(*multipart.FileHeader); ok {

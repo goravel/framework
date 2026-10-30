@@ -3,7 +3,10 @@ package db
 import (
 	"context"
 	databasesql "database/sql"
+	"fmt"
+	"strconv"
 	"testing"
+	"testing/synctest"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/stretchr/testify/assert"
@@ -189,6 +192,71 @@ func (s *QueryTestSuite) TestCrossJoin() {
 
 	err := s.query.CrossJoin("posts as p").Where("age", 25).Get(&users)
 	s.Nil(err)
+}
+
+func (s *QueryTestSuite) TestCursor() {
+	sql := "SELECT * FROM users"
+
+	s.Run("query error", func() {
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().QueryxContext(s.ctx, sql).Return(nil, assert.AnError).Once()
+		s.mockReadBuilder.EXPECT().Explain(sql).Return(sql).Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, sql, int64(-1), assert.AnError).Return().Once()
+
+		var errs []error
+		for row := range s.query.Cursor() {
+			errs = append(errs, row.Err())
+		}
+
+		s.Equal([]error{assert.AnError}, errs)
+	})
+
+	// The consumer receives one row and cancels the context. When it is canceled, the producer is blocked
+	// sending the third row, and the second one is in the buffer: the producer replaces it with the error.
+	cancelAfterFirstRow := func(t *testing.T) (chan db.Row, *eachDriver, func()) {
+		rows, fake, closeDB := newEachRows(t, 3)
+		ctx, cancel := context.WithCancel(context.Background())
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().QueryxContext(ctx, sql).Return(rows, nil).Once()
+		s.mockReadBuilder.EXPECT().Explain(sql).Return(sql).Once()
+		s.mockLogger.EXPECT().Trace(ctx, s.now, sql, int64(1), context.Canceled).Return().Once()
+
+		ch := NewQuery(ctx, s.mockReadBuilder, s.mockWriteBuilder, s.mockGrammar, s.mockLogger, "users", nil).Cursor()
+		first := <-ch
+		s.NoError(first.Err())
+
+		synctest.Wait()
+		cancel()
+		synctest.Wait()
+
+		return ch, fake, closeDB
+	}
+
+	s.Run("stop reading after canceling the context", func() {
+		// synctest fails if the producer goroutine is still blocked when the test ends.
+		synctest.Test(s.T(), func(t *testing.T) {
+			_, fake, closeDB := cancelAfterFirstRow(t)
+			defer closeDB()
+
+			s.True(fake.closed.Load())
+		})
+	})
+
+	s.Run("keep reading after canceling the context", func() {
+		synctest.Test(s.T(), func(t *testing.T) {
+			ch, fake, closeDB := cancelAfterFirstRow(t)
+			defer closeDB()
+
+			var errs []error
+			for row := range ch {
+				errs = append(errs, row.Err())
+			}
+
+			s.Equal([]error{context.Canceled}, errs)
+			s.True(fake.closed.Load())
+		})
+	})
 }
 
 func (s *QueryTestSuite) TestDecrement() {
@@ -1274,6 +1342,85 @@ func (s *QueryTestSuite) TestPaginate() {
 		s.Equal(int64(2), total)
 		s.Equal(2, len(users))
 	})
+
+	s.Run("total is nil", func() {
+		var users []TestUser
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE name = ? LIMIT 10 OFFSET 10", "John").
+			Run(func(ctx context.Context, dest any, query string, args ...any) {
+				destUsers := dest.(*[]TestUser)
+				*destUsers = []TestUser{{ID: 1, Name: "John", Age: 25}}
+			}).Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE name = ? LIMIT 10 OFFSET 10", "John").Return("SELECT * FROM users WHERE name = \"John\" LIMIT 10 OFFSET 10").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE name = \"John\" LIMIT 10 OFFSET 10", int64(1), nil).Return().Once()
+
+		s.NotPanics(func() {
+			err := s.query.Where("name", "John").Paginate(2, 10, &users, nil)
+			s.Nil(err)
+		})
+		s.Equal(1, len(users))
+	})
+
+	for _, page := range []int{0, -1} {
+		s.Run("page is "+strconv.Itoa(page), func() {
+			var users []TestUser
+			var total int64
+
+			s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Twice()
+			s.mockReadBuilder.EXPECT().GetContext(s.ctx, &total, "SELECT COUNT(*) FROM users WHERE name = ?", "John").
+				Run(func(ctx context.Context, dest any, query string, args ...any) {
+					destTotal := dest.(*int64)
+					*destTotal = 2
+				}).Return(nil).Once()
+			s.mockReadBuilder.EXPECT().Explain("SELECT COUNT(*) FROM users WHERE name = ?", "John").Return("SELECT COUNT(*) FROM users WHERE name = \"John\"").Once()
+			s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(*) FROM users WHERE name = \"John\"", int64(-1), nil).Return().Once()
+
+			s.mockReadBuilder.EXPECT().SelectContext(s.ctx, &users, "SELECT * FROM users WHERE name = ? LIMIT 10 OFFSET 0", "John").
+				Run(func(ctx context.Context, dest any, query string, args ...any) {
+					destUsers := dest.(*[]TestUser)
+					*destUsers = []TestUser{{ID: 1, Name: "John", Age: 25}, {ID: 2, Name: "Jane", Age: 30}}
+				}).Return(nil).Once()
+			s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE name = ? LIMIT 10 OFFSET 0", "John").Return("SELECT * FROM users WHERE name = \"John\" LIMIT 10 OFFSET 0").Once()
+			s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE name = \"John\" LIMIT 10 OFFSET 0", int64(2), nil).Return().Once()
+
+			err := s.query.Where("name", "John").Paginate(page, 10, &users, &total)
+			s.Nil(err)
+			s.Equal(int64(2), total)
+			s.Equal(2, len(users))
+		})
+	}
+
+	s.Run("failed to count", func() {
+		var (
+			users []TestUser
+			total int64
+		)
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().GetContext(s.ctx, &total, "SELECT COUNT(*) FROM users WHERE name = ?", "John").Return(assert.AnError).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT COUNT(*) FROM users WHERE name = ?", "John").Return("SELECT COUNT(*) FROM users WHERE name = \"John\"").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(*) FROM users WHERE name = \"John\"", int64(-1), assert.AnError).Return().Once()
+
+		// The error is returned and the page is not queried.
+		err := s.query.Where("name", "John").Paginate(1, 10, &users, &total)
+		s.ErrorIs(err, assert.AnError)
+		s.Zero(total)
+	})
+
+	for _, limit := range []int{0, -10} {
+		s.Run(fmt.Sprintf("limit is %d", limit), func() {
+			var (
+				users []TestUser
+				total int64
+			)
+
+			// No COUNT or page query: a non-positive limit would read the whole table.
+			err := s.query.Where("name", "John").Paginate(1, limit, &users, &total)
+			s.ErrorIs(err, errors.DatabaseInvalidPaginationLimit)
+			s.Zero(total)
+		})
+	}
 }
 
 func (s *QueryTestSuite) TestPluck() {

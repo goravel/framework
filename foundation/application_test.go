@@ -2,6 +2,8 @@ package foundation
 
 import (
 	"context"
+	"errors"
+	"html/template"
 	"os"
 	"path/filepath"
 	"slices"
@@ -30,6 +32,7 @@ import (
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mocksroute "github.com/goravel/framework/mocks/route"
+	mocksview "github.com/goravel/framework/mocks/view"
 	"github.com/goravel/framework/support"
 )
 
@@ -1395,27 +1398,23 @@ func TestRunnerWithInfoRaceFreedom(t *testing.T) {
 
 	// Simulate multiple goroutines accessing running field
 	for i := 0; i < 10; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for j := 0; j < 100; j++ {
 				runner.running.Store(true)
 				time.Sleep(1 * time.Millisecond)
 				_ = runner.running.Load()
 				runner.running.Store(false)
 			}
-		}()
+		})
 	}
 
 	// Simulate multiple goroutines calling doneOnce
 	for i := 0; i < 10; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			runner.doneOnce.Do(func() {
 				// This should only be called once
 			})
-		}()
+		})
 	}
 
 	wg.Wait()
@@ -1436,15 +1435,13 @@ func TestDoneOnceGuarantee(t *testing.T) {
 
 	// Simulate multiple goroutines trying to call Done
 	for i := 0; i < 100; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			runner.doneOnce.Do(func() {
 				mu.Lock()
 				counter++
 				mu.Unlock()
 			})
-		}()
+		})
 	}
 
 	wg.Wait()
@@ -1603,3 +1600,104 @@ func (r *orderedRunner) ShouldRun() bool       { return true }
 func (r *orderedRunner) Run() error            { return nil }
 func (r *orderedRunner) Shutdown() error       { r.shutdowns <- r.signature; return nil }
 func (r *orderedRunner) ShutdownPriority() int { return r.priority }
+
+// compilerRoute is a route driver that implements view.Compiler.
+type compilerRoute struct {
+	*mocksroute.Route
+	err    error
+	called int
+}
+
+func (r *compilerRoute) CompileViews() error {
+	r.called++
+
+	return r.err
+}
+
+func (s *ApplicationTestSuite) TestConfigureViews() {
+	tests := []struct {
+		name  string
+		setup func()
+	}{
+		{
+			name: "without view funcs and without route facade",
+			setup: func() {
+				s.app.builder = NewApplicationBuilder(s.app)
+				s.app.configureViews() // Should not panic
+			},
+		},
+		{
+			name: "empty view funcs are ignored",
+			setup: func() {
+				builder := NewApplicationBuilder(s.app)
+				builder.viewFuncs = func() template.FuncMap { return nil }
+				s.app.builder = builder
+				s.app.configureViews() // Should not touch the view facade, which is not bound
+			},
+		},
+		{
+			name: "view funcs are added to the view facade",
+			setup: func() {
+				mockView := mocksview.NewView(s.T())
+				mockView.EXPECT().AddFuncs(mock.MatchedBy(func(funcs template.FuncMap) bool {
+					_, ok := funcs["upper"]
+					return ok && len(funcs) == 1
+				})).Return().Once()
+				s.app.Instance(binding.View, mockView)
+
+				builder := NewApplicationBuilder(s.app)
+				builder.viewFuncs = func() template.FuncMap {
+					return template.FuncMap{"upper": func(v string) string { return v }}
+				}
+				s.app.builder = builder
+				s.app.configureViews()
+			},
+		},
+		{
+			name: "view funcs without view facade do not panic",
+			setup: func() {
+				builder := NewApplicationBuilder(s.app)
+				builder.viewFuncs = func() template.FuncMap {
+					return template.FuncMap{"upper": func(v string) string { return v }}
+				}
+				s.app.builder = builder
+				s.app.configureViews() // Should not panic
+			},
+		},
+		{
+			name: "route driver implementing view.Compiler is asked to compile",
+			setup: func() {
+				route := &compilerRoute{Route: mocksroute.NewRoute(s.T())}
+				s.app.Instance(binding.Route, route)
+				s.app.builder = NewApplicationBuilder(s.app)
+				s.app.configureViews()
+				s.Equal(1, route.called)
+			},
+		},
+		{
+			name: "compile error is reported without panicking",
+			setup: func() {
+				route := &compilerRoute{Route: mocksroute.NewRoute(s.T()), err: errors.New("parse failed")}
+				s.app.Instance(binding.Route, route)
+				s.app.builder = NewApplicationBuilder(s.app)
+				s.app.configureViews() // Should not panic
+				s.Equal(1, route.called)
+			},
+		},
+		{
+			name: "route driver without view.Compiler is left alone",
+			setup: func() {
+				s.app.Instance(binding.Route, mocksroute.NewRoute(s.T()))
+				s.app.builder = NewApplicationBuilder(s.app)
+				s.app.configureViews() // The mock asserts that nothing was called
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			s.SetupTest()
+			tt.setup()
+		})
+	}
+}
