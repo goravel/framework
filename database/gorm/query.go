@@ -1887,6 +1887,7 @@ func (r *Query) incrementOrDecrement(column, operator string, value ...uint64) e
 	// Read the current value before updating: GORM assigns the update expression to the model,
 	// which resets sql.Scanner fields.
 	field, current := r.incrementField(column)
+	restore := r.snapshotField(column)
 
 	columnSQL, vars := columnCondition(column)
 	values := map[string]any{
@@ -1894,11 +1895,13 @@ func (r *Query) incrementOrDecrement(column, operator string, value ...uint64) e
 	}
 	result, err := r.Update(values)
 	if err != nil {
+		restore()
 		return err
 	}
 
 	// Skip the in-memory sync if no row was updated, or if an event has replaced the expression with a concrete value.
 	if _, ok := values[column].(clause.Expr); !ok || result.RowsAffected == 0 || field == nil {
+		restore()
 		return nil
 	}
 
@@ -1917,6 +1920,7 @@ func (r *Query) incrementOrDecrement(column, operator string, value ...uint64) e
 			next = current.Uint() - amount
 		} else {
 			// The database rejects or clamps the underflow, don't wrap around in memory.
+			restore()
 			return nil
 		}
 	case reflect.Float32, reflect.Float64:
@@ -1926,12 +1930,45 @@ func (r *Query) incrementOrDecrement(column, operator string, value ...uint64) e
 			next = current.Float() - float64(amount)
 		}
 	default:
+		restore()
 		return nil
 	}
 
 	_ = field.Set(r.ctx, reflect.ValueOf(r.conditions.model).Elem(), next)
 
 	return nil
+}
+
+// snapshotField copies the model field of the column and returns a function that puts the copy back.
+// GORM assigns the update expression to the model, and how a field (e.g. sql.Null*) handles that
+// depends on its type and the Go version, so a field that isn't synced is restored as it was.
+func (r *Query) snapshotField(column string) func() {
+	model := r.conditions.model
+	modelValue := reflect.ValueOf(model)
+	if model == nil || modelValue.Kind() != reflect.Pointer || modelValue.IsNil() || modelValue.Elem().Kind() != reflect.Struct {
+		return func() {}
+	}
+
+	statement := &gormio.Statement{DB: r.instance}
+	if err := statement.Parse(model); err != nil {
+		return func() {}
+	}
+
+	field := statement.Schema.LookUpField(column)
+	if field == nil {
+		return func() {}
+	}
+
+	fieldValue := field.ReflectValueOf(r.ctx, modelValue.Elem())
+	if !fieldValue.CanSet() {
+		return func() {}
+	}
+	original := reflect.New(fieldValue.Type()).Elem()
+	original.Set(fieldValue)
+
+	return func() {
+		fieldValue.Set(original)
+	}
 }
 
 // incrementField returns the schema field of the query model for the column and its current numeric value,
