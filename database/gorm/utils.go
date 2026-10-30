@@ -32,9 +32,9 @@ type notExpression struct {
 	exprs []clause.Expression
 }
 
-func (r notExpression) Build(builder clause.Builder) {
+func (n notExpression) Build(builder clause.Builder) {
 	_, _ = builder.WriteString("NOT (")
-	clause.Where{Exprs: r.exprs}.Build(builder)
+	clause.Where{Exprs: n.exprs}.Build(builder)
 	_ = builder.WriteByte(')')
 }
 

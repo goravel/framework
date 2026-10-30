@@ -13,14 +13,15 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	gormio "gorm.io/gorm"
-	gormtests "gorm.io/gorm/utils/tests"
 	"gorm.io/gorm/clause"
+	gormtests "gorm.io/gorm/utils/tests"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 	contractsdb "github.com/goravel/framework/contracts/database/db"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/errors"
+	mocksdriver "github.com/goravel/framework/mocks/database/driver"
 )
 
 func TestAddGlobalScopes(t *testing.T) {
@@ -1344,6 +1345,16 @@ func TestWhereClauses(t *testing.T) {
 			expectError: errors.OrmQueryInvalidSubQuery,
 		},
 		{
+			name: "WhereExists with typed nil sub query",
+			query: func() contractsorm.Query {
+				return newQuery().WhereExists(func() contractsorm.Query {
+					var sub *Query
+					return sub
+				})
+			},
+			expectError: errors.OrmQueryInvalidSubQuery,
+		},
+		{
 			name: "WhereExists propagates the sub query error",
 			query: func() contractsorm.Query {
 				return newQuery().WhereExists(func() contractsorm.Query {
@@ -1377,6 +1388,43 @@ func TestWhereClauses(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestWhereNotWithJsonSelector(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	mockGrammar := mocksdriver.NewGrammar(t)
+	mockGrammar.EXPECT().CompileJsonSelector("data->string").Return("json_extract(`data`, '$.string')").Once()
+	mockGrammar.EXPECT().CompileJsonValues("first").Return([]any{"first"}).Once()
+
+	query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, mockGrammar, nil, nil, nil, nil).
+		Table("users").
+		WhereNot("data->string", "first").(*Query).
+		buildConditions()
+
+	statement := query.instance.Find(&[]map[string]any{}).Statement
+	assert.NoError(t, statement.Error)
+	assert.Equal(t, "SELECT * FROM `users` WHERE NOT (json_extract(`data`, '$.string') = ?)", statement.SQL.String())
+	assert.Equal(t, []any{"first"}, statement.Vars)
+}
+
+func TestWithErrorSurvivesModelConnection(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	// Product uses the "sqlite" connection, so buildConditions switches to that connection's query.
+	query := NewQuery(context.Background(), nil, contractsdatabase.Config{Connection: "mysql"}, db, nil, nil, nil, nil, nil).
+		Model(&Product{}).
+		WhereColumn("name").(*Query)
+	query.queries = map[string]*Query{
+		"sqlite": NewQuery(context.Background(), nil, contractsdatabase.Config{Connection: "sqlite"}, db.Session(&gormio.Session{}), nil, nil, nil, nil, nil),
+	}
+
+	built := query.buildConditions()
+
+	assert.EqualError(t, built.instance.Error, errors.DatabaseInvalidArgumentNumber.Args(0, "1 or 2").Error())
+	assert.NotSame(t, query.instance, built.instance)
 }
 
 func TestLatest(t *testing.T) {

@@ -148,7 +148,7 @@ type Query interface {
 	OrWhereJsonLength(column string, length int) Query
 	// OrWhereLike adds an "or where column like" clause to the query.
 	OrWhereLike(column string, value string) Query
-	// OrWhereNot adds an "or where not" clause to the query.
+	// OrWhereNot adds an "or where not" clause that negates the given conditions as a group.
 	OrWhereNot(query any, args ...any) Query
 	// OrWhereNotBetween adds an "or where column not between x and y" clause to the query.
 	OrWhereNotBetween(column string, x, y any) Query
@@ -237,7 +237,7 @@ type Query interface {
 	WhereLike(column string, value string) Query
 	// WhereNone adds a "where none of columns match" clause to the query.
 	WhereNone(columns []string, args ...any) Query
-	// WhereNot adds a basic "where not" clause to the query.
+	// WhereNot adds a "where not" clause that negates the given conditions as a group.
 	WhereNot(query any, args ...any) Query
 	// WhereNotBetween adds a "where column not between x and y" clause to the query.
 	WhereNotBetween(column string, x, y any) Query
