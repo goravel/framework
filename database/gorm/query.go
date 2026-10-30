@@ -1339,7 +1339,7 @@ func (r *Query) addGlobalScopes() *Query {
 	return r.Scopes(globalScopes...).(*Query)
 }
 
-// addJoin appends a raw JOIN clause, all join types share the same slice so the call order is kept.
+// addJoin appends to the shared join slice so joins render in the order they were called.
 func (r *Query) addJoin(query string, args ...any) contractsorm.Query {
 	conditions := r.conditions
 	conditions.join = deep.Append(conditions.join, contractsdriver.Join{
