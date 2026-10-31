@@ -29,6 +29,7 @@ func (s *TelemetryChannelTestSuite) TestHandle() {
 		setup            func(m *mocksconfig.Config)
 		shouldBeEnabled  bool
 		expectedInstName string
+		expectedLevel    contractslog.Level
 	}{
 		{
 			name: "Success: Telemetry enabled with custom name",
@@ -36,9 +37,23 @@ func (s *TelemetryChannelTestSuite) TestHandle() {
 				m.EXPECT().GetBool(telemetryKey, false).Return(true).Once()
 				m.EXPECT().GetString(channelPath+".instrument_name", DefaultInstrumentationName).
 					Return("custom-app-logger").Once()
+				m.EXPECT().GetString(channelPath + ".level").Return("warning").Once()
 			},
 			shouldBeEnabled:  true,
 			expectedInstName: "custom-app-logger",
+			expectedLevel:    contractslog.LevelWarning,
+		},
+		{
+			name: "Success: Level not set logs everything",
+			setup: func(m *mocksconfig.Config) {
+				m.EXPECT().GetBool(telemetryKey, false).Return(true).Once()
+				m.EXPECT().GetString(channelPath+".instrument_name", DefaultInstrumentationName).
+					Return(DefaultInstrumentationName).Once()
+				m.EXPECT().GetString(channelPath + ".level").Return("").Once()
+			},
+			shouldBeEnabled:  true,
+			expectedInstName: DefaultInstrumentationName,
+			expectedLevel:    contractslog.LevelDebug,
 		},
 		{
 			name: "Success: Telemetry disabled via config",
@@ -61,13 +76,17 @@ func (s *TelemetryChannelTestSuite) TestHandle() {
 			s.NoError(err)
 			s.NotNil(channelHandler)
 
-			s.Equal(tt.shouldBeEnabled, channelHandler.Enabled(contractslog.LevelInfo))
+			s.Equal(tt.shouldBeEnabled, channelHandler.Enabled(tt.expectedLevel))
+			if tt.shouldBeEnabled {
+				s.False(channelHandler.Enabled(tt.expectedLevel - 1))
+			}
 
 			if tt.shouldBeEnabled {
 				impl, ok := channelHandler.(*handler)
 				s.True(ok, "Returned handler must be of type *handler")
 
 				s.Equal(tt.expectedInstName, impl.instrumentName, "Instrumentation name should match config")
+				s.Equal(tt.expectedLevel, impl.level, "Level should match config")
 
 				s.NotNil(impl.resolver, "Handler resolver should not be nil")
 				s.Equal(mockTelemetry, impl.resolver(), "Resolver should return the injected telemetry service")
