@@ -46,11 +46,15 @@ func (r *TestMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *TestMakeCommand) Handle(ctx console.Context) error {
-	filePath := ctx.Argument(0)
+	supportconsole.HandleEach(ctx, r.makeOne)
+
+	return nil
+}
+
+func (r *TestMakeCommand) makeOne(ctx console.Context, filePath string) error {
 	m, err := supportconsole.NewMake(ctx, "test", filePath, support.Config.Paths.Tests)
 	if err != nil {
-		ctx.Error(err.Error())
-		return nil
+		return err
 	}
 
 	stub := r.getStub()
@@ -64,8 +68,7 @@ func (r *TestMakeCommand) Handle(ctx console.Context) error {
 	}
 
 	if err := file.PutContent(m.GetFilePath(), r.populateStub(stub, m.GetPackageName(), m.GetStructName(), testsImport, testCase)); err != nil {
-		ctx.Error(err.Error())
-		return nil
+		return err
 	}
 
 	ctx.Success("Test created successfully")

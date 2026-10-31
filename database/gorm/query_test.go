@@ -2,13 +2,22 @@ package gorm
 
 import (
 	"context"
+	"database/sql"
+	"database/sql/driver"
+	"fmt"
+	"io"
 	"reflect"
+	"sync/atomic"
 	"testing"
+	"testing/synctest"
 
 	"github.com/stretchr/testify/assert"
 	gormio "gorm.io/gorm"
+	"gorm.io/gorm/clause"
+	gormtests "gorm.io/gorm/utils/tests"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
+	contractsdb "github.com/goravel/framework/contracts/database/db"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/errors"
@@ -274,6 +283,50 @@ func TestAddWhere(t *testing.T) {
 	}, query1.conditions.where)
 }
 
+func TestCursor(t *testing.T) {
+	// The consumer receives one row and cancels the context. When it is canceled, the producer is blocked
+	// sending the third row, and the second one is in the buffer: the producer replaces it with the error.
+	cancelAfterFirstRow := func(t *testing.T) (chan contractsdb.Row, *cursorDriver, func()) {
+		ctx, cancel := context.WithCancel(context.Background())
+		query, fake, closeDB := newCursorQuery(t, ctx, 3)
+
+		ch := query.Cursor()
+		first := <-ch
+		assert.NoError(t, first.Err())
+
+		synctest.Wait()
+		cancel()
+		synctest.Wait()
+
+		return ch, fake, closeDB
+	}
+
+	t.Run("stop reading after canceling the context", func(t *testing.T) {
+		// synctest fails if the producer goroutine is still blocked when the test ends.
+		synctest.Test(t, func(t *testing.T) {
+			_, fake, closeDB := cancelAfterFirstRow(t)
+			defer closeDB()
+
+			assert.True(t, fake.closed.Load())
+		})
+	})
+
+	t.Run("keep reading after canceling the context", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			ch, fake, closeDB := cancelAfterFirstRow(t)
+			defer closeDB()
+
+			var errs []error
+			for row := range ch {
+				errs = append(errs, row.Err())
+			}
+
+			assert.Equal(t, []error{context.Canceled}, errs)
+			assert.True(t, fake.closed.Load())
+		})
+	})
+}
+
 func TestFilterFindConditions(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -404,6 +457,83 @@ func TestGetObserver(t *testing.T) {
 
 	assert.Nil(t, query.getObserver(Product{}))
 	assert.Equal(t, &UserObserver{}, query.getObserver(User{}))
+}
+
+func TestJoinClauses(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	newQuery := func() contractsorm.Query {
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, nil, nil, nil, nil, nil).Table("users")
+	}
+
+	tests := []struct {
+		name       string
+		query      func() contractsorm.Query
+		expectSql  string
+		expectVars []any
+	}{
+		{
+			name:      "Join",
+			query:     func() contractsorm.Query { return newQuery().Join("JOIN posts ON posts.user_id = users.id") },
+			expectSql: "SELECT * FROM `users` JOIN posts ON posts.user_id = users.id",
+		},
+		{
+			name:      "LeftJoin",
+			query:     func() contractsorm.Query { return newQuery().LeftJoin("posts ON posts.user_id = users.id") },
+			expectSql: "SELECT * FROM `users` LEFT JOIN posts ON posts.user_id = users.id",
+		},
+		{
+			name: "LeftJoin with args",
+			query: func() contractsorm.Query {
+				return newQuery().LeftJoin("posts ON posts.user_id = users.id AND posts.published = ?", true).Where("users.id", 1)
+			},
+			expectSql:  "SELECT * FROM `users` LEFT JOIN posts ON posts.user_id = users.id AND posts.published = ? WHERE `users`.`id` = ?",
+			expectVars: []any{true, 1},
+		},
+		{
+			name:      "RightJoin",
+			query:     func() contractsorm.Query { return newQuery().RightJoin("posts ON posts.user_id = users.id") },
+			expectSql: "SELECT * FROM `users` RIGHT JOIN posts ON posts.user_id = users.id",
+		},
+		{
+			name: "RightJoin with args",
+			query: func() contractsorm.Query {
+				return newQuery().RightJoin("posts ON posts.user_id = users.id AND posts.id > ?", 10)
+			},
+			expectSql:  "SELECT * FROM `users` RIGHT JOIN posts ON posts.user_id = users.id AND posts.id > ?",
+			expectVars: []any{10},
+		},
+		{
+			name:      "CrossJoin",
+			query:     func() contractsorm.Query { return newQuery().CrossJoin("roles") },
+			expectSql: "SELECT * FROM `users` CROSS JOIN roles",
+		},
+		{
+			name: "mixed joins keep the call order",
+			query: func() contractsorm.Query {
+				return newQuery().
+					CrossJoin("roles").
+					LeftJoin("posts ON posts.user_id = users.id").
+					Join("JOIN addresses ON addresses.user_id = users.id").
+					RightJoin("books ON books.user_id = users.id")
+			},
+			expectSql: "SELECT * FROM `users` CROSS JOIN roles LEFT JOIN posts ON posts.user_id = users.id JOIN addresses ON addresses.user_id = users.id RIGHT JOIN books ON books.user_id = users.id",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			statement := test.query().(*Query).buildConditions().instance.Find(&[]map[string]any{}).Statement
+			assert.NoError(t, statement.Error)
+			assert.Equal(t, test.expectSql, statement.SQL.String())
+			if len(test.expectVars) == 0 {
+				assert.Empty(t, statement.Vars)
+			} else {
+				assert.Equal(t, test.expectVars, statement.Vars)
+			}
+		})
+	}
 }
 
 func TestModelToStruct(t *testing.T) {
@@ -936,6 +1066,198 @@ func TestObserverEvent(t *testing.T) {
 	assert.Nil(t, getObserverEvent("error", &UserObserver{}))
 }
 
+func TestQuoteColumns(t *testing.T) {
+	group := clause.Column{Name: "group"}
+	order := clause.Column{Name: "order"}
+
+	tests := []struct {
+		name          string
+		query         func(contractsorm.Query) contractsorm.Query
+		expectedWhere []contractsdriver.Where
+		expectedOrder []any
+	}{
+		{
+			name: "WhereIn",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereIn("group", []any{"a"})
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? IN ?", Args: []any{group, []any{"a"}}}},
+		},
+		{
+			name: "OrWhereIn",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrWhereIn("group", []any{"a"})
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? IN ?", Args: []any{group, []any{"a"}}, Or: true}},
+		},
+		{
+			name: "WhereNotIn",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNotIn("group", []any{"a"})
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? NOT IN ?", Args: []any{group, []any{"a"}}}},
+		},
+		{
+			name: "OrWhereNotIn",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrWhereNotIn("group", []any{"a"})
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? NOT IN ?", Args: []any{group, []any{"a"}}, Or: true}},
+		},
+		{
+			name: "WhereBetween",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereBetween("order", 1, 2)
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? BETWEEN ? AND ?", Args: []any{order, 1, 2}}},
+		},
+		{
+			name: "WhereNotBetween",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNotBetween("order", 1, 2)
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? NOT BETWEEN ? AND ?", Args: []any{order, 1, 2}}},
+		},
+		{
+			name: "OrWhereBetween",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrWhereBetween("order", 1, 2)
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? BETWEEN ? AND ?", Args: []any{order, 1, 2}, Or: true}},
+		},
+		{
+			name: "OrWhereNotBetween",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrWhereNotBetween("order", 1, 2)
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? NOT BETWEEN ? AND ?", Args: []any{order, 1, 2}, Or: true}},
+		},
+		{
+			name: "WhereNull",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNull("group")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? IS NULL", Args: []any{group}}},
+		},
+		{
+			name: "OrWhereNull",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrWhereNull("group")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? IS NULL", Args: []any{group}, Or: true}},
+		},
+		{
+			name: "WhereNotNull",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNotNull("group")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? IS NOT NULL", Args: []any{group}}},
+		},
+		{
+			name: "WhereAll",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereAll([]string{"group", "order"}, "a")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? = ? AND ? = ?", Args: []any{group, "a", order, "a"}}},
+		},
+		{
+			name: "WhereAny",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereAny([]string{"group", "order"}, "a")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "(? = ? OR ? = ?)", Args: []any{group, "a", order, "a"}}},
+		},
+		{
+			name: "WhereNone",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNone([]string{"group", "order"}, "LIKE", "a")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "NOT (? LIKE ?) AND NOT (? LIKE ?)", Args: []any{group, "a", order, "a"}}},
+		},
+		{
+			name: "WhereNone with equal operator",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNone([]string{"group"}, "a")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? <> ?", Args: []any{group, "a"}}},
+		},
+		{
+			name: "OrderBy",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrderBy("order")
+			},
+			expectedOrder: []any{clause.OrderByColumn{Column: order}},
+		},
+		{
+			name: "OrderBy with lower case direction",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrderBy("order", "desc")
+			},
+			expectedOrder: []any{clause.OrderByColumn{Column: order, Desc: true}},
+		},
+		{
+			name: "OrderBy with custom direction is not quoted",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrderBy("order", "DESC NULLS LAST")
+			},
+			expectedOrder: []any{"order DESC NULLS LAST"},
+		},
+		{
+			name: "OrderByDesc",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrderByDesc("order")
+			},
+			expectedOrder: []any{clause.OrderByColumn{Column: order, Desc: true}},
+		},
+		{
+			name: "table qualified column",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNull("users.group")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? IS NULL", Args: []any{clause.Column{Name: "users.group"}}}},
+		},
+		{
+			name: "expression is not quoted",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNull("LOWER(name)")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "LOWER(name) IS NULL"}},
+		},
+		{
+			name: "json selector is not quoted",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNull("data->name")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "data->name IS NULL"}},
+		},
+		{
+			name: "quoted column is not quoted again",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNull("`group`")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "`group` IS NULL"}},
+		},
+		{
+			name: "expression in OrderBy is not quoted",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrderByDesc("LOWER(name)")
+			},
+			expectedOrder: []any{"LOWER(name) DESC"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// No gorm instance: the column is quoted when the query is built, by the connection that runs it,
+			// so these methods must not need one (e.g. when the database is not configured).
+			query := test.query(NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, nil, nil)).(*Query)
+
+			assert.Equal(t, test.expectedWhere, query.conditions.where)
+			assert.Equal(t, test.expectedOrder, query.conditions.order)
+		})
+	}
+}
+
 func TestWhen(t *testing.T) {
 	query := &Query{}
 	trueQuery := &Query{}
@@ -954,6 +1276,87 @@ func TestWhen(t *testing.T) {
 	assert.Same(t, trueQuery, query.When(true, callback, falseCallback))
 	assert.Same(t, query, query.When(false, callback))
 	assert.Same(t, falseQuery, query.When(false, callback, falseCallback))
+}
+
+func TestLatest(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	newQuery := func() contractsorm.Query {
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, nil, nil, nil, nil, nil).Table("users")
+	}
+
+	tests := []struct {
+		name      string
+		query     func() contractsorm.Query
+		expectSql string
+	}{
+		{
+			name:      "default column",
+			query:     func() contractsorm.Query { return newQuery().Latest() },
+			expectSql: "SELECT * FROM `users` ORDER BY `created_at` DESC",
+		},
+		{
+			name:      "empty column falls back to default",
+			query:     func() contractsorm.Query { return newQuery().Latest("") },
+			expectSql: "SELECT * FROM `users` ORDER BY `created_at` DESC",
+		},
+		{
+			name:      "custom column",
+			query:     func() contractsorm.Query { return newQuery().Latest("id") },
+			expectSql: "SELECT * FROM `users` ORDER BY `id` DESC",
+		},
+		{
+			name:      "combined with other orders",
+			query:     func() contractsorm.Query { return newQuery().Latest("updated_at").OrderBy("id") },
+			expectSql: "SELECT * FROM `users` ORDER BY `updated_at` DESC,`id`",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			query := test.query().(*Query).buildConditions()
+			statement := query.instance.Find(&[]map[string]any{}).Statement
+			assert.NoError(t, statement.Error)
+			assert.Equal(t, test.expectSql, statement.SQL.String())
+		})
+	}
+}
+
+func TestValueWithNonPointerDest(t *testing.T) {
+	var name string
+	err := (&Query{}).Value("name", name)
+
+	assert.EqualError(t, err, errors.DatabaseUnsupportedType.Args(reflect.String, "pointer").Error())
+}
+
+func TestValueAndDoesntExist(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	newQuery := func(db *gormio.DB) contractsorm.Query {
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, nil, nil, nil, nil, nil).Table("users")
+	}
+
+	// Value scans, which GORM refuses in dry run mode: the query is built and
+	// the error is returned without touching dest.
+	name := "unchanged"
+	assert.ErrorIs(t, newQuery(db).Where("id", 1).Value("name", &name), gormio.ErrDryRunModeUnsupported)
+	assert.Equal(t, "unchanged", name)
+
+	doesntExist, err := newQuery(db).Where("id", 1).DoesntExist()
+	assert.NoError(t, err)
+	assert.True(t, doesntExist)
+
+	// Errors of the underlying query are returned.
+	failing := db.Session(&gormio.Session{})
+	_ = failing.AddError(assert.AnError)
+
+	assert.ErrorIs(t, newQuery(failing).Value("name", &name), assert.AnError)
+
+	doesntExist, err = newQuery(failing).DoesntExist()
+	assert.ErrorIs(t, err, assert.AnError)
+	assert.False(t, doesntExist)
 }
 
 type User struct {
@@ -1084,4 +1487,68 @@ type ModelWithEmptyGlobalScopes struct {
 
 func (m *ModelWithEmptyGlobalScopes) GlobalScopes() map[string]func(contractsorm.Query) contractsorm.Query {
 	return map[string]func(contractsorm.Query) contractsorm.Query{}
+}
+
+// cursorDriver is a database/sql driver whose queries return `rows` rows with an "id" column, and that
+// records when the rows are closed.
+type cursorDriver struct {
+	rows   int
+	closed atomic.Bool
+}
+
+func (r *cursorDriver) Open(string) (driver.Conn, error) { return &cursorConn{driver: r}, nil }
+
+type cursorConn struct{ driver *cursorDriver }
+
+func (r *cursorConn) Prepare(string) (driver.Stmt, error) { return &cursorStmt{driver: r.driver}, nil }
+func (r *cursorConn) Close() error                        { return nil }
+func (r *cursorConn) Begin() (driver.Tx, error)           { return nil, fmt.Errorf("not supported") }
+
+type cursorStmt struct{ driver *cursorDriver }
+
+func (r *cursorStmt) Close() error  { return nil }
+func (r *cursorStmt) NumInput() int { return -1 }
+func (r *cursorStmt) Exec([]driver.Value) (driver.Result, error) {
+	return nil, fmt.Errorf("not supported")
+}
+func (r *cursorStmt) Query([]driver.Value) (driver.Rows, error) {
+	return &cursorRows{driver: r.driver}, nil
+}
+
+type cursorRows struct {
+	driver *cursorDriver
+	next   int
+}
+
+func (r *cursorRows) Columns() []string { return []string{"id"} }
+func (r *cursorRows) Close() error {
+	r.driver.closed.Store(true)
+	return nil
+}
+func (r *cursorRows) Next(dest []driver.Value) error {
+	if r.next >= r.driver.rows {
+		return io.EOF
+	}
+	r.next++
+	dest[0] = int64(r.next)
+	return nil
+}
+
+var cursorDriverID atomic.Int64
+
+// newCursorQuery returns a query on a new cursorDriver, and a function that closes its database.
+func newCursorQuery(t *testing.T, ctx context.Context, rows int) (*Query, *cursorDriver, func()) {
+	fake := &cursorDriver{rows: rows}
+	name := fmt.Sprintf("goravel-orm-cursor-%d", cursorDriverID.Add(1))
+	sql.Register(name, fake)
+
+	sqlDB, err := sql.Open(name, "")
+	assert.NoError(t, err)
+
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{ConnPool: sqlDB})
+	assert.NoError(t, err)
+
+	query := NewQuery(ctx, nil, contractsdatabase.Config{}, db.WithContext(ctx), nil, nil, nil, nil, nil)
+
+	return query.Table("users").(*Query), fake, func() { _ = sqlDB.Close() }
 }

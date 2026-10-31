@@ -72,46 +72,57 @@ func (r *ModelMakeCommand) Extend() command.Extend {
 }
 
 func (r *ModelMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "model", ctx.Argument(0), support.Config.Paths.Models)
-	if err != nil {
-		ctx.Error(err.Error())
-		return nil
-	}
-
 	table := ctx.Option("table")
-	model := modelDefinition{
-		Imports: make(map[string]struct{}),
+	if table != "" && len(supportconsole.MakeNames(ctx)) > 1 {
+		return errors.ConsoleTableOptionSingleName
 	}
-	structName := m.GetStructName()
 
+	var columns []driver.Column
 	if table != "" {
 		if !r.schema.HasTable(table) {
 			ctx.Error(errors.SchemaTableNotFound.Args(table).Error())
 			return nil
 		}
 
-		columns, err := r.schema.GetColumns(table)
-		if err != nil {
+		var err error
+		if columns, err = r.schema.GetColumns(table); err != nil {
 			ctx.Error(err.Error())
 			return nil
 		}
+	}
 
+	supportconsole.HandleEach(ctx, func(ctx console.Context, name string) error {
+		return r.makeOne(ctx, name, table, columns)
+	})
+
+	return nil
+}
+
+func (r *ModelMakeCommand) makeOne(ctx console.Context, name, table string, columns []driver.Column) error {
+	m, err := supportconsole.NewMake(ctx, "model", name, support.Config.Paths.Models)
+	if err != nil {
+		return err
+	}
+
+	model := modelDefinition{
+		Imports: make(map[string]struct{}),
+	}
+	structName := m.GetStructName()
+
+	if table != "" {
 		model, err = r.generateModelInfo(columns, structName, table)
 		if err != nil {
-			ctx.Error(err.Error())
-			return nil
+			return err
 		}
 	}
 
 	stubContent, err := r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName(), model)
 	if err != nil {
-		ctx.Error(err.Error())
-		return nil
+		return err
 	}
 
 	if err := file.PutContent(m.GetFilePath(), stubContent); err != nil {
-		ctx.Error(err.Error())
-		return nil
+		return err
 	}
 
 	ctx.Success("Model created successfully")

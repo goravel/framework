@@ -15,6 +15,7 @@ import (
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/mysql"
 	"github.com/goravel/postgres"
 	"github.com/goravel/sqlite"
@@ -583,6 +584,32 @@ func (s *QueryTestSuite) TestCreate() {
 	}
 }
 
+func (s *QueryTestSuite) TestCrossJoin() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			users := []User{{Name: "cross_join_user1"}, {Name: "cross_join_user2"}}
+			s.Nil(query.Query().Create(&users))
+
+			addresses := []Address{{UserID: users[0].ID, Name: "cross_join_address1"}, {UserID: users[0].ID, Name: "cross_join_address2"}}
+			s.Nil(query.Query().Create(&addresses))
+
+			type Result struct {
+				UserName    string
+				AddressName string
+			}
+			var result []Result
+			s.Nil(query.Query().Model(&User{}).CrossJoin("addresses").
+				Where("users.name LIKE ?", "cross_join_user%").Where("addresses.name LIKE ?", "cross_join_address%").
+				Select("users.name user_name, addresses.name address_name").Get(&result))
+			s.Len(result, 4)
+			s.Contains(result, Result{UserName: "cross_join_user1", AddressName: "cross_join_address1"})
+			s.Contains(result, Result{UserName: "cross_join_user1", AddressName: "cross_join_address2"})
+			s.Contains(result, Result{UserName: "cross_join_user2", AddressName: "cross_join_address1"})
+			s.Contains(result, Result{UserName: "cross_join_user2", AddressName: "cross_join_address2"})
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestCursor() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
@@ -1004,6 +1031,36 @@ func (s *QueryTestSuite) TestDelete() {
 				test.setup()
 			})
 		}
+	}
+}
+
+func (s *QueryTestSuite) TestDoesntExist() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			user := User{Name: "doesnt_exist_user", Avatar: "doesnt_exist_avatar"}
+			s.Nil(query.Query().Create(&user))
+			s.True(user.ID > 0)
+
+			doesntExist, err := query.Query().Model(&User{}).Where("name", "doesnt_exist_user").DoesntExist()
+			s.Nil(err)
+			s.False(doesntExist)
+
+			doesntExist, err = query.Query().Model(&User{}).Where("name", "no_doesnt_exist_user").DoesntExist()
+			s.Nil(err)
+			s.True(doesntExist)
+
+			// Soft deleted records are excluded unless WithTrashed is used.
+			_, err = query.Query().Delete(&user)
+			s.Nil(err)
+
+			doesntExist, err = query.Query().Model(&User{}).Where("name", "doesnt_exist_user").DoesntExist()
+			s.Nil(err)
+			s.True(doesntExist)
+
+			doesntExist, err = query.Query().Model(&User{}).WithTrashed().Where("name", "doesnt_exist_user").DoesntExist()
+			s.Nil(err)
+			s.False(doesntExist)
+		})
 	}
 }
 
@@ -2586,6 +2643,23 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 				s.Equal(0, len(globalScopes))
 			})
 
+			s.Run("DoesntExist", func() {
+				query.CreateTable(TestTableGlobalScopes)
+				prepareData(query.Query())
+
+				doesntExist, err := query.Query().Model(&GlobalScope{}).DoesntExist()
+				s.Nil(err)
+				s.False(doesntExist)
+
+				doesntExist, err = query.Query().Model(&GlobalScope{}).Where("avatar", "avatar_scope1").DoesntExist()
+				s.Nil(err)
+				s.True(doesntExist)
+
+				doesntExist, err = query.Query().Model(&GlobalScope{}).WithoutGlobalScopes().Where("avatar", "avatar_scope1").DoesntExist()
+				s.Nil(err)
+				s.False(doesntExist)
+			})
+
 			s.Run("Exists", func() {
 				query.CreateTable(TestTableGlobalScopes)
 				prepareData(query.Query())
@@ -2838,6 +2912,18 @@ func (s *QueryTestSuite) TestGlobalScopes() {
 				s.Nil(query.Query().Get(&globalScopes))
 				s.Equal(0, len(globalScopes))
 			})
+
+			s.Run("Value", func() {
+				query.CreateTable(TestTableGlobalScopes)
+				prepareData(query.Query())
+
+				var avatar string
+				s.Nil(query.Query().Model(&GlobalScope{}).OrderByDesc("id").Value("avatar", &avatar))
+				s.Equal("avatar_scope", avatar)
+
+				s.Nil(query.Query().Model(&GlobalScope{}).WithoutGlobalScopes().OrderByDesc("id").Value("avatar", &avatar))
+				s.Equal("avatar_scope1", avatar)
+			})
 		})
 	}
 }
@@ -2863,6 +2949,35 @@ func (s *QueryTestSuite) TestJoin() {
 			s.Equal(1, len(result))
 			s.Equal("join_user", result[0].UserName)
 			s.Equal("join_address", result[0].UserAddressName)
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestLeftJoin() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			users := []User{{Name: "left_join_user1"}, {Name: "left_join_user2"}}
+			s.Nil(query.Query().Create(&users))
+
+			addresses := []Address{{UserID: users[0].ID, Name: "left_join_address1"}, {UserID: users[0].ID, Name: "left_join_address2"}}
+			s.Nil(query.Query().Create(&addresses))
+
+			type Result struct {
+				UserName    string
+				AddressName *string
+			}
+			var result []Result
+			s.Nil(query.Query().Model(&User{}).LeftJoin("addresses ON addresses.user_id = users.id AND addresses.name = ?", "left_join_address1").
+				Where("users.name LIKE ?", "left_join_user%").
+				Select("users.name user_name, addresses.name address_name").Get(&result))
+			s.Len(result, 2)
+			s.Contains(result, Result{UserName: "left_join_user1", AddressName: convert.Pointer("left_join_address1")})
+			s.Contains(result, Result{UserName: "left_join_user2"})
+
+			count, err := query.Query().Model(&User{}).LeftJoin("addresses ON addresses.user_id = users.id").
+				Where("users.name LIKE ?", "left_join_user%").Count()
+			s.NoError(err)
+			s.Equal(int64(3), count)
 		})
 	}
 }
@@ -3347,6 +3462,44 @@ func (s *QueryTestSuite) TestManyToManyUpdateWithAssociations() {
 					test.setup()
 				})
 			}
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestLatest() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			older := User{Name: "latest_user", Avatar: "latest_avatar_older", Model: Model{Timestamps: Timestamps{
+				CreatedAt: carbon.NewDateTime(carbon.FromDateTime(2025, 1, 2, 3, 4, 5)),
+			}}}
+			s.Nil(query.Query().Create(&older))
+			s.True(older.ID > 0)
+
+			newer := User{Name: "latest_user", Avatar: "latest_avatar_newer", Model: Model{Timestamps: Timestamps{
+				CreatedAt: carbon.NewDateTime(carbon.FromDateTime(2025, 1, 3, 3, 4, 5)),
+			}}}
+			s.Nil(query.Query().Create(&newer))
+			s.True(newer.ID > 0)
+
+			oldest := User{Name: "latest_user", Avatar: "latest_avatar_oldest", Model: Model{Timestamps: Timestamps{
+				CreatedAt: carbon.NewDateTime(carbon.FromDateTime(2025, 1, 1, 3, 4, 5)),
+			}}}
+			s.Nil(query.Query().Create(&oldest))
+			s.True(oldest.ID > 0)
+
+			var users []User
+			s.Nil(query.Query().Where("name", "latest_user").Latest().Get(&users))
+			s.Len(users, 3)
+			s.Equal(newer.ID, users[0].ID)
+			s.Equal(older.ID, users[1].ID)
+			s.Equal(oldest.ID, users[2].ID)
+
+			users = nil
+			s.Nil(query.Query().Where("name", "latest_user").Latest("id").Get(&users))
+			s.Len(users, 3)
+			s.Equal(oldest.ID, users[0].ID)
+			s.Equal(newer.ID, users[1].ID)
+			s.Equal(older.ID, users[2].ID)
 		})
 	}
 }
@@ -3958,6 +4111,30 @@ func (s *QueryTestSuite) TestRestore() {
 	}
 }
 
+func (s *QueryTestSuite) TestRightJoin() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			users := []User{{Name: "right_join_user1"}, {Name: "right_join_user2"}}
+			s.Nil(query.Query().Create(&users))
+
+			address := Address{UserID: users[0].ID, Name: "right_join_address"}
+			s.Nil(query.Query().Create(&address))
+
+			type Result struct {
+				UserName    string
+				AddressName *string
+			}
+			var result []Result
+			s.Nil(query.Query().Table("addresses").RightJoin("users ON users.id = addresses.user_id AND users.name LIKE ?", "right_join_user%").
+				Where("users.name LIKE ?", "right_join_user%").
+				Select("users.name user_name, addresses.name address_name").Get(&result))
+			s.Len(result, 2)
+			s.Contains(result, Result{UserName: "right_join_user1", AddressName: convert.Pointer("right_join_address")})
+			s.Contains(result, Result{UserName: "right_join_user2"})
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestSum() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
@@ -4064,6 +4241,30 @@ func (s *QueryTestSuite) TestToSql() {
 				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = @p1 AND \"users\".\"deleted_at\" IS NULL", query.Query().Where("id", 1).ToSql().Find(User{}))
 			default:
 				s.Equal("SELECT * FROM `users` WHERE `id` = ? AND `users`.`deleted_at` IS NULL", query.Query().Where("id", 1).ToSql().Find(User{}))
+			}
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestToSqlWithJoins() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			joinQuery := query.Query().Model(&User{}).Select("users.name").
+				LeftJoin("addresses ON addresses.user_id = users.id AND addresses.name = ?", "goravel").
+				RightJoin("books ON books.user_id = users.id").
+				CrossJoin("roles").
+				Where("users.id", 1)
+
+			switch driver {
+			case postgres.Name:
+				s.Equal("SELECT users.name FROM \"users\" LEFT JOIN addresses ON addresses.user_id = users.id AND addresses.name = $1 RIGHT JOIN books ON books.user_id = users.id CROSS JOIN roles WHERE \"users\".\"id\" = $2 AND \"users\".\"deleted_at\" IS NULL", joinQuery.ToSql().Find(User{}))
+				s.Equal("SELECT users.name FROM \"users\" LEFT JOIN addresses ON addresses.user_id = users.id AND addresses.name = 'goravel' RIGHT JOIN books ON books.user_id = users.id CROSS JOIN roles WHERE \"users\".\"id\" = 1 AND \"users\".\"deleted_at\" IS NULL", joinQuery.ToRawSql().Find(User{}))
+			case sqlserver.Name:
+				s.Equal("SELECT users.name FROM \"users\" LEFT JOIN addresses ON addresses.user_id = users.id AND addresses.name = @p1 RIGHT JOIN books ON books.user_id = users.id CROSS JOIN roles WHERE \"users\".\"id\" = @p2 AND \"users\".\"deleted_at\" IS NULL", joinQuery.ToSql().Find(User{}))
+				s.Equal("SELECT users.name FROM \"users\" LEFT JOIN addresses ON addresses.user_id = users.id AND addresses.name = $1$ RIGHT JOIN books ON books.user_id = users.id CROSS JOIN roles WHERE \"users\".\"id\" = $2$ AND \"users\".\"deleted_at\" IS NULL", joinQuery.ToRawSql().Find(User{}))
+			default:
+				s.Equal("SELECT users.name FROM `users` LEFT JOIN addresses ON addresses.user_id = users.id AND addresses.name = ? RIGHT JOIN books ON books.user_id = users.id CROSS JOIN roles WHERE `users`.`id` = ? AND `users`.`deleted_at` IS NULL", joinQuery.ToSql().Find(User{}))
+				s.Equal("SELECT users.name FROM `users` LEFT JOIN addresses ON addresses.user_id = users.id AND addresses.name = 'goravel' RIGHT JOIN books ON books.user_id = users.id CROSS JOIN roles WHERE `users`.`id` = 1 AND `users`.`deleted_at` IS NULL", joinQuery.ToRawSql().Find(User{}))
 			}
 		})
 	}
@@ -4224,6 +4425,55 @@ func (s *QueryTestSuite) TestUpdateOrCreate() {
 			count, err := query.Query().Model(User{}).Where("name", "update_or_create_user").Count()
 			s.Nil(err)
 			s.Equal(int64(1), count)
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestValue() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			users := []User{
+				{Name: "value_user", Avatar: "value_avatar_1"},
+				{Name: "value_user", Avatar: "value_avatar_2"},
+			}
+			s.Nil(query.Query().Create(&users))
+
+			var avatar string
+			s.Nil(query.Query().Model(&User{}).Where("name", "value_user").OrderBy("id").Value("avatar", &avatar))
+			s.Equal("value_avatar_1", avatar)
+
+			s.Nil(query.Query().Model(&User{}).Where("name", "value_user").Latest("id").Value("avatar", &avatar))
+			s.Equal("value_avatar_2", avatar)
+
+			var id uint
+			s.Nil(query.Query().Table("users").Where("avatar", "value_avatar_2").Value("id", &id))
+			s.Equal(users[1].ID, id)
+
+			// No matching record leaves dest untouched without returning an error.
+			missing := "untouched"
+			s.Nil(query.Query().Model(&User{}).Where("name", "value_user_missing").Value("avatar", &missing))
+			s.Equal("untouched", missing)
+
+			// Soft deleted records are excluded unless WithTrashed is used.
+			_, err := query.Query().Delete(&users[0])
+			s.Nil(err)
+
+			avatar = ""
+			s.Nil(query.Query().Model(&User{}).Where("name", "value_user").OrderBy("id").Value("avatar", &avatar))
+			s.Equal("value_avatar_2", avatar)
+
+			s.Nil(query.Query().Model(&User{}).WithTrashed().Where("name", "value_user").OrderBy("id").Value("avatar", &avatar))
+			s.Equal("value_avatar_1", avatar)
+
+			// Value reads a raw column, so model events such as Retrieved are not dispatched.
+			retrieved := User{Name: "event_retrieved_name"}
+			s.Nil(query.Query().Create(&retrieved))
+
+			var name string
+			s.Nil(query.Query().Model(&User{}).Where("id", retrieved.ID).Value("name", &name))
+			s.Equal("event_retrieved_name", name)
+
+			s.ErrorIs(query.Query().Model(&User{}).Value("name", name), errors.DatabaseUnsupportedType)
 		})
 	}
 }
@@ -5016,6 +5266,71 @@ func TestCustomConnection(t *testing.T) {
 	docker, err := sqliteTestQuery.Driver().Docker()
 	assert.NoError(t, err)
 	assert.NoError(t, docker.Shutdown())
+}
+
+// Columns must be quoted by the connection that runs the query, not by the default one:
+// MySQL quotes with backticks, which Postgres rejects.
+func TestCustomConnectionQuotesColumns(t *testing.T) {
+	mysqlTestQuery := NewTestQueryBuilder().Mysql("", false)
+	mysqlTestQuery.CreateTable(TestTableProducts)
+
+	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
+	postgresTestQuery.CreateTable(TestTableProducts)
+
+	config := postgresTestQuery.Driver().Pool().Writers[0]
+	config.Connection = "postgres"
+	mockDatabaseConfig(mysqlTestQuery.MockConfig(), config)
+
+	query := mysqlTestQuery.Query()
+	light := PostgresProduct{Product: Product{Name: "quote_light", Weight: convert.Pointer(1)}}
+	heavy := PostgresProduct{Product: Product{Name: "quote_heavy", Weight: convert.Pointer(10)}}
+	assert.NoError(t, query.Create(&light))
+	assert.NoError(t, query.Create(&heavy))
+
+	tests := []struct {
+		name     string
+		query    contractsorm.Query
+		expected []string
+	}{
+		{
+			name:     "WhereIn",
+			query:    query.WhereIn("name", []any{"quote_light", "quote_heavy"}).OrderBy("id"),
+			expected: []string{"quote_light", "quote_heavy"},
+		},
+		{
+			name:     "WhereBetween",
+			query:    query.WhereBetween("weight", 5, 15),
+			expected: []string{"quote_heavy"},
+		},
+		{
+			name:     "WhereNotNull",
+			query:    query.WhereIn("name", []any{"quote_light", "quote_heavy"}).WhereNotNull("height"),
+			expected: nil,
+		},
+		{
+			name:     "WhereAny",
+			query:    query.WhereAny([]string{"name", "name"}, "quote_light"),
+			expected: []string{"quote_light"},
+		},
+		{
+			name:     "OrderByDesc",
+			query:    query.WhereIn("name", []any{"quote_light", "quote_heavy"}).OrderByDesc("weight"),
+			expected: []string{"quote_heavy", "quote_light"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var products []PostgresProduct
+			assert.NoError(t, test.query.Find(&products))
+
+			var names []string
+			for _, product := range products {
+				names = append(names, product.Name)
+			}
+			assert.Equal(t, test.expected, names)
+		})
+	}
 }
 
 func TestOrmReadWriteSeparate(t *testing.T) {
