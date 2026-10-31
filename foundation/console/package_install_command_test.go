@@ -587,6 +587,7 @@ func TestGetDependencyBindings(t *testing.T) {
 			binding.Validation,
 			binding.View,
 			binding.Route,
+			binding.Fake,
 		}
 		assert.Equal(t, expected, getDependencyBindings(binding.Testing, binding.Bindings, true))
 

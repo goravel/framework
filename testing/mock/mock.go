@@ -143,6 +143,13 @@ func (r *factory) EventTask() *mocksevent.Task {
 	return &mocksevent.Task{}
 }
 
+func (r *factory) Fake() *mockstesting.Fake {
+	mockFake := &mockstesting.Fake{}
+	r.app.EXPECT().MakeFake().Return(mockFake)
+
+	return mockFake
+}
+
 func (r *factory) Gate() *mocksaccess.Gate {
 	mockGate := &mocksaccess.Gate{}
 	r.app.EXPECT().MakeGate().Return(mockGate)
