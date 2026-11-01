@@ -125,6 +125,7 @@ func (r *Application) Build() foundation.Application {
 	r.configureViews()
 	r.configureEventListeners()
 	r.configureCommands()
+	r.configureCommandHooks()
 	r.configureSchedule()
 	r.configureMigrations()
 	r.configureSeeders()
@@ -477,6 +478,25 @@ func (r *Application) configureCommands() {
 			r.registerCommands(commands)
 		}
 	}
+}
+
+func (r *Application) configureCommandHooks() {
+	if r.builder.commandHooks == nil {
+		return
+	}
+
+	hooks := r.builder.commandHooks()
+	if len(hooks) == 0 {
+		return
+	}
+
+	artisanFacade := r.MakeArtisan()
+	if artisanFacade == nil {
+		color.Warningln(errors.ConsoleFacadeNotSet.Error())
+		return
+	}
+
+	artisanFacade.SetHooks(hooks)
 }
 
 func (r *Application) configureCustomConfig() {

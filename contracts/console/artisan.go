@@ -12,4 +12,7 @@ type Artisan interface {
 
 	// Run a command. args include: ["./main", "artisan", "command"]
 	Run(args []string, exitIfArtisan bool) error
+
+	// SetHooks set the hooks that run around matching commands, in registration order.
+	SetHooks(hooks []CommandHook)
 }

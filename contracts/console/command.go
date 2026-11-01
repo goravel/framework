@@ -30,6 +30,28 @@ type Shutdownable interface {
 	Shutdown(ctx Context) error
 }
 
+// CommandHook runs around the Handle of every command whose signature matches
+// Signature. Hooks are registered through Artisan.SetHooks and run in
+// registration order: Before hooks first to last, After hooks last to first.
+type CommandHook struct {
+	// Signature is an exact command signature ("migrate") or a '*' glob
+	// ("make:*", "*"), matched like the commands filter. A blank Signature
+	// matches nothing.
+	Signature string
+	// Flags are added to every matching command and read in the hooks through
+	// ctx.Option*. A name or alias that clashes with the command's own flags,
+	// another matching hook's flags, or the reserved help, h and no-ansi flags
+	// fails command registration. A Required flag is required on every
+	// matching command, even when Before skips Handle.
+	Flags []command.Flag
+	// Before runs before Handle. Returning false or an error skips Handle and
+	// every After. Optional.
+	Before func(ctx Context) (proceed bool, err error)
+	// After runs after Handle and receives its error. The returned error
+	// replaces it. Optional.
+	After func(ctx Context, handleErr error) error
+}
+
 type Context interface {
 	context.Context
 	// Ask prompts the user for input.

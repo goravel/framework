@@ -179,6 +179,39 @@ func (_c *Artisan_Run_Call) RunAndReturn(run func([]string, bool) error) *Artisa
 	return _c
 }
 
+// SetHooks provides a mock function with given fields: hooks
+func (_m *Artisan) SetHooks(hooks []console.CommandHook) {
+	_m.Called(hooks)
+}
+
+// Artisan_SetHooks_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetHooks'
+type Artisan_SetHooks_Call struct {
+	*mock.Call
+}
+
+// SetHooks is a helper method to define mock.On call
+//   - hooks []console.CommandHook
+func (_e *Artisan_Expecter) SetHooks(hooks interface{}) *Artisan_SetHooks_Call {
+	return &Artisan_SetHooks_Call{Call: _e.mock.On("SetHooks", hooks)}
+}
+
+func (_c *Artisan_SetHooks_Call) Run(run func(hooks []console.CommandHook)) *Artisan_SetHooks_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].([]console.CommandHook))
+	})
+	return _c
+}
+
+func (_c *Artisan_SetHooks_Call) Return() *Artisan_SetHooks_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Artisan_SetHooks_Call) RunAndReturn(run func([]console.CommandHook)) *Artisan_SetHooks_Call {
+	_c.Run(run)
+	return _c
+}
+
 // NewArtisan creates a new instance of Artisan. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewArtisan(t interface {

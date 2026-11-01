@@ -32,6 +32,7 @@ var (
 
 type Application struct {
 	commands   []console.Command
+	hooks      []console.CommandHook
 	name       string
 	usage      string
 	usageText  string
@@ -147,8 +148,13 @@ func (r *Application) SetCommands(commands []console.Command) {
 	r.commands = commands
 }
 
+// SetHooks Set the hooks that run around matching commands, in registration order.
+func (r *Application) SetHooks(hooks []console.CommandHook) {
+	r.hooks = hooks
+}
+
 func (r *Application) command() (*cli.Command, error) {
-	cliCommands, err := commandsToCliCommands(r.commands)
+	cliCommands, err := commandsToCliCommands(r.commands, r.hooks)
 	if err != nil {
 		return nil, err
 	}
@@ -225,12 +231,118 @@ func FilterCommandsByAllowlist(commands []console.Command, allowlist []string) [
 	return kept
 }
 
-func commandsToCliCommands(commands []console.Command) ([]*cli.Command, error) {
+// hooksForCommand returns the hooks that apply to item, in registration order
+// (outermost first).
+func hooksForCommand(item console.Command, hooks []console.CommandHook) []console.CommandHook {
+	sig := item.Signature()
+	var matched []console.CommandHook
+	for _, hook := range hooks {
+		if signatureMatches(hook.Signature, sig) {
+			matched = append(matched, hook)
+		}
+	}
+
+	return matched
+}
+
+// commandFlags returns the CLI flags for item: its own flags, then the flags of
+// each matching hook in registration order, then the default help and no-ansi
+// flags. A hook flag whose name or alias is already taken, or is reserved for
+// a default flag, is an error.
+func commandFlags(item console.Command, hooks []console.CommandHook) ([]cli.Flag, error) {
+	flags := convertFlags(item.Extend().Flags)
+
+	taken := map[string]bool{"help": true, "h": true, noANSIFlag.Name: true}
+	for _, flag := range flags {
+		for _, name := range flag.Names() {
+			taken[name] = true
+		}
+	}
+
+	for _, hook := range hooks {
+		for _, flag := range convertFlags(hook.Flags) {
+			names := flag.Names()
+			for _, name := range names {
+				if taken[name] {
+					return nil, errors.ConsoleCommandHookFlagConflict.Args(name)
+				}
+			}
+			for _, name := range names {
+				taken[name] = true
+			}
+			flags = append(flags, flag)
+		}
+	}
+
+	return withDefaultFlags(flags), nil
+}
+
+// signatureMatches reports whether pattern matches sig, using the same rules as
+// FilterCommandsByAllowlist: exact match, or path.Match when pattern contains '*'.
+func signatureMatches(pattern, sig string) bool {
+	pattern = strings.TrimSpace(pattern)
+	if pattern == "" {
+		return false
+	}
+	if strings.Contains(pattern, "*") {
+		ok, _ := stdpath.Match(pattern, sig)
+		return ok
+	}
+
+	return pattern == sig
+}
+
+// handleWithHooks runs the Before hooks in order, then Handle, then the After
+// hooks in reverse order. A Before that returns false or an error skips Handle
+// and every After. started is closed just before Handle runs.
+func handleWithHooks(item console.Command, hooks []console.CommandHook, ctx console.Context, started chan<- struct{}) (handled bool, err error) {
+	for _, hook := range hooks {
+		if hook.Before == nil {
+			continue
+		}
+		proceed, err := hook.Before(ctx)
+		if err != nil || !proceed {
+			return false, err
+		}
+	}
+
+	close(started)
+	err = item.Handle(ctx)
+
+	for i := len(hooks) - 1; i >= 0; i-- {
+		if hooks[i].After != nil {
+			err = hooks[i].After(ctx, err)
+		}
+	}
+
+	return true, err
+}
+
+func isClosed(ch <-chan struct{}) bool {
+	select {
+	case <-ch:
+		return true
+	default:
+		return false
+	}
+}
+
+type handleResult struct {
+	err     error
+	handled bool
+}
+
+func commandsToCliCommands(commands []console.Command, hooks []console.CommandHook) ([]*cli.Command, error) {
 	cliCommands := make([]*cli.Command, len(commands))
 
 	for i, item := range commands {
 		arguments := item.Extend().Arguments
 		cliArguments, err := argumentsToCliArgs(arguments)
+		if err != nil {
+			return nil, errors.ConsoleCommandRegisterFailed.Args(item.Signature(), err)
+		}
+		itemHooks := hooksForCommand(item, hooks)
+		flags, err := commandFlags(item, itemHooks)
 		if err != nil {
 			return nil, errors.ConsoleCommandRegisterFailed.Args(item.Signature(), err)
 		}
@@ -243,40 +355,58 @@ func commandsToCliCommands(commands []console.Command) ([]*cli.Command, error) {
 					return cli.ShowCommandHelp(ctx, cmd, cmd.Name)
 				}
 
-				errCh := make(chan error, 1)
+				started := make(chan struct{})
+				resultCh := make(chan handleResult, 1)
 				go func() {
 					defer func() {
 						if r := recover(); r != nil {
-							errCh <- errors.ConsoleCommandPanicInHandle.Args(r)
+							resultCh <- handleResult{err: errors.ConsoleCommandPanicInHandle.Args(r), handled: isClosed(started)}
 						}
 					}()
-					errCh <- item.Handle(cliCtx)
+					handled, err := handleWithHooks(item, itemHooks, cliCtx, started)
+					resultCh <- handleResult{err: err, handled: handled}
 				}()
 
 				shutdownable, ok := item.(console.Shutdownable)
 
 				if ok {
 					select {
-					case handleErr := <-errCh:
+					case result := <-resultCh:
+						// Nothing to clean up when a Before hook skipped Handle.
+						if !result.handled {
+							return result.err
+						}
 						if err := shutdownCommand(shutdownable, cmd, arguments); err != nil {
 							color.Errorln("shutdown error:", err.Error())
 						}
-						return handleErr
+						return result.err
 					case <-ctx.Done():
+						// Wait for the Before hooks to decide, so Shutdown only
+						// runs for a Handle that was actually started.
+						select {
+						case <-started:
+						case result := <-resultCh:
+							if !result.handled {
+								if result.err != nil {
+									return result.err
+								}
+								return ctx.Err()
+							}
+						}
 						return shutdownCommand(shutdownable, cmd, arguments)
 					}
 				}
 
 				select {
-				case err := <-errCh:
-					return err
+				case result := <-resultCh:
+					return result.err
 				case <-ctx.Done():
 					return ctx.Err()
 				}
 			},
 			Category:     item.Extend().Category,
 			ArgsUsage:    item.Extend().ArgsUsage,
-			Flags:        flagsToCliFlags(item.Extend().Flags),
+			Flags:        flags,
 			Arguments:    cliArguments,
 			OnUsageError: onUsageError,
 		}
@@ -286,6 +416,11 @@ func commandsToCliCommands(commands []console.Command) ([]*cli.Command, error) {
 }
 
 func flagsToCliFlags(flags []command.Flag) []cli.Flag {
+	return withDefaultFlags(convertFlags(flags))
+}
+
+// convertFlags converts command flags to CLI flags, without the defaults.
+func convertFlags(flags []command.Flag) []cli.Flag {
 	var cliFlags []cli.Flag
 	for _, flag := range flags {
 		switch flag.Type() {
@@ -374,6 +509,12 @@ func flagsToCliFlags(flags []command.Flag) []cli.Flag {
 		}
 	}
 
+	return cliFlags
+}
+
+// withDefaultFlags appends the help flag (unless already defined) and the
+// no-ansi flag.
+func withDefaultFlags(cliFlags []cli.Flag) []cli.Flag {
 	var (
 		existHelp bool
 		existH    bool

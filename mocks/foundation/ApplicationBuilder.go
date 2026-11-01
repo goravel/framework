@@ -139,6 +139,54 @@ func (_c *ApplicationBuilder_WithCallback_Call) RunAndReturn(run func(func()) fo
 	return _c
 }
 
+// WithCommandHooks provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithCommandHooks(_a0 func() []console.CommandHook) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithCommandHooks")
+	}
+
+	var r0 foundation.ApplicationBuilder
+	if rf, ok := ret.Get(0).(func(func() []console.CommandHook) foundation.ApplicationBuilder); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(foundation.ApplicationBuilder)
+		}
+	}
+
+	return r0
+}
+
+// ApplicationBuilder_WithCommandHooks_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithCommandHooks'
+type ApplicationBuilder_WithCommandHooks_Call struct {
+	*mock.Call
+}
+
+// WithCommandHooks is a helper method to define mock.On call
+//   - _a0 func() []console.CommandHook
+func (_e *ApplicationBuilder_Expecter) WithCommandHooks(_a0 interface{}) *ApplicationBuilder_WithCommandHooks_Call {
+	return &ApplicationBuilder_WithCommandHooks_Call{Call: _e.mock.On("WithCommandHooks", _a0)}
+}
+
+func (_c *ApplicationBuilder_WithCommandHooks_Call) Run(run func(_a0 func() []console.CommandHook)) *ApplicationBuilder_WithCommandHooks_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func() []console.CommandHook))
+	})
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithCommandHooks_Call) Return(_a0 foundation.ApplicationBuilder) *ApplicationBuilder_WithCommandHooks_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithCommandHooks_Call) RunAndReturn(run func(func() []console.CommandHook) foundation.ApplicationBuilder) *ApplicationBuilder_WithCommandHooks_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // WithCommands provides a mock function with given fields: _a0
 func (_m *ApplicationBuilder) WithCommands(_a0 func() []console.Command) foundation.ApplicationBuilder {
 	ret := _m.Called(_a0)

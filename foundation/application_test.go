@@ -155,6 +155,66 @@ func (s *ApplicationTestSuite) TestConfigureCommands() {
 	}
 }
 
+func (s *ApplicationTestSuite) TestConfigureCommandHooks() {
+	hooks := []console.CommandHook{
+		{Signature: "migrate", Before: func(_ console.Context) (bool, error) { return true, nil }},
+		{Signature: "make:*", After: func(_ console.Context, err error) error { return err }},
+	}
+
+	tests := []struct {
+		name  string
+		setup func()
+	}{
+		{
+			name: "without hooks function",
+			setup: func() {
+				s.app.builder = NewApplicationBuilder(s.app)
+				s.app.configureCommandHooks() // Should not panic
+			},
+		},
+		{
+			name: "empty hooks are ignored",
+			setup: func() {
+				builder := NewApplicationBuilder(s.app)
+				builder.commandHooks = func() []console.CommandHook { return nil }
+				s.app.builder = builder
+				s.app.configureCommandHooks() // Should not touch the artisan facade, which is not bound
+			},
+		},
+		{
+			name: "hooks are passed to the artisan facade",
+			setup: func() {
+				mockArtisan := mocksconsole.NewArtisan(s.T())
+				mockArtisan.EXPECT().SetHooks(mock.MatchedBy(func(got []console.CommandHook) bool {
+					return len(got) == 2 && got[0].Signature == "migrate" && got[1].Signature == "make:*"
+				})).Return().Once()
+				s.app.Instance(binding.Artisan, mockArtisan)
+
+				builder := NewApplicationBuilder(s.app)
+				builder.commandHooks = func() []console.CommandHook { return hooks }
+				s.app.builder = builder
+				s.app.configureCommandHooks()
+			},
+		},
+		{
+			name: "hooks without artisan facade do not panic",
+			setup: func() {
+				builder := NewApplicationBuilder(s.app)
+				builder.commandHooks = func() []console.CommandHook { return hooks }
+				s.app.builder = builder
+				s.app.configureCommandHooks() // Should not panic
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			s.SetupTest()
+			tt.setup()
+		})
+	}
+}
+
 func (s *ApplicationTestSuite) TestDefaultCommandsRegistersMaintenanceCommandsWithRouteFacade() {
 	s.app.SetJson(foundationjson.New())
 	s.app.Instance(binding.Route, mocksroute.NewRoute(s.T()))
