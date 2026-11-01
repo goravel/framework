@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.opentelemetry.io/otel/log/noop"
 
+	contractslog "github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/errors"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mockstelemetry "github.com/goravel/framework/mocks/telemetry"
@@ -38,6 +39,7 @@ func (s *TelemetryChannelTestSuite) TearDownTest() {
 func (s *TelemetryChannelTestSuite) TestHandle_Success_DefaultName() {
 	channelPath := "logging.channels.otel"
 	s.mockConfig.EXPECT().GetString(channelPath+".instrument_name", defaultInstrumentationName).Return(defaultInstrumentationName).Once()
+	s.mockConfig.EXPECT().GetString(channelPath+".level").Return("info").Once()
 
 	s.mockTelemetry.On("Logger", defaultInstrumentationName).Return(noop.NewLoggerProvider().Logger("test")).Once()
 
@@ -46,6 +48,7 @@ func (s *TelemetryChannelTestSuite) TestHandle_Success_DefaultName() {
 
 	s.NoError(err)
 	s.NotNil(h)
+	s.Equal(contractslog.LevelInfo, h.(*handler).level)
 	s.mockTelemetry.AssertExpectations(s.T())
 }
 
@@ -54,6 +57,7 @@ func (s *TelemetryChannelTestSuite) TestHandle_Success_CustomName() {
 	customName := "my-service-logs"
 
 	s.mockConfig.EXPECT().GetString(channelPath+".instrument_name", defaultInstrumentationName).Return(customName).Once()
+	s.mockConfig.EXPECT().GetString(channelPath+".level").Return("").Once()
 
 	s.mockTelemetry.On("Logger", customName).Return(noop.NewLoggerProvider().Logger("test")).Once()
 
@@ -62,6 +66,8 @@ func (s *TelemetryChannelTestSuite) TestHandle_Success_CustomName() {
 
 	s.NoError(err)
 	s.NotNil(h)
+	// An empty level falls back to debug, so every level is sent.
+	s.Equal(contractslog.LevelDebug, h.(*handler).level)
 	s.mockTelemetry.AssertExpectations(s.T())
 }
 

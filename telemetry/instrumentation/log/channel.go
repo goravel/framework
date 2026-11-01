@@ -25,7 +25,15 @@ func (r *TelemetryChannel) Handle(channelPath string) (log.Handler, error) {
 	}
 
 	instrumentName := config.GetString(channelPath+".instrument_name", defaultInstrumentationName)
+
+	// An empty or unknown level sends every level, like the other channels.
+	level, err := log.ParseLevel(config.GetString(channelPath + ".level"))
+	if err != nil {
+		level = log.LevelDebug
+	}
+
 	return &handler{
 		logger: telemetry.TelemetryFacade.Logger(instrumentName),
+		level:  level,
 	}, nil
 }

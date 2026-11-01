@@ -13,10 +13,11 @@ var _ contractslog.Handler = (*handler)(nil)
 
 type handler struct {
 	logger otellog.Logger
+	level  contractslog.Level
 }
 
 func (r *handler) Enabled(level contractslog.Level) bool {
-	return true
+	return level >= r.level
 }
 
 func (r *handler) Handle(entry contractslog.Entry) error {
