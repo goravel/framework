@@ -155,6 +155,41 @@ func (s *ApplicationTestSuite) TestConfigureCommands() {
 	}
 }
 
+func (s *ApplicationTestSuite) TestBuild() {
+	hooks := []console.CommandHook{
+		{Signature: "migrate", Before: func(_ console.Context) (bool, error) { return true, nil }},
+	}
+
+	mockConfig := mocksconfig.NewConfig(s.T())
+	mockConfig.EXPECT().GetString("app.timezone", "UTC").Return("UTC").Once()
+	mockConfig.EXPECT().GetStringSlice("app.disabled_runners", []string{}).Return([]string{}).Once()
+	s.app.Instance(binding.Config, mockConfig)
+
+	mockArtisan := mocksconsole.NewArtisan(s.T())
+	mockArtisan.EXPECT().Register(mock.Anything).Return().Once()
+	mockArtisan.EXPECT().SetHooks(mock.MatchedBy(func(got []console.CommandHook) bool {
+		return len(got) == 1 && got[0].Signature == "migrate"
+	})).Return().Once()
+	mockArtisan.EXPECT().Run(os.Args, true).Return(nil).Once()
+	s.app.Instance(binding.Artisan, mockArtisan)
+
+	mockRepo := mocksfoundation.NewProviderRepository(s.T())
+	mockRepo.EXPECT().Register(s.app).Return(nil).Once()
+	mockRepo.EXPECT().Boot(s.app).Return().Once()
+	mockRepo.EXPECT().GetBooted().Return([]foundation.ServiceProvider{}).Once()
+	s.app.providerRepository = mockRepo
+
+	builder := NewApplicationBuilder(s.app)
+	builder.commandHooks = func() []console.CommandHook { return hooks }
+	s.app.builder = builder
+	s.app.SetJson(foundationjson.New())
+
+	built := s.app.Build()
+	defer s.app.cancel()
+
+	s.Same(s.app, built)
+}
+
 func (s *ApplicationTestSuite) TestConfigureCommandHooks() {
 	hooks := []console.CommandHook{
 		{Signature: "migrate", Before: func(_ console.Context) (bool, error) { return true, nil }},

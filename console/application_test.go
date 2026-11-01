@@ -562,6 +562,10 @@ func (receiver *TestPanicCommand) Handle(_ console.Context) error {
 
 type TestShutdownableCommand struct {
 	shutdownCalled bool
+	// handle, when set, replaces the default Handle that blocks until the
+	// context is cancelled.
+	handle      func(ctx console.Context) error
+	shutdownErr error
 }
 
 func (receiver *TestShutdownableCommand) Signature() string {
@@ -577,13 +581,17 @@ func (receiver *TestShutdownableCommand) Extend() command.Extend {
 }
 
 func (receiver *TestShutdownableCommand) Handle(ctx console.Context) error {
+	if receiver.handle != nil {
+		return receiver.handle(ctx)
+	}
+
 	<-ctx.Done()
 	return nil
 }
 
 func (receiver *TestShutdownableCommand) Shutdown(_ console.Context) error {
 	receiver.shutdownCalled = true
-	return nil
+	return receiver.shutdownErr
 }
 
 type TestBlockingCommand struct {
@@ -878,6 +886,14 @@ func TestRun_HooksShutdownOnCancel(t *testing.T) {
 			},
 			expectShutdown: true,
 		},
+		{
+			name: "cancel while Before blocks returns the Before error without Shutdown",
+			before: func(ctx console.Context) (bool, error) {
+				<-ctx.Done()
+				return false, assert.AnError
+			},
+			expectErr: assert.AnError,
+		},
 	}
 
 	for _, tt := range tests {
@@ -903,6 +919,25 @@ func TestRun_HooksShutdownOnCancel(t *testing.T) {
 			assert.Equal(t, tt.expectShutdown, command.shutdownCalled)
 		})
 	}
+}
+
+func TestRun_ShutdownableHandleReturns(t *testing.T) {
+	errHandle := errors.New("handle failed")
+	errShutdown := errors.New("shutdown failed")
+
+	command := &TestShutdownableCommand{
+		handle:      func(_ console.Context) error { return errHandle },
+		shutdownErr: errShutdown,
+	}
+	cliApp := NewApplication("test", "test", "test", "test", true)
+	cliApp.Register([]console.Command{command})
+
+	// Handle returns on its own, so Shutdown runs and its error is only
+	// reported, the Handle error is what the caller gets.
+	err := cliApp.Call(command.Signature())
+
+	assert.ErrorIs(t, err, errHandle)
+	assert.True(t, command.shutdownCalled)
 }
 
 func TestRun_HookFlags(t *testing.T) {
