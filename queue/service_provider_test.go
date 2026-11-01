@@ -13,9 +13,9 @@ import (
 func TestServiceProviderBoot(t *testing.T) {
 	provider := &ServiceProvider{}
 	app := mocksfoundation.NewApplication(t)
-	queue := mocksqueue.NewQueue(t)
+	mockQueue := mocksqueue.NewQueue(t)
 
-	app.EXPECT().MakeQueue().Return(queue).Twice()
+	app.EXPECT().MakeQueue().Return(mockQueue).Twice()
 	app.EXPECT().GetJson().Return(nil).Once()
 	app.EXPECT().Commands(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
 		if len(commands) != 3 {
