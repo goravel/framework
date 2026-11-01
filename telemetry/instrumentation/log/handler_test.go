@@ -26,6 +26,7 @@ func (s *HandlerTestSuite) SetupTest() {
 	s.recorder = logtest.NewRecorder()
 	s.handler = &handler{
 		logger: s.recorder.Logger(s.loggerName),
+		level:  contractslog.LevelDebug,
 	}
 	s.now = time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC)
 
@@ -37,6 +38,10 @@ func (s *HandlerTestSuite) TestEnabled() {
 	s.True(s.handler.Enabled(contractslog.LevelDebug))
 	s.True(s.handler.Enabled(contractslog.LevelInfo))
 	s.True(s.handler.Enabled(contractslog.LevelError))
+
+	s.handler.level = contractslog.LevelInfo
+	s.False(s.handler.Enabled(contractslog.LevelDebug))
+	s.True(s.handler.Enabled(contractslog.LevelInfo))
 }
 
 func (s *HandlerTestSuite) TestHandle() {
