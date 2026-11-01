@@ -36,6 +36,7 @@ func (s *HandlerTestSuite) SetupTest() {
 	s.handler = &handler{
 		enabled:        true,
 		instrumentName: s.loggerName,
+		level:          contractslog.LevelDebug,
 		resolver: func() contractstelemetry.Telemetry {
 			return s.mockTelemetry
 		},
@@ -90,6 +91,13 @@ func (s *HandlerTestSuite) TestEnabled() {
 	s.True(s.handler.Enabled(contractslog.LevelDebug))
 	s.True(s.handler.Enabled(contractslog.LevelInfo))
 	s.True(s.handler.Enabled(contractslog.LevelError))
+
+	s.handler.level = contractslog.LevelInfo
+	s.False(s.handler.Enabled(contractslog.LevelDebug))
+	s.True(s.handler.Enabled(contractslog.LevelInfo))
+
+	s.handler.enabled = false
+	s.False(s.handler.Enabled(contractslog.LevelError))
 }
 
 func (s *HandlerTestSuite) TestHandle() {
