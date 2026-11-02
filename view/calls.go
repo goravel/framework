@@ -1,6 +1,7 @@
 package view
 
 import (
+	"cmp"
 	"html/template"
 	"slices"
 	"text/template/parse"
@@ -27,14 +28,7 @@ func Calls(tmpl *template.Template, function string) []Call {
 
 	templates := tmpl.Templates()
 	slices.SortFunc(templates, func(a, b *template.Template) int {
-		switch {
-		case a.Name() < b.Name():
-			return -1
-		case a.Name() > b.Name():
-			return 1
-		default:
-			return 0
-		}
+		return cmp.Compare(a.Name(), b.Name())
 	})
 
 	var calls []Call
