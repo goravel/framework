@@ -46,6 +46,8 @@ type Query interface {
 	// CrossJoin specifies CROSS JOIN conditions for the query.
 	CrossJoin(query string, args ...any) Query
 	// Cursor returns a cursor, use scan to iterate over the returned rows.
+	// If the iteration is stopped before the channel is closed (e.g. break), cancel the context passed to
+	// WithContext, otherwise the underlying goroutine, rows and connection are not released.
 	Cursor() chan Row
 	// Decrement decrements the given column's values by the given amounts.
 	Decrement(column string, value ...uint64) error
