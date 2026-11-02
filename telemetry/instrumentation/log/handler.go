@@ -19,12 +19,13 @@ type handler struct {
 	telemetry      contractstelemetry.Telemetry // The cached instance
 	enabled        bool
 	instrumentName string
+	level          contractslog.Level
 	logger         otellog.Logger
 	mu             sync.Mutex
 }
 
 func (r *handler) Enabled(level contractslog.Level) bool {
-	return r.enabled
+	return r.enabled && level >= r.level
 }
 
 func (r *handler) Handle(entry contractslog.Entry) error {

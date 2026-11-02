@@ -32,9 +32,17 @@ func (r *TelemetryChannel) Handle(channelPath string) (contractslog.Handler, err
 	}
 
 	instrumentName := r.config.GetString(channelPath+".instrument_name", DefaultInstrumentationName)
+
+	// An empty or unknown level sends every level, like the other channels.
+	level, err := contractslog.ParseLevel(r.config.GetString(channelPath + ".level"))
+	if err != nil {
+		level = contractslog.LevelDebug
+	}
+
 	return &handler{
 		resolver:       r.resolver,
 		enabled:        true,
 		instrumentName: instrumentName,
+		level:          level,
 	}, nil
 }

@@ -34,6 +34,16 @@ func MakeNames(ctx console.Context) []string {
 	return names
 }
 
+// HandleEach runs makeOne for every name passed to a make:* command. A failure
+// for one name is reported and does not stop the remaining names.
+func HandleEach(ctx console.Context, makeOne func(ctx console.Context, name string) error) {
+	for _, name := range MakeNames(ctx) {
+		if err := makeOne(ctx, name); err != nil {
+			ctx.Error(err.Error())
+		}
+	}
+}
+
 func NewMake(ctx console.Context, ttype, name, root string) (*Make, error) {
 	if name == "" {
 		var err error
