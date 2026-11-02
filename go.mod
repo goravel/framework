@@ -6,7 +6,7 @@ toolchain go1.27.0
 
 require (
 	github.com/Masterminds/squirrel v1.5.4
-	github.com/brianvoe/gofakeit/v7 v7.18.0
+	github.com/brianvoe/gofakeit/v7 v7.18.1
 	github.com/charmbracelet/huh v0.8.0
 	github.com/charmbracelet/huh/spinner v0.0.0-20260223110133-9dc45e34a40b
 	github.com/charmbracelet/lipgloss v1.1.0
@@ -50,7 +50,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.47.0
 	golang.org/x/crypto v0.58.0
 	golang.org/x/exp v0.0.0-20261014143641-f0251eb4aa3e
-	google.golang.org/grpc v1.86.0-dev.0.20261023181330-80c1e76a540c
+	google.golang.org/grpc v1.86.0-dev.0.20261029074820-bc90736a6fad
 	google.golang.org/protobuf v1.36.12
 	gorm.io/gorm v1.31.2
 	gorm.io/plugin/dbresolver v1.6.2
@@ -140,8 +140,8 @@ require (
 )
 
 replace (
-	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20261019180522-ce908d29299b
-	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20261019180522-ce908d29299b
+	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20261026165753-2ffab32bce7e
+	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20261026165753-2ffab32bce7e
 )
 
 tool github.com/vektra/mockery/v2
