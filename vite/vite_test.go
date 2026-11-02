@@ -291,6 +291,24 @@ func TestManifest_Missing(t *testing.T) {
 	vite.UseBuildDirectory("dist").UseManifestFilename("assets.json")
 	_, err = vite.Tags("resources/js/app.js")
 	assert.EqualError(t, err, errors.ViteManifestNotFound.Args(filepath.Join(public, "dist", "assets.json")).Error())
+
+	// Asset and Content report the same error when there is no hot server to fall back on.
+	_, err = vite.Asset("resources/images/logo.svg")
+	assert.EqualError(t, err, errors.ViteManifestNotFound.Args(filepath.Join(public, "dist", "assets.json")).Error())
+	_, err = vite.Content("resources/images/logo.svg")
+	assert.EqualError(t, err, errors.ViteManifestNotFound.Args(filepath.Join(public, "dist", "assets.json")).Error())
+}
+
+func TestManifest_Unreadable(t *testing.T) {
+	// A directory at the manifest path passes the existence check but cannot be read.
+	public := setupProject(t)
+	manifestPath := filepath.Join(public, "build", ".vite", "manifest.json")
+	require.NoError(t, os.MkdirAll(manifestPath, 0o755))
+	vite := newTestVite(t, "")
+
+	_, err := vite.Tags("resources/js/app.js")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "[vite] failed to read vite manifest "+manifestPath+": ")
 }
 
 func TestManifest_Invalid(t *testing.T) {
