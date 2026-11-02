@@ -3156,7 +3156,8 @@ func (s *QueryTestSuite) TestIncrementAndDecrement() {
 				var result User
 				s.Nil(query.Query().Find(&result, user.ID))
 				s.Equal(float64(6), result.Ratio)
-				s.Equal(result.UpdatedAt.ToDateTimeString(), user.UpdatedAt.ToDateTimeString())
+				// The database may round the fractional seconds the model keeps in memory.
+				s.InDelta(result.UpdatedAt.Timestamp(), user.UpdatedAt.Timestamp(), 1)
 
 				s.Nil(query.Query().Model(&user).Decrement("ratio", 2))
 				s.Equal(float64(4), user.Ratio)
