@@ -11,6 +11,8 @@ import (
 	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/facades"
 	"github.com/goravel/framework/contracts/foundation"
+	contractsvite "github.com/goravel/framework/contracts/vite"
+	mocksvite "github.com/goravel/framework/mocks/vite"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -246,6 +248,7 @@ func (s *ContainerTestSuite) TestMakeWrappers_SuppressBindingNotFoundError() {
 		{name: "testing", run: func(container *Container) any { return container.MakeTesting() }},
 		{name: "validation", run: func(container *Container) any { return container.MakeValidation() }},
 		{name: "view", run: func(container *Container) any { return container.MakeView() }},
+		{name: "vite", run: func(container *Container) any { return container.MakeVite() }},
 	}
 
 	for _, test := range tests {
@@ -258,6 +261,15 @@ func (s *ContainerTestSuite) TestMakeWrappers_SuppressBindingNotFoundError() {
 			s.Equal("", output)
 		})
 	}
+}
+
+func (s *ContainerTestSuite) TestMakeVite() {
+	container := NewContainer()
+	vite := mocksvite.NewVite(s.T())
+	container.Instance(facades.FacadeToBinding[facades.Vite], vite)
+
+	s.Same(vite, container.MakeVite())
+	s.Implements((*contractsvite.Vite)(nil), container.MakeVite())
 }
 
 func (s *ContainerTestSuite) TestMakeWrappers_LogNonBindingError() {
