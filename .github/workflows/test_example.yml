@@ -52,7 +52,7 @@ jobs:
 
       - name: Run tests
         working-directory: example
-        run: go test -timeout 10m -run "^TestMainTestSuite$" . ./app/...
+        run: go test -timeout 20m . ./app/...
 
   integration:
     strategy:
@@ -97,4 +97,4 @@ jobs:
 
       - name: Run tests
         working-directory: example
-        run: go test -timeout 10m ./tests/...
+        run: go test -timeout 20m ./tests/...

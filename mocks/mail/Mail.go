@@ -212,6 +212,53 @@ func (_c *Mail_Content_Call) RunAndReturn(run func(mail.Content) mail.Mail) *Mai
 	return _c
 }
 
+// Fake provides a mock function with no fields
+func (_m *Mail) Fake() mail.Fake {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Fake")
+	}
+
+	var r0 mail.Fake
+	if rf, ok := ret.Get(0).(func() mail.Fake); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(mail.Fake)
+		}
+	}
+
+	return r0
+}
+
+// Mail_Fake_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Fake'
+type Mail_Fake_Call struct {
+	*mock.Call
+}
+
+// Fake is a helper method to define mock.On call
+func (_e *Mail_Expecter) Fake() *Mail_Fake_Call {
+	return &Mail_Fake_Call{Call: _e.mock.On("Fake")}
+}
+
+func (_c *Mail_Fake_Call) Run(run func()) *Mail_Fake_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Mail_Fake_Call) Return(_a0 mail.Fake) *Mail_Fake_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Mail_Fake_Call) RunAndReturn(run func() mail.Fake) *Mail_Fake_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // From provides a mock function with given fields: address
 func (_m *Mail) From(address mail.Address) mail.Mail {
 	ret := _m.Called(address)

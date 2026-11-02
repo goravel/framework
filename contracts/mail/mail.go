@@ -9,6 +9,10 @@ type Mail interface {
 	Cc(addresses []string) Mail
 	// Content set the content of Mail.
 	Content(content Content) Mail
+	// Fake records every mail sent or queued through the Mail facade,
+	// including mail notifications, instead of delivering it, until Reset.
+	// Calling it again while faking keeps the mails recorded so far.
+	Fake() Fake
 	// From set the sender of Mail.
 	From(address Address) Mail
 	// Headers adds custom headers to the Mail.
