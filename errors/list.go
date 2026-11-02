@@ -24,6 +24,7 @@ var (
 	SessionFacadeNotSet     = New("session facade is not initialized")
 	ServiceProviderCycle    = New("circular dependency detected between providers: %s")
 	TelemetryFacadeNotSet   = New("telemetry facade is not initialized")
+	ViewFacadeNotSet        = New("view facade is not initialized")
 
 	AuthEmptySecret             = New("authentication secret is missing or required")
 	AuthGuardMismatch           = New("authentication token guard mismatch: expected %s, got %s")
@@ -384,4 +385,11 @@ var (
 	ViewReadFailed         = New("failed to read view %s: %v")
 	ViewSourceWalkFailed   = New("failed to walk view source %s: %v")
 	ViewTemplateNotExist   = New("view template %s does not exist")
+
+	ViteAssetReadFailed    = New("failed to read vite asset %s: %v").SetModule(ModuleVite)
+	ViteFacadeNotSet       = New("vite facade is not initialized").SetModule(ModuleVite)
+	ViteEntryNotFound      = New("unable to locate file in vite manifest: %s").SetModule(ModuleVite)
+	ViteManifestInvalid    = New("vite manifest %s is invalid: %v").SetModule(ModuleVite)
+	ViteManifestNotFound   = New("vite manifest not found at %s, run `npm run build` or start the dev server").SetModule(ModuleVite)
+	ViteManifestReadFailed = New("failed to read vite manifest %s: %v").SetModule(ModuleVite)
 )
