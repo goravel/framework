@@ -94,8 +94,9 @@ func Funcs(v contractsvite.Vite) template.FuncMap {
 }
 
 func (r *Vite) Asset(asset string) (string, error) {
+	asset = normalizeEntry(asset)
 	if url, ok := r.hotURL(); ok {
-		return url + "/" + strings.TrimPrefix(asset, "/"), nil
+		return url + "/" + asset, nil
 	}
 
 	m, err := r.manifest()
@@ -112,6 +113,7 @@ func (r *Vite) Asset(asset string) (string, error) {
 }
 
 func (r *Vite) Content(asset string) (string, error) {
+	asset = normalizeEntry(asset)
 	m, err := r.manifest()
 	if err != nil {
 		return "", err
@@ -172,6 +174,12 @@ func (r *Vite) ReactRefresh() template.HTML {
 }
 
 func (r *Vite) Tags(entries ...string) (template.HTML, error) {
+	normalized := make([]string, len(entries))
+	for i, entry := range entries {
+		normalized[i] = normalizeEntry(entry)
+	}
+	entries = normalized
+
 	if url, ok := r.hotURL(); ok {
 		return r.hotTags(url, entries), nil
 	}
@@ -208,12 +216,18 @@ func (r *Vite) UseManifestFilename(filename string) contractsvite.Vite {
 	return r
 }
 
+// normalizeEntry strips a leading slash so "/resources/js/app.js" and
+// "resources/js/app.js" name the same manifest key and dev-server path.
+func normalizeEntry(entry string) string {
+	return strings.TrimPrefix(entry, "/")
+}
+
 // hotTags loads the Vite client, then every entry from the dev server.
 func (r *Vite) hotTags(url string, entries []string) template.HTML {
 	var b strings.Builder
 	b.WriteString(scriptTag(url + "/@vite/client"))
 	for _, entry := range entries {
-		src := url + "/" + strings.TrimPrefix(entry, "/")
+		src := url + "/" + entry
 		if isCSS(entry) {
 			b.WriteString(stylesheetTag(src))
 		} else {

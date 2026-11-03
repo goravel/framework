@@ -189,6 +189,11 @@ func TestTags_Build(t *testing.T) {
 			expected: `<link rel="stylesheet" href="/build/assets/site-0a0b0c0d.css">`,
 		},
 		{
+			name:     "leading slash resolves like the dev server path",
+			entries:  []string{"/resources/css/site.css"},
+			expected: `<link rel="stylesheet" href="/build/assets/site-0a0b0c0d.css">`,
+		},
+		{
 			name:    "several entries share chunks once, stylesheets before scripts",
 			entries: []string{"resources/css/site.css", "resources/js/app.js", "resources/js/admin.js"},
 			expected: `<link rel="modulepreload" href="/build/assets/vendor-1f2e3d4c.js">` +
@@ -260,6 +265,15 @@ func TestAssetAndContent(t *testing.T) {
 	assert.Equal(t, "/build/assets/logo-11223344.svg", url)
 
 	content, err := vite.Content("resources/css/site.css")
+	require.NoError(t, err)
+	assert.Equal(t, "body{margin:0}", content)
+
+	// A leading slash is accepted everywhere, not only on the dev server.
+	url, err = vite.Asset("/resources/images/logo.svg")
+	require.NoError(t, err)
+	assert.Equal(t, "/build/assets/logo-11223344.svg", url)
+
+	content, err = vite.Content("/resources/css/site.css")
 	require.NoError(t, err)
 	assert.Equal(t, "body{margin:0}", content)
 
