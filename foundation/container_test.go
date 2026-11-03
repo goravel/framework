@@ -11,7 +11,6 @@ import (
 	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/facades"
 	"github.com/goravel/framework/contracts/foundation"
-	contractsvite "github.com/goravel/framework/contracts/vite"
 	mocksvite "github.com/goravel/framework/mocks/vite"
 	"github.com/goravel/framework/support/color"
 )
@@ -269,7 +268,6 @@ func (s *ContainerTestSuite) TestMakeVite() {
 	container.Instance(facades.FacadeToBinding[facades.Vite], vite)
 
 	s.Same(vite, container.MakeVite())
-	s.Implements((*contractsvite.Vite)(nil), container.MakeVite())
 }
 
 func (s *ContainerTestSuite) TestMakeWrappers_LogNonBindingError() {
