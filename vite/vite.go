@@ -124,7 +124,7 @@ func (r *Vite) Asset(asset string) (string, error) {
 		return "", errors.ViteEntryNotFound.Args(asset)
 	}
 
-	return r.assetURL(c.File), nil
+	return assetURL(r.assetBase(), c.File), nil
 }
 
 func (r *Vite) Content(asset string) (string, error) {
@@ -211,7 +211,7 @@ func (r *Vite) Tags(entries ...string) (template.HTML, error) {
 		return "", err
 	}
 
-	return r.buildTags(m, entries)
+	return r.buildTags(m, r.assetBase(), entries)
 }
 
 func (r *Vite) UseBuildDirectory(directory string) contractsvite.Vite {
@@ -264,7 +264,7 @@ func (r *Vite) hotTags(url string, entries []string) template.HTML {
 
 // buildTags resolves the entries through the manifest: modulepreloads for imported
 // chunks, then stylesheets, then scripts, each file once.
-func (r *Vite) buildTags(m *manifest, entries []string) (template.HTML, error) {
+func (r *Vite) buildTags(m *manifest, base string, entries []string) (template.HTML, error) {
 	var preloads, stylesheets, scripts strings.Builder
 	seen := make(map[string]struct{})
 	once := func(file string) bool {
@@ -284,29 +284,29 @@ func (r *Vite) buildTags(m *manifest, entries []string) (template.HTML, error) {
 
 		if isCSS(c.File) {
 			if once(c.File) {
-				stylesheets.WriteString(stylesheetTag(r.assetURL(c.File)))
+				stylesheets.WriteString(stylesheetTag(assetURL(base, c.File)))
 			}
 			continue
 		}
 
 		for _, css := range c.CSS {
 			if once(css) {
-				stylesheets.WriteString(stylesheetTag(r.assetURL(css)))
+				stylesheets.WriteString(stylesheetTag(assetURL(base, css)))
 			}
 		}
 		for _, imported := range m.imports(entry, nil) {
 			ic := m.chunks[imported]
 			if once(ic.File) {
-				preloads.WriteString(preloadTag(r.assetURL(ic.File)))
+				preloads.WriteString(preloadTag(assetURL(base, ic.File)))
 			}
 			for _, css := range ic.CSS {
 				if once(css) {
-					stylesheets.WriteString(stylesheetTag(r.assetURL(css)))
+					stylesheets.WriteString(stylesheetTag(assetURL(base, css)))
 				}
 			}
 		}
 		if once(c.File) {
-			scripts.WriteString(scriptTag(r.assetURL(c.File)))
+			scripts.WriteString(scriptTag(assetURL(base, c.File)))
 		}
 	}
 
@@ -345,8 +345,9 @@ func (r *Vite) hotURL() (string, bool) {
 	return strings.TrimRight(strings.TrimSpace(string(content)), "/"), true
 }
 
-// assetURL is the public URL of a file inside the build directory, prefixed with app.asset_url.
-func (r *Vite) assetURL(file string) string {
+// assetBase is the public URL of the build directory, prefixed with app.asset_url.
+// It is read once per Tags or Asset call, not once per emitted tag.
+func (r *Vite) assetBase() string {
 	r.mu.RLock()
 	directory := r.buildDirectory
 	r.mu.RUnlock()
@@ -356,7 +357,17 @@ func (r *Vite) assetURL(file string) string {
 		prefix = strings.TrimRight(r.config.GetString("app.asset_url"), "/")
 	}
 
-	return prefix + "/" + path.Join(strings.Trim(directory, "/"), file)
+	if directory = strings.Trim(directory, "/"); directory == "" {
+		return prefix
+	}
+
+	return prefix + "/" + directory
+}
+
+// assetURL is the public URL of a file inside the build directory. The base is
+// concatenated, not joined, so the "//" of an absolute asset URL survives.
+func assetURL(base, file string) string {
+	return base + "/" + strings.TrimLeft(file, "/")
 }
 
 // buildPath is the absolute path of the build directory.
