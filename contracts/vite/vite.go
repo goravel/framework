@@ -24,10 +24,4 @@ type Vite interface {
 	// Tags returns the stylesheet, modulepreload and module script tags for the
 	// entries; while the dev server runs, the Vite client plus one tag per entry.
 	Tags(entries ...string) (template.HTML, error)
-	// UseBuildDirectory sets the build directory. Default "build".
-	UseBuildDirectory(directory string) Vite
-	// UseHotFile sets the hot file; a relative path resolves against the project root. Default "public/hot".
-	UseHotFile(path string) Vite
-	// UseManifestFilename sets the manifest file name. Default ".vite/manifest.json".
-	UseManifestFilename(filename string) Vite
 }

@@ -214,7 +214,12 @@ func (r *Vite) Tags(entries ...string) (template.HTML, error) {
 	return r.buildTags(m, r.assetBase(), entries)
 }
 
-func (r *Vite) UseBuildDirectory(directory string) contractsvite.Vite {
+// UseBuildDirectory sets the build directory inside the public directory. Default
+// "build". The setters live on *Vite, not the contract: the shared instance is
+// configured from config/vite.go, which goravel-vite-plugin reads too, so a
+// change at render time would desync the build. They exist for tests and for
+// applications that construct their own Vite.
+func (r *Vite) UseBuildDirectory(directory string) *Vite {
 	r.mu.Lock()
 	r.buildDirectory = directory
 	r.buildRoot = resolveBuildRoot(directory)
@@ -223,7 +228,8 @@ func (r *Vite) UseBuildDirectory(directory string) contractsvite.Vite {
 	return r
 }
 
-func (r *Vite) UseHotFile(path string) contractsvite.Vite {
+// UseHotFile sets the hot file; a relative path resolves against the project root. Default "public/hot".
+func (r *Vite) UseHotFile(path string) *Vite {
 	r.mu.Lock()
 	r.hotFile = path
 	r.hotPath = resolveHotPath(path)
@@ -232,7 +238,8 @@ func (r *Vite) UseHotFile(path string) contractsvite.Vite {
 	return r
 }
 
-func (r *Vite) UseManifestFilename(filename string) contractsvite.Vite {
+// UseManifestFilename sets the manifest file name inside the build directory. Default ".vite/manifest.json".
+func (r *Vite) UseManifestFilename(filename string) *Vite {
 	r.mu.Lock()
 	r.manifestFilename = filename
 	r.mu.Unlock()
