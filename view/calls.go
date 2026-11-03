@@ -11,10 +11,11 @@ import (
 type Call struct {
 	// Template is the name of the template the call appears in.
 	Template string
-	// Args are the string constants passed to the function, in order; nil when Dynamic.
+	// Args are the string constants passed to the function, in order. A Dynamic
+	// call still lists its constants, so {{ vite "app.js" .extra }} reports "app.js".
 	Args []string
-	// Dynamic reports that an argument is computed at render time, so the call
-	// cannot be resolved by reading the template.
+	// Dynamic reports that at least one argument is computed at render time, so
+	// the call cannot be fully resolved by reading the template.
 	Dynamic bool
 }
 
@@ -52,8 +53,8 @@ func Calls(tmpl *template.Template, function string) []Call {
 				for _, arg := range args {
 					str, ok := arg.(*parse.StringNode)
 					if !ok {
-						call = Call{Template: t.Name(), Dynamic: true}
-						break
+						call.Dynamic = true
+						continue
 					}
 					call.Args = append(call.Args, str.Text)
 				}

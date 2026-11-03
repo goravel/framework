@@ -57,7 +57,7 @@ func TestInputsCommand_Metadata(t *testing.T) {
 func TestInputsCommand_Handle(t *testing.T) {
 	setupAppViews(t, map[string]string{
 		"home.tmpl": `{{ vite "resources/css/app.css" "resources/js/app.js" }}<img src="{{ viteAsset "resources/images/logo.svg" }}">`,
-		"dyn.tmpl":  `{{ vite .entry }}`,
+		"dyn.tmpl":  `{{ vite .entry }}{{ vite "resources/js/mixed.js" .extra }}`,
 	})
 	pkg := fstest.MapFS{"admin.tmpl": {Data: []byte(`{{ vite "resources/js/admin.js" "resources/js/app.js" }}`)}}
 
@@ -70,7 +70,7 @@ func TestInputsCommand_Handle(t *testing.T) {
 	view.EXPECT().RegisteredViewFS().Return([]fs.FS{pkg}).Once()
 
 	ctx := mocksconsole.NewContext(t)
-	ctx.EXPECT().Line(`{"inputs":["resources/css/app.css","resources/js/admin.js","resources/js/app.js"],"assets":["resources/images/logo.svg"],"dynamic":[{"template":"dyn.tmpl","function":"vite"}],` + defaultPaths + `}`).Once()
+	ctx.EXPECT().Line(`{"inputs":["resources/css/app.css","resources/js/admin.js","resources/js/app.js","resources/js/mixed.js"],"assets":["resources/images/logo.svg"],"dynamic":[{"template":"dyn.tmpl","function":"vite"},{"template":"dyn.tmpl","function":"vite"}],` + defaultPaths + `}`).Once()
 
 	assert.NoError(t, NewInputsCommand(view, defaultVite(t)).Handle(ctx))
 }

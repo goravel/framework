@@ -35,7 +35,7 @@ func TestCalls(t *testing.T) {
 			{{ template "partial" (asset "partial-arg.js") }}
 			{{ end }}
 			{{ define "partial" }}{{ . }}{{ end }}`,
-		"layout.tmpl": `{{ $entry := "var.js" }}{{ asset $entry }}{{ asset (printf "%s" .name) }}{{ asset "ok.js" .dyn }}{{ .Field "asset" }}{{ asset }}{{ (asset "chain.js").Len }}`,
+		"layout.tmpl": `{{ $entry := "var.js" }}{{ asset $entry }}{{ asset (printf "%s" .name) }}{{ asset "ok.js" .dyn "also.js" }}{{ .Field "asset" }}{{ asset }}{{ (asset "chain.js").Len }}`,
 	})
 
 	assert.Equal(t, []Call{
@@ -45,9 +45,10 @@ func TestCalls(t *testing.T) {
 		{Template: "admin.tmpl", Args: []string{"with.js"}},
 		{Template: "admin.tmpl", Args: []string{"partial-arg.js"}},
 		{Template: "home.tmpl", Args: []string{"a.css", "a.js"}},
-		{Template: "layout.tmpl", Dynamic: true},
-		{Template: "layout.tmpl", Dynamic: true},
-		{Template: "layout.tmpl", Dynamic: true},
+		{Template: "layout.tmpl", Args: []string{}, Dynamic: true},
+		{Template: "layout.tmpl", Args: []string{}, Dynamic: true},
+		// The literals around a computed argument are kept, so a build can still include them.
+		{Template: "layout.tmpl", Args: []string{"ok.js", "also.js"}, Dynamic: true},
 		{Template: "layout.tmpl", Args: []string{}},
 		{Template: "layout.tmpl", Args: []string{"chain.js"}},
 	}, Calls(set, "asset"))

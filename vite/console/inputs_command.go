@@ -125,12 +125,12 @@ func (r *InputsCommand) paths() Paths {
 	}
 }
 
-// collect adds the calls' arguments to values, each once and sorted, and the dynamic calls to dynamic.
+// collect adds the calls' arguments to values, each once and sorted, and the dynamic
+// calls to dynamic. A dynamic call's literal arguments are still inputs.
 func collect(calls []view.Call, function string, values *[]string, dynamic *[]DynamicCall) {
 	for _, call := range calls {
 		if call.Dynamic {
 			*dynamic = append(*dynamic, DynamicCall{Template: call.Template, Function: function})
-			continue
 		}
 		for _, arg := range call.Args {
 			if !slices.Contains(*values, arg) {
