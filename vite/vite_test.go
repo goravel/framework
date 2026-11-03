@@ -125,6 +125,21 @@ func TestHotFile(t *testing.T) {
 	assert.False(t, vite.IsRunningHot())
 }
 
+func TestPathsResolvedOnce(t *testing.T) {
+	public := setupProject(t)
+	vite := newTestVite(t, "")
+	vite.UseHotFile("public/hot").UseBuildDirectory("dist")
+
+	hot, build := vite.HotFile(), vite.buildPath()
+	assert.Equal(t, filepath.Join(public, "hot"), hot)
+	assert.Equal(t, filepath.Join(public, "dist"), build)
+
+	// The paths are fixed when set, so a render never resolves them again.
+	support.RelativePath = t.TempDir()
+	assert.Equal(t, hot, vite.HotFile())
+	assert.Equal(t, build, vite.buildPath())
+}
+
 func TestTags_Hot(t *testing.T) {
 	public := setupProject(t)
 	vite := newTestVite(t, "")

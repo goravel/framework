@@ -55,7 +55,9 @@ type Vite struct {
 
 	mu               sync.RWMutex
 	hotFile          string
+	hotPath          string // hotFile resolved to an absolute path, once, so a render does not call getwd
 	buildDirectory   string
+	buildRoot        string // buildDirectory resolved to an absolute path, once
 	manifestFilename string
 
 	manifestMu sync.Mutex
@@ -80,7 +82,20 @@ func NewVite(config config.Config) *Vite {
 		v.manifestFilename = config.GetString("vite.manifest", DefaultManifestFilename)
 	}
 
+	v.hotPath = resolveHotPath(v.hotFile)
+	v.buildRoot = resolveBuildRoot(v.buildDirectory)
+
 	return v
+}
+
+// resolveHotPath is the absolute path of a hot file given relative to the project root.
+func resolveHotPath(hotFile string) string {
+	return paths.Abs(hotFile)
+}
+
+// resolveBuildRoot is the absolute path of a build directory given relative to the public directory.
+func resolveBuildRoot(directory string) string {
+	return paths.Abs(support.Config.Paths.Public, directory)
 }
 
 // Funcs returns the template functions the service provider registers, for
@@ -150,7 +165,7 @@ func (r *Vite) HotFile() string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	return paths.Abs(r.hotFile)
+	return r.hotPath
 }
 
 func (r *Vite) ManifestFilename() string {
@@ -202,6 +217,7 @@ func (r *Vite) Tags(entries ...string) (template.HTML, error) {
 func (r *Vite) UseBuildDirectory(directory string) contractsvite.Vite {
 	r.mu.Lock()
 	r.buildDirectory = directory
+	r.buildRoot = resolveBuildRoot(directory)
 	r.mu.Unlock()
 
 	return r
@@ -210,6 +226,7 @@ func (r *Vite) UseBuildDirectory(directory string) contractsvite.Vite {
 func (r *Vite) UseHotFile(path string) contractsvite.Vite {
 	r.mu.Lock()
 	r.hotFile = path
+	r.hotPath = resolveHotPath(path)
 	r.mu.Unlock()
 
 	return r
@@ -347,7 +364,7 @@ func (r *Vite) buildPath() string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	return paths.Abs(support.Config.Paths.Public, r.buildDirectory)
+	return r.buildRoot
 }
 
 // manifest returns the parsed manifest, re-reading it only when the file changed.
