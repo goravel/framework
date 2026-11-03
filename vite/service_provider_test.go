@@ -2,6 +2,7 @@ package vite
 
 import (
 	"html/template"
+	"io"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,6 +17,7 @@ import (
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mocksview "github.com/goravel/framework/mocks/view"
+	"github.com/goravel/framework/support/color"
 )
 
 type ServiceProviderTestSuite struct {
@@ -78,19 +80,25 @@ func (s *ServiceProviderTestSuite) TestBoot() {
 		s.provider.Boot(s.app)
 	})
 
-	s.Run("without the view registry nothing is registered", func() {
+	s.Run("without the view registry nothing is registered and the cause is reported", func() {
 		s.app.EXPECT().MakeView().Return(nil).Once()
 
-		s.provider.Boot(s.app)
+		output := color.CaptureOutput(func(io.Writer) {
+			s.provider.Boot(s.app)
+		})
+		s.Contains(output, errors.ViewFacadeNotSet.SetModule(errors.ModuleVite).Error())
 	})
 
-	s.Run("without the vite binding nothing is registered", func() {
+	s.Run("without the vite binding the functions are skipped and the cause is reported", func() {
 		view := mocksview.NewView(s.T())
 		s.app.EXPECT().MakeView().Return(view).Once()
 		s.app.EXPECT().MakeVite().Return(nil).Once()
 		s.expectInputsCommand()
 
-		s.provider.Boot(s.app)
+		output := color.CaptureOutput(func(io.Writer) {
+			s.provider.Boot(s.app)
+		})
+		s.Contains(output, errors.ViteFacadeNotSet.Error())
 	})
 }
 

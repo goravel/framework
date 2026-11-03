@@ -5,6 +5,7 @@ import (
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/vite/console"
 )
 
@@ -34,14 +35,19 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 // Boot registers the vite template functions and the vite:inputs command. The
 // view set is compiled only after every provider has booted, so the functions
 // are in place before the first template is parsed.
+// A missing dependency is reported, not swallowed: otherwise the first symptom is
+// `function "vite" not defined` at parse time with nothing pointing at the cause.
 func (r *ServiceProvider) Boot(app foundation.Application) {
 	view := app.MakeView()
 	if view == nil {
+		color.Warningln(errors.ViewFacadeNotSet.SetModule(errors.ModuleVite))
 		return
 	}
 
 	vite := app.MakeVite()
-	if vite != nil {
+	if vite == nil {
+		color.Warningln(errors.ViteFacadeNotSet)
+	} else {
 		view.AddFuncs(Funcs(vite))
 	}
 
