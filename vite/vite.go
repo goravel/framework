@@ -124,7 +124,14 @@ func (r *Vite) Content(asset string) (string, error) {
 		return "", errors.ViteEntryNotFound.Args(asset)
 	}
 
-	content, err := os.ReadFile(filepath.Join(r.buildPath(), filepath.FromSlash(c.File)))
+	// The manifest is data, so a "file" such as "../../.env" must not reach outside the build.
+	root := r.buildPath()
+	file := filepath.Join(root, filepath.FromSlash(c.File))
+	if rel, err := filepath.Rel(root, file); err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", errors.ViteAssetOutsideBuild.Args(c.File)
+	}
+
+	content, err := os.ReadFile(file)
 	if err != nil {
 		return "", errors.ViteAssetReadFailed.Args(c.File, err)
 	}

@@ -386,6 +386,7 @@ var (
 	ViewSourceWalkFailed   = New("failed to walk view source %s: %v")
 	ViewTemplateNotExist   = New("view template %s does not exist")
 
+	ViteAssetOutsideBuild  = New("vite asset %s resolves outside the build directory").SetModule(ModuleVite)
 	ViteAssetReadFailed    = New("failed to read vite asset %s: %v").SetModule(ModuleVite)
 	ViteFacadeNotSet       = New("vite facade is not initialized").SetModule(ModuleVite)
 	ViteEntryNotFound      = New("unable to locate file in vite manifest: %s").SetModule(ModuleVite)

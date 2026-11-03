@@ -294,6 +294,24 @@ func TestAssetAndContent(t *testing.T) {
 	assert.Equal(t, "body{margin:0}", content)
 }
 
+func TestContent_RejectsPathOutsideBuild(t *testing.T) {
+	public := setupProject(t)
+	writeFile(t, filepath.Join(public, "secret.txt"), "secret")
+	writeFile(t, filepath.Join(public, "build", ".vite", "manifest.json"), `{
+  "resources/js/escape.js": {"file": "../secret.txt", "isEntry": true},
+  "resources/js/sibling.js": {"file": "assets/../../secret.txt", "isEntry": true}
+}`)
+	vite := newTestVite(t, "")
+
+	for entry, file := range map[string]string{
+		"resources/js/escape.js":  "../secret.txt",
+		"resources/js/sibling.js": "assets/../../secret.txt",
+	} {
+		_, err := vite.Content(entry)
+		assert.EqualError(t, err, errors.ViteAssetOutsideBuild.Args(file).Error(), entry)
+	}
+}
+
 func TestManifest_Missing(t *testing.T) {
 	public := setupProject(t)
 	vite := newTestVite(t, "")
