@@ -45,9 +45,22 @@ type chunk struct {
 // manifest is a parsed manifest.json with the size and mtime of its file, so a
 // rebuild is picked up without a restart.
 type manifest struct {
-	chunks  map[string]chunk
-	size    int64
-	modTime int64
+	chunks map[string]chunk
+	// importsOf is each chunk's transitive imports in preload order, computed once
+	// when the manifest is parsed so a render does not re-walk the graph.
+	importsOf map[string][]string
+	size      int64
+	modTime   int64
+}
+
+// newManifest indexes the parsed chunks.
+func newManifest(chunks map[string]chunk, size, modTime int64) *manifest {
+	m := &manifest{chunks: chunks, importsOf: make(map[string][]string, len(chunks)), size: size, modTime: modTime}
+	for name := range chunks {
+		m.importsOf[name] = m.imports(name, nil)
+	}
+
+	return m
 }
 
 type Vite struct {
@@ -301,7 +314,7 @@ func (r *Vite) buildTags(m *manifest, base string, entries []string) (template.H
 				stylesheets.WriteString(stylesheetTag(assetURL(base, css)))
 			}
 		}
-		for _, imported := range m.imports(entry, nil) {
+		for _, imported := range m.importsOf[entry] {
 			ic := m.chunks[imported]
 			if once(ic.File) {
 				preloads.WriteString(preloadTag(assetURL(base, ic.File)))
@@ -320,7 +333,9 @@ func (r *Vite) buildTags(m *manifest, base string, entries []string) (template.H
 	return template.HTML(preloads.String() + stylesheets.String() + scripts.String()), nil
 }
 
-// imports returns every chunk the named chunk statically imports, transitively, each once in discovery order.
+// imports returns every chunk the named chunk statically imports, transitively,
+// each once in discovery order, skipping cycles and chunks missing from the
+// manifest. It runs once per chunk in newManifest, never per render.
 func (m *manifest) imports(name string, visited map[string]struct{}) []string {
 	if visited == nil {
 		visited = map[string]struct{}{name: {}}
@@ -415,7 +430,7 @@ func (r *Vite) manifest() (*manifest, error) {
 		return nil, errors.ViteManifestInvalid.Args(manifestPath, err)
 	}
 
-	m := &manifest{chunks: chunks, size: info.Size(), modTime: info.ModTime().UnixNano()}
+	m := newManifest(chunks, info.Size(), info.ModTime().UnixNano())
 	r.manifests[manifestPath] = m
 
 	return m, nil
