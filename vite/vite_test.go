@@ -176,6 +176,11 @@ func TestTags_HotEscapesURL(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotContains(t, string(tags), "<script>alert(1)</script>")
 	assert.Contains(t, string(tags), "&#34;&gt;&lt;script&gt;alert(1)&lt;/script&gt;")
+
+	// The preamble places the URL inside a JavaScript string, so it is escaped as one.
+	preamble := string(vite.ReactRefresh())
+	assert.NotContains(t, preamble, `"><script>alert(1)</script>`)
+	assert.Contains(t, preamble, `from 'http://localhost:5173/\"\u003E\u003Cscript\u003Ealert(1)\u003C/script\u003E/@react-refresh'`)
 }
 
 func TestTags_Build(t *testing.T) {
