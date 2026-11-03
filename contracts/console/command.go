@@ -51,6 +51,23 @@ type CommandHook interface {
 	Flags() []command.Flag
 }
 
+// BaseCommandHook is a CommandHook whose methods all pass through: Before
+// proceeds, After returns handleErr unchanged, Flags adds none. Embed it in a
+// hook and override only the methods it needs.
+type BaseCommandHook struct{}
+
+func (BaseCommandHook) Before(Context) (bool, error) {
+	return true, nil
+}
+
+func (BaseCommandHook) After(_ Context, handleErr error) error {
+	return handleErr
+}
+
+func (BaseCommandHook) Flags() []command.Flag {
+	return nil
+}
+
 type Context interface {
 	context.Context
 	// Ask prompts the user for input.

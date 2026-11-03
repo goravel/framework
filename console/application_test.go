@@ -771,6 +771,14 @@ func TestRun_Hooks(t *testing.T) {
 			expectCalls: []string{"handle"},
 		},
 		{
+			name:    "hook embedding BaseCommandHook overrides only what it needs",
+			command: &TestHookCommand{},
+			hooks: map[string][]console.CommandHook{
+				"hook-cmd": {&beforeOnlyHook{calls: &calls}},
+			},
+			expectCalls: []string{"before-only", "handle"},
+		},
+		{
 			name:    "before returning false skips Handle and After",
 			command: &TestHookCommand{},
 			hooks: map[string][]console.CommandHook{
@@ -1072,6 +1080,18 @@ func (h *testHook) After(ctx console.Context, handleErr error) error {
 
 func (h *testHook) Flags() []command.Flag {
 	return h.flags
+}
+
+// beforeOnlyHook embeds console.BaseCommandHook and overrides Before alone;
+// After and Flags come from the base.
+type beforeOnlyHook struct {
+	console.BaseCommandHook
+	calls *[]string
+}
+
+func (h *beforeOnlyHook) Before(_ console.Context) (bool, error) {
+	*h.calls = append(*h.calls, "before-only")
+	return true, nil
 }
 
 type TestHookCommand struct {
