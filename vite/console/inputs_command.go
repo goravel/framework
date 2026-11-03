@@ -56,8 +56,8 @@ type InputsCommand struct {
 	vite contractsvite.Vite
 }
 
-func NewInputsCommand(view contractsview.View, vite contractsvite.Vite) *InputsCommand {
-	return &InputsCommand{view: view, vite: vite}
+func NewInputsCommand(views contractsview.View, vite contractsvite.Vite) *InputsCommand {
+	return &InputsCommand{view: views, vite: vite}
 }
 
 // Signature The name and signature of the console command.
