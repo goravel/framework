@@ -22,12 +22,10 @@ type ApplicationBuilder interface {
 	Create() Application
 	// WithCallback sets a callback function to be called during application creation.
 	WithCallback(func()) ApplicationBuilder
-	// WithCommandHooks registers a callback that returns hooks to run around
-	// Artisan commands. The callback runs once at Build() time. Each hook's
-	// Signature is an exact signature or a '*' glob, matched like
-	// WithCommandsFilter. When several hooks match a command, their Before hooks
-	// run in registration order and their After hooks in reverse.
-	WithCommandHooks(func() []console.CommandHook) ApplicationBuilder
+	// WithCommandHooks registers a callback that returns the hooks to run
+	// around Artisan commands, keyed by command signature or '*' pattern,
+	// matched like WithCommandsFilter.
+	WithCommandHooks(func() map[string][]console.CommandHook) ApplicationBuilder
 	// WithCommands sets the application's commands.
 	WithCommands(func() []console.Command) ApplicationBuilder
 	// WithCommandsFilter registers a callback that returns the positive list of

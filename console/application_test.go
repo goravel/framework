@@ -23,7 +23,7 @@ var (
 
 func TestRun(t *testing.T) {
 	testCommand = 0
-	cliApp := NewApplication("test", "test", "test", "test", true)
+	cliApp := NewApplication("test", "test", "test", "test", true, nil)
 	cliApp.Register([]console.Command{
 		&TestCommand{},
 	})
@@ -36,7 +36,7 @@ func TestRun_Concurrent(t *testing.T) {
 	testCommand1.Store(0)
 	testCommand2.Store(0)
 
-	cliApp := NewApplication("test", "test", "test", "test", true)
+	cliApp := NewApplication("test", "test", "test", "test", true, nil)
 	cliApp.Register([]console.Command{
 		&TestCommand1{},
 		&TestCommand2{},
@@ -87,7 +87,7 @@ func TestRun_SignalHandling(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cliApp := NewApplication("test", "test", "test", "test", true)
+			cliApp := NewApplication("test", "test", "test", "test", true, nil)
 			cliApp.Register([]console.Command{tt.command})
 
 			if tt.preCancel {
@@ -713,14 +713,13 @@ func (f *filterTestCommand) Handle(_ console.Context) error { return nil }
 
 func TestRun_Hooks(t *testing.T) {
 	var calls []string
-	record := func(name, signature string) console.CommandHook {
-		return console.CommandHook{
-			Signature: signature,
-			Before: func(_ console.Context) (bool, error) {
+	record := func(name string) console.CommandHook {
+		return &testHook{
+			before: func(_ console.Context) (bool, error) {
 				calls = append(calls, name+":before")
 				return true, nil
 			},
-			After: func(_ console.Context, handleErr error) error {
+			after: func(_ console.Context, handleErr error) error {
 				calls = append(calls, name+":after")
 				return handleErr
 			},
@@ -732,7 +731,7 @@ func TestRun_Hooks(t *testing.T) {
 	tests := []struct {
 		name        string
 		command     console.Command
-		hooks       []console.CommandHook
+		hooks       map[string][]console.CommandHook
 		expectErr   error
 		expectCalls []string
 		verify      func(t *testing.T, cmd console.Command)
@@ -743,60 +742,59 @@ func TestRun_Hooks(t *testing.T) {
 			expectCalls: []string{"handle"},
 		},
 		{
-			name:    "before and after run around Handle in registration order, after in reverse",
+			name:    "before runs in sorted key order, after in reverse",
 			command: &TestHookCommand{},
-			hooks: []console.CommandHook{
-				record("exact", "hook-cmd"),
-				record("glob", "hook-*"),
+			hooks: map[string][]console.CommandHook{
+				"hook-cmd": {record("exact")},
+				"hook-*":   {record("glob")},
 			},
-			expectCalls: []string{"exact:before", "glob:before", "handle", "glob:after", "exact:after"},
+			expectCalls: []string{"glob:before", "exact:before", "handle", "exact:after", "glob:after"},
 		},
 		{
-			name:    "several hooks for the same signature all run",
+			name:    "several hooks for the same key run in slice order",
 			command: &TestHookCommand{},
-			hooks: []console.CommandHook{
-				record("first", "hook-cmd"),
-				record("second", "hook-cmd"),
+			hooks: map[string][]console.CommandHook{
+				"hook-cmd": {record("first"), record("second")},
 			},
 			expectCalls: []string{"first:before", "second:before", "handle", "second:after", "first:after"},
 		},
 		{
-			name:    "non-matching hooks are ignored",
+			name:    "non-matching keys and nil hooks are ignored",
 			command: &TestHookCommand{},
-			hooks: []console.CommandHook{
-				record("other", "other"),
-				record("glob", "other:*"),
-				record("blank", "  "),
-				record("empty", ""),
+			hooks: map[string][]console.CommandHook{
+				"other":    {record("other")},
+				"other:*":  {record("glob")},
+				"  ":       {record("blank")},
+				"":         {record("empty")},
+				"hook-cmd": {nil},
 			},
 			expectCalls: []string{"handle"},
 		},
 		{
 			name:    "before returning false skips Handle and After",
 			command: &TestHookCommand{},
-			hooks: []console.CommandHook{
-				{
-					Signature: "hook-cmd",
-					Before: func(_ console.Context) (bool, error) {
+			hooks: map[string][]console.CommandHook{
+				"hook-cmd": {&testHook{
+					before: func(_ console.Context) (bool, error) {
 						calls = append(calls, "before")
 						return false, nil
 					},
-					After: func(_ console.Context, handleErr error) error {
+					after: func(_ console.Context, handleErr error) error {
 						calls = append(calls, "after")
 						return handleErr
 					},
-				},
+				}},
 			},
 			expectCalls: []string{"before"},
 		},
 		{
 			name:    "before error skips Handle and is returned",
 			command: &TestHookCommand{},
-			hooks: []console.CommandHook{
-				{Signature: "hook-cmd", Before: func(_ console.Context) (bool, error) {
+			hooks: map[string][]console.CommandHook{
+				"hook-cmd": {&testHook{before: func(_ console.Context) (bool, error) {
 					calls = append(calls, "before")
 					return true, errBefore
-				}},
+				}}},
 			},
 			expectErr:   errBefore,
 			expectCalls: []string{"before"},
@@ -804,32 +802,32 @@ func TestRun_Hooks(t *testing.T) {
 		{
 			name:    "after receives the Handle error and can replace it",
 			command: &TestHookCommand{err: errHandle},
-			hooks: []console.CommandHook{
-				{Signature: "hook-cmd", After: func(_ console.Context, handleErr error) error {
+			hooks: map[string][]console.CommandHook{
+				"hook-cmd": {&testHook{after: func(_ console.Context, handleErr error) error {
 					assert.ErrorIs(t, handleErr, errHandle)
 					calls = append(calls, "after")
 					return nil
-				}},
+				}}},
 			},
 			expectCalls: []string{"handle", "after"},
 		},
 		{
 			name:    "panic in hook is recovered",
 			command: &TestHookCommand{},
-			hooks: []console.CommandHook{
-				{Signature: "hook-cmd", Before: func(_ console.Context) (bool, error) {
+			hooks: map[string][]console.CommandHook{
+				"hook-cmd": {&testHook{before: func(_ console.Context) (bool, error) {
 					panic("oops")
-				}},
+				}}},
 			},
 			expectErr: errors.ConsoleCommandPanicInHandle,
 		},
 		{
 			name:    "shutdownable command skips Shutdown when Handle is skipped",
 			command: &TestShutdownableCommand{},
-			hooks: []console.CommandHook{
-				{Signature: "shutdown-cmd", Before: func(_ console.Context) (bool, error) {
+			hooks: map[string][]console.CommandHook{
+				"shutdown-cmd": {&testHook{before: func(_ console.Context) (bool, error) {
 					return false, nil
-				}},
+				}}},
 			},
 			verify: func(t *testing.T, cmd console.Command) {
 				assert.False(t, cmd.(*TestShutdownableCommand).shutdownCalled)
@@ -844,9 +842,8 @@ func TestRun_Hooks(t *testing.T) {
 				cmd.calls = &calls
 			}
 
-			cliApp := NewApplication("test", "test", "test", "test", true)
+			cliApp := NewApplication("test", "test", "test", "test", true, tt.hooks)
 			cliApp.Register([]console.Command{tt.command})
-			cliApp.SetHooks(tt.hooks)
 
 			err := cliApp.Call(tt.command.Signature())
 
@@ -899,11 +896,10 @@ func TestRun_HooksShutdownOnCancel(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			command := &TestShutdownableCommand{}
-			cliApp := NewApplication("test", "test", "test", "test", true)
-			cliApp.Register([]console.Command{command})
-			cliApp.SetHooks([]console.CommandHook{
-				{Signature: "shutdown-cmd", Before: tt.before},
+			cliApp := NewApplication("test", "test", "test", "test", true, map[string][]console.CommandHook{
+				"shutdown-cmd": {&testHook{before: tt.before}},
 			})
+			cliApp.Register([]console.Command{command})
 
 			ctx, cancel := context.WithCancel(context.Background())
 			cliApp.ctx = ctx
@@ -929,7 +925,7 @@ func TestRun_ShutdownableHandleReturns(t *testing.T) {
 		handle:      func(_ console.Context) error { return errHandle },
 		shutdownErr: errShutdown,
 	}
-	cliApp := NewApplication("test", "test", "test", "test", true)
+	cliApp := NewApplication("test", "test", "test", "test", true, nil)
 	cliApp.Register([]console.Command{command})
 
 	// Handle returns on its own, so Shutdown runs and its error is only
@@ -945,30 +941,27 @@ func TestRun_HookFlags(t *testing.T) {
 		yes bool
 		tag string
 	)
-	cliApp := NewApplication("test", "test", "test", "test", true)
-	cliApp.Register([]console.Command{&TestHookCommand{}})
-	cliApp.SetHooks([]console.CommandHook{
-		{
-			Signature: "hook-cmd",
-			Flags: []command.Flag{
+	cliApp := NewApplication("test", "test", "test", "test", true, map[string][]console.CommandHook{
+		"hook-cmd": {&testHook{
+			flags: []command.Flag{
 				&command.BoolFlag{Name: "yes", Aliases: []string{"y"}, Usage: "Skip confirmation"},
 			},
-			Before: func(ctx console.Context) (bool, error) {
+			before: func(ctx console.Context) (bool, error) {
 				yes = ctx.OptionBool("yes")
 				return true, nil
 			},
-		},
-		{
-			Signature: "*",
-			Flags: []command.Flag{
+		}},
+		"*": {&testHook{
+			flags: []command.Flag{
 				&command.StringFlag{Name: "tag", Usage: "Audit tag"},
 			},
-			After: func(ctx console.Context, handleErr error) error {
+			after: func(ctx console.Context, handleErr error) error {
 				tag = ctx.Option("tag")
 				return handleErr
 			},
-		},
+		}},
 	})
+	cliApp.Register([]console.Command{&TestHookCommand{}})
 
 	assert.NoError(t, cliApp.Call("hook-cmd -y --tag=nightly"))
 	assert.True(t, yes)
@@ -984,53 +977,57 @@ func TestCommandsToCliCommands_HookFlags(t *testing.T) {
 		return names
 	}
 
+	flagHook := func(flags ...command.Flag) console.CommandHook {
+		return &testHook{flags: flags}
+	}
+
 	tests := []struct {
 		name        string
 		command     *TestHookCommand
-		hooks       []console.CommandHook
+		hooks       map[string][]console.CommandHook
 		expectNames []string
 		expectErr   error
 	}{
 		{
-			name:    "own flags, then hook flags in registration order, then defaults",
+			name:    "own flags, then hook flags in sorted key order, then defaults",
 			command: &TestHookCommand{flags: []command.Flag{&command.BoolFlag{Name: "force"}}},
-			hooks: []console.CommandHook{
-				{Signature: "hook-cmd", Flags: []command.Flag{&command.BoolFlag{Name: "yes"}}},
-				{Signature: "other", Flags: []command.Flag{&command.BoolFlag{Name: "ignored"}}},
-				{Signature: "hook-*", Flags: []command.Flag{&command.StringFlag{Name: "tag"}}},
+			hooks: map[string][]console.CommandHook{
+				"hook-cmd": {flagHook(&command.BoolFlag{Name: "yes"})},
+				"other":    {flagHook(&command.BoolFlag{Name: "ignored"})},
+				"hook-*":   {flagHook(&command.StringFlag{Name: "tag"})},
 			},
-			expectNames: []string{"force", "yes", "tag", "help", "no-ansi"},
+			expectNames: []string{"force", "tag", "yes", "help", "no-ansi"},
 		},
 		{
 			name:    "hook flag clashing with a command flag",
 			command: &TestHookCommand{flags: []command.Flag{&command.BoolFlag{Name: "force", Aliases: []string{"f"}}}},
-			hooks: []console.CommandHook{
-				{Signature: "hook-cmd", Flags: []command.Flag{&command.BoolFlag{Name: "fast", Aliases: []string{"f"}}}},
+			hooks: map[string][]console.CommandHook{
+				"hook-cmd": {flagHook(&command.BoolFlag{Name: "fast", Aliases: []string{"f"}})},
 			},
 			expectErr: errors.ConsoleCommandHookFlagConflict,
 		},
 		{
 			name:    "hook flag clashing with another hook's flag",
 			command: &TestHookCommand{},
-			hooks: []console.CommandHook{
-				{Signature: "hook-cmd", Flags: []command.Flag{&command.BoolFlag{Name: "yes"}}},
-				{Signature: "*", Flags: []command.Flag{&command.BoolFlag{Name: "yes"}}},
+			hooks: map[string][]console.CommandHook{
+				"hook-cmd": {flagHook(&command.BoolFlag{Name: "yes"})},
+				"*":        {flagHook(&command.BoolFlag{Name: "yes"})},
 			},
 			expectErr: errors.ConsoleCommandHookFlagConflict,
 		},
 		{
 			name:    "hook flag clashing with a reserved flag",
 			command: &TestHookCommand{},
-			hooks: []console.CommandHook{
-				{Signature: "hook-cmd", Flags: []command.Flag{&command.BoolFlag{Name: "host", Aliases: []string{"h"}}}},
+			hooks: map[string][]console.CommandHook{
+				"hook-cmd": {flagHook(&command.BoolFlag{Name: "host", Aliases: []string{"h"}})},
 			},
 			expectErr: errors.ConsoleCommandHookFlagConflict,
 		},
 		{
-			name:    "clashing flags on a hook that does not match are ignored",
+			name:    "clashing flags on a key that does not match are ignored",
 			command: &TestHookCommand{flags: []command.Flag{&command.BoolFlag{Name: "force"}}},
-			hooks: []console.CommandHook{
-				{Signature: "other", Flags: []command.Flag{&command.BoolFlag{Name: "force"}}},
+			hooks: map[string][]console.CommandHook{
+				"other": {flagHook(&command.BoolFlag{Name: "force"})},
 			},
 			expectNames: []string{"force", "help", "no-ansi"},
 		},
@@ -1049,6 +1046,32 @@ func TestCommandsToCliCommands_HookFlags(t *testing.T) {
 			assert.Equal(t, tt.expectNames, flagNames(cliCommands[0]))
 		})
 	}
+}
+
+// testHook is a console.CommandHook built from optional funcs: a nil before
+// proceeds, a nil after passes the error through.
+type testHook struct {
+	before func(ctx console.Context) (bool, error)
+	after  func(ctx console.Context, handleErr error) error
+	flags  []command.Flag
+}
+
+func (h *testHook) Before(ctx console.Context) (bool, error) {
+	if h.before == nil {
+		return true, nil
+	}
+	return h.before(ctx)
+}
+
+func (h *testHook) After(ctx console.Context, handleErr error) error {
+	if h.after == nil {
+		return handleErr
+	}
+	return h.after(ctx, handleErr)
+}
+
+func (h *testHook) Flags() []command.Flag {
+	return h.flags
 }
 
 type TestHookCommand struct {

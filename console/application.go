@@ -3,6 +3,7 @@ package console
 import (
 	"context"
 	"io"
+	"maps"
 	"os"
 	"os/signal"
 	stdpath "path"
@@ -32,7 +33,7 @@ var (
 
 type Application struct {
 	commands   []console.Command
-	hooks      []console.CommandHook
+	hooks      map[string][]console.CommandHook
 	name       string
 	usage      string
 	usageText  string
@@ -44,9 +45,12 @@ type Application struct {
 
 // NewApplication Create a new Artisan application.
 // Will add artisan flag to the command if useArtisan is true.
-func NewApplication(name, usage, usageText, version string, useArtisan bool) *Application {
+// hooks run around matching commands, keyed by command signature or '*'
+// pattern;
+func NewApplication(name, usage, usageText, version string, useArtisan bool, hooks map[string][]console.CommandHook) *Application {
 	ctx, _ := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	return &Application{
+		hooks:      hooks,
 		name:       name,
 		usage:      usage,
 		usageText:  usageText,
@@ -148,11 +152,6 @@ func (r *Application) SetCommands(commands []console.Command) {
 	r.commands = commands
 }
 
-// SetHooks Set the hooks that run around matching commands, in registration order.
-func (r *Application) SetHooks(hooks []console.CommandHook) {
-	r.hooks = hooks
-}
-
 func (r *Application) command() (*cli.Command, error) {
 	cliCommands, err := commandsToCliCommands(r.commands, r.hooks)
 	if err != nil {
@@ -231,14 +230,19 @@ func FilterCommandsByAllowlist(commands []console.Command, allowlist []string) [
 	return kept
 }
 
-// hooksForCommand returns the hooks that apply to item, in registration order
-// (outermost first).
-func hooksForCommand(item console.Command, hooks []console.CommandHook) []console.CommandHook {
+// hooksForCommand returns the hooks that apply to item, outermost first: the
+// matching keys in sorted order, then the hooks of each key in slice order.
+func hooksForCommand(item console.Command, hooks map[string][]console.CommandHook) []console.CommandHook {
 	sig := item.Signature()
 	var matched []console.CommandHook
-	for _, hook := range hooks {
-		if signatureMatches(hook.Signature, sig) {
-			matched = append(matched, hook)
+	for _, pattern := range slices.Sorted(maps.Keys(hooks)) {
+		if !signatureMatches(pattern, sig) {
+			continue
+		}
+		for _, hook := range hooks[pattern] {
+			if hook != nil {
+				matched = append(matched, hook)
+			}
 		}
 	}
 
@@ -246,8 +250,8 @@ func hooksForCommand(item console.Command, hooks []console.CommandHook) []consol
 }
 
 // commandFlags returns the CLI flags for item: its own flags, then the flags of
-// each matching hook in registration order, then the default help and no-ansi
-// flags. A hook flag whose name or alias is already taken, or is reserved for
+// each matching hook in the order hooksForCommand returns them, then the
+// default help and no-ansi flags. A hook flag whose name or alias is already taken, or is reserved for
 // a default flag, is an error.
 func commandFlags(item console.Command, hooks []console.CommandHook) ([]cli.Flag, error) {
 	flags := convertFlags(item.Extend().Flags)
@@ -260,7 +264,7 @@ func commandFlags(item console.Command, hooks []console.CommandHook) ([]cli.Flag
 	}
 
 	for _, hook := range hooks {
-		for _, flag := range convertFlags(hook.Flags) {
+		for _, flag := range convertFlags(hook.Flags()) {
 			names := flag.Names()
 			for _, name := range names {
 				if taken[name] {
@@ -297,9 +301,6 @@ func signatureMatches(pattern, sig string) bool {
 // and every After. started is closed just before Handle runs.
 func handleWithHooks(item console.Command, hooks []console.CommandHook, ctx console.Context, started chan<- struct{}) (handled bool, err error) {
 	for _, hook := range hooks {
-		if hook.Before == nil {
-			continue
-		}
 		proceed, err := hook.Before(ctx)
 		if err != nil || !proceed {
 			return false, err
@@ -310,9 +311,7 @@ func handleWithHooks(item console.Command, hooks []console.CommandHook, ctx cons
 	err = item.Handle(ctx)
 
 	for i := len(hooks) - 1; i >= 0; i-- {
-		if hooks[i].After != nil {
-			err = hooks[i].After(ctx, err)
-		}
+		err = hooks[i].After(ctx, err)
 	}
 
 	return true, err
@@ -332,7 +331,7 @@ type handleResult struct {
 	handled bool
 }
 
-func commandsToCliCommands(commands []console.Command, hooks []console.CommandHook) ([]*cli.Command, error) {
+func commandsToCliCommands(commands []console.Command, hooks map[string][]console.CommandHook) ([]*cli.Command, error) {
 	cliCommands := make([]*cli.Command, len(commands))
 
 	for i, item := range commands {

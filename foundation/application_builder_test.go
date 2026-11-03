@@ -316,8 +316,8 @@ func (s *ApplicationBuilderTestSuite) TestWithCommandsFilterNil() {
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithCommandHooks() {
-	hooks := []contractsconsole.CommandHook{{Signature: "migrate"}}
-	builder := s.builder.WithCommandHooks(func() []contractsconsole.CommandHook {
+	hooks := map[string][]contractsconsole.CommandHook{"migrate": {mocksconsole.NewCommandHook(s.T())}}
+	builder := s.builder.WithCommandHooks(func() map[string][]contractsconsole.CommandHook {
 		return hooks
 	})
 

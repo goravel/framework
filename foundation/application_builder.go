@@ -25,7 +25,7 @@ func Setup() foundation.ApplicationBuilder {
 type ApplicationBuilder struct {
 	app                        foundation.Application
 	callback                   func()
-	commandHooks               func() []console.CommandHook
+	commandHooks               func() map[string][]console.CommandHook
 	commands                   func() []console.Command
 	config                     func()
 	configuredServiceProviders func() []foundation.ServiceProvider
@@ -66,12 +66,14 @@ func (r *ApplicationBuilder) WithCallback(callback func()) foundation.Applicatio
 	return r
 }
 
-// WithCommandHooks registers a callback that returns hooks to run around
-// Artisan commands. The callback runs once at Build() time. Each hook's
-// Signature is an exact signature or a '*' glob, matched like
-// WithCommandsFilter. When several hooks match a command, their Before hooks
-// run in registration order and their After hooks in reverse.
-func (r *ApplicationBuilder) WithCommandHooks(fn func() []console.CommandHook) foundation.ApplicationBuilder {
+// WithCommandHooks registers a callback that returns the hooks to run around
+// Artisan commands, keyed by command signature or '*' pattern, matched like
+// WithCommandsFilter. The callback runs once at Build() time and the map
+// reaches the Artisan application when the console provider constructs it.
+// For a command, the hooks of every matching key run: keys in sorted order,
+// hooks in slice order within a key. Before hooks run first to last and After
+// hooks last to first.
+func (r *ApplicationBuilder) WithCommandHooks(fn func() map[string][]console.CommandHook) foundation.ApplicationBuilder {
 	r.commandHooks = fn
 
 	return r

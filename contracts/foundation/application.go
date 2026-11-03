@@ -70,6 +70,9 @@ type Application interface {
 	// CommandsFilter returns the positive-list of command signatures to keep
 	// (set via WithCommandsFilter). nil means no filter.
 	CommandsFilter() []string
+	// CommandHooks returns the hooks that run around Artisan commands, keyed by
+	// command signature or '*' pattern (set via WithCommandHooks).
+	CommandHooks() map[string][]console.CommandHook
 	// Context gets the application context.
 	Context() context.Context
 	// GetJson get the JSON implementation.

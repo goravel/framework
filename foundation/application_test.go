@@ -156,9 +156,7 @@ func (s *ApplicationTestSuite) TestConfigureCommands() {
 }
 
 func (s *ApplicationTestSuite) TestBuild() {
-	hooks := []console.CommandHook{
-		{Signature: "migrate", Before: func(_ console.Context) (bool, error) { return true, nil }},
-	}
+	hooks := map[string][]console.CommandHook{"migrate": {mocksconsole.NewCommandHook(s.T())}}
 
 	mockConfig := mocksconfig.NewConfig(s.T())
 	mockConfig.EXPECT().GetString("app.timezone", "UTC").Return("UTC").Once()
@@ -167,9 +165,6 @@ func (s *ApplicationTestSuite) TestBuild() {
 
 	mockArtisan := mocksconsole.NewArtisan(s.T())
 	mockArtisan.EXPECT().Register(mock.Anything).Return().Once()
-	mockArtisan.EXPECT().SetHooks(mock.MatchedBy(func(got []console.CommandHook) bool {
-		return len(got) == 1 && got[0].Signature == "migrate"
-	})).Return().Once()
 	mockArtisan.EXPECT().Run(os.Args, true).Return(nil).Once()
 	s.app.Instance(binding.Artisan, mockArtisan)
 
@@ -180,7 +175,7 @@ func (s *ApplicationTestSuite) TestBuild() {
 	s.app.providerRepository = mockRepo
 
 	builder := NewApplicationBuilder(s.app)
-	builder.commandHooks = func() []console.CommandHook { return hooks }
+	builder.commandHooks = func() map[string][]console.CommandHook { return hooks }
 	s.app.builder = builder
 	s.app.SetJson(foundationjson.New())
 
@@ -188,66 +183,9 @@ func (s *ApplicationTestSuite) TestBuild() {
 	defer s.app.cancel()
 
 	s.Same(s.app, built)
-}
-
-func (s *ApplicationTestSuite) TestConfigureCommandHooks() {
-	hooks := []console.CommandHook{
-		{Signature: "migrate", Before: func(_ console.Context) (bool, error) { return true, nil }},
-		{Signature: "make:*", After: func(_ console.Context, err error) error { return err }},
-	}
-
-	tests := []struct {
-		name  string
-		setup func()
-	}{
-		{
-			name: "without hooks function",
-			setup: func() {
-				s.app.builder = NewApplicationBuilder(s.app)
-				s.app.configureCommandHooks() // Should not panic
-			},
-		},
-		{
-			name: "empty hooks are ignored",
-			setup: func() {
-				builder := NewApplicationBuilder(s.app)
-				builder.commandHooks = func() []console.CommandHook { return nil }
-				s.app.builder = builder
-				s.app.configureCommandHooks() // Should not touch the artisan facade, which is not bound
-			},
-		},
-		{
-			name: "hooks are passed to the artisan facade",
-			setup: func() {
-				mockArtisan := mocksconsole.NewArtisan(s.T())
-				mockArtisan.EXPECT().SetHooks(mock.MatchedBy(func(got []console.CommandHook) bool {
-					return len(got) == 2 && got[0].Signature == "migrate" && got[1].Signature == "make:*"
-				})).Return().Once()
-				s.app.Instance(binding.Artisan, mockArtisan)
-
-				builder := NewApplicationBuilder(s.app)
-				builder.commandHooks = func() []console.CommandHook { return hooks }
-				s.app.builder = builder
-				s.app.configureCommandHooks()
-			},
-		},
-		{
-			name: "hooks without artisan facade do not panic",
-			setup: func() {
-				builder := NewApplicationBuilder(s.app)
-				builder.commandHooks = func() []console.CommandHook { return hooks }
-				s.app.builder = builder
-				s.app.configureCommandHooks() // Should not panic
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		s.Run(tt.name, func() {
-			s.SetupTest()
-			tt.setup()
-		})
-	}
+	// Build runs the WithCommandHooks callback before the providers register,
+	// so the console provider can hand the map to the Artisan application.
+	s.Equal(hooks, s.app.CommandHooks())
 }
 
 func (s *ApplicationTestSuite) TestDefaultCommandsRegistersMaintenanceCommandsWithRouteFacade() {

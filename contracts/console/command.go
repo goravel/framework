@@ -30,26 +30,25 @@ type Shutdownable interface {
 	Shutdown(ctx Context) error
 }
 
-// CommandHook runs around the Handle of every command whose signature matches
-// Signature. Hooks are registered through Artisan.SetHooks and run in
-// registration order: Before hooks first to last, After hooks last to first.
-type CommandHook struct {
-	// Signature is an exact command signature ("migrate") or a '*' glob
-	// ("make:*", "*"), matched like the commands filter. A blank Signature
-	// matches nothing.
-	Signature string
+// CommandHook runs around the Handle of a command. Hooks are registered
+// through ApplicationBuilder.WithCommandHooks as a map from a command
+// signature ("migrate") or '*' pattern ("make:*", "*") to the hooks for it,
+// matched like the commands filter. When a command runs, the hooks of every
+// matching key run: keys in sorted order, hooks in slice order within a key.
+// Before hooks run first to last, then Handle, then After hooks last to first.
+type CommandHook interface {
+	// Before runs before Handle. Returning false or an error skips Handle and
+	// every After.
+	Before(ctx Context) (proceed bool, err error)
+	// After runs after Handle and receives its error. The returned error
+	// replaces it.
+	After(ctx Context, handleErr error) error
 	// Flags are added to every matching command and read in the hooks through
 	// ctx.Option*. A name or alias that clashes with the command's own flags,
 	// another matching hook's flags, or the reserved help, h and no-ansi flags
 	// fails command registration. A Required flag is required on every
-	// matching command, even when Before skips Handle.
-	Flags []command.Flag
-	// Before runs before Handle. Returning false or an error skips Handle and
-	// every After. Optional.
-	Before func(ctx Context) (proceed bool, err error)
-	// After runs after Handle and receives its error. The returned error
-	// replaces it. Optional.
-	After func(ctx Context, handleErr error) error
+	// matching command, even when Before skips Handle. Return nil for none.
+	Flags() []command.Flag
 }
 
 type Context interface {

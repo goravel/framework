@@ -34,6 +34,7 @@ func TestServiceProviderRegister(t *testing.T) {
 		app.EXPECT().Singleton(binding.Artisan, mock.AnythingOfType("func(foundation.Application) (interface {}, error)")).Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
 			callbackApp := mocksfoundation.NewApplication(t)
 			callbackApp.EXPECT().Version().Return("v1.18.0").Once()
+			callbackApp.EXPECT().CommandHooks().Return(nil).Once()
 
 			instance, err := callback(callbackApp)
 
