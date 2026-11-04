@@ -295,8 +295,8 @@ func signatureMatches(pattern, sig string) bool {
 		return false
 	}
 	if strings.Contains(pattern, "*") {
-		ok, _ := stdpath.Match(pattern, sig)
-		return ok
+		ok, err := stdpath.Match(pattern, sig)
+		return err == nil && ok
 	}
 
 	return pattern == sig
