@@ -22,7 +22,8 @@ type Repository interface {
 	Forever(key string, value any) bool
 	// Forget removes an item from the cache.
 	Forget(key string) bool
-	// Flush remove all items from the cache, a tagged view only removes the items stored under any of its tags.
+	// Flush remove all items from the cache.
+	// A tagged view removes only the items it stored under any of its tags.
 	Flush() bool
 	// Get retrieve an item from the cache by key.
 	Get(key string, def ...any) any
