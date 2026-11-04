@@ -862,6 +862,24 @@ func TestRun_Hooks(t *testing.T) {
 			expectCalls: []string{"handle", "after-inner", "after-outer"},
 		},
 		{
+			name: "panic in After still runs Shutdown once Handle ran",
+			command: &TestShutdownableCommand{handle: func(_ console.Context) error {
+				calls = append(calls, "handle")
+				return nil
+			}},
+			hooks: map[string][]console.CommandHook{
+				"shutdown-cmd": {&testHook{after: func(_ console.Context, _ error) error {
+					calls = append(calls, "after")
+					panic("oops")
+				}}},
+			},
+			expectErr:   errors.ConsoleCommandPanicInAfterHook,
+			expectCalls: []string{"handle", "after"},
+			verify: func(t *testing.T, cmd console.Command) {
+				assert.True(t, cmd.(*TestShutdownableCommand).shutdownCalled)
+			},
+		},
+		{
 			name:    "shutdownable command skips Shutdown when Handle is skipped",
 			command: &TestShutdownableCommand{},
 			hooks: map[string][]console.CommandHook{
