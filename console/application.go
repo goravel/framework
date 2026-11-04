@@ -435,10 +435,6 @@ func commandsToCliCommands(commands []console.Command, hooks map[string][]consol
 	return cliCommands, nil
 }
 
-func flagsToCliFlags(flags []command.Flag) []cli.Flag {
-	return withDefaultFlags(convertFlags(flags))
-}
-
 // convertFlags converts command flags to CLI flags, without the defaults.
 func convertFlags(flags []command.Flag) []cli.Flag {
 	var cliFlags []cli.Flag

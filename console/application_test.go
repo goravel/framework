@@ -111,7 +111,7 @@ func TestRun_SignalHandling(t *testing.T) {
 	}
 }
 
-func TestFlagsToCliFlags(t *testing.T) {
+func TestConvertFlagsWithDefaults(t *testing.T) {
 	// Mock flags of different types
 	boolFlag := &command.BoolFlag{Name: "boolFlag", Aliases: []string{"bf"}, Usage: "bool flag", Required: false, Value: false}
 	float64Flag := &command.Float64Flag{Name: "float64Flag", Aliases: []string{"ff"}, Usage: "float64 flag", Required: true, Value: 1.0}
@@ -126,8 +126,8 @@ func TestFlagsToCliFlags(t *testing.T) {
 	// Create a slice of command flags
 	flags := []command.Flag{boolFlag, float64Flag, float64SliceFlag, intFlag, intSliceFlag, int64Flag, int64SliceFlag, stringFlag, stringSliceFlag}
 
-	// Convert command flags to CLI flags
-	cliFlags := flagsToCliFlags(flags)
+	// Convert command flags to CLI flags, the same way commandFlags does
+	cliFlags := withDefaultFlags(convertFlags(flags))
 	assert.NotNil(t, cliFlags)
 
 	// Assert that the number of CLI flags matches the number of command flags
