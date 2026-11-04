@@ -920,6 +920,11 @@ func TestRun_Hooks(t *testing.T) {
 }
 
 func TestRun_HooksShutdownOnCancel(t *testing.T) {
+	// release lets the hook that ignores cancellation return once the test is
+	// done, so its goroutine does not outlive the test.
+	release := make(chan struct{})
+	t.Cleanup(func() { close(release) })
+
 	tests := []struct {
 		name           string
 		before         func(ctx console.Context) (bool, error)
@@ -952,7 +957,8 @@ func TestRun_HooksShutdownOnCancel(t *testing.T) {
 		{
 			name: "cancel while Before ignores cancellation calls Shutdown after the decision timeout",
 			before: func(_ console.Context) (bool, error) {
-				select {}
+				<-release
+				return true, nil
 			},
 			expectShutdown: true,
 		},
