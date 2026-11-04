@@ -119,7 +119,7 @@ func (r *Application) Run(args []string, exitIfArtisan bool) error {
 	if artisanIndex != -1 {
 		command, err := r.command()
 		if err != nil {
-			return err
+			return r.fail(err, exitIfArtisan)
 		}
 
 		if artisanIndex+1 == len(args) {
@@ -128,15 +128,7 @@ func (r *Application) Run(args []string, exitIfArtisan bool) error {
 
 		cliArgs := append([]string{args[0]}, args[artisanIndex+1:]...)
 		if err := command.Run(r.ctx, cliArgs); err != nil {
-			if exitIfArtisan {
-				if !errors.Is(err, context.Canceled) {
-					color.Errorln(err.Error())
-					os.Exit(1)
-				}
-				os.Exit(0)
-			}
-
-			return err
+			return r.fail(err, exitIfArtisan)
 		}
 
 		if exitIfArtisan {
@@ -145,6 +137,24 @@ func (r *Application) Run(args []string, exitIfArtisan bool) error {
 	}
 
 	return nil
+}
+
+// fail reports an error from Run. When exitIfArtisan is set the error is
+// printed and the process exits, so a caller that discards the returned error
+// (the application boot) never hides it; otherwise it is returned as is.
+func (r *Application) fail(err error, exitIfArtisan bool) error {
+	if !exitIfArtisan {
+		return err
+	}
+
+	if errors.Is(err, context.Canceled) {
+		os.Exit(0)
+	}
+
+	color.Errorln(err.Error())
+	os.Exit(1)
+
+	return err
 }
 
 // SetCommands Set the commands for the application.

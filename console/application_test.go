@@ -1019,6 +1019,18 @@ func TestRun_HookFlags(t *testing.T) {
 	assert.Equal(t, "nightly", tag)
 }
 
+func TestRun_HookFlagConflict(t *testing.T) {
+	cliApp := NewApplication("test", "test", "test", "test", true, map[string][]console.CommandHook{
+		"*": {&testHook{flags: []command.Flag{&command.BoolFlag{Name: "force"}}}},
+	})
+	cliApp.Register([]console.Command{&TestHookCommand{flags: []command.Flag{&command.BoolFlag{Name: "force"}}}})
+
+	err := cliApp.Call("hook-cmd")
+	assert.ErrorIs(t, err, errors.ConsoleCommandRegisterFailed)
+	assert.ErrorContains(t, err, "hook-cmd")
+	assert.ErrorContains(t, err, "flag 'force' conflicts")
+}
+
 func TestCommandsToCliCommands_HookFlags(t *testing.T) {
 	flagNames := func(cmd *cli.Command) []string {
 		var names []string
