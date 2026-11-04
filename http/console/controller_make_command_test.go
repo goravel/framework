@@ -54,8 +54,8 @@ func TestControllerMakeCommand_MultipleNames(t *testing.T) {
 
 	assert.Nil(t, controllerMakeCommand.Handle(mockContext))
 
-	assert.True(t, file.Exists("app/http/controllers/user_controller.go"))
-	assert.True(t, file.Exists("app/http/controllers/order_controller.go"))
+	assert.FileExists(t, "app/http/controllers/user_controller.go")
+	assert.FileExists(t, "app/http/controllers/order_controller.go")
 	assert.Nil(t, file.Remove("app"))
 }
 
@@ -85,8 +85,8 @@ func TestControllerMakeCommand_MultipleNamesPartialFailure(t *testing.T) {
 	mockContext.EXPECT().Success("Controller created successfully").Once()
 	assert.Nil(t, controllerMakeCommand.Handle(mockContext))
 
-	assert.True(t, file.Exists("app/http/controllers/user_controller.go"))
-	assert.True(t, file.Exists("app/http/controllers/order_controller.go"))
+	assert.FileExists(t, "app/http/controllers/user_controller.go")
+	assert.FileExists(t, "app/http/controllers/order_controller.go")
 	assert.Nil(t, file.Remove("app"))
 }
 

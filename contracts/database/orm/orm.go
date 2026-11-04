@@ -51,12 +51,19 @@ type Query interface {
 	Count() (int64, error)
 	// Create inserts new record into the database.
 	Create(value any) error
+	// CrossJoin adds a CROSS JOIN to the query. Pass only the table expression, e.g. "roles", the
+	// "CROSS JOIN" keyword is added automatically. args only fill "?" placeholders in that expression.
+	CrossJoin(query string, args ...any) Query
 	// Cursor returns a cursor, use scan to iterate over the returned rows.
 	// If the iteration is stopped before the channel is closed (e.g. break), cancel the context passed to
 	// WithContext, otherwise the underlying goroutine, rows and connection are not released.
 	Cursor() chan db.Row
 	// DB gets the underlying database connection.
 	DB() (*sql.DB, error)
+	// Decrement decrements the given column's value by the given amount (default 1).
+	// When the query has a model with a primary key (Model(&user)), the column and updated_at
+	// of that model are also updated in memory. JSON path columns (data->x) are not supported.
+	Decrement(column string, value ...uint64) error
 	// Delete deletes records matching given conditions, if the conditions are empty will delete all records.
 	Delete(value ...any) (*db.Result, error)
 	// Distinct specifies distinct fields to query.
@@ -97,6 +104,10 @@ type Query interface {
 	GroupBy(column ...string) Query
 	// Having specifying HAVING conditions for the query.
 	Having(query any, args ...any) Query
+	// Increment increments the given column's value by the given amount (default 1).
+	// When the query has a model with a primary key (Model(&user)), the column and updated_at
+	// of that model are also updated in memory. JSON path columns (data->x) are not supported.
+	Increment(column string, value ...uint64) error
 	// InRandomOrder specifies the order randomly.
 	InRandomOrder() Query
 	// InTransaction checks if the query is in a transaction.
@@ -105,6 +116,9 @@ type Query interface {
 	Join(query string, args ...any) Query
 	// Latest orders the query by the given column descending, default column is "created_at".
 	Latest(column ...string) Query
+	// LeftJoin adds a LEFT JOIN to the query. Pass the table and its condition without the keyword,
+	// e.g. "posts ON posts.user_id = users.id", the "LEFT JOIN" keyword is added automatically.
+	LeftJoin(query string, args ...any) Query
 	// Limit the number of records returned.
 	Limit(limit int) Query
 	// Load loads a relationship for the model.
@@ -158,6 +172,9 @@ type Query interface {
 	Raw(sql string, values ...any) Query
 	// Restore restores a soft deleted model.
 	Restore(model ...any) (*db.Result, error)
+	// RightJoin adds a RIGHT JOIN to the query. Pass the table and its condition without the keyword,
+	// e.g. "posts ON posts.user_id = users.id", the "RIGHT JOIN" keyword is added automatically.
+	RightJoin(query string, args ...any) Query
 	// Rollback rolls back the changes in a transaction.
 	Rollback() error
 	// Save updates value in a database

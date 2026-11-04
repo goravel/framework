@@ -50,7 +50,7 @@ func TestMiddlewareMakeCommand_MultipleNames(t *testing.T) {
 
 	assert.NoError(t, middlewareMakeCommand.Handle(mockContext))
 
-	assert.True(t, file.Exists("app/http/middleware/authenticate.go"))
-	assert.True(t, file.Exists("app/http/middleware/throttle.go"))
+	assert.FileExists(t, "app/http/middleware/authenticate.go")
+	assert.FileExists(t, "app/http/middleware/throttle.go")
 	assert.Nil(t, file.Remove("app"))
 }

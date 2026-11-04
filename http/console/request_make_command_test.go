@@ -50,7 +50,7 @@ func TestRequestMakeCommand_MultipleNames(t *testing.T) {
 
 	assert.NoError(t, requestMakeCommand.Handle(mockContext))
 
-	assert.True(t, file.Exists("app/http/requests/store_user.go"))
-	assert.True(t, file.Exists("app/http/requests/update_user.go"))
+	assert.FileExists(t, "app/http/requests/store_user.go")
+	assert.FileExists(t, "app/http/requests/update_user.go")
 	assert.Nil(t, file.Remove("app"))
 }

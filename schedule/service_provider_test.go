@@ -134,12 +134,10 @@ func TestServiceProviderRegister(t *testing.T) {
 func TestServiceProviderBoot(t *testing.T) {
 	provider := &ServiceProvider{}
 	app := mocksfoundation.NewApplication(t)
-	artisan := mocksconsole.NewArtisan(t)
 	schedule := mocksschedule.NewSchedule(t)
 
-	app.EXPECT().MakeArtisan().Return(artisan).Once()
 	app.EXPECT().MakeSchedule().Return(schedule).Twice()
-	artisan.EXPECT().Register(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
+	app.EXPECT().Commands(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
 		if len(commands) != 2 || commands[0] == nil || commands[1] == nil {
 			return false
 		}

@@ -584,6 +584,32 @@ func (s *QueryTestSuite) TestCreate() {
 	}
 }
 
+func (s *QueryTestSuite) TestCrossJoin() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			users := []User{{Name: "cross_join_user1"}, {Name: "cross_join_user2"}}
+			s.Nil(query.Query().Create(&users))
+
+			addresses := []Address{{UserID: users[0].ID, Name: "cross_join_address1"}, {UserID: users[0].ID, Name: "cross_join_address2"}}
+			s.Nil(query.Query().Create(&addresses))
+
+			type Result struct {
+				UserName    string
+				AddressName string
+			}
+			var result []Result
+			s.Nil(query.Query().Model(&User{}).CrossJoin("addresses").
+				Where("users.name LIKE ?", "cross_join_user%").Where("addresses.name LIKE ?", "cross_join_address%").
+				Select("users.name user_name, addresses.name address_name").Get(&result))
+			s.Len(result, 4)
+			s.Contains(result, Result{UserName: "cross_join_user1", AddressName: "cross_join_address1"})
+			s.Contains(result, Result{UserName: "cross_join_user1", AddressName: "cross_join_address2"})
+			s.Contains(result, Result{UserName: "cross_join_user2", AddressName: "cross_join_address1"})
+			s.Contains(result, Result{UserName: "cross_join_user2", AddressName: "cross_join_address2"})
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestCursor() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
@@ -2927,6 +2953,35 @@ func (s *QueryTestSuite) TestJoin() {
 	}
 }
 
+func (s *QueryTestSuite) TestLeftJoin() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			users := []User{{Name: "left_join_user1"}, {Name: "left_join_user2"}}
+			s.Nil(query.Query().Create(&users))
+
+			addresses := []Address{{UserID: users[0].ID, Name: "left_join_address1"}, {UserID: users[0].ID, Name: "left_join_address2"}}
+			s.Nil(query.Query().Create(&addresses))
+
+			type Result struct {
+				UserName    string
+				AddressName *string
+			}
+			var result []Result
+			s.Nil(query.Query().Model(&User{}).LeftJoin("addresses ON addresses.user_id = users.id AND addresses.name = ?", "left_join_address1").
+				Where("users.name LIKE ?", "left_join_user%").
+				Select("users.name user_name, addresses.name address_name").Get(&result))
+			s.Len(result, 2)
+			s.Contains(result, Result{UserName: "left_join_user1", AddressName: convert.Pointer("left_join_address1")})
+			s.Contains(result, Result{UserName: "left_join_user2"})
+
+			count, err := query.Query().Model(&User{}).LeftJoin("addresses ON addresses.user_id = users.id").
+				Where("users.name LIKE ?", "left_join_user%").Count()
+			s.NoError(err)
+			s.Equal(int64(3), count)
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestLockForUpdate() {
 	for driver, query := range s.queries {
 		if driver == sqlite.Name {
@@ -3040,6 +3095,103 @@ func (s *QueryTestSuite) TestOrderByDesc() {
 			usersLength := len(users)
 			s.True(usersLength == 2)
 			s.True(users[usersLength-1].ID == user.ID)
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestIncrementAndDecrement() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			s.Run("with conditions", func() {
+				users := []User{
+					{Name: "increment_conditions_user", Avatar: "increment_conditions_avatar_1", Ratio: 1},
+					{Name: "increment_conditions_user", Avatar: "increment_conditions_avatar_2", Ratio: 1},
+					{Name: "increment_conditions_other", Avatar: "increment_conditions_avatar_3", Ratio: 1},
+				}
+				s.Nil(query.Query().Create(&users))
+
+				s.Nil(query.Query().Model(&User{}).Where("name", "increment_conditions_user").Increment("ratio"))
+				s.Nil(query.Query().Model(&User{}).Where("name", "increment_conditions_user").Increment("ratio", 5))
+
+				var result []User
+				s.Nil(query.Query().Where("name LIKE ?", "increment_conditions_%").Order("id").Find(&result))
+				s.Len(result, 3)
+				s.Equal(float64(7), result[0].Ratio)
+				s.Equal(float64(7), result[1].Ratio)
+				s.Equal(float64(1), result[2].Ratio)
+
+				s.Nil(query.Query().Model(&User{}).Where("name", "increment_conditions_user").Decrement("ratio"))
+				s.Nil(query.Query().Model(&User{}).Where("name", "increment_conditions_user").Decrement("ratio", 4))
+
+				result = nil
+				s.Nil(query.Query().Where("name LIKE ?", "increment_conditions_%").Order("id").Find(&result))
+				s.Len(result, 3)
+				s.Equal(float64(2), result[0].Ratio)
+				s.Equal(float64(2), result[1].Ratio)
+				s.Equal(float64(1), result[2].Ratio)
+			})
+
+			s.Run("with table", func() {
+				user := User{Name: "increment_table_user", Avatar: "increment_table_avatar", Ratio: 1}
+				s.Nil(query.Query().Create(&user))
+
+				s.Nil(query.Query().Table("users").Where("id", user.ID).Increment("ratio", 2))
+
+				var result User
+				s.Nil(query.Query().Find(&result, user.ID))
+				s.Equal(float64(3), result.Ratio)
+			})
+
+			s.Run("with loaded model", func() {
+				user := User{Name: "increment_model_user", Avatar: "increment_model_avatar", Ratio: 1}
+				other := User{Name: "increment_model_other", Avatar: "increment_model_avatar", Ratio: 1}
+				s.Nil(query.Query().Create(&user))
+				s.Nil(query.Query().Create(&other))
+
+				s.Nil(query.Query().Model(&user).Increment("ratio", 5))
+				s.Equal(float64(6), user.Ratio)
+				s.NotNil(user.UpdatedAt)
+				s.False(user.UpdatedAt.IsZero())
+
+				var result User
+				s.Nil(query.Query().Find(&result, user.ID))
+				s.Equal(float64(6), result.Ratio)
+				// The database may round the fractional seconds the model keeps in memory.
+				s.InDelta(result.UpdatedAt.Timestamp(), user.UpdatedAt.Timestamp(), 1)
+
+				s.Nil(query.Query().Model(&user).Decrement("ratio", 2))
+				s.Equal(float64(4), user.Ratio)
+
+				result = User{}
+				s.Nil(query.Query().Find(&result, user.ID))
+				s.Equal(float64(4), result.Ratio)
+
+				result = User{}
+				s.Nil(query.Query().Find(&result, other.ID))
+				s.Equal(float64(1), result.Ratio)
+			})
+
+			s.Run("skips soft deleted rows", func() {
+				users := []User{
+					{Name: "increment_soft_delete_user", Avatar: "increment_soft_delete_avatar_1", Ratio: 1},
+					{Name: "increment_soft_delete_user", Avatar: "increment_soft_delete_avatar_2", Ratio: 1},
+				}
+				s.Nil(query.Query().Create(&users))
+				_, err := query.Query().Delete(&users[1])
+				s.Nil(err)
+
+				s.Nil(query.Query().Model(&User{}).Where("name", "increment_soft_delete_user").Increment("ratio"))
+
+				var result []User
+				s.Nil(query.Query().WithTrashed().Where("name", "increment_soft_delete_user").Order("id").Find(&result))
+				s.Len(result, 2)
+				s.Equal(float64(2), result[0].Ratio)
+				s.Equal(float64(1), result[1].Ratio)
+
+				// The in-memory value is not changed when no row is updated.
+				s.Nil(query.Query().Model(&users[1]).Increment("ratio"))
+				s.Equal(float64(1), users[1].Ratio)
+			})
 		})
 	}
 }
@@ -4056,6 +4208,30 @@ func (s *QueryTestSuite) TestRestore() {
 	}
 }
 
+func (s *QueryTestSuite) TestRightJoin() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			users := []User{{Name: "right_join_user1"}, {Name: "right_join_user2"}}
+			s.Nil(query.Query().Create(&users))
+
+			address := Address{UserID: users[0].ID, Name: "right_join_address"}
+			s.Nil(query.Query().Create(&address))
+
+			type Result struct {
+				UserName    string
+				AddressName *string
+			}
+			var result []Result
+			s.Nil(query.Query().Table("addresses").RightJoin("users ON users.id = addresses.user_id AND users.name LIKE ?", "right_join_user%").
+				Where("users.name LIKE ?", "right_join_user%").
+				Select("users.name user_name, addresses.name address_name").Get(&result))
+			s.Len(result, 2)
+			s.Contains(result, Result{UserName: "right_join_user1", AddressName: convert.Pointer("right_join_address")})
+			s.Contains(result, Result{UserName: "right_join_user2"})
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestSum() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
@@ -4162,6 +4338,30 @@ func (s *QueryTestSuite) TestToSql() {
 				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = @p1 AND \"users\".\"deleted_at\" IS NULL", query.Query().Where("id", 1).ToSql().Find(User{}))
 			default:
 				s.Equal("SELECT * FROM `users` WHERE `id` = ? AND `users`.`deleted_at` IS NULL", query.Query().Where("id", 1).ToSql().Find(User{}))
+			}
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestToSqlWithJoins() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			joinQuery := query.Query().Model(&User{}).Select("users.name").
+				LeftJoin("addresses ON addresses.user_id = users.id AND addresses.name = ?", "goravel").
+				RightJoin("books ON books.user_id = users.id").
+				CrossJoin("roles").
+				Where("users.id", 1)
+
+			switch driver {
+			case postgres.Name:
+				s.Equal("SELECT users.name FROM \"users\" LEFT JOIN addresses ON addresses.user_id = users.id AND addresses.name = $1 RIGHT JOIN books ON books.user_id = users.id CROSS JOIN roles WHERE \"users\".\"id\" = $2 AND \"users\".\"deleted_at\" IS NULL", joinQuery.ToSql().Find(User{}))
+				s.Equal("SELECT users.name FROM \"users\" LEFT JOIN addresses ON addresses.user_id = users.id AND addresses.name = 'goravel' RIGHT JOIN books ON books.user_id = users.id CROSS JOIN roles WHERE \"users\".\"id\" = 1 AND \"users\".\"deleted_at\" IS NULL", joinQuery.ToRawSql().Find(User{}))
+			case sqlserver.Name:
+				s.Equal("SELECT users.name FROM \"users\" LEFT JOIN addresses ON addresses.user_id = users.id AND addresses.name = @p1 RIGHT JOIN books ON books.user_id = users.id CROSS JOIN roles WHERE \"users\".\"id\" = @p2 AND \"users\".\"deleted_at\" IS NULL", joinQuery.ToSql().Find(User{}))
+				s.Equal("SELECT users.name FROM \"users\" LEFT JOIN addresses ON addresses.user_id = users.id AND addresses.name = $1$ RIGHT JOIN books ON books.user_id = users.id CROSS JOIN roles WHERE \"users\".\"id\" = $2$ AND \"users\".\"deleted_at\" IS NULL", joinQuery.ToRawSql().Find(User{}))
+			default:
+				s.Equal("SELECT users.name FROM `users` LEFT JOIN addresses ON addresses.user_id = users.id AND addresses.name = ? RIGHT JOIN books ON books.user_id = users.id CROSS JOIN roles WHERE `users`.`id` = ? AND `users`.`deleted_at` IS NULL", joinQuery.ToSql().Find(User{}))
+				s.Equal("SELECT users.name FROM `users` LEFT JOIN addresses ON addresses.user_id = users.id AND addresses.name = 'goravel' RIGHT JOIN books ON books.user_id = users.id CROSS JOIN roles WHERE `users`.`id` = 1 AND `users`.`deleted_at` IS NULL", joinQuery.ToRawSql().Find(User{}))
 			}
 		})
 	}

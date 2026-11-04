@@ -67,10 +67,7 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 		}
 	}
 
-	artisanFacade := app.MakeArtisan()
-	if artisanFacade != nil {
-		artisanFacade.Register([]contractsconsole.Command{
-			console.NewChannelMakeCommand(),
-		})
-	}
+	app.Commands([]contractsconsole.Command{
+		console.NewChannelMakeCommand(),
+	})
 }
