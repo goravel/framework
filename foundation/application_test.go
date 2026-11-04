@@ -169,7 +169,11 @@ func (s *ApplicationTestSuite) TestBuild() {
 	s.app.Instance(binding.Artisan, mockArtisan)
 
 	mockRepo := mocksfoundation.NewProviderRepository(s.T())
-	mockRepo.EXPECT().Register(s.app).Return(nil).Once()
+	mockRepo.EXPECT().Register(s.app).Run(func(_ foundation.Application) {
+		// The console provider reads the hooks while registering, so Build
+		// must have run the WithCommandHooks callback by now.
+		s.Equal(hooks, s.app.CommandHooks())
+	}).Return(nil).Once()
 	mockRepo.EXPECT().Boot(s.app).Return().Once()
 	mockRepo.EXPECT().GetBooted().Return([]foundation.ServiceProvider{}).Once()
 	s.app.providerRepository = mockRepo
@@ -183,8 +187,6 @@ func (s *ApplicationTestSuite) TestBuild() {
 	defer s.app.cancel()
 
 	s.Same(s.app, built)
-	// Build runs the WithCommandHooks callback before the providers register,
-	// so the console provider can hand the map to the Artisan application.
 	s.Equal(hooks, s.app.CommandHooks())
 }
 
