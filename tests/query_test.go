@@ -6132,8 +6132,7 @@ func (s *QueryTestSuite) TestOrWhereNotNull() {
 			for _, item := range users {
 				ids = append(ids, item.ID)
 			}
-			s.Contains(ids, user.ID)
-			s.Contains(ids, user1.ID)
+			s.ElementsMatch([]uint{user.ID, user1.ID}, ids)
 		})
 	}
 }
