@@ -198,13 +198,7 @@ func shutdownCommand(shutdownable console.Shutdownable, cmd *cli.Command, argume
 }
 
 // FilterCommandsByAllowlist returns the subset of commands whose Signature()
-// matches at least one entry in allowlist.
-//
-// Matching is signature-only (category never consulted):
-//   - Entries without '*' are exact-matched against command.Signature().
-//   - Entries containing '*' use glob matching via path.Match against
-//     command.Signature() (only '*' triggers the glob path; '?' is matched
-//     literally as an exact match).
+// matches at least one entry in allowlist, as decided by signatureMatches.
 //
 // Special cases:
 //   - allowlist == nil            → every command is kept (no filter applied).
@@ -213,34 +207,20 @@ func FilterCommandsByAllowlist(commands []console.Command, allowlist []string) [
 	if allowlist == nil {
 		return commands
 	}
-	exact := make(map[string]struct{}, len(allowlist))
-	var globs []string
+	patterns := make([]string, 0, len(allowlist))
 	for _, s := range allowlist {
-		s = strings.TrimSpace(s)
-		if s == "" {
-			continue
-		}
-		if strings.Contains(s, "*") {
-			globs = append(globs, s)
-		} else {
-			exact[s] = struct{}{}
+		if s = strings.TrimSpace(s); s != "" {
+			patterns = append(patterns, s)
 		}
 	}
-	if len(exact) == 0 && len(globs) == 0 {
+	if len(patterns) == 0 {
 		return nil
 	}
 	kept := make([]console.Command, 0, len(commands))
 	for _, cmd := range commands {
 		sig := cmd.Signature()
-		if _, ok := exact[sig]; ok {
+		if slices.ContainsFunc(patterns, func(pattern string) bool { return signatureMatches(pattern, sig) }) {
 			kept = append(kept, cmd)
-			continue
-		}
-		for _, pattern := range globs {
-			if ok, _ := stdpath.Match(pattern, sig); ok {
-				kept = append(kept, cmd)
-				break
-			}
 		}
 	}
 	return kept
@@ -297,8 +277,11 @@ func commandFlags(item console.Command, hooks []console.CommandHook) ([]cli.Flag
 	return withDefaultFlags(flags), nil
 }
 
-// signatureMatches reports whether pattern matches sig, using the same rules as
-// FilterCommandsByAllowlist: exact match, or path.Match when pattern contains '*'.
+// signatureMatches reports whether pattern matches the command signature sig.
+// It owns the matching rules shared by FilterCommandsByAllowlist and command
+// hooks: pattern is trimmed, a blank pattern matches nothing, a pattern
+// containing '*' is a path.Match glob, and anything else must equal sig
+// exactly ('?' is literal).
 func signatureMatches(pattern, sig string) bool {
 	pattern = strings.TrimSpace(pattern)
 	if pattern == "" {
