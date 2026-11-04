@@ -1037,6 +1037,28 @@ func TestRun_HookFlags(t *testing.T) {
 	assert.Equal(t, "nightly", tag)
 }
 
+func TestRun_RequiredHookFlag(t *testing.T) {
+	var calls []string
+	cliApp := NewApplication("test", "test", "test", "test", true, map[string][]console.CommandHook{
+		"*": {&testHook{
+			flags: []command.Flag{&command.StringFlag{Name: "tag", Required: true}},
+			before: func(ctx console.Context) (bool, error) {
+				calls = append(calls, "before:"+ctx.Option("tag"))
+				return false, nil
+			},
+		}},
+	})
+	cliApp.Register([]console.Command{&TestHookCommand{calls: &calls}})
+
+	err := cliApp.Call("hook-cmd")
+	assert.ErrorContains(t, err, "tag")
+	assert.Empty(t, calls, "a missing required hook flag rejects the command before any hook runs")
+
+	calls = nil
+	assert.NoError(t, cliApp.Call("hook-cmd --tag=nightly"))
+	assert.Equal(t, []string{"before:nightly"}, calls)
+}
+
 func TestRun_HookFlagConflict(t *testing.T) {
 	cliApp := NewApplication("test", "test", "test", "test", true, map[string][]console.CommandHook{
 		"*": {&testHook{flags: []command.Flag{&command.BoolFlag{Name: "force"}}}},
