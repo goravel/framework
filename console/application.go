@@ -306,7 +306,7 @@ func signatureMatches(pattern, sig string) bool {
 // hooks in reverse order. A Before that returns false or an error skips Handle
 // and every After. started is closed just before Handle runs. A Handle panic
 // becomes an error so the After hooks still run and see it.
-func handleWithHooks(item console.Command, hooks []console.CommandHook, ctx console.Context, started chan<- struct{}) (handled bool, err error) {
+func handleWithHooks(ctx console.Context, item console.Command, hooks []console.CommandHook, started chan<- struct{}) (handled bool, err error) {
 	for _, hook := range hooks {
 		proceed, err := hook.Before(ctx)
 		if err != nil || !proceed {
@@ -315,7 +315,7 @@ func handleWithHooks(item console.Command, hooks []console.CommandHook, ctx cons
 	}
 
 	close(started)
-	err = handleRecovered(item, ctx)
+	err = handleRecovered(ctx, item)
 
 	for i := len(hooks) - 1; i >= 0; i-- {
 		err = hooks[i].After(ctx, err)
@@ -325,7 +325,7 @@ func handleWithHooks(item console.Command, hooks []console.CommandHook, ctx cons
 }
 
 // handleRecovered calls Handle, returning a panic as an error.
-func handleRecovered(item console.Command, ctx console.Context) (err error) {
+func handleRecovered(ctx console.Context, item console.Command) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = errors.ConsoleCommandPanicInHandle.Args(r)
@@ -380,7 +380,7 @@ func commandsToCliCommands(commands []console.Command, hooks map[string][]consol
 							resultCh <- handleResult{err: errors.ConsoleCommandPanicInHandle.Args(r), handled: isClosed(started)}
 						}
 					}()
-					handled, err := handleWithHooks(item, itemHooks, cliCtx, started)
+					handled, err := handleWithHooks(cliCtx, item, itemHooks, started)
 					resultCh <- handleResult{err: err, handled: handled}
 				}()
 
