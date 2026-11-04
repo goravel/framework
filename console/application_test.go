@@ -1049,6 +1049,15 @@ func TestRun_HookFlagConflict(t *testing.T) {
 	assert.ErrorContains(t, err, "flag 'force' conflicts")
 }
 
+func TestDefaultFlagNames(t *testing.T) {
+	var added []string
+	for _, flag := range withDefaultFlags(nil) {
+		added = append(added, flag.Names()...)
+	}
+
+	assert.ElementsMatch(t, added, defaultFlagNames())
+}
+
 func TestCommandsToCliCommands_HookFlags(t *testing.T) {
 	flagNames := func(cmd *cli.Command) []string {
 		var names []string

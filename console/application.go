@@ -29,7 +29,22 @@ var (
 		HideDefault: true,
 		Usage:       "Force disable ANSI output",
 	}
+	// helpFlag is the template for the help flag withDefaultFlags adds to
+	// every command. It is copied per command, as the alias is dropped when
+	// the command already has an "h" flag.
+	helpFlag = &cli.BoolFlag{
+		Name:        "help",
+		Aliases:     []string{"h"},
+		Usage:       "Show help",
+		HideDefault: true,
+	}
 )
+
+// defaultFlagNames returns every name and alias of the flags withDefaultFlags
+// adds to a command. Hook flags may not use them.
+func defaultFlagNames() []string {
+	return append(helpFlag.Names(), noANSIFlag.Names()...)
+}
 
 type Application struct {
 	commands   []console.Command
@@ -252,7 +267,10 @@ func hooksForCommand(item console.Command, hooks map[string][]console.CommandHoo
 func commandFlags(item console.Command, hooks []console.CommandHook) ([]cli.Flag, error) {
 	flags := convertFlags(item.Extend().Flags)
 
-	taken := map[string]bool{"help": true, "h": true, noANSIFlag.Name: true}
+	taken := map[string]bool{}
+	for _, name := range defaultFlagNames() {
+		taken[name] = true
+	}
 	for _, flag := range flags {
 		for _, name := range flag.Names() {
 			taken[name] = true
@@ -374,7 +392,7 @@ func commandsToCliCommands(commands []console.Command, hooks map[string][]consol
 			Usage: item.Description(),
 			Action: func(ctx context.Context, cmd *cli.Command) error {
 				cliCtx := NewCliContext(ctx, cmd, arguments)
-				if cliCtx.OptionBool("help") {
+				if cliCtx.OptionBool(helpFlag.Name) {
 					return cli.ShowCommandHelp(ctx, cmd, cmd.Name)
 				}
 
@@ -537,30 +555,19 @@ func convertFlags(flags []command.Flag) []cli.Flag {
 // withDefaultFlags appends the help flag (unless already defined) and the
 // no-ansi flag.
 func withDefaultFlags(cliFlags []cli.Flag) []cli.Flag {
-	var (
-		existHelp bool
-		existH    bool
-	)
+	taken := map[string]bool{}
 	for _, flag := range cliFlags {
-		names := flag.Names()
-		if slices.Contains(names, "help") {
-			existHelp = true
-		}
-		if slices.Contains(names, "h") {
-			existH = true
+		for _, name := range flag.Names() {
+			taken[name] = true
 		}
 	}
 
-	if !existHelp {
-		helpFlag := &cli.BoolFlag{
-			Name:        "help",
-			Usage:       "Show help",
-			HideDefault: true,
-		}
-		if !existH {
-			helpFlag.Aliases = []string{"h"}
-		}
-		cliFlags = append(cliFlags, helpFlag)
+	if !taken[helpFlag.Name] {
+		help := *helpFlag
+		help.Aliases = slices.DeleteFunc(slices.Clone(helpFlag.Aliases), func(alias string) bool {
+			return taken[alias]
+		})
+		cliFlags = append(cliFlags, &help)
 	}
 
 	cliFlags = append(cliFlags, noANSIFlag)
