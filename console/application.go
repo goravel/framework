@@ -46,7 +46,7 @@ type Application struct {
 // NewApplication Create a new Artisan application.
 // Will add artisan flag to the command if useArtisan is true.
 // hooks run around matching commands, keyed by command signature or '*'
-// pattern;
+// pattern.
 func NewApplication(name, usage, usageText, version string, useArtisan bool, hooks map[string][]console.CommandHook) *Application {
 	ctx, _ := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	return &Application{
