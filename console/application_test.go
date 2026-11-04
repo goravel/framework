@@ -820,6 +820,19 @@ func TestRun_Hooks(t *testing.T) {
 			expectCalls: []string{"handle", "after"},
 		},
 		{
+			name:    "panic in Handle still runs After with the panic error",
+			command: &TestHookCommand{panics: true},
+			hooks: map[string][]console.CommandHook{
+				"hook-cmd": {&testHook{after: func(_ console.Context, handleErr error) error {
+					assert.ErrorIs(t, handleErr, errors.ConsoleCommandPanicInHandle)
+					calls = append(calls, "after")
+					return handleErr
+				}}},
+			},
+			expectErr:   errors.ConsoleCommandPanicInHandle,
+			expectCalls: []string{"handle", "after"},
+		},
+		{
 			name:    "panic in hook is recovered",
 			command: &TestHookCommand{},
 			hooks: map[string][]console.CommandHook{
@@ -1106,9 +1119,10 @@ func (h *beforeOnlyHook) Before(_ console.Context) (bool, error) {
 }
 
 type TestHookCommand struct {
-	calls *[]string
-	err   error
-	flags []command.Flag
+	calls  *[]string
+	err    error
+	flags  []command.Flag
+	panics bool
 }
 
 func (receiver *TestHookCommand) Signature() string {
@@ -1126,6 +1140,9 @@ func (receiver *TestHookCommand) Extend() command.Extend {
 func (receiver *TestHookCommand) Handle(_ console.Context) error {
 	if receiver.calls != nil {
 		*receiver.calls = append(*receiver.calls, "handle")
+	}
+	if receiver.panics {
+		panic("oops")
 	}
 	return receiver.err
 }

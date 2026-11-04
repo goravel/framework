@@ -304,7 +304,8 @@ func signatureMatches(pattern, sig string) bool {
 
 // handleWithHooks runs the Before hooks in order, then Handle, then the After
 // hooks in reverse order. A Before that returns false or an error skips Handle
-// and every After. started is closed just before Handle runs.
+// and every After. started is closed just before Handle runs. A Handle panic
+// becomes an error so the After hooks still run and see it.
 func handleWithHooks(item console.Command, hooks []console.CommandHook, ctx console.Context, started chan<- struct{}) (handled bool, err error) {
 	for _, hook := range hooks {
 		proceed, err := hook.Before(ctx)
@@ -314,13 +315,24 @@ func handleWithHooks(item console.Command, hooks []console.CommandHook, ctx cons
 	}
 
 	close(started)
-	err = item.Handle(ctx)
+	err = handleRecovered(item, ctx)
 
 	for i := len(hooks) - 1; i >= 0; i-- {
 		err = hooks[i].After(ctx, err)
 	}
 
 	return true, err
+}
+
+// handleRecovered calls Handle, returning a panic as an error.
+func handleRecovered(item console.Command, ctx console.Context) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.ConsoleCommandPanicInHandle.Args(r)
+		}
+	}()
+
+	return item.Handle(ctx)
 }
 
 func isClosed(ch <-chan struct{}) bool {
