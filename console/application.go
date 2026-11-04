@@ -175,6 +175,12 @@ func (r *Application) command() (*cli.Command, error) {
 	return command, nil
 }
 
+// hookDecisionTimeout bounds how long a cancelled Shutdownable command waits
+// for its Before hooks to decide whether Handle runs. A hook that ignores
+// cancellation (a prompt, blocking I/O) would otherwise hold Ctrl-C forever,
+// so after this long Shutdown runs anyway, as it did before hooks existed.
+var hookDecisionTimeout = 5 * time.Second
+
 func shutdownCommand(shutdownable console.Shutdownable, cmd *cli.Command, arguments []command.Argument) error {
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer shutdownCancel()
@@ -381,7 +387,9 @@ func commandsToCliCommands(commands []console.Command, hooks map[string][]consol
 						return result.err
 					case <-ctx.Done():
 						// Wait for the Before hooks to decide, so Shutdown only
-						// runs for a Handle that was actually started.
+						// runs for a Handle that was actually started. The wait
+						// is bounded: a hook that never observes cancellation
+						// must not block Ctrl-C.
 						select {
 						case <-started:
 						case result := <-resultCh:
@@ -391,6 +399,7 @@ func commandsToCliCommands(commands []console.Command, hooks map[string][]consol
 								}
 								return ctx.Err()
 							}
+						case <-time.After(hookDecisionTimeout):
 						}
 						return shutdownCommand(shutdownable, cmd, arguments)
 					}

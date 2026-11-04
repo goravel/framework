@@ -899,7 +899,18 @@ func TestRun_HooksShutdownOnCancel(t *testing.T) {
 			},
 			expectErr: assert.AnError,
 		},
+		{
+			name: "cancel while Before ignores cancellation calls Shutdown after the decision timeout",
+			before: func(_ console.Context) (bool, error) {
+				select {}
+			},
+			expectShutdown: true,
+		},
 	}
+
+	previousTimeout := hookDecisionTimeout
+	hookDecisionTimeout = 100 * time.Millisecond
+	t.Cleanup(func() { hookDecisionTimeout = previousTimeout })
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
