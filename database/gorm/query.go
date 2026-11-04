@@ -1043,9 +1043,7 @@ func (r *Query) Where(query any, args ...any) contractsorm.Query {
 func (r *Query) WhereAll(columns []string, args ...any) contractsorm.Query {
 	op, value, err := utils.PrepareWhereOperatorAndValue(args...)
 	if err != nil {
-		query := r.new(r.instance.Session(&gormio.Session{}))
-		_ = query.instance.AddError(err)
-		return query
+		return r.withError(err)
 	}
 
 	var conditions []string
@@ -1068,9 +1066,7 @@ func (r *Query) WhereAll(columns []string, args ...any) contractsorm.Query {
 func (r *Query) WhereAny(columns []string, args ...any) contractsorm.Query {
 	op, value, err := utils.PrepareWhereOperatorAndValue(args...)
 	if err != nil {
-		query := r.new(r.instance.Session(&gormio.Session{}))
-		_ = query.instance.AddError(err)
-		return query
+		return r.withError(err)
 	}
 
 	var conditions []string
@@ -1273,9 +1269,7 @@ func (r *Query) OrWhereRaw(raw string, args []any) contractsorm.Query {
 func (r *Query) WhereNone(columns []string, args ...any) contractsorm.Query {
 	op, value, err := utils.PrepareWhereOperatorAndValue(args...)
 	if err != nil {
-		query := r.new(r.instance.Session(&gormio.Session{}))
-		_ = query.instance.AddError(err)
-		return query
+		return r.withError(err)
 	}
 
 	var conditions []string
@@ -1438,15 +1432,6 @@ func (r *Query) addGlobalScopes() *Query {
 	return r.Scopes(globalScopes...).(*Query)
 }
 
-// withError returns a copy of the query with err attached; executing the query returns err.
-// The error is kept on the conditions so it survives switching to the model's connection.
-func (r *Query) withError(err error) contractsorm.Query {
-	conditions := r.conditions
-	conditions.err = errors.Join(conditions.err, err)
-
-	return r.setConditions(conditions)
-}
-
 // addJoin appends to the shared join slice so joins render in the order they were called.
 func (r *Query) addJoin(query string, args ...any) contractsorm.Query {
 	conditions := r.conditions
@@ -1483,7 +1468,6 @@ func (r *Query) buildConditions() *Query {
 
 	query = query.buildModel()
 	db := query.instance
-	db = query.buildError(db)
 	db = query.buildDistinct(db)
 	db = query.buildGroup(db)
 	db = query.buildHaving(db)
@@ -1500,6 +1484,8 @@ func (r *Query) buildConditions() *Query {
 	db = query.buildWith(db)
 	db = query.buildWithTrashed(db)
 	db = query.buildWhere(db)
+	// Last, so errors collected while building the where clauses (e.g. inside groups) are applied too.
+	db = query.buildError(db)
 
 	return query.new(db)
 }
@@ -1694,16 +1680,20 @@ func (r *Query) buildSharedLock(db *gormio.DB) *gormio.DB {
 	return db
 }
 
-func (r *Query) buildSubquery(sub func(contractsorm.Query) contractsorm.Query) *gormio.DB {
+// buildSubquery builds the where clauses of a group and returns the errors raised inside it, so the caller can
+// report them instead of silently dropping the group.
+func (r *Query) buildSubquery(sub func(contractsorm.Query) contractsorm.Query) (*gormio.DB, error) {
 	db := r.instance.Session(&gormio.Session{NewDB: true, Initialized: true})
 	queryImpl := NewQuery(r.ctx, r.config, r.dbConfig, db, r.grammar, r.log, r.modelToObserver, nil, r.telemetryResolver)
 	query := sub(queryImpl)
 	var ok bool
 	if queryImpl, ok = query.(*Query); ok {
-		return queryImpl.buildWhere(db)
+		db = queryImpl.buildWhere(db)
+
+		return db, queryImpl.conditions.err
 	}
 
-	return db
+	return db, nil
 }
 
 func (r *Query) buildTable(db *gormio.DB) *gormio.DB {
@@ -1727,7 +1717,7 @@ func (r *Query) buildWhere(db *gormio.DB) *gormio.DB {
 		case contractsdriver.WhereTypeJsonContains:
 			query, value, err := r.grammar.CompileJsonContains(item.Query.(string), item.Args[0], item.IsNot)
 			if err != nil {
-				_ = r.instance.AddError(errors.OrmJsonContainsInvalidBinding.Args(err))
+				r.conditions.err = errors.Join(r.conditions.err, errors.OrmJsonContainsInvalidBinding.Args(err))
 				continue
 			}
 
@@ -1743,7 +1733,13 @@ func (r *Query) buildWhere(db *gormio.DB) *gormio.DB {
 		default:
 			switch query := item.Query.(type) {
 			case func(contractsorm.Query) contractsorm.Query:
-				item.Query = r.buildSubquery(query)
+				sub, err := r.buildSubquery(query)
+				if err != nil {
+					r.conditions.err = errors.Join(r.conditions.err, err)
+					continue
+				}
+
+				item.Query = sub
 				item.Args = nil
 			case string:
 				if strings.Contains(query, "->") {
@@ -2387,6 +2383,15 @@ func (r *Query) update(values any) (*contractsdb.Result, error) {
 	return &contractsdb.Result{
 		RowsAffected: result.RowsAffected,
 	}, result.Error
+}
+
+// withError returns a copy of the query with err attached; executing the query returns err.
+// The error is kept on the conditions so it survives switching to the model's connection.
+func (r *Query) withError(err error) contractsorm.Query {
+	conditions := r.conditions
+	conditions.err = errors.Join(conditions.err, err)
+
+	return r.setConditions(conditions)
 }
 
 func buildSelectForCount(query *Query) *Query {

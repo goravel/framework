@@ -1669,6 +1669,46 @@ func TestWhereClauses(t *testing.T) {
 			expectError: errors.DatabaseInvalidArgumentNumber.Args(0, "1 or 2"),
 		},
 		{
+			name: "WhereExists applies the sub query global scopes",
+			query: func() contractsorm.Query {
+				return newQuery().WhereExists(func() contractsorm.Query {
+					return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, nil, nil, nil, nil, nil).
+						Model(&ModelWithGlobalScopes{}).Select("1").WhereColumn("model_with_global_scopes.user_id", "users.id")
+				})
+			},
+			expectSql:  "SELECT * FROM `users` WHERE EXISTS (SELECT 1 FROM `model_with_global_scopes` WHERE `model_with_global_scopes`.`user_id` = `users`.`id` AND `active` = ? AND `verified` = ?)",
+			expectVars: []any{true, true},
+		},
+		{
+			name: "Where group propagates the error of a nested condition",
+			query: func() contractsorm.Query {
+				return newQuery().Where(func(query contractsorm.Query) contractsorm.Query {
+					return query.WhereColumn("updated_at")
+				})
+			},
+			expectError: errors.DatabaseInvalidArgumentNumber.Args(0, "1 or 2"),
+		},
+		{
+			name: "WhereNot group propagates the error of a nested condition",
+			query: func() contractsorm.Query {
+				return newQuery().WhereNot(func(query contractsorm.Query) contractsorm.Query {
+					return query.Where("id", 1).OrWhereColumn("a", "b", "c", "d")
+				})
+			},
+			expectError: errors.DatabaseInvalidArgumentNumber.Args(3, "1 or 2"),
+		},
+		{
+			name: "Nested groups propagate the error of the innermost condition",
+			query: func() contractsorm.Query {
+				return newQuery().Where(func(query contractsorm.Query) contractsorm.Query {
+					return query.Where("id", 1).OrWhere(func(query contractsorm.Query) contractsorm.Query {
+						return query.WhereNone([]string{"name"}, "=", "a", "b")
+					})
+				})
+			},
+			expectError: errors.DatabaseInvalidArgumentNumber.Args(3, "1 or 2"),
+		},
+		{
 			name:      "WhereNot without conditions is ignored",
 			query:     func() contractsorm.Query { return newQuery().WhereNot(map[string]any{}) },
 			expectSql: "SELECT * FROM `users`",
@@ -1728,8 +1768,70 @@ func TestWithErrorSurvivesModelConnection(t *testing.T) {
 
 	built := query.buildConditions()
 
-	assert.EqualError(t, built.instance.Error, errors.DatabaseInvalidArgumentNumber.Args(0, "1 or 2").Error())
-	assert.NotSame(t, query.instance, built.instance)
+	assert.Equal(t, "sqlite", built.dbConfig.Connection)
+	assert.EqualError(t, built.instance.Error, "invalid argument number: 0, expected 1 or 2")
+}
+
+func TestArgumentErrorsSurviveModelConnection(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	tests := []struct {
+		name  string
+		query func(contractsorm.Query) contractsorm.Query
+	}{
+		{
+			name: "WhereAll",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereAll([]string{"name"}, "=", "a", "b")
+			},
+		},
+		{
+			name: "WhereAny",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereAny([]string{"name"}, "=", "a", "b")
+			},
+		},
+		{
+			name: "WhereNone",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNone([]string{"name"}, "=", "a", "b")
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// Product uses the "sqlite" connection, so buildConditions switches to that connection's query.
+			query := test.query(NewQuery(context.Background(), nil, contractsdatabase.Config{Connection: "mysql"}, db, nil, nil, nil, nil, nil).
+				Model(&Product{})).(*Query)
+			query.queries = map[string]*Query{
+				"sqlite": NewQuery(context.Background(), nil, contractsdatabase.Config{Connection: "sqlite"}, db.Session(&gormio.Session{}), nil, nil, nil, nil, nil),
+			}
+
+			built := query.buildConditions()
+
+			assert.Equal(t, "sqlite", built.dbConfig.Connection)
+			assert.EqualError(t, built.instance.Error, errors.DatabaseInvalidArgumentNumber.Args(3, "1 or 2").Error())
+		})
+	}
+}
+
+func TestJsonContainsErrorInsideGroup(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	mockGrammar := mocksdriver.NewGrammar(t)
+	mockGrammar.EXPECT().CompileJsonContains("data->tags", "a", false).Return("", nil, assert.AnError).Once()
+
+	query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, mockGrammar, nil, nil, nil, nil).
+		Table("users").
+		Where(func(query contractsorm.Query) contractsorm.Query {
+			return query.WhereJsonContains("data->tags", "a")
+		}).(*Query).
+		buildConditions()
+
+	assert.EqualError(t, query.instance.Error, errors.OrmJsonContainsInvalidBinding.Args(assert.AnError).Error())
 }
 
 func TestLatest(t *testing.T) {
