@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	contractscache "github.com/goravel/framework/contracts/cache"
+	frameworkerrors "github.com/goravel/framework/errors"
 )
 
 type MemoryTagsTestSuite struct {
@@ -52,6 +53,29 @@ func (s *MemoryTagsTestSuite) TestTagNamesDoNotAlias() {
 	s.True(s.tags("a").Flush())
 	s.Equal("joined", s.tags("a|b").Get("key"))
 	s.Nil(s.tags("a", "b").Get("key"))
+}
+
+func (s *MemoryTagsTestSuite) TestTagNamesAreLengthPrefixed() {
+	// Only the length prefix keeps "ab" apart from "a" followed by "b".
+	s.True(s.tags("ab").Forever("key", "joined"))
+	s.True(s.tags("a", "b").Forever("key", "split"))
+
+	s.Equal("joined", s.tags("ab").Get("key"))
+	s.Equal("split", s.tags("a", "b").Get("key"))
+
+	s.True(s.tags("a").Flush())
+	s.Equal("joined", s.tags("ab").Get("key"))
+	s.Nil(s.tags("a", "b").Get("key"))
+}
+
+func (s *MemoryTagsTestSuite) TestZeroValueMemory() {
+	memory := &Memory{}
+
+	s.NoError(memory.Tags("a").Put("key", "value", time.Minute))
+	s.Equal("value", memory.Tags("a").Get("key"))
+
+	s.True(memory.Tags("a").Flush())
+	s.Nil(memory.Tags("a").Get("key"))
 }
 
 func (s *MemoryTagsTestSuite) TestTagNamesAreCopied() {
@@ -146,6 +170,12 @@ func (s *MemoryTagsTestSuite) TestIncrementAndDecrement() {
 	res, err = s.tags("counters").Decrement("visits")
 	s.NoError(err)
 	s.Equal(int64(-1), res)
+
+	s.NoError(s.tags("counters").Put("name", "goravel", time.Minute))
+	_, err = s.tags("counters").Increment("name")
+	s.EqualError(err, frameworkerrors.CacheMemoryInvalidIntValueType.Args("name").Error())
+	_, err = s.tags("counters").Decrement("name")
+	s.EqualError(err, frameworkerrors.CacheMemoryInvalidIntValueType.Args("name").Error())
 }
 
 func (s *MemoryTagsTestSuite) TestForgetAndPull() {

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	contractscache "github.com/goravel/framework/contracts/cache"
+	"github.com/goravel/framework/errors"
 )
 
 // Tags begins a tagged cache operation. Like Laravel, an item is namespaced by
@@ -78,7 +79,13 @@ func (r *memoryTaggedCache) Decrement(key string, value ...int64) (int64, error)
 	itemKey := r.itemKey(key)
 	r.register(itemKey)
 
-	return r.memory.Decrement(itemKey, value...)
+	res, err := r.memory.Decrement(itemKey, value...)
+	if err != nil {
+		// Report the caller's key, not the namespaced one.
+		return 0, errors.CacheMemoryInvalidIntValueType.Args(key)
+	}
+
+	return res, nil
 }
 
 // Forever add an item in the cache indefinitely.
@@ -152,7 +159,13 @@ func (r *memoryTaggedCache) Increment(key string, value ...int64) (int64, error)
 	itemKey := r.itemKey(key)
 	r.register(itemKey)
 
-	return r.memory.Increment(itemKey, value...)
+	res, err := r.memory.Increment(itemKey, value...)
+	if err != nil {
+		// Report the caller's key, not the namespaced one.
+		return 0, errors.CacheMemoryInvalidIntValueType.Args(key)
+	}
+
+	return res, nil
 }
 
 // Put an item in the cache for a given time.
@@ -206,6 +219,10 @@ func (r *memoryTaggedCache) itemKey(key string) string {
 
 // register adds the item key to the index of every tag, the caller must hold tagsMu.
 func (r *memoryTaggedCache) register(itemKey string) {
+	// A zero-value Memory has no index yet.
+	if r.memory.tags == nil {
+		r.memory.tags = make(map[string]map[string]struct{})
+	}
 	for _, name := range r.names {
 		keys, exist := r.memory.tags[name]
 		if !exist {
