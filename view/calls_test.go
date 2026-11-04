@@ -36,6 +36,7 @@ func TestCalls(t *testing.T) {
 			{{ end }}
 			{{ define "partial" }}{{ . }}{{ end }}`,
 		"layout.tmpl": `{{ $entry := "var.js" }}{{ asset $entry }}{{ asset (printf "%s" .name) }}{{ asset "ok.js" .dyn "also.js" }}{{ .Field "asset" }}{{ asset }}{{ (asset "chain.js").Len }}`,
+		"pipe.tmpl":   `{{ .entry | asset "pipe.js" }}{{ printf "%s" "x" | asset }}{{ "a.js" | asset "b.js" }}{{ $v := "v.js" }}{{ $v | asset }}{{ "z.js" | upper | asset }}`,
 	})
 
 	assert.Equal(t, []Call{
@@ -51,9 +52,18 @@ func TestCalls(t *testing.T) {
 		{Template: "layout.tmpl", Args: []string{"ok.js", "also.js"}, Dynamic: true},
 		{Template: "layout.tmpl", Args: []string{}},
 		{Template: "layout.tmpl", Args: []string{"chain.js"}},
+		// The piped value is the final argument: a constant only when it is a bare literal.
+		{Template: "pipe.tmpl", Args: []string{"pipe.js"}, Dynamic: true},
+		{Template: "pipe.tmpl", Args: []string{}, Dynamic: true},
+		{Template: "pipe.tmpl", Args: []string{"b.js", "a.js"}},
+		{Template: "pipe.tmpl", Args: []string{}, Dynamic: true},
+		{Template: "pipe.tmpl", Args: []string{}, Dynamic: true},
 	}, Calls(set, "asset"))
 
-	assert.Equal(t, []Call{{Template: "home.tmpl", Args: []string{"shout"}}}, Calls(set, "upper"))
+	assert.Equal(t, []Call{
+		{Template: "home.tmpl", Args: []string{"shout"}},
+		{Template: "pipe.tmpl", Args: []string{"z.js"}},
+	}, Calls(set, "upper"))
 	assert.Nil(t, Calls(set, "missing"))
 	assert.Nil(t, Calls(nil, "asset"))
 }

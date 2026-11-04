@@ -45,8 +45,9 @@ func Calls(tmpl *template.Template, function string) []Call {
 				}
 
 				args := cmd.Args[1:]
-				if len(args) == 0 && i > 0 {
-					args = pipe.Cmds[i-1].Args
+				if i > 0 {
+					// The previous command's result is passed as the final argument.
+					args = append(slices.Clone(args), piped(pipe.Cmds[i-1]))
 				}
 
 				call := Call{Template: t.Name(), Args: make([]string, 0, len(args))}
@@ -65,6 +66,17 @@ func Calls(tmpl *template.Template, function string) []Call {
 	}
 
 	return calls
+}
+
+// piped returns the value a command feeds into the next stage of its pipeline:
+// its lone argument when the command is a bare literal, variable or field, or the
+// command itself when the value is computed by a function call.
+func piped(cmd *parse.CommandNode) parse.Node {
+	if len(cmd.Args) == 1 {
+		return cmd.Args[0]
+	}
+
+	return cmd
 }
 
 // invokes reports whether the command starts with the named function.
