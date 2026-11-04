@@ -113,7 +113,7 @@ var (
 	DatabaseSeederRegisterFailed        = New("seeder register failed: %v")
 	DatabaseFailToRunSeeder             = New("fail to run seeder: %v")
 	DatabaseUnsupportedType             = New("unsupported type: %s, expected %s")
-	DatabaseInvalidArgumentNumber       = New("invalid argument number: %s, expected %s")
+	DatabaseInvalidArgumentNumber       = New("invalid argument number: %d, expected %s")
 	DatabaseInvalidPaginationLimit      = New("invalid pagination limit: %d, must be greater than 0")
 	DatabaseTransactionNotStarted       = New("transaction not started")
 	DatabaseFailedToGetSql              = New("failed to get sql: %v")
