@@ -87,6 +87,7 @@ var (
 
 	ConsoleCommandHookFlagConflict           = New("command hook flag '%s' conflicts with an existing flag")
 	ConsoleCommandPanicInHandle              = New("panic in Handle: %v")
+	ConsoleCommandPanicInAfterHook           = New("panic in After hook: %v")
 	ConsoleCommandRegisterFailed             = New("failed to register command '%s': %v")
 	ConsoleCommandRequiredArgumentWrongOrder = New("required argument '%s' should be placed before any not-required arguments")
 	ConsoleCommandArgumentUnknownType        = New("unknown type of console command argument %T, with value %+v")
