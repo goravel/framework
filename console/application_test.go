@@ -742,13 +742,14 @@ func TestRun_Hooks(t *testing.T) {
 			expectCalls: []string{"handle"},
 		},
 		{
-			name:    "before runs in sorted key order, after in reverse",
+			name:    "before runs broadest key first, after in reverse",
 			command: &TestHookCommand{},
 			hooks: map[string][]console.CommandHook{
 				"hook-cmd": {record("exact")},
 				"hook-*":   {record("glob")},
+				"*":        {record("all")},
 			},
-			expectCalls: []string{"glob:before", "exact:before", "handle", "exact:after", "glob:after"},
+			expectCalls: []string{"all:before", "glob:before", "exact:before", "handle", "exact:after", "glob:after", "all:after"},
 		},
 		{
 			name:    "several hooks for the same key run in slice order",
@@ -1099,7 +1100,7 @@ func TestCommandsToCliCommands_HookFlags(t *testing.T) {
 		expectErr   error
 	}{
 		{
-			name:    "own flags, then hook flags in sorted key order, then defaults",
+			name:    "own flags, then hook flags broadest key first, then defaults",
 			command: &TestHookCommand{flags: []command.Flag{&command.BoolFlag{Name: "force"}}},
 			hooks: map[string][]console.CommandHook{
 				"hook-cmd": {flagHook(&command.BoolFlag{Name: "yes"})},
@@ -1154,6 +1155,55 @@ func TestCommandsToCliCommands_HookFlags(t *testing.T) {
 
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expectNames, flagNames(cliCommands[0]))
+		})
+	}
+}
+
+func TestSortedHookKeys(t *testing.T) {
+	tests := []struct {
+		name   string
+		keys   []string
+		expect []string
+	}{
+		{
+			name:   "star, then globs by literal length, then exact",
+			keys:   []string{"make:model", "make:*", "*", "make:mo*", "m*"},
+			expect: []string{"*", "m*", "make:*", "make:mo*", "make:model"},
+		},
+		{
+			// In byte order "test:console-hook" sorts before "test:console-hook*".
+			name:   "an exact key is innermost even when it is a prefix of a glob",
+			keys:   []string{"test:console-hook", "test:console-hook*"},
+			expect: []string{"test:console-hook*", "test:console-hook"},
+		},
+		{
+			// In byte order " make:*" sorts before "*".
+			name:   "keys are ranked trimmed, as they are matched",
+			keys:   []string{" make:*", "*", "make:model "},
+			expect: []string{"*", " make:*", "make:model "},
+		},
+		{
+			name:   "equal specificity falls back to string order",
+			keys:   []string{"migrate", "db:seed", "b:*", "a:*"},
+			expect: []string{"a:*", "b:*", "db:seed", "migrate"},
+		},
+		{
+			name:   "nil map",
+			expect: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var hooks map[string][]console.CommandHook
+			if tt.keys != nil {
+				hooks = make(map[string][]console.CommandHook, len(tt.keys))
+				for _, key := range tt.keys {
+					hooks[key] = nil
+				}
+			}
+
+			assert.Equal(t, tt.expect, sortedHookKeys(hooks))
 		})
 	}
 }

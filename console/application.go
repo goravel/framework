@@ -1,6 +1,7 @@
 package console
 
 import (
+	"cmp"
 	"context"
 	"io"
 	"maps"
@@ -241,12 +242,54 @@ func FilterCommandsByAllowlist(commands []console.Command, allowlist []string) [
 	return kept
 }
 
+// sortedHookKeys returns the keys of hooks outermost first. Keys are ranked by
+// specificity, broadest first, so a hook wraps every hook registered under a
+// more specific key: "*" first, then the other '*' patterns by literal length
+// ascending (the bytes that are not '*'), then exact signatures. Keys with the
+// same rank and literal length fall back to string order. Keys are trimmed
+// before ranking, as signatureMatches trims them before matching.
+func sortedHookKeys(hooks map[string][]console.CommandHook) []string {
+	keys := slices.Collect(maps.Keys(hooks))
+	slices.SortStableFunc(keys, func(a, b string) int {
+		a, b = strings.TrimSpace(a), strings.TrimSpace(b)
+		if c := cmp.Compare(hookRank(a), hookRank(b)); c != 0 {
+			return c
+		}
+		if c := cmp.Compare(hookLiteralLen(a), hookLiteralLen(b)); c != 0 {
+			return c
+		}
+		return strings.Compare(a, b)
+	})
+
+	return keys
+}
+
+// hookRank is the specificity of a trimmed hook key: 0 for "*", 1 for any
+// other '*' pattern, 2 for an exact signature.
+func hookRank(key string) int {
+	switch {
+	case key == "*":
+		return 0
+	case strings.Contains(key, "*"):
+		return 1
+	default:
+		return 2
+	}
+}
+
+// hookLiteralLen counts the bytes of key that are not '*'. A '*' pattern with
+// fewer literal bytes matches more signatures, so it sorts first.
+func hookLiteralLen(key string) int {
+	return len(key) - strings.Count(key, "*")
+}
+
 // hooksForCommand returns the hooks that apply to item, outermost first: the
-// matching keys in sorted order, then the hooks of each key in slice order.
-func hooksForCommand(item console.Command, hooks map[string][]console.CommandHook) []console.CommandHook {
+// matching keys in the order of keys (see sortedHookKeys), then the hooks of
+// each key in slice order.
+func hooksForCommand(item console.Command, keys []string, hooks map[string][]console.CommandHook) []console.CommandHook {
 	sig := item.Signature()
 	var matched []console.CommandHook
-	for _, pattern := range slices.Sorted(maps.Keys(hooks)) {
+	for _, pattern := range keys {
 		if !signatureMatches(pattern, sig) {
 			continue
 		}
@@ -375,6 +418,7 @@ type handleResult struct {
 
 func commandsToCliCommands(commands []console.Command, hooks map[string][]console.CommandHook) ([]*cli.Command, error) {
 	cliCommands := make([]*cli.Command, len(commands))
+	hookKeys := sortedHookKeys(hooks)
 
 	for i, item := range commands {
 		arguments := item.Extend().Arguments
@@ -382,7 +426,7 @@ func commandsToCliCommands(commands []console.Command, hooks map[string][]consol
 		if err != nil {
 			return nil, errors.ConsoleCommandRegisterFailed.Args(item.Signature(), err)
 		}
-		itemHooks := hooksForCommand(item, hooks)
+		itemHooks := hooksForCommand(item, hookKeys, hooks)
 		flags, err := commandFlags(item, itemHooks)
 		if err != nil {
 			return nil, errors.ConsoleCommandRegisterFailed.Args(item.Signature(), err)

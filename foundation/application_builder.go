@@ -70,9 +70,10 @@ func (r *ApplicationBuilder) WithCallback(callback func()) foundation.Applicatio
 // Artisan commands, keyed by command signature or '*' pattern, matched like
 // WithCommandsFilter. The callback runs once at Build() time and the map
 // reaches the Artisan application when the console provider constructs it.
-// For a command, the hooks of every matching key run: keys in sorted order,
-// hooks in slice order within a key. Before hooks run first to last and After
-// hooks last to first.
+// For a command, the hooks of every matching key run, broadest key outermost:
+// "*" first, then the other '*' patterns from fewest to most literal
+// characters, then the exact signature; hooks in slice order within a key.
+// Before hooks run first to last and After hooks last to first.
 func (r *ApplicationBuilder) WithCommandHooks(fn func() map[string][]console.CommandHook) foundation.ApplicationBuilder {
 	r.commandHooks = fn
 

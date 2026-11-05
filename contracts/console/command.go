@@ -34,8 +34,11 @@ type Shutdownable interface {
 // through ApplicationBuilder.WithCommandHooks as a map from a command
 // signature ("migrate") or '*' pattern ("make:*", "*") to the hooks for it,
 // matched like the commands filter. When a command runs, the hooks of every
-// matching key run: keys in sorted order, hooks in slice order within a key.
-// Before hooks run first to last, then Handle, then After hooks last to first.
+// matching key run, broadest key outermost: "*" first, then the other '*'
+// patterns from fewest to most literal characters, then the exact signature.
+// Keys of equal specificity run in string order, and the hooks of one key run
+// in slice order. Before hooks run first to last, then Handle, then After
+// hooks last to first.
 type CommandHook interface {
 	// Before runs before Handle. Returning false or an error skips Handle and
 	// every After.

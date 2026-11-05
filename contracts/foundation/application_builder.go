@@ -24,7 +24,9 @@ type ApplicationBuilder interface {
 	WithCallback(func()) ApplicationBuilder
 	// WithCommandHooks registers a callback that returns the hooks to run
 	// around Artisan commands, keyed by command signature or '*' pattern,
-	// matched like WithCommandsFilter.
+	// matched like WithCommandsFilter. The broadest matching key wraps the
+	// others: "*", then other '*' patterns, then the exact signature. See
+	// console.CommandHook.
 	WithCommandHooks(func() map[string][]console.CommandHook) ApplicationBuilder
 	// WithCommands sets the application's commands.
 	WithCommands(func() []console.Command) ApplicationBuilder
