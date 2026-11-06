@@ -1,12 +1,13 @@
 package testing
 
 import (
-	"github.com/goravel/framework/contracts/binding"
+	contractsbinding "github.com/goravel/framework/contracts/binding"
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	contractsroute "github.com/goravel/framework/contracts/route"
 	contractsession "github.com/goravel/framework/contracts/session"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/binding"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -20,18 +21,21 @@ var (
 type ServiceProvider struct {
 }
 
-func (r *ServiceProvider) Relationship() binding.Relationship {
-	return binding.Relationship{
-		Bindings: []string{
-			binding.Testing,
-		},
-		Dependencies: binding.Bindings[binding.Testing].Dependencies,
+func (r *ServiceProvider) Relationship() contractsbinding.Relationship {
+	bindings := []string{
+		contractsbinding.Testing,
+		contractsbinding.Fake,
+	}
+
+	return contractsbinding.Relationship{
+		Bindings:     bindings,
+		Dependencies: binding.Dependencies(bindings...),
 		ProvideFor:   []string{},
 	}
 }
 
 func (r *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(binding.Testing, func(app foundation.Application) (any, error) {
+	app.Singleton(contractsbinding.Testing, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleTesting)
@@ -44,6 +48,10 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		process := app.MakeProcess()
 
 		return NewApplication(artisan, cache, config, orm, process), nil
+	})
+
+	app.Singleton(contractsbinding.Fake, func(app foundation.Application) (any, error) {
+		return NewFake(), nil
 	})
 }
 

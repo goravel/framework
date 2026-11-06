@@ -10,6 +10,7 @@ const (
 	Crypt        = "goravel.crypt"
 	DB           = "goravel.db"
 	Event        = "goravel.event"
+	Fake         = "goravel.fake"
 	Gate         = "goravel.gate"
 	Grpc         = "goravel.grpc"
 	Hash         = "goravel.hash"
@@ -185,6 +186,10 @@ var (
 			Dependencies: []string{
 				Queue,
 			},
+		},
+		Fake: {
+			Description: "Generates fake data for testing, database seeding, and factories.",
+			PkgPath:     "github.com/goravel/framework/testing",
 		},
 		Gate: {
 			Description: "An easy-to-use authorization feature to manage user actions on resources.",
@@ -431,6 +436,9 @@ var (
 				Process,
 				Route,
 				Session,
+			},
+			InstallTogether: []string{
+				Fake,
 			},
 		},
 		Validation: {

@@ -85,12 +85,17 @@ func (s *DummySeeder) Run() error {
 func (r Stubs) Factory() string {
 	return `package DummyPackage
 
+import (
+	"DummyFacadesImport"
+)
+
 type DummyFactory struct {
 }
 
 // Definition Define the model's default state.
 func (f *DummyFactory) Definition() map[string]any {
-     return nil
+	fake := DummyFacadesPackage.Fake()
+	return nil
 }
 `
 }
