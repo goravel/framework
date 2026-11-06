@@ -315,6 +315,17 @@ func (s *ApplicationBuilderTestSuite) TestWithCommandsFilterNil() {
 	s.Nil(s.builder.commandsFilter)
 }
 
+func (s *ApplicationBuilderTestSuite) TestWithCommandHooks() {
+	hooks := map[string][]contractsconsole.CommandHook{"migrate": {mocksconsole.NewCommandHook(s.T())}}
+	builder := s.builder.WithCommandHooks(func() map[string][]contractsconsole.CommandHook {
+		return hooks
+	})
+
+	s.NotNil(builder)
+	s.NotNil(s.builder.commandHooks)
+	s.Equal(hooks, s.builder.commandHooks())
+}
+
 type mockStatsHandler struct{ stats.Handler }
 
 func (s *ApplicationBuilderTestSuite) TestWithViewFuncs() {

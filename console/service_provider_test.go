@@ -32,13 +32,16 @@ func TestServiceProviderRegister(t *testing.T) {
 	t.Run("register artisan singleton", func(t *testing.T) {
 		app := mocksfoundation.NewApplication(t)
 		app.EXPECT().Singleton(binding.Artisan, mock.AnythingOfType("func(foundation.Application) (interface {}, error)")).Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
+			hooks := map[string][]contractsconsole.CommandHook{"migrate": {mocksconsole.NewCommandHook(t)}}
 			callbackApp := mocksfoundation.NewApplication(t)
 			callbackApp.EXPECT().Version().Return("v1.18.0").Once()
+			callbackApp.EXPECT().CommandHooks().Return(hooks).Once()
 
 			instance, err := callback(callbackApp)
 
 			assert.NoError(t, err)
 			assert.IsType(t, &Application{}, instance)
+			assert.Equal(t, hooks, instance.(*Application).hooks)
 		}).Once()
 
 		provider.Register(app)

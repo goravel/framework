@@ -78,6 +78,7 @@ type Application struct {
 	json               foundation.Json
 	bootedRunners      []string
 	commandsFilter     []string
+	commandHooks       map[string][]contractsconsole.CommandHook
 	runnerWg           sync.WaitGroup
 	runnersToRun       []*RunnerWithInfo
 }
@@ -117,6 +118,9 @@ func (r *Application) Build() foundation.Application {
 	r.configureCustomConfig()
 	if r.builder.commandsFilter != nil {
 		r.commandsFilter = r.builder.commandsFilter()
+	}
+	if r.builder.commandHooks != nil {
+		r.commandHooks = r.builder.commandHooks()
 	}
 	r.configureServiceProviders()
 	r.providerRepository.Register(r)
@@ -339,6 +343,14 @@ func (r *Application) SetBuilder(builder foundation.ApplicationBuilder) foundati
 // defaultCommands batch.
 func (r *Application) CommandsFilter() []string {
 	return r.commandsFilter
+}
+
+// CommandHooks returns the hooks that run around Artisan commands, keyed by
+// command signature or '*' pattern. nil means no hooks. Used by the console
+// service provider, which passes the map to the Artisan application when it
+// constructs it, the same way CommandsFilter reaches its command batch.
+func (r *Application) CommandHooks() map[string][]contractsconsole.CommandHook {
+	return r.commandHooks
 }
 
 func (r *Application) SetJson(j foundation.Json) {

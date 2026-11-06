@@ -155,6 +155,41 @@ func (s *ApplicationTestSuite) TestConfigureCommands() {
 	}
 }
 
+func (s *ApplicationTestSuite) TestBuild() {
+	hooks := map[string][]console.CommandHook{"migrate": {mocksconsole.NewCommandHook(s.T())}}
+
+	mockConfig := mocksconfig.NewConfig(s.T())
+	mockConfig.EXPECT().GetString("app.timezone", "UTC").Return("UTC").Once()
+	mockConfig.EXPECT().GetStringSlice("app.disabled_runners", []string{}).Return([]string{}).Once()
+	s.app.Instance(binding.Config, mockConfig)
+
+	mockArtisan := mocksconsole.NewArtisan(s.T())
+	mockArtisan.EXPECT().Register(mock.Anything).Return().Once()
+	mockArtisan.EXPECT().Run(os.Args, true).Return(nil).Once()
+	s.app.Instance(binding.Artisan, mockArtisan)
+
+	mockRepo := mocksfoundation.NewProviderRepository(s.T())
+	mockRepo.EXPECT().Register(s.app).Run(func(_ foundation.Application) {
+		// The console provider reads the hooks while registering, so Build
+		// must have run the WithCommandHooks callback by now.
+		s.Equal(hooks, s.app.CommandHooks())
+	}).Return(nil).Once()
+	mockRepo.EXPECT().Boot(s.app).Return().Once()
+	mockRepo.EXPECT().GetBooted().Return([]foundation.ServiceProvider{}).Once()
+	s.app.providerRepository = mockRepo
+
+	builder := NewApplicationBuilder(s.app)
+	builder.commandHooks = func() map[string][]console.CommandHook { return hooks }
+	s.app.builder = builder
+	s.app.SetJson(foundationjson.New())
+
+	built := s.app.Build()
+	defer s.app.cancel()
+
+	s.Same(s.app, built)
+	s.Equal(hooks, s.app.CommandHooks())
+}
+
 func (s *ApplicationTestSuite) TestDefaultCommandsRegistersMaintenanceCommandsWithRouteFacade() {
 	s.app.SetJson(foundationjson.New())
 	s.app.Instance(binding.Route, mocksroute.NewRoute(s.T()))

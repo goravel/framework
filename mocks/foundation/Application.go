@@ -432,6 +432,53 @@ func (_c *Application_Build_Call) RunAndReturn(run func() foundation.Application
 	return _c
 }
 
+// CommandHooks provides a mock function with no fields
+func (_m *Application) CommandHooks() map[string][]console.CommandHook {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for CommandHooks")
+	}
+
+	var r0 map[string][]console.CommandHook
+	if rf, ok := ret.Get(0).(func() map[string][]console.CommandHook); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string][]console.CommandHook)
+		}
+	}
+
+	return r0
+}
+
+// Application_CommandHooks_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CommandHooks'
+type Application_CommandHooks_Call struct {
+	*mock.Call
+}
+
+// CommandHooks is a helper method to define mock.On call
+func (_e *Application_Expecter) CommandHooks() *Application_CommandHooks_Call {
+	return &Application_CommandHooks_Call{Call: _e.mock.On("CommandHooks")}
+}
+
+func (_c *Application_CommandHooks_Call) Run(run func()) *Application_CommandHooks_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Application_CommandHooks_Call) Return(_a0 map[string][]console.CommandHook) *Application_CommandHooks_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Application_CommandHooks_Call) RunAndReturn(run func() map[string][]console.CommandHook) *Application_CommandHooks_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Commands provides a mock function with given fields: _a0
 func (_m *Application) Commands(_a0 []console.Command) {
 	_m.Called(_a0)

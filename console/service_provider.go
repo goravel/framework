@@ -26,7 +26,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		usage := "Goravel Framework"
 		usageText := "artisan command [options] [arguments...]"
 
-		return NewApplication(name, usage, usageText, app.Version(), true), nil
+		return NewApplication(name, usage, usageText, app.Version(), true, app.CommandHooks()), nil
 	})
 }
 
