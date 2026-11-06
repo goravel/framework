@@ -30,4 +30,5 @@ var (
 	ModuleTelemetry    = "telemetry"
 	ModuleTesting      = "testing"
 	ModuleView         = "view"
+	ModuleVite         = "vite"
 )

@@ -34,6 +34,7 @@ import (
 	"github.com/goravel/framework/contracts/translation"
 	"github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/contracts/view"
+	"github.com/goravel/framework/contracts/vite"
 )
 
 type Runner interface {
@@ -204,6 +205,8 @@ type Application interface {
 	MakeValidation() validation.Validation
 	// MakeView resolves the view instance.
 	MakeView() view.View
+	// MakeVite resolves the vite instance.
+	MakeVite() vite.Vite
 	// MakeSeeder resolves the seeder instance.
 	MakeSeeder() seeder.Facade
 	// MakeWith resolves the given type with the given parameters from the container.
