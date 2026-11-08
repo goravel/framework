@@ -1506,7 +1506,12 @@ func TestOrderByValidation(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			query := newQuery().OrderBy(test.column, test.direction...).(*Query)
 
-			assert.ErrorIs(t, query.conditions.err, test.expectedError)
+			if test.expectedError != nil {
+				assert.EqualError(t, query.conditions.err, test.expectedError.Error())
+				return
+			}
+
+			assert.NoError(t, query.conditions.err)
 			assert.Equal(t, test.expectedOrder, query.conditions.order)
 		})
 	}

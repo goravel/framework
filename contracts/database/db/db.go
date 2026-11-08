@@ -103,6 +103,7 @@ type Query interface {
 	// anything else fails and must go through OrderByRaw.
 	OrderBy(column string, directions ...string) Query
 	// OrderByDesc specifies the order should be descending.
+	// The column follows the OrderBy rule.
 	OrderByDesc(column string) Query
 	// OrderByRaw specifies the order should be raw. It is put into the SQL as is, so never pass user input to it.
 	OrderByRaw(raw string) Query

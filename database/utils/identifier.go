@@ -6,7 +6,7 @@ import (
 )
 
 // plainIdentifierRegex matches ASCII identifiers only, optionally qualified by a table. A name with other characters
-// (non ASCII letters, "$", etc.) is an expression and must go through the raw order method instead.
+// (non ASCII letters, "$", etc.) is an expression and is left unquoted by the caller.
 var plainIdentifierRegex = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$`)
 
 // orderDirectionRegex matches the only directions the order methods accept.

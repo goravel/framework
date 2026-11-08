@@ -562,13 +562,13 @@ func (r *Query) OrderBy(column string, directions ...string) db.Query {
 	// The builder puts the column and the direction into the SQL as is, so it only accepts values it can verify.
 	// Anything else has to go through OrderByRaw, which is raw by definition.
 	if !utils.IsPlainIdentifier(column) {
-		q.err = errors.DatabaseInvalidOrderByColumn.Args(column)
+		q.err = errors.Join(q.err, errors.DatabaseInvalidOrderByColumn.Args(column))
 		return q
 	}
 
 	normalizedDirection, ok := utils.NormalizeOrderDirection(direction)
 	if !ok {
-		q.err = errors.DatabaseInvalidOrderByDirection.Args(direction)
+		q.err = errors.Join(q.err, errors.DatabaseInvalidOrderByDirection.Args(direction))
 		return q
 	}
 
