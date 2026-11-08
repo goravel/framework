@@ -427,6 +427,51 @@ func (_c *Vite_Tags_Call) RunAndReturn(run func(...string) (template.HTML, error
 	return _c
 }
 
+// Version provides a mock function with no fields
+func (_m *Vite) Version() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Version")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Vite_Version_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Version'
+type Vite_Version_Call struct {
+	*mock.Call
+}
+
+// Version is a helper method to define mock.On call
+func (_e *Vite_Expecter) Version() *Vite_Version_Call {
+	return &Vite_Version_Call{Call: _e.mock.On("Version")}
+}
+
+func (_c *Vite_Version_Call) Run(run func()) *Vite_Version_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Vite_Version_Call) Return(_a0 string) *Vite_Version_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Vite_Version_Call) RunAndReturn(run func() string) *Vite_Version_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewVite creates a new instance of Vite. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewVite(t interface {

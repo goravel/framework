@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 
+	contractsconfig "github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	contractsview "github.com/goravel/framework/contracts/view"
@@ -24,7 +25,8 @@ const (
 
 // Inputs is what goravel-vite-plugin reads: the entries passed to vite and the
 // files passed to viteAsset, each once and sorted, the calls with computed
-// arguments, and the configured paths.
+// arguments, and the configured paths. The entries and assets include vite.inputs
+// and vite.assets from config, so a build tool need not reach into config itself.
 type Inputs struct {
 	Inputs  []string      `json:"inputs"`
 	Assets  []string      `json:"assets"`
@@ -52,12 +54,13 @@ type DynamicCall struct {
 // InputsCommand prints the entries, assets and build paths the views and config
 // declare, so a build tool need not repeat them.
 type InputsCommand struct {
-	view contractsview.View
-	vite contractsvite.Vite
+	view   contractsview.View
+	vite   contractsvite.Vite
+	config contractsconfig.Config
 }
 
-func NewInputsCommand(views contractsview.View, vite contractsvite.Vite) *InputsCommand {
-	return &InputsCommand{view: views, vite: vite}
+func NewInputsCommand(views contractsview.View, vite contractsvite.Vite, config contractsconfig.Config) *InputsCommand {
+	return &InputsCommand{view: views, vite: vite, config: config}
 }
 
 // Signature The name and signature of the console command.
@@ -67,7 +70,7 @@ func (r *InputsCommand) Signature() string {
 
 // Description The console command description.
 func (r *InputsCommand) Description() string {
-	return "Print the Vite entry points and assets the views reference, and the build paths, as JSON"
+	return "Print the Vite entry points and assets the views and config declare, and the build paths, as JSON"
 }
 
 // Extend The console command extend.
@@ -95,7 +98,12 @@ func (r *InputsCommand) Handle(ctx console.Context) error {
 		return errors.ViewCompileFailed.Args(err).SetModule(errors.ModuleVite)
 	}
 
-	inputs := Inputs{Inputs: []string{}, Assets: []string{}, Dynamic: []DynamicCall{}, Paths: r.paths()}
+	inputs := Inputs{
+		Inputs:  r.configured("vite.inputs"),
+		Assets:  r.configured("vite.assets"),
+		Dynamic: []DynamicCall{},
+		Paths:   r.paths(),
+	}
 	collect(view.Calls(tmpl, tagsFunction), tagsFunction, &inputs.Inputs, &inputs.Dynamic)
 	collect(view.Calls(tmpl, assetFunction), assetFunction, &inputs.Assets, &inputs.Dynamic)
 
@@ -125,6 +133,21 @@ func (r *InputsCommand) paths() Paths {
 	}
 }
 
+// configured returns vite.inputs or vite.assets as []string; empty when the key is
+// unset or no config is bound, so the JSON is always [] and never null.
+func (r *InputsCommand) configured(key string) []string {
+	if r.config == nil {
+		return []string{}
+	}
+
+	values := r.config.GetStringSlice(key, []string{})
+	if values == nil {
+		return []string{}
+	}
+
+	return values
+}
+
 // collect adds the calls' arguments to values, each once and sorted, and the dynamic
 // calls to dynamic. A dynamic call's literal arguments are still inputs.
 func collect(calls []view.Call, function string, values *[]string, dynamic *[]DynamicCall) {
@@ -132,12 +155,9 @@ func collect(calls []view.Call, function string, values *[]string, dynamic *[]Dy
 		if call.Dynamic {
 			*dynamic = append(*dynamic, DynamicCall{Template: call.Template, Function: function})
 		}
-		for _, arg := range call.Args {
-			if !slices.Contains(*values, arg) {
-				*values = append(*values, arg)
-			}
-		}
+		*values = append(*values, call.Args...)
 	}
 
 	slices.Sort(*values)
+	*values = slices.Compact(*values)
 }

@@ -1,6 +1,8 @@
 package vite
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"html/template"
 	"os"
 	"path/filepath"
@@ -77,6 +79,7 @@ func newTestVite(t *testing.T, assetURL string) *Vite {
 	config.EXPECT().GetString("vite.hot_file", DefaultHotFile).Return(DefaultHotFile).Once()
 	config.EXPECT().GetString("vite.build_directory", DefaultBuildDirectory).Return(DefaultBuildDirectory).Once()
 	config.EXPECT().GetString("vite.manifest", DefaultManifestFilename).Return(DefaultManifestFilename).Once()
+	config.EXPECT().GetString("vite.dev_url", "").Return("").Once()
 	config.EXPECT().GetString("app.asset_url").Return(assetURL).Maybe()
 
 	return NewVite(config)
@@ -87,16 +90,22 @@ func TestNewVite_ReadsConfig(t *testing.T) {
 	config.EXPECT().GetString("vite.hot_file", DefaultHotFile).Return("storage/vite.hot").Once()
 	config.EXPECT().GetString("vite.build_directory", DefaultBuildDirectory).Return("dist").Once()
 	config.EXPECT().GetString("vite.manifest", DefaultManifestFilename).Return("my-manifest.json").Once()
+	config.EXPECT().GetString("vite.dev_url", "").Return("http://localhost:5173/").Once()
 
+	setupProject(t)
 	vite := NewVite(config)
 	assert.Equal(t, "storage/vite.hot", vite.hotFile)
 	assert.Equal(t, "dist", vite.BuildDirectory())
 	assert.Equal(t, "my-manifest.json", vite.ManifestFilename())
+	assert.Equal(t, "http://localhost:5173", vite.devURL)
+	assert.True(t, vite.IsRunningHot()) // dev_url counts as a running dev server
 
 	vite = NewVite(nil)
 	assert.Equal(t, DefaultHotFile, vite.hotFile)
 	assert.Equal(t, DefaultBuildDirectory, vite.buildDirectory)
 	assert.Equal(t, DefaultManifestFilename, vite.manifestFilename)
+	assert.Equal(t, "", vite.devURL)
+	assert.False(t, vite.IsRunningHot())
 }
 
 func TestHotFile(t *testing.T) {
@@ -165,6 +174,46 @@ func TestTags_Hot(t *testing.T) {
 			`window.$RefreshSig$ = () => (type) => type;`+
 			`window.__vite_plugin_react_preamble_installed__ = true;</script>`,
 	), vite.ReactRefresh())
+}
+
+func TestDevURL_Tags(t *testing.T) {
+	setupProject(t) // no public/hot is written
+	vite := newTestVite(t, "").UseDevURL("http://[::1]:5173/")
+
+	tags, err := vite.Tags("resources/css/app.css", "/resources/js/app.js")
+	require.NoError(t, err)
+	assert.Equal(t, template.HTML(
+		`<script type="module" src="http://[::1]:5173/@vite/client"></script>`+
+			`<link rel="stylesheet" href="http://[::1]:5173/resources/css/app.css">`+
+			`<script type="module" src="http://[::1]:5173/resources/js/app.js"></script>`,
+	), tags)
+
+	url, err := vite.Asset("resources/images/logo.svg")
+	require.NoError(t, err)
+	assert.Equal(t, "http://[::1]:5173/resources/images/logo.svg", url)
+
+	assert.Contains(t, string(vite.ReactRefresh()), "http://[::1]:5173/@react-refresh")
+}
+
+func TestDevURL_HotFileWins(t *testing.T) {
+	public := setupProject(t)
+	writeFile(t, filepath.Join(public, "hot"), "http://127.0.0.1:5199\n")
+	vite := newTestVite(t, "").UseDevURL("http://localhost:5173")
+
+	tags, err := vite.Tags("resources/js/app.js")
+	require.NoError(t, err)
+	assert.Contains(t, string(tags), "http://127.0.0.1:5199/@vite/client")
+	assert.NotContains(t, string(tags), "localhost:5173")
+}
+
+func TestDevURL_EmptyUsesManifest(t *testing.T) {
+	setupProject(t) // neither hot file nor dev_url
+	vite := newTestVite(t, "")
+
+	assert.False(t, vite.IsRunningHot())
+	tags, err := vite.Tags("resources/js/app.js")
+	require.Error(t, err)
+	assert.Empty(t, tags)
 }
 
 func TestTags_HotEscapesURL(t *testing.T) {
@@ -396,6 +445,55 @@ func TestManifest_ReloadedWhenChanged(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "/build/a-2.js", url)
 	assert.NotSame(t, first, vite.manifests[manifestPath])
+}
+
+func TestVersion_FromManifest(t *testing.T) {
+	public := setupProject(t)
+	writeFile(t, filepath.Join(public, "build", ".vite", "manifest.json"), sampleManifest)
+	vite := newTestVite(t, "")
+
+	sum := md5.Sum([]byte(sampleManifest))
+	assert.Equal(t, hex.EncodeToString(sum[:]), vite.Version())
+
+	// Tags shares the cache, so the version is unchanged after a render.
+	_, err := vite.Tags("resources/js/app.js")
+	require.NoError(t, err)
+	assert.Equal(t, hex.EncodeToString(sum[:]), vite.Version())
+}
+
+func TestVersion_EmptyWithoutManifest(t *testing.T) {
+	setupProject(t)
+	vite := newTestVite(t, "")
+
+	assert.Equal(t, "", vite.Version())
+}
+
+func TestVersion_InvalidManifest(t *testing.T) {
+	public := setupProject(t)
+	writeFile(t, filepath.Join(public, "build", ".vite", "manifest.json"), "{not json")
+	vite := newTestVite(t, "")
+
+	assert.Equal(t, "", vite.Version())
+}
+
+func TestVersion_MovesWithRebuild(t *testing.T) {
+	public := setupProject(t)
+	manifestPath := filepath.Join(public, "build", ".vite", "manifest.json")
+	writeFile(t, manifestPath, `{"a.js": {"file": "a-1.js"}}`)
+	vite := newTestVite(t, "")
+
+	firstVersion := vite.Version()
+	assert.NotEmpty(t, firstVersion)
+	tags, err := vite.Tags("a.js")
+	require.NoError(t, err)
+	assert.Contains(t, string(tags), "a-1.js")
+
+	// A rebuild changes the manifest size, so Tags and Version are picked up together.
+	writeFile(t, manifestPath, `{"a.js": {"file": "a-2.js"}, "b.js": {"file": "b-1.js"}}`)
+	assert.NotEqual(t, firstVersion, vite.Version())
+	tags, err = vite.Tags("a.js")
+	require.NoError(t, err)
+	assert.Contains(t, string(tags), "a-2.js")
 }
 
 func TestUseBuildDirectory(t *testing.T) {

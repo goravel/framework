@@ -30,6 +30,20 @@ func init() {
 		//
 		// The manifest ` + "`vite build`" + ` writes, relative to the build directory.
 		"manifest": ".vite/manifest.json",
+
+		// Inputs and Assets
+		//
+		// Entries and assets used outside resources/views, such as the Inertia root
+		// template. ` + "`vite:inputs`" + ` merges them with the calls it finds in views.
+		"inputs": []string{},
+		"assets": []string{},
+
+		// Dev URL
+		//
+		// The dev server URL used when public/hot is absent, usually set through the
+		// VITE_DEV_URL environment variable. Leave it empty in production so the tags
+		// come from the build manifest.
+		"dev_url": config.Env("VITE_DEV_URL", ""),
 	})
 }
 `
