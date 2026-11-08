@@ -93,6 +93,7 @@ func (r *Validation) Make(ctx context.Context, data any, rules map[string]any, o
 	}
 
 	// Validate that all rule names are known (builtin, custom, or control)
+	// and that guarded builtin rules received the parameters they read.
 	for field, fieldRules := range parsedRules {
 		for _, pr := range fieldRules {
 			// skip control rules
@@ -100,6 +101,9 @@ func (r *Validation) Make(ctx context.Context, data any, rules map[string]any, o
 				continue
 			}
 			if _, ok := builtinRules[pr.Name]; ok {
+				if required, ok := minRuleParameters[pr.Name]; ok && len(pr.Parameters) < required {
+					return nil, errors.ValidationRuleMissingParameters.Args(pr.Name, required)
+				}
 				continue
 			}
 			if _, ok := excludeRules[pr.Name]; ok {

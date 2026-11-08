@@ -226,6 +226,16 @@ var implicitRules = map[string]bool{
 	"prohibits": true,
 }
 
+// minRuleParameters is the minimum number of parameters a builtin rule reads.
+// Rules absent from this map accept any parameter count, matching Laravel, which
+// only guards these four.
+var minRuleParameters = map[string]int{
+	"required_if":          2,
+	"required_unless":      2,
+	"required_if_accepted": 1,
+	"required_if_declined": 1,
+}
+
 // excludeRules are rules that may cause a field to be excluded from validated data.
 var excludeRules = map[string]bool{
 	"exclude": true, "exclude_if": true, "exclude_unless": true,
