@@ -503,17 +503,22 @@ func (r *withSliceHandler) createWithMethod(setupCall *dst.CallExpr, parentOfSet
 	parentOfSetup.X = newWithCall
 }
 
-// findFoundationSetupCalls walks the chain to find Setup() and WithMethod() calls.
+// findFoundationSetupCalls walks the chain to find Setup() and the configured WithMethod() calls.
+func (r *withSliceHandler) findFoundationSetupCalls(callExpr *dst.CallExpr) (setupCall, withCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr) {
+	return findSetupCalls(callExpr, r.config.withMethodName)
+}
+
+// findSetupCalls walks the chain to find foundation.Setup() and the withMethod call.
 //
 // Example: For a chain like:
 //
-//	foundation.Setup().WithCommands(Commands).WithMigrations(Migrations).Boot()
+//	foundation.Setup().WithCommands(Commands).WithMigrations(Migrations).Create()
 //
-// If withMethodName="WithCommands", returns:
+// With withMethod="WithCommands" it returns:
 //   - setupCall: the CallExpr for "foundation.Setup()"
 //   - withCall: the CallExpr for "WithCommands(Commands)" (if it exists)
-//   - parentOfSetup: the SelectorExpr representing the next method after Setup (e.g., ".WithCommands")
-func (r *withSliceHandler) findFoundationSetupCalls(callExpr *dst.CallExpr) (setupCall, withCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr) {
+//   - parentOfSetup: the SelectorExpr of the method called on Setup, e.g. ".WithCommands"
+func findSetupCalls(callExpr *dst.CallExpr, withMethod string) (setupCall, withCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr) {
 	current := callExpr
 	for current != nil {
 		if sel, ok := current.Fun.(*dst.SelectorExpr); ok {
@@ -528,7 +533,7 @@ func (r *withSliceHandler) findFoundationSetupCalls(callExpr *dst.CallExpr) (set
 						}
 					}
 					// Check if this is the WithMethod
-					if innerSel.Sel.Name == r.config.withMethodName {
+					if innerSel.Sel.Name == withMethod {
 						withCall = innerCall
 					}
 				}
@@ -992,35 +997,6 @@ func createWithMiddleware(setupCall *dst.CallExpr, parentOfSetup *dst.SelectorEx
 	parentOfSetup.X = newWithMiddlewareCall
 }
 
-// findFoundationSetupCallsForMiddleware walks the chain to find Setup() and WithMiddleware() calls.
-func findFoundationSetupCallsForMiddleware(callExpr *dst.CallExpr) (setupCall, withMiddlewareCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr) {
-	current := callExpr
-	for current != nil {
-		if sel, ok := current.Fun.(*dst.SelectorExpr); ok {
-			if innerCall, ok := sel.X.(*dst.CallExpr); ok {
-				if innerSel, ok := innerCall.Fun.(*dst.SelectorExpr); ok {
-					// Check if this is the Setup() call
-					if innerSel.Sel.Name == "Setup" {
-						if ident, ok := innerSel.X.(*dst.Ident); ok && ident.Name == "foundation" {
-							setupCall = innerCall
-							parentOfSetup = sel
-							break
-						}
-					}
-					// Check if this is WithMiddleware
-					if innerSel.Sel.Name == "WithMiddleware" {
-						withMiddlewareCall = innerCall
-					}
-				}
-				current = innerCall
-				continue
-			}
-		}
-		break
-	}
-	return
-}
-
 // findMiddlewareAppendCall finds the handler.Append() call in the function literal.
 func findMiddlewareAppendCall(funcLit *dst.FuncLit) *dst.CallExpr {
 	for _, stmt := range funcLit.Body.List {
@@ -1068,7 +1044,7 @@ func foundationSetupMiddleware(middleware string) modify.Action {
 			return
 		}
 
-		setupCall, withMiddlewareCall, parentOfSetup := findFoundationSetupCallsForMiddleware(callExpr)
+		setupCall, withMiddlewareCall, parentOfSetup := findSetupCalls(callExpr, "WithMiddleware")
 		if setupCall == nil || parentOfSetup == nil {
 			return
 		}
@@ -1083,9 +1059,14 @@ func foundationSetupMiddleware(middleware string) modify.Action {
 	}
 }
 
+// consolePackageImportPath is the contracts/console import a WithCommandHooks call needs.
+const consolePackageImportPath = "github.com/goravel/framework/contracts/console"
+
 // foundationSetupCommandHook registers a hook in the foundation.Setup() chain,
-// adding WithCommandHooks when it does not exist.
-func foundationSetupCommandHook(key, hook string) modify.Action {
+// adding WithCommandHooks when it does not exist. consoleName is the local name of
+// the console package and registered reports whether the hook is in the chain
+// afterwards.
+func foundationSetupCommandHook(key, hook string, consoleName *string, registered *bool) modify.Action {
 	return func(cursor *dstutil.Cursor) {
 		var callExpr *dst.CallExpr
 
@@ -1115,7 +1096,7 @@ func foundationSetupCommandHook(key, hook string) modify.Action {
 			return
 		}
 
-		setupCall, withCommandHooksCall, parentOfSetup := findFoundationSetupCallsForCommandHook(callExpr)
+		setupCall, withCommandHooksCall, parentOfSetup := findSetupCalls(callExpr, "WithCommandHooks")
 		if setupCall == nil || parentOfSetup == nil {
 			return
 		}
@@ -1123,52 +1104,26 @@ func foundationSetupCommandHook(key, hook string) modify.Action {
 		hookExpr := MustParseExpr(hook).(dst.Expr)
 
 		if withCommandHooksCall != nil {
-			appendToExistingCommandHook(withCommandHooksCall, key, hook, hookExpr)
-		} else {
-			createWithCommandHooks(setupCall, parentOfSetup, key, hookExpr)
+			*registered = appendToExistingCommandHook(withCommandHooksCall, key, hook, hookExpr)
+
+			return
 		}
+
+		*registered = createWithCommandHooks(setupCall, parentOfSetup, key, *consoleName, hookExpr)
 	}
 }
 
-// findFoundationSetupCallsForCommandHook walks the chain to find Setup() and WithCommandHooks() calls.
-func findFoundationSetupCallsForCommandHook(callExpr *dst.CallExpr) (setupCall, withCommandHooksCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr) {
-	current := callExpr
-	for current != nil {
-		if sel, ok := current.Fun.(*dst.SelectorExpr); ok {
-			if innerCall, ok := sel.X.(*dst.CallExpr); ok {
-				if innerSel, ok := innerCall.Fun.(*dst.SelectorExpr); ok {
-					// Check if this is the Setup() call
-					if innerSel.Sel.Name == "Setup" {
-						if ident, ok := innerSel.X.(*dst.Ident); ok && ident.Name == "foundation" {
-							setupCall = innerCall
-							parentOfSetup = sel
-							break
-						}
-					}
-					// Check if this is WithCommandHooks
-					if innerSel.Sel.Name == "WithCommandHooks" {
-						withCommandHooksCall = innerCall
-					}
-				}
-				current = innerCall
-				continue
-			}
-		}
-		break
-	}
-	return
-}
-
-// appendToExistingCommandHook appends the hook to the WithCommandHooks map entry
-// of key, creating the entry when the map has no key yet.
-func appendToExistingCommandHook(withCall *dst.CallExpr, key, hook string, hookExpr dst.Expr) {
+// appendToExistingCommandHook adds the hook to the WithCommandHooks map of the
+// existing call, creating the entry for key when missing. It reports whether the
+// hook is in the chain.
+func appendToExistingCommandHook(withCall *dst.CallExpr, key, hook string, hookExpr dst.Expr) bool {
 	if len(withCall.Args) == 0 {
-		return
+		return false
 	}
 
 	funcLit, ok := withCall.Args[0].(*dst.FuncLit)
 	if !ok {
-		return
+		return false
 	}
 
 	for _, stmt := range funcLit.Body.List {
@@ -1187,18 +1142,18 @@ func appendToExistingCommandHook(withCall *dst.CallExpr, key, hook string, hookE
 		if i := KeyIndex(mapLit.Elts, keyExpr); i >= 0 {
 			kv, ok := mapLit.Elts[i].(*dst.KeyValueExpr)
 			if !ok {
-				return
+				return false
 			}
 
 			hooksLit, ok := kv.Value.(*dst.CompositeLit)
 			if !ok {
-				return
+				return false
 			}
 
 			if ExprExists(hooksLit.Elts, hookExpr) {
 				color.Warningln(errors.PackageRegistrationDuplicate.Args(hook))
 
-				return
+				return true
 			}
 
 			if len(hooksLit.Elts) > 0 {
@@ -1209,7 +1164,7 @@ func appendToExistingCommandHook(withCall *dst.CallExpr, key, hook string, hookE
 			hookExpr.Decorations().After = dst.NewLine
 			hooksLit.Elts = append(hooksLit.Elts, hookExpr)
 
-			return
+			return true
 		}
 
 		if len(mapLit.Elts) > 0 {
@@ -1221,18 +1176,26 @@ func appendToExistingCommandHook(withCall *dst.CallExpr, key, hook string, hookE
 			Value: &dst.CompositeLit{Elts: []dst.Expr{hookExpr}},
 		}))
 
-		return
+		return true
 	}
+
+	return false
 }
 
-// createWithCommandHooks inserts a new WithCommandHooks call after foundation.Setup().
-func createWithCommandHooks(setupCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr, key string, hookExpr dst.Expr) {
+// createWithCommandHooks inserts a new WithCommandHooks call after
+// foundation.Setup(), spelling the hook type with consoleName. It reports whether
+// the call was created.
+func createWithCommandHooks(setupCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr, key, consoleName string, hookExpr dst.Expr) bool {
+	if consoleName == "" {
+		return false
+	}
+
 	mapType := func() dst.Expr {
 		return &dst.MapType{
 			Key: &dst.Ident{Name: "string"},
 			Value: &dst.ArrayType{
 				Elt: &dst.SelectorExpr{
-					X:   &dst.Ident{Name: "console"},
+					X:   &dst.Ident{Name: consoleName},
 					Sel: &dst.Ident{Name: "CommandHook"},
 				},
 			},
@@ -1283,6 +1246,53 @@ func createWithCommandHooks(setupCall *dst.CallExpr, parentOfSetup *dst.Selector
 	}
 
 	parentOfSetup.X = newWithCall
+
+	return true
+}
+
+// captureImportName records the local name of the import at importPath.
+func captureImportName(importPath string, localName *string) modify.Action {
+	return func(cursor *dstutil.Cursor) {
+		decl, ok := cursor.Node().(*dst.GenDecl)
+		if !ok {
+			return
+		}
+
+		for _, spec := range decl.Specs {
+			importSpec, ok := spec.(*dst.ImportSpec)
+			if !ok || importSpec.Path.Value != strconv.Quote(importPath) {
+				continue
+			}
+
+			if importSpec.Name == nil {
+				return
+			}
+
+			if name := importSpec.Name.Name; name == "_" || name == "." {
+				*localName = ""
+			} else {
+				*localName = name
+			}
+
+			return
+		}
+	}
+}
+
+// addCommandHookImports adds the hook package and console imports once the hook
+// is registered.
+func addCommandHookImports(pkg string, registered *bool) modify.Action {
+	addHookPkg := AddImport(pkg)
+	addConsole := AddImport(consolePackageImportPath)
+
+	return func(cursor *dstutil.Cursor) {
+		if !*registered {
+			return
+		}
+
+		addHookPkg(cursor)
+		addConsole(cursor)
+	}
 }
 
 // foundationSetupRouting returns an action that modifies the foundation.Setup() chain to add or update WithRouting.
@@ -1316,7 +1326,7 @@ func foundationSetupRouting(route string) modify.Action {
 			return
 		}
 
-		setupCall, withRoutingCall, parentOfSetup := findFoundationSetupCallsForRouting(callExpr)
+		setupCall, withRoutingCall, parentOfSetup := findSetupCalls(callExpr, "WithRouting")
 		if setupCall == nil || parentOfSetup == nil {
 			return
 		}
@@ -1363,7 +1373,7 @@ func removeRouteFromSetup(route string) modify.Action {
 			return
 		}
 
-		_, withRoutingCall, _ := findFoundationSetupCallsForRouting(callExpr)
+		_, withRoutingCall, _ := findSetupCalls(callExpr, "WithRouting")
 		if withRoutingCall == nil || len(withRoutingCall.Args) == 0 {
 			return
 		}
@@ -1377,35 +1387,6 @@ func removeRouteFromSetup(route string) modify.Action {
 		routeStmt := &dst.ExprStmt{X: routeExpr}
 		removeRouteFromFuncBody(funcLit.Body, routeStmt)
 	}
-}
-
-// findFoundationSetupCallsForRouting finds the Setup() call and WithRouting() call in the chain.
-func findFoundationSetupCallsForRouting(callExpr *dst.CallExpr) (setupCall *dst.CallExpr, withRoutingCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr) {
-	current := callExpr
-	for current != nil {
-		if sel, ok := current.Fun.(*dst.SelectorExpr); ok {
-			if innerCall, ok := sel.X.(*dst.CallExpr); ok {
-				if innerSel, ok := innerCall.Fun.(*dst.SelectorExpr); ok {
-					// Check if this is the Setup() call
-					if innerSel.Sel.Name == "Setup" {
-						if ident, ok := innerSel.X.(*dst.Ident); ok && ident.Name == "foundation" {
-							setupCall = innerCall
-							parentOfSetup = sel
-							break
-						}
-					}
-					// Check if this is WithRouting
-					if innerSel.Sel.Name == "WithRouting" {
-						withRoutingCall = innerCall
-					}
-				}
-				current = innerCall
-				continue
-			}
-		}
-		break
-	}
-	return
 }
 
 // createWithRouting creates a new WithRouting call and inserts it into the chain.

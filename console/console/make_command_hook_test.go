@@ -22,7 +22,7 @@ import (
 )
 
 func Boot() contractsfoundation.Application {
-	return foundation.Setup().Start()
+	return foundation.Setup().Create()
 }
 `
 
@@ -43,7 +43,24 @@ func Boot() contractsfoundation.Application {
 					&hooks.Existing{},
 				},
 			}
-		}).Start()
+		}).Create()
+}
+`
+
+	commandHookBootstrapAppWithNamedHooks = `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/console"
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation"
+)
+
+func commandHooks() map[string][]console.CommandHook {
+	return nil
+}
+
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithCommandHooks(commandHooks).Create()
 }
 `
 )
@@ -162,6 +179,23 @@ func TestMakeCommandHook(t *testing.T) {
 		assert.Contains(t, appContent, "&hooks.Existing{}")
 		assert.Contains(t, appContent, "&hooks.AuditLog{}")
 		assert.Equal(t, 1, strings.Count(appContent, "WithCommandHooks("))
+	})
+
+	t.Run("hooks call that cannot be edited reports an error", func(t *testing.T) {
+		resetHooks()
+		bootstrapPath := filepath.Join("bootstrap", "app.go")
+		assert.NoError(t, file.PutContent(bootstrapPath, commandHookBootstrapAppWithNamedHooks))
+
+		mockContext := mocksconsole.NewContext(t)
+		mockContext.EXPECT().Option("command").Return("migrate").Once()
+		mockContext.EXPECT().Arguments().Return([]string{"AuditLog"}).Once()
+		mockContext.EXPECT().OptionBool("force").Return(false).Once()
+		mockContext.EXPECT().Success("Command hook created successfully").Once()
+		mockContext.EXPECT().Error(mock.MatchedBy(func(message string) bool {
+			return strings.Contains(message, "failed to register command hook") && strings.Contains(message, "could not be edited")
+		})).Once()
+
+		assert.Nil(t, makeCommandHook.Handle(mockContext))
 	})
 
 	t.Run("several names share the one --command key", func(t *testing.T) {

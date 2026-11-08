@@ -5,6 +5,7 @@ import (
 	"go/token"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/dave/dst"
@@ -298,12 +299,15 @@ func Commands() []console.Command {
 
 func TestAddCommandHook(t *testing.T) {
 	tests := []struct {
-		name        string
-		appContent  string
-		pkg         string
-		key         string
-		hook        string
-		expectedApp string
+		name            string
+		appContent      string
+		pkg             string
+		key             string
+		hook            string
+		expectedApp     string
+		wantRegistered  bool
+		wantErr         string
+		hookOccurrences int // when set, asserts how often hook appears in the result
 	}{
 		{
 			name: "add hook when WithCommandHooks doesn't exist",
@@ -312,16 +316,16 @@ func TestAddCommandHook(t *testing.T) {
 import (
 	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
-	"goravel/config"
 )
 
 func Boot() contractsfoundation.Application {
-	return foundation.Setup().WithConfig(config.Boot).Start()
+	return foundation.Setup().Create()
 }
 `,
-			pkg:  "goravel/app/console/hooks",
-			key:  "migrate",
-			hook: "&hooks.AuditLog{}",
+			pkg:            "goravel/app/console/hooks",
+			key:            "migrate",
+			hook:           "&hooks.AuditLog{}",
+			wantRegistered: true,
 			expectedApp: `package bootstrap
 
 import (
@@ -329,7 +333,6 @@ import (
 	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 	"goravel/app/console/hooks"
-	"goravel/config"
 )
 
 func Boot() contractsfoundation.Application {
@@ -340,7 +343,7 @@ func Boot() contractsfoundation.Application {
 					&hooks.AuditLog{},
 				},
 			}
-		}).WithConfig(config.Boot).Start()
+		}).Create()
 }
 `,
 		},
@@ -363,12 +366,13 @@ func Boot() contractsfoundation.Application {
 					&hooks.Existing{},
 				},
 			}
-		}).Start()
+		}).Create()
 }
 `,
-			pkg:  "goravel/app/console/hooks",
-			key:  "migrate",
-			hook: "&hooks.AuditLog{}",
+			pkg:            "goravel/app/console/hooks",
+			key:            "migrate",
+			hook:           "&hooks.AuditLog{}",
+			wantRegistered: true,
 			expectedApp: `package bootstrap
 
 import (
@@ -387,7 +391,7 @@ func Boot() contractsfoundation.Application {
 					&hooks.AuditLog{},
 				},
 			}
-		}).Start()
+		}).Create()
 }
 `,
 		},
@@ -410,12 +414,13 @@ func Boot() contractsfoundation.Application {
 					&hooks.Existing{},
 				},
 			}
-		}).Start()
+		}).Create()
 }
 `,
-			pkg:  "goravel/app/console/hooks",
-			key:  "make:*",
-			hook: "&hooks.AuditLog{}",
+			pkg:            "goravel/app/console/hooks",
+			key:            "make:*",
+			hook:           "&hooks.AuditLog{}",
+			wantRegistered: true,
 			expectedApp: `package bootstrap
 
 import (
@@ -436,7 +441,134 @@ func Boot() contractsfoundation.Application {
 					&hooks.AuditLog{},
 				},
 			}
-		}).Start()
+		}).Create()
+}
+`,
+		},
+		{
+			name: "keep one entry when the hook is already registered under the key",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/console"
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation"
+	"goravel/app/console/hooks"
+)
+
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithCommandHooks(func() map[string][]console.CommandHook {
+			return map[string][]console.CommandHook{
+				"migrate": {
+					&hooks.AuditLog{},
+				},
+			}
+		}).Create()
+}
+`,
+			pkg:             "goravel/app/console/hooks",
+			key:             "migrate",
+			hook:            "&hooks.AuditLog{}",
+			wantRegistered:  true,
+			hookOccurrences: 1,
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/console"
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation"
+	"goravel/app/console/hooks"
+)
+
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithCommandHooks(func() map[string][]console.CommandHook {
+			return map[string][]console.CommandHook{
+				"migrate": {
+					&hooks.AuditLog{},
+				},
+			}
+		}).Create()
+}
+`,
+		},
+		{
+			name: "spell the hook type with the local name of an aliased console import",
+			appContent: `package bootstrap
+
+import (
+	contractsconsole "github.com/goravel/framework/contracts/console"
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation"
+)
+
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().Create()
+}
+`,
+			pkg:            "goravel/app/console/hooks",
+			key:            "migrate",
+			hook:           "&hooks.AuditLog{}",
+			wantRegistered: true,
+			expectedApp: `package bootstrap
+
+import (
+	contractsconsole "github.com/goravel/framework/contracts/console"
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation"
+	"goravel/app/console/hooks"
+)
+
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().
+		WithCommandHooks(func() map[string][]contractsconsole.CommandHook {
+			return map[string][]contractsconsole.CommandHook{
+				"migrate": {
+					&hooks.AuditLog{},
+				},
+			}
+		}).Create()
+}
+`,
+		},
+		{
+			name: "report an error without touching imports when the hooks call cannot be edited",
+			appContent: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/console"
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation"
+)
+
+func commandHooks() map[string][]console.CommandHook {
+	return nil
+}
+
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithCommandHooks(commandHooks).Create()
+}
+`,
+			pkg:            "goravel/app/console/hooks",
+			key:            "migrate",
+			hook:           "&hooks.AuditLog{}",
+			wantRegistered: false,
+			wantErr:        "could not be edited",
+			expectedApp: `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/console"
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation"
+)
+
+func commandHooks() map[string][]console.CommandHook {
+	return nil
+}
+
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithCommandHooks(commandHooks).Create()
 }
 `,
 		},
@@ -453,9 +585,10 @@ func Boot() foundation.Application {
 	return foundation.NewApplication()
 }
 `,
-			pkg:  "goravel/app/console/hooks",
-			key:  "migrate",
-			hook: "&hooks.AuditLog{}",
+			pkg:            "goravel/app/console/hooks",
+			key:            "migrate",
+			hook:           "&hooks.AuditLog{}",
+			wantRegistered: false,
 			expectedApp: `package bootstrap
 
 import (
@@ -480,11 +613,21 @@ func Boot() foundation.Application {
 				assert.NoError(t, supportfile.Remove(bootstrapDir))
 			}()
 
-			assert.NoError(t, AddCommandHook(tt.pkg, tt.key, tt.hook))
+			registered, err := AddCommandHook(tt.pkg, tt.key, tt.hook)
+			if tt.wantErr != "" {
+				assert.ErrorContains(t, err, tt.wantErr)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, tt.wantRegistered, registered)
 
 			appContent, err := supportfile.GetContent(appFile)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expectedApp, appContent)
+
+			if tt.hookOccurrences > 0 {
+				assert.Equal(t, tt.hookOccurrences, strings.Count(appContent, tt.hook))
+			}
 		})
 	}
 }

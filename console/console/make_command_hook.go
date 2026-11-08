@@ -69,7 +69,7 @@ func (r *MakeCommandHook) makeOne(ctx console.Context, name, commandKey string) 
 		return err
 	}
 
-	commandKey, err = r.commandKey(ctx, commandKey)
+	key, err := r.resolveCommandKey(ctx, commandKey)
 	if err != nil {
 		return err
 	}
@@ -81,14 +81,21 @@ func (r *MakeCommandHook) makeOne(ctx console.Context, name, commandKey string) 
 	ctx.Success("Command hook created successfully")
 
 	if !env.IsBootstrapSetup() {
-		ctx.Warning("Command hook created but not registered, add it to WithCommandHooks in bootstrap/app.go manually")
+		r.warnNotRegistered(ctx)
 
 		return nil
 	}
 
 	hook := fmt.Sprintf("&%s.%s{}", make.GetPackageName(), make.GetStructName())
-	if err := modify.AddCommandHook(make.GetPackageImportPath(), commandKey, hook); err != nil {
+	registered, err := modify.AddCommandHook(make.GetPackageImportPath(), key, hook)
+	if err != nil {
 		return errors.ConsoleCommandHookRegisterFailed.Args(make.GetSignature(), err)
+	}
+
+	if !registered {
+		r.warnNotRegistered(ctx)
+
+		return nil
 	}
 
 	ctx.Success("Command hook registered successfully")
@@ -96,9 +103,13 @@ func (r *MakeCommandHook) makeOne(ctx console.Context, name, commandKey string) 
 	return nil
 }
 
-// commandKey returns the key given with --command, otherwise it prompts for one
-// with "*" as the default.
-func (r *MakeCommandHook) commandKey(ctx console.Context, key string) (string, error) {
+func (r *MakeCommandHook) warnNotRegistered(ctx console.Context) {
+	ctx.Warning("Command hook created but not registered, add it to WithCommandHooks in bootstrap/app.go manually")
+}
+
+// resolveCommandKey returns the key given with --command, otherwise it prompts
+// for one with "*" as the default.
+func (r *MakeCommandHook) resolveCommandKey(ctx console.Context, key string) (string, error) {
 	if key = strings.TrimSpace(key); key != "" {
 		return key, nil
 	}

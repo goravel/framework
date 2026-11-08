@@ -31,27 +31,36 @@ func AddCommand(pkg, command string) error {
 	return handler.AddItem(pkg, command)
 }
 
-// AddCommandHook registers a command hook in bootstrap/app.go under a command
-// signature or '*' pattern, e.g. "migrate" or "make:*". When the
-// foundation.Setup() chain has no WithCommandHooks call, it is created first.
-// It returns nil when bootstrap/app.go has no foundation.Setup() chain.
-func AddCommandHook(pkg, key, hook string) error {
+// AddCommandHook registers a hook in bootstrap/app.go under a command signature
+// or '*' pattern, e.g. "migrate" or "make:*". It creates the WithCommandHooks
+// call when missing and reports whether the hook is in the chain afterwards. A
+// file without a foundation.Setup() chain returns false without an error.
+func AddCommandHook(pkg, key, hook string) (bool, error) {
 	appFilePath := path.Bootstrap("app.go")
 
 	if !supportfile.Contains(appFilePath, "foundation.Setup().") {
-		return nil
+		return false, nil
 	}
 
-	if err := addImportsToFile(appFilePath, pkg); err != nil {
-		return err
+	consoleName := "console"
+	registered := false
+
+	if err := GoFile(appFilePath).
+		FindOrCreate(match.Imports(), createImport).
+		Modify(captureImportName(consolePackageImportPath, &consoleName)).
+		Find(match.FoundationSetup()).
+		Modify(foundationSetupCommandHook(key, hook, &consoleName, &registered)).
+		FindOrCreate(match.Imports(), createImport).
+		Modify(addCommandHookImports(pkg, &registered)).
+		Apply(); err != nil {
+		return false, err
 	}
 
-	// []console.CommandHook is spelled out when WithCommandHooks is created.
-	if err := addImportsToFile(appFilePath, "github.com/goravel/framework/contracts/console"); err != nil {
-		return err
+	if !registered {
+		return false, errors.PackageCommandHookNotRegistered.Args(hook)
 	}
 
-	return GoFile(appFilePath).Find(match.FoundationSetup()).Modify(foundationSetupCommandHook(key, hook)).Apply()
+	return true, nil
 }
 
 // AddFilter adds filter to the foundation.Setup() chain in the Boot function.
