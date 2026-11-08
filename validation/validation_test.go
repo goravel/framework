@@ -226,15 +226,25 @@ func TestMakeRuleParameterCount(t *testing.T) {
 	}{
 		{"error when required_if has no parameters", map[string]any{"role": "required_if"}, errors.ValidationRuleMissingParameters},
 		{"error when required_if has only the other field", map[string]any{"role": "required_if:type"}, errors.ValidationRuleMissingParameters},
-		{"error when required_if has an empty parameter segment", map[string]any{"role": "required_if::"}, errors.ValidationRuleMissingParameters},
+		{"error when required_if has a single parameter", map[string]any{"role": "required_if::"}, errors.ValidationRuleMissingParameters},
 		{"error when required_unless has no parameters", map[string]any{"role": "required_unless"}, errors.ValidationRuleMissingParameters},
 		{"error when required_unless has only the other field", map[string]any{"role": "required_unless:type"}, errors.ValidationRuleMissingParameters},
 		{"error when required_if_accepted has no parameters", map[string]any{"role": "required_if_accepted"}, errors.ValidationRuleMissingParameters},
 		{"error when required_if_declined has no parameters", map[string]any{"role": "required_if_declined"}, errors.ValidationRuleMissingParameters},
+		{"error when accepted_if has only the other field", map[string]any{"role": "accepted_if:type"}, errors.ValidationRuleMissingParameters},
+		{"error when prohibited_if has no parameters", map[string]any{"role": "prohibited_if"}, errors.ValidationRuleMissingParameters},
+		{"error when present_if has no parameters", map[string]any{"role": "present_if"}, errors.ValidationRuleMissingParameters},
+		{"error when missing_if has no parameters", map[string]any{"role": "missing_if"}, errors.ValidationRuleMissingParameters},
+		{"error when exclude_if has only the other field", map[string]any{"role": "exclude_if:type"}, errors.ValidationRuleMissingParameters},
+		{"error when prohibited_if_accepted has no parameters", map[string]any{"role": "prohibited_if_accepted"}, errors.ValidationRuleMissingParameters},
+		{"error when present_with has no parameters", map[string]any{"role": "present_with"}, errors.ValidationRuleMissingParameters},
+		{"error when same has no parameters", map[string]any{"role": "same"}, errors.ValidationRuleMissingParameters},
+		{"error when after has no parameters", map[string]any{"role": "after"}, errors.ValidationRuleMissingParameters},
 		{"pass when required_if has field and value", map[string]any{"role": "required_if:type,company"}, nil},
 		{"pass when required_if has field and several values", map[string]any{"role": "required_if:type,company,person"}, nil},
+		{"pass when required_if has an empty comparison value", map[string]any{"role": "required_if:type,"}, nil},
 		{"pass when a param is a slice rule string", map[string]any{"role": []string{"required", "required_if:type,company"}}, nil},
-		// Not guarded, so they stay aligned with Laravel and keep parsing.
+		// Laravel does not guard these, so they keep parsing with no parameters.
 		{"pass when required_with has no parameters", map[string]any{"role": "required_with"}, nil},
 		{"pass when required_without has no parameters", map[string]any{"role": "required_without"}, nil},
 		{"pass when in has no parameters", map[string]any{"role": "in"}, nil},
@@ -257,6 +267,14 @@ func TestMakeRuleParameterCount(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, validator)
 		})
+	}
+}
+
+func TestMakeRuleParameterCountOrder(t *testing.T) {
+	rules := map[string]any{"zeta": "same", "alpha": "required_if", "middle": "after"}
+	for range 20 {
+		_, err := NewValidation().Make(context.Background(), map[string]any{"zeta": "1", "middle": "1"}, rules)
+		require.EqualError(t, err, "validation rule required_if requires at least 2 parameters")
 	}
 }
 
