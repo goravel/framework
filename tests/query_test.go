@@ -2258,6 +2258,45 @@ func (s *QueryTestSuite) TestFind() {
 	}
 }
 
+func (s *QueryTestSuite) TestFind_StringPrimaryKey() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			entity := UlidEntity{ID: "01AN4Z07BY79KA1307SR9X4MV4", Name: "find_string_primary_key"}
+			s.Nil(query.Query().Create(&entity))
+
+			other := UlidEntity{ID: "01AN4Z07BY79KA1307SR9X4MV5", Name: "find_string_primary_key_other"}
+			s.Nil(query.Query().Create(&other))
+
+			var found UlidEntity
+			s.Nil(query.Query().Find(&found, entity.ID))
+			s.Equal(entity.ID, found.ID)
+			s.Equal(entity.Name, found.Name)
+
+			var foundOrFail UlidEntity
+			s.Nil(query.Query().FindOrFail(&foundOrFail, entity.ID))
+			s.Equal(entity.ID, foundOrFail.ID)
+
+			var notFound UlidEntity
+			s.ErrorIs(query.Query().FindOrFail(&notFound, "01AN4Z07BY79KA1307SR9X4MV6"), errors.OrmRecordNotFound)
+
+			// The value must be bound as a parameter, not concatenated into the SQL.
+			var entities []UlidEntity
+			s.Nil(query.Query().Find(&entities, "1 = 1 OR 1 = 1"))
+			s.Empty(entities)
+
+			// A slice of keys keeps working as before.
+			var entitiesByKeys []UlidEntity
+			s.Nil(query.Query().Find(&entitiesByKeys, []string{entity.ID, other.ID}))
+			s.Len(entitiesByKeys, 2)
+
+			// Conditions with arguments keep working as before.
+			var foundWithCondition UlidEntity
+			s.Nil(query.Query().Find(&foundWithCondition, "id = ?", entity.ID))
+			s.Equal(entity.ID, foundWithCondition.ID)
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestFindOrFail() {
 	for _, query := range s.queries {
 		tests := []struct {
