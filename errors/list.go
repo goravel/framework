@@ -87,6 +87,7 @@ var (
 	ConsoleProvidersNotArray = New("the app.providers configuration is not of type []foundation.ServiceProvider, skipping registering service providers")
 
 	ConsoleCommandHookFlagConflict           = New("command hook flag '%s' conflicts with an existing flag")
+	ConsoleCommandHookRegisterFailed         = New("failed to register command hook '%s': %v")
 	ConsoleCommandPanicInHandle              = New("panic in Handle: %v")
 	ConsoleCommandPanicInAfterHook           = New("panic in After hook: %v")
 	ConsoleCommandRegisterFailed             = New("failed to register command '%s': %v")

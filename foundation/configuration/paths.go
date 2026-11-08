@@ -84,6 +84,12 @@ func (r *Paths) Filters(path string) configuration.Paths {
 	return r
 }
 
+func (r *Paths) Hooks(path string) configuration.Paths {
+	support.Config.Paths.Hooks = path
+
+	return r
+}
+
 func (r *Paths) Jobs(path string) configuration.Paths {
 	support.Config.Paths.Jobs = path
 

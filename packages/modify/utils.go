@@ -9,6 +9,7 @@ import (
 
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages/match"
+	supportfile "github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/path"
 )
 
@@ -28,6 +29,29 @@ func AddCommand(pkg, command string) error {
 
 	handler := newWithSliceHandler(config)
 	return handler.AddItem(pkg, command)
+}
+
+// AddCommandHook registers a command hook in bootstrap/app.go under a command
+// signature or '*' pattern, e.g. "migrate" or "make:*". When the
+// foundation.Setup() chain has no WithCommandHooks call, it is created first.
+// It returns nil when bootstrap/app.go has no foundation.Setup() chain.
+func AddCommandHook(pkg, key, hook string) error {
+	appFilePath := path.Bootstrap("app.go")
+
+	if !supportfile.Contains(appFilePath, "foundation.Setup().") {
+		return nil
+	}
+
+	if err := addImportsToFile(appFilePath, pkg); err != nil {
+		return err
+	}
+
+	// []console.CommandHook is spelled out when WithCommandHooks is created.
+	if err := addImportsToFile(appFilePath, "github.com/goravel/framework/contracts/console"); err != nil {
+		return err
+	}
+
+	return GoFile(appFilePath).Find(match.FoundationSetup()).Modify(foundationSetupCommandHook(key, hook)).Apply()
 }
 
 // AddFilter adds filter to the foundation.Setup() chain in the Boot function.

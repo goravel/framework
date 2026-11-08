@@ -4,6 +4,7 @@ import (
 	"go/token"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/dave/dst"
@@ -11,7 +12,9 @@ import (
 
 	contractsmatch "github.com/goravel/framework/contracts/packages/match"
 	"github.com/goravel/framework/contracts/packages/modify"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages/match"
+	"github.com/goravel/framework/support/color"
 	supportfile "github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/path"
 )
@@ -1078,6 +1081,208 @@ func foundationSetupMiddleware(middleware string) modify.Action {
 			createWithMiddleware(setupCall, parentOfSetup, middlewareExpr)
 		}
 	}
+}
+
+// foundationSetupCommandHook registers a hook in the foundation.Setup() chain,
+// adding WithCommandHooks when it does not exist.
+func foundationSetupCommandHook(key, hook string) modify.Action {
+	return func(cursor *dstutil.Cursor) {
+		var callExpr *dst.CallExpr
+
+		switch stmt := cursor.Node().(type) {
+		case *dst.ExprStmt:
+			if !containsFoundationSetup(stmt) {
+				return
+			}
+			var ok bool
+			callExpr, ok = stmt.X.(*dst.CallExpr)
+			if !ok {
+				return
+			}
+		case *dst.ReturnStmt:
+			if !containsFoundationSetup(stmt) {
+				return
+			}
+			if len(stmt.Results) == 0 {
+				return
+			}
+			var ok bool
+			callExpr, ok = stmt.Results[0].(*dst.CallExpr)
+			if !ok {
+				return
+			}
+		default:
+			return
+		}
+
+		setupCall, withCommandHooksCall, parentOfSetup := findFoundationSetupCallsForCommandHook(callExpr)
+		if setupCall == nil || parentOfSetup == nil {
+			return
+		}
+
+		hookExpr := MustParseExpr(hook).(dst.Expr)
+
+		if withCommandHooksCall != nil {
+			appendToExistingCommandHook(withCommandHooksCall, key, hook, hookExpr)
+		} else {
+			createWithCommandHooks(setupCall, parentOfSetup, key, hookExpr)
+		}
+	}
+}
+
+// findFoundationSetupCallsForCommandHook walks the chain to find Setup() and WithCommandHooks() calls.
+func findFoundationSetupCallsForCommandHook(callExpr *dst.CallExpr) (setupCall, withCommandHooksCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr) {
+	current := callExpr
+	for current != nil {
+		if sel, ok := current.Fun.(*dst.SelectorExpr); ok {
+			if innerCall, ok := sel.X.(*dst.CallExpr); ok {
+				if innerSel, ok := innerCall.Fun.(*dst.SelectorExpr); ok {
+					// Check if this is the Setup() call
+					if innerSel.Sel.Name == "Setup" {
+						if ident, ok := innerSel.X.(*dst.Ident); ok && ident.Name == "foundation" {
+							setupCall = innerCall
+							parentOfSetup = sel
+							break
+						}
+					}
+					// Check if this is WithCommandHooks
+					if innerSel.Sel.Name == "WithCommandHooks" {
+						withCommandHooksCall = innerCall
+					}
+				}
+				current = innerCall
+				continue
+			}
+		}
+		break
+	}
+	return
+}
+
+// appendToExistingCommandHook appends the hook to the WithCommandHooks map entry
+// of key, creating the entry when the map has no key yet.
+func appendToExistingCommandHook(withCall *dst.CallExpr, key, hook string, hookExpr dst.Expr) {
+	if len(withCall.Args) == 0 {
+		return
+	}
+
+	funcLit, ok := withCall.Args[0].(*dst.FuncLit)
+	if !ok {
+		return
+	}
+
+	for _, stmt := range funcLit.Body.List {
+		retStmt, ok := stmt.(*dst.ReturnStmt)
+		if !ok || len(retStmt.Results) == 0 {
+			continue
+		}
+
+		mapLit, ok := retStmt.Results[0].(*dst.CompositeLit)
+		if !ok {
+			continue
+		}
+
+		keyExpr := &dst.BasicLit{Kind: token.STRING, Value: strconv.Quote(key)}
+
+		if i := KeyIndex(mapLit.Elts, keyExpr); i >= 0 {
+			kv, ok := mapLit.Elts[i].(*dst.KeyValueExpr)
+			if !ok {
+				return
+			}
+
+			hooksLit, ok := kv.Value.(*dst.CompositeLit)
+			if !ok {
+				return
+			}
+
+			if ExprExists(hooksLit.Elts, hookExpr) {
+				color.Warningln(errors.PackageRegistrationDuplicate.Args(hook))
+
+				return
+			}
+
+			if len(hooksLit.Elts) > 0 {
+				hooksLit.Elts[0].Decorations().Before = dst.NewLine
+			}
+
+			hookExpr.Decorations().Before = dst.NewLine
+			hookExpr.Decorations().After = dst.NewLine
+			hooksLit.Elts = append(hooksLit.Elts, hookExpr)
+
+			return
+		}
+
+		if len(mapLit.Elts) > 0 {
+			mapLit.Elts[0].Decorations().Before = dst.NewLine
+		}
+
+		mapLit.Elts = append(mapLit.Elts, WrapNewline(&dst.KeyValueExpr{
+			Key:   keyExpr,
+			Value: &dst.CompositeLit{Elts: []dst.Expr{hookExpr}},
+		}))
+
+		return
+	}
+}
+
+// createWithCommandHooks inserts a new WithCommandHooks call after foundation.Setup().
+func createWithCommandHooks(setupCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr, key string, hookExpr dst.Expr) {
+	mapType := func() dst.Expr {
+		return &dst.MapType{
+			Key: &dst.Ident{Name: "string"},
+			Value: &dst.ArrayType{
+				Elt: &dst.SelectorExpr{
+					X:   &dst.Ident{Name: "console"},
+					Sel: &dst.Ident{Name: "CommandHook"},
+				},
+			},
+		}
+	}
+
+	hookExpr.Decorations().Before = dst.NewLine
+	hookExpr.Decorations().After = dst.NewLine
+
+	entry := &dst.KeyValueExpr{
+		Key:   &dst.BasicLit{Kind: token.STRING, Value: strconv.Quote(key)},
+		Value: &dst.CompositeLit{Elts: []dst.Expr{hookExpr}},
+	}
+	entry.Decorations().Before = dst.NewLine
+	entry.Decorations().After = dst.NewLine
+
+	mapLit := &dst.CompositeLit{
+		Type: mapType(),
+		Elts: []dst.Expr{entry},
+	}
+
+	funcArg := &dst.FuncLit{
+		Type: &dst.FuncType{
+			Params:  &dst.FieldList{},
+			Results: &dst.FieldList{List: []*dst.Field{{Type: mapType()}}},
+		},
+		Body: &dst.BlockStmt{
+			List: []dst.Stmt{
+				&dst.ReturnStmt{
+					Results: []dst.Expr{mapLit},
+					Decs: dst.ReturnStmtDecorations{
+						NodeDecs: dst.NodeDecs{Before: dst.NewLine, After: dst.NewLine},
+					},
+				},
+			},
+		},
+	}
+
+	newWithCall := &dst.CallExpr{
+		Fun: &dst.SelectorExpr{
+			X: setupCall,
+			Sel: &dst.Ident{
+				Name: "WithCommandHooks",
+				Decs: dst.IdentDecorations{NodeDecs: dst.NodeDecs{Before: dst.NewLine}},
+			},
+		},
+		Args: []dst.Expr{funcArg},
+	}
+
+	parentOfSetup.X = newWithCall
 }
 
 // foundationSetupRouting returns an action that modifies the foundation.Setup() chain to add or update WithRouting.

@@ -105,6 +105,12 @@ func (s *PathsTestSuite) TestFilters() {
 	s.Equal(s.paths, result)
 }
 
+func (s *PathsTestSuite) TestHooks() {
+	result := s.paths.Hooks("custom/hooks")
+	s.Equal("custom/hooks", support.Config.Paths.Hooks)
+	s.Equal(s.paths, result)
+}
+
 func (s *PathsTestSuite) TestJobs() {
 	result := s.paths.Jobs("custom/jobs")
 	s.Equal("custom/jobs", support.Config.Paths.Jobs)
