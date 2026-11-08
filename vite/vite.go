@@ -389,7 +389,7 @@ func (m *manifest) imports(name string, visited map[string]struct{}) []string {
 // stale VITE_DEV_URL.
 func (r *Vite) devServerURL() (string, bool) {
 	if content, err := os.ReadFile(r.HotFile()); err == nil {
-		return strings.TrimRight(strings.TrimSpace(string(content)), "/"), true
+		return normalizeDevURL(string(content)), true
 	}
 
 	r.mu.RLock()

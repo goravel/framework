@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -449,15 +450,18 @@ func TestManifest_ReloadedWhenChanged(t *testing.T) {
 
 func TestVersion_FromManifest(t *testing.T) {
 	public := setupProject(t)
-	writeFile(t, filepath.Join(public, "build", ".vite", "manifest.json"), sampleManifest)
+	manifestPath := filepath.Join(public, "build", ".vite", "manifest.json")
+	writeFile(t, manifestPath, sampleManifest)
 	vite := newTestVite(t, "")
 
 	sum := md5.Sum([]byte(sampleManifest))
 	assert.Equal(t, hex.EncodeToString(sum[:]), vite.Version())
 
-	// Tags shares the cache, so the version is unchanged after a render.
+	// Tags reuses the manifest Version hashed, so a render leaves the version untouched.
+	cached := vite.manifests[manifestPath]
 	_, err := vite.Tags("resources/js/app.js")
 	require.NoError(t, err)
+	assert.Same(t, cached, vite.manifests[manifestPath])
 	assert.Equal(t, hex.EncodeToString(sum[:]), vite.Version())
 }
 
@@ -488,12 +492,29 @@ func TestVersion_MovesWithRebuild(t *testing.T) {
 	require.NoError(t, err)
 	assert.Contains(t, string(tags), "a-1.js")
 
-	// A rebuild changes the manifest size, so Tags and Version are picked up together.
-	writeFile(t, manifestPath, `{"a.js": {"file": "a-2.js"}, "b.js": {"file": "b-1.js"}}`)
-	assert.NotEqual(t, firstVersion, vite.Version())
+	// A rebuild that only swaps the content keeps the size, so the mtime is what
+	// invalidates the cache.
+	sameLength := `{"a.js": {"file": "a-2.js"}}`
+	writeFile(t, manifestPath, sameLength)
+	info, err := os.Stat(manifestPath)
+	require.NoError(t, err)
+	future := info.ModTime().Add(time.Second)
+	require.NoError(t, os.Chtimes(manifestPath, future, future))
+
+	secondVersion := vite.Version()
+	sum := md5.Sum([]byte(sameLength))
+	assert.Equal(t, hex.EncodeToString(sum[:]), secondVersion)
+	assert.NotEqual(t, firstVersion, secondVersion)
 	tags, err = vite.Tags("a.js")
 	require.NoError(t, err)
 	assert.Contains(t, string(tags), "a-2.js")
+
+	// A rebuild that changes the size is picked up as well.
+	writeFile(t, manifestPath, `{"a.js": {"file": "a-3.js"}, "b.js": {"file": "b-1.js"}}`)
+	assert.NotEqual(t, secondVersion, vite.Version())
+	tags, err = vite.Tags("a.js")
+	require.NoError(t, err)
+	assert.Contains(t, string(tags), "a-3.js")
 }
 
 func TestUseBuildDirectory(t *testing.T) {

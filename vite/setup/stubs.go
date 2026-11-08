@@ -40,7 +40,7 @@ func init() {
 
 		// Dev URL
 		//
-		// The dev server URL used when public/hot is absent, usually set through the
+		// The dev server URL used when the hot file is absent, usually set through the
 		// VITE_DEV_URL environment variable. Leave it empty in production so the tags
 		// come from the build manifest.
 		"dev_url": config.Env("VITE_DEV_URL", ""),

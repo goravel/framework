@@ -99,8 +99,8 @@ func (r *InputsCommand) Handle(ctx console.Context) error {
 	}
 
 	inputs := Inputs{
-		Inputs:  r.configured("vite.inputs"),
-		Assets:  r.configured("vite.assets"),
+		Inputs:  r.configuredEntries("vite.inputs"),
+		Assets:  r.configuredEntries("vite.assets"),
 		Dynamic: []DynamicCall{},
 		Paths:   r.paths(),
 	}
@@ -133,14 +133,15 @@ func (r *InputsCommand) paths() Paths {
 	}
 }
 
-// configured returns vite.inputs or vite.assets as []string; empty when the key is
-// unset or no config is bound, so the JSON is always [] and never null.
-func (r *InputsCommand) configured(key string) []string {
+// configuredEntries returns vite.inputs or vite.assets as []string; empty when the
+// key is unset or no config is bound, so the JSON is always [] and never null. The
+// slice is cloned so sorting and compacting never rewrites the config's own value.
+func (r *InputsCommand) configuredEntries(key string) []string {
 	if r.config == nil {
 		return []string{}
 	}
 
-	values := r.config.GetStringSlice(key, []string{})
+	values := slices.Clone(r.config.GetStringSlice(key, []string{}))
 	if values == nil {
 		return []string{}
 	}

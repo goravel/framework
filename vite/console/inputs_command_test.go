@@ -141,13 +141,31 @@ func TestInputsCommand_ConfiguredEntries(t *testing.T) {
 	view.EXPECT().RegisteredViewFS().Return(nil).Once()
 
 	config := mocksconfig.NewConfig(t)
-	config.EXPECT().GetStringSlice("vite.inputs", []string{}).Return([]string{"resources/inertia/app.ts", "resources/inertia/app.ts", "resources/js/app.ts"}).Once()
+	inputs := []string{"resources/inertia/app.ts", "resources/inertia/app.ts", "resources/js/app.ts"}
+	config.EXPECT().GetStringSlice("vite.inputs", []string{}).Return(inputs).Once()
 	config.EXPECT().GetStringSlice("vite.assets", []string{}).Return([]string{"resources/images/logo.svg"}).Once()
 
 	ctx := mocksconsole.NewContext(t)
 	ctx.EXPECT().Line(`{"inputs":["resources/inertia/app.ts","resources/js/app.ts"],"assets":["resources/images/logo.svg"],"dynamic":[],` + defaultPaths + `}`).Once()
 
 	assert.NoError(t, NewInputsCommand(view, defaultVite(t), config).Handle(ctx))
+
+	// The command sorts its own copy, never the value the config stores.
+	assert.Equal(t, []string{"resources/inertia/app.ts", "resources/inertia/app.ts", "resources/js/app.ts"}, inputs)
+}
+
+func TestInputsCommand_NilConfig(t *testing.T) {
+	setupAppViews(t, nil)
+
+	view := mocksview.NewView(t)
+	view.EXPECT().Funcs().Return(template.FuncMap{}).Once()
+	view.EXPECT().RegisteredViews().Return(nil).Once()
+	view.EXPECT().RegisteredViewFS().Return(nil).Once()
+
+	ctx := mocksconsole.NewContext(t)
+	ctx.EXPECT().Line(`{"inputs":[],"assets":[],"dynamic":[],` + defaultPaths + `}`).Once()
+
+	assert.NoError(t, NewInputsCommand(view, defaultVite(t), nil).Handle(ctx))
 }
 
 func TestInputsCommand_Errors(t *testing.T) {
