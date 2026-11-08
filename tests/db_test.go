@@ -876,6 +876,29 @@ func (s *DBTestSuite) TestOrderBy() {
 	}
 }
 
+func (s *DBTestSuite) TestOrderByRejectsUnsafeInput() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{{Name: "order_unsafe_product"}})
+
+			var name string
+			s.ErrorIs(query.DB().Table("products").OrderBy("id; DROP TABLE products").Value("name", &name),
+				errors.DatabaseInvalidOrderByColumn)
+			s.ErrorIs(query.DB().Table("products").OrderBy("LOWER(name)").Value("name", &name),
+				errors.DatabaseInvalidOrderByColumn)
+			s.ErrorIs(query.DB().Table("products").OrderBy("id", "DESC NULLS LAST").Value("name", &name),
+				errors.DatabaseInvalidOrderByDirection)
+
+			s.NoError(query.DB().Table("products").OrderByRaw("LOWER(name)").Value("name", &name))
+			s.Equal("order_unsafe_product", name)
+
+			count, err := query.DB().Table("products").Count()
+			s.NoError(err)
+			s.Equal(int64(1), count)
+		})
+	}
+}
+
 func (s *DBTestSuite) TestOffset() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {

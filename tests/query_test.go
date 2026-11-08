@@ -3079,6 +3079,36 @@ func (s *QueryTestSuite) TestOrderBy() {
 	}
 }
 
+func (s *QueryTestSuite) TestOrderByRejectsUnsafeInput() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			user := User{Name: "order_unsafe_user", Avatar: "order_unsafe_avatar"}
+			s.Nil(query.Query().Create(&user))
+
+			var users []User
+			s.ErrorIs(query.Query().Where("name = ?", "order_unsafe_user").OrderBy("id; DROP TABLE users").Get(&users),
+				errors.DatabaseInvalidOrderByColumn)
+			s.ErrorIs(query.Query().Where("name = ?", "order_unsafe_user").OrderBy("LOWER(name)").Get(&users),
+				errors.DatabaseInvalidOrderByColumn)
+			s.ErrorIs(query.Query().Where("name = ?", "order_unsafe_user").OrderBy("id", "DESC NULLS LAST").Get(&users),
+				errors.DatabaseInvalidOrderByDirection)
+
+			// OrderByRaw is the escape hatch for expressions
+			s.Nil(query.Query().Where("name = ?", "order_unsafe_user").OrderByRaw("LOWER(name)").Get(&users))
+			s.Len(users, 1)
+
+			// a plain identifier still works and is quoted on the Postgres path
+			s.Nil(query.Query().Where("name = ?", "order_unsafe_user").OrderBy("id", "DESC").Get(&users))
+			s.Len(users, 1)
+
+			// the table is intact after the rejected statements
+			count, err := query.Query().Model(&User{}).Where("name = ?", "order_unsafe_user").Count()
+			s.Nil(err)
+			s.Equal(int64(1), count)
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestOrderByDesc() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {

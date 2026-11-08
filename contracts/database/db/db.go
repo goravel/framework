@@ -99,10 +99,12 @@ type Query interface {
 	// Offset specifies the number of records to skip before starting to return the records.
 	Offset(offset uint64) Query
 	// OrderBy specifies the order should be ascending.
+	// The column must be a plain column name (group, users.group) and the direction must be ASC or DESC,
+	// anything else fails and must go through OrderByRaw.
 	OrderBy(column string, directions ...string) Query
 	// OrderByDesc specifies the order should be descending.
 	OrderByDesc(column string) Query
-	// OrderByRaw specifies the order should be raw.
+	// OrderByRaw specifies the order should be raw. It is put into the SQL as is, so never pass user input to it.
 	OrderByRaw(raw string) Query
 	// OrWhere adds an "or where" clause to the query.
 	OrWhere(query any, args ...any) Query

@@ -135,12 +135,16 @@ type Query interface {
 	Omit(columns ...string) Query
 	// Order specifies the order in which the results should be returned.
 	// DEPRECATED Use OrderByRaw instead.
+	// Order is raw by definition, so never pass user input to it.
 	Order(value any) Query
 	// OrderBy specifies the order should be ascending.
+	// The column must be a plain column name (group, users.group) and the direction must be ASC or DESC.
+	// A plain column is quoted by the connection that runs the query; anything else fails and must go
+	// through OrderByRaw.
 	OrderBy(column string, direction ...string) Query
 	// OrderByDesc specifies the order should be descending.
 	OrderByDesc(column string) Query
-	// OrderByRaw specifies the order should be raw.
+	// OrderByRaw specifies the order should be raw. It is put into the SQL as is, so never pass user input to it.
 	OrderByRaw(raw string) Query
 	// OrWhere add an "or where" clause to the query.
 	OrWhere(query any, args ...any) Query

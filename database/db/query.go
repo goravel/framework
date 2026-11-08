@@ -513,7 +513,7 @@ func (r *Query) InsertGetID(data any) (int64, error) {
 
 func (r *Query) Latest(column ...string) db.Query {
 	col := "created_at"
-	if len(column) > 0 {
+	if len(column) > 0 && column[0] != "" {
 		col = column[0]
 	}
 
@@ -552,22 +552,33 @@ func (r *Query) Offset(offset uint64) db.Query {
 }
 
 func (r *Query) OrderBy(column string, directions ...string) db.Query {
-	direction := "ASC"
+	direction := ""
 	if len(directions) > 0 {
 		direction = directions[0]
 	}
 
 	q := r.clone()
-	q.conditions.OrderBy = deep.Append(q.conditions.OrderBy, column+" "+direction)
+
+	// The builder puts the column and the direction into the SQL as is, so it only accepts values it can verify.
+	// Anything else has to go through OrderByRaw, which is raw by definition.
+	if !utils.IsPlainIdentifier(column) {
+		q.err = errors.DatabaseInvalidOrderByColumn.Args(column)
+		return q
+	}
+
+	normalizedDirection, ok := utils.NormalizeOrderDirection(direction)
+	if !ok {
+		q.err = errors.DatabaseInvalidOrderByDirection.Args(direction)
+		return q
+	}
+
+	q.conditions.OrderBy = deep.Append(q.conditions.OrderBy, column+" "+normalizedDirection)
 
 	return q
 }
 
 func (r *Query) OrderByDesc(column string) db.Query {
-	q := r.clone()
-	q.conditions.OrderBy = deep.Append(q.conditions.OrderBy, column+" DESC")
-
-	return q
+	return r.OrderBy(column, "DESC")
 }
 
 func (r *Query) OrderByRaw(raw string) db.Query {

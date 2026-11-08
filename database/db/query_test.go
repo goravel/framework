@@ -953,6 +953,18 @@ func (s *QueryTestSuite) TestLatest() {
 		err := s.query.Where("age", 25).Latest("name").First(&user)
 		s.Nil(err)
 	})
+
+	s.Run("empty column falls back to created_at", func() {
+		var user TestUser
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().GetContext(s.ctx, &user, "SELECT * FROM users WHERE age = ? ORDER BY created_at DESC", 25).Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE age = ? ORDER BY created_at DESC", 25).Return("SELECT * FROM users WHERE age = 25 ORDER BY created_at DESC").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 ORDER BY created_at DESC", int64(1), nil).Return().Once()
+
+		err := s.query.Where("age", 25).Latest("").First(&user)
+		s.Nil(err)
+	})
 }
 
 func (s *QueryTestSuite) TestLeftJoin() {
@@ -1059,6 +1071,26 @@ func (s *QueryTestSuite) TestOrderByRaw() {
 
 	err := s.query.Where("age", 25).OrderBy("name").OrderByRaw("age DESC, id ASC").Get(&users)
 	s.Nil(err)
+}
+
+func (s *QueryTestSuite) TestOrderByValidation() {
+	s.Equal([]string{"users.age ASC"}, s.query.OrderBy("users.age").(*Query).conditions.OrderBy)
+	s.Equal([]string{"age ASC", "id DESC"}, s.query.OrderBy("age").OrderBy("id", "desc").(*Query).conditions.OrderBy)
+
+	s.ErrorIs(s.query.OrderBy("LOWER(name)").(*Query).err, errors.DatabaseInvalidOrderByColumn)
+	s.ErrorIs(s.query.OrderBy("data->name").(*Query).err, errors.DatabaseInvalidOrderByColumn)
+	s.ErrorIs(s.query.OrderBy("id; DROP TABLE users").(*Query).err, errors.DatabaseInvalidOrderByColumn)
+	s.ErrorIs(s.query.OrderByDesc("LOWER(name)").(*Query).err, errors.DatabaseInvalidOrderByColumn)
+	s.ErrorIs(s.query.OrderBy("order", "DESC NULLS LAST").(*Query).err, errors.DatabaseInvalidOrderByDirection)
+	s.ErrorIs(s.query.OrderBy("id", "ASC; DROP TABLE users").(*Query).err, errors.DatabaseInvalidOrderByDirection)
+}
+
+func (s *QueryTestSuite) TestOrderByRejectsUnsafeInput() {
+	// No builder expectation: the error must be returned before the driver is called.
+	var users []TestUser
+	s.ErrorIs(s.query.Where("age", 25).OrderBy("id; DROP TABLE users").Get(&users), errors.DatabaseInvalidOrderByColumn)
+	s.ErrorIs(s.query.Where("age", 25).OrderBy("LOWER(name)").Get(&users), errors.DatabaseInvalidOrderByColumn)
+	s.ErrorIs(s.query.Where("age", 25).OrderBy("id", "DESC NULLS LAST").Get(&users), errors.DatabaseInvalidOrderByDirection)
 }
 
 func (s *QueryTestSuite) TestOrWhere() {
