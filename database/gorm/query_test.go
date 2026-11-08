@@ -1481,21 +1481,23 @@ func TestQuoteColumns(t *testing.T) {
 }
 
 func TestOrderByValidation(t *testing.T) {
-	newQuery := func() *Query {
-		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, nil, nil)
+	newQuery := func(grammar contractsdriver.Grammar) *Query {
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, grammar, nil, nil, nil, nil)
 	}
 
 	tests := []struct {
 		name          string
 		column        string
 		direction     []string
+		jsonSelector  string
 		expectedOrder []any
 		expectedError error
 	}{
 		{name: "plain column", column: "group", expectedOrder: []any{clause.OrderByColumn{Column: clause.Column{Name: "group"}}}},
 		{name: "plain column desc", column: "group", direction: []string{"desc"}, expectedOrder: []any{clause.OrderByColumn{Column: clause.Column{Name: "group"}, Desc: true}}},
+		{name: "json selector", column: "data->name", jsonSelector: "data->name", expectedOrder: []any{"json_extract(`data`, '$.name') ASC"}},
+		{name: "json selector desc", column: "data->name", direction: []string{"desc"}, jsonSelector: "data->name", expectedOrder: []any{"json_extract(`data`, '$.name') DESC"}},
 		{name: "expression", column: "LOWER(name)", expectedError: errors.DatabaseInvalidOrderByColumn.Args("LOWER(name)")},
-		{name: "json selector", column: "data->name", expectedError: errors.DatabaseInvalidOrderByColumn.Args("data->name")},
 		{name: "quoted column", column: "`group`", expectedError: errors.DatabaseInvalidOrderByColumn.Args("`group`")},
 		{name: "injected column", column: "id; DROP TABLE users", expectedError: errors.DatabaseInvalidOrderByColumn.Args("id; DROP TABLE users")},
 		{name: "nulls direction", column: "order", direction: []string{"DESC NULLS LAST"}, expectedError: errors.DatabaseInvalidOrderByDirection.Args("DESC NULLS LAST")},
@@ -1504,7 +1506,14 @@ func TestOrderByValidation(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			query := newQuery().OrderBy(test.column, test.direction...).(*Query)
+			var grammar contractsdriver.Grammar
+			if test.jsonSelector != "" {
+				mockGrammar := mocksdriver.NewGrammar(t)
+				mockGrammar.EXPECT().CompileJsonSelector(test.jsonSelector).Return("json_extract(`data`, '$.name')").Once()
+				grammar = mockGrammar
+			}
+
+			query := newQuery(grammar).OrderBy(test.column, test.direction...).(*Query)
 
 			if test.expectedError != nil {
 				assert.EqualError(t, query.conditions.err, test.expectedError.Error())

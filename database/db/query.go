@@ -559,17 +559,22 @@ func (r *Query) OrderBy(column string, directions ...string) db.Query {
 
 	q := r.clone()
 
-	// The builder puts the column and the direction into the SQL as is, so it only accepts values it can verify.
-	// Anything else has to go through OrderByRaw, which is raw by definition.
-	if !utils.IsPlainIdentifier(column) {
+	// The builder puts the column and the direction into the SQL as is, so it only accepts values it can verify:
+	// a plain column, or a JSON selector compiled by the grammar. Anything else has to go through OrderByRaw.
+	jsonSelector := utils.IsJsonSelector(column)
+	if !jsonSelector && !utils.IsPlainIdentifier(column) {
 		q.err = errors.Join(q.err, errors.DatabaseInvalidOrderByColumn.Args(column))
 		return q
 	}
 
-	normalizedDirection, ok := utils.NormalizeOrderDirection(direction)
-	if !ok {
-		q.err = errors.Join(q.err, errors.DatabaseInvalidOrderByDirection.Args(direction))
+	normalizedDirection, err := utils.NormalizeOrderDirection(direction)
+	if err != nil {
+		q.err = errors.Join(q.err, err)
 		return q
+	}
+
+	if jsonSelector {
+		column = r.grammar.CompileJsonSelector(column)
 	}
 
 	q.conditions.OrderBy = deep.Append(q.conditions.OrderBy, column+" "+normalizedDirection)

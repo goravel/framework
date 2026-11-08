@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/goravel/framework/errors"
 )
 
 func TestIsPlainIdentifier(t *testing.T) {
@@ -39,28 +41,58 @@ func TestIsPlainIdentifier(t *testing.T) {
 	}
 }
 
+func TestIsJsonSelector(t *testing.T) {
+	tests := []struct {
+		name     string
+		column   string
+		expected bool
+	}{
+		{name: "json selector", column: "data->name", expected: true},
+		{name: "table qualified json selector", column: "users.data->name", expected: true},
+		{name: "nested json selector", column: "data->nested->name", expected: true},
+		{name: "plain column", column: "data", expected: false},
+		{name: "trailing arrow", column: "data->", expected: false},
+		{name: "single dash", column: "data-name", expected: false},
+		{name: "function", column: "LOWER(data->name)", expected: false},
+		{name: "with direction", column: "data->name desc", expected: false},
+		{name: "injection", column: "data->name; DROP TABLE users", expected: false},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.expected, IsJsonSelector(test.column))
+		})
+	}
+}
+
 func TestNormalizeOrderDirection(t *testing.T) {
 	tests := []struct {
 		name               string
 		direction          string
 		expectedNormalized string
-		expectedOK         bool
+		expectedError      error
 	}{
-		{name: "empty means ascending", direction: "", expectedNormalized: "ASC", expectedOK: true},
-		{name: "lower case ascending", direction: "asc", expectedNormalized: "ASC", expectedOK: true},
-		{name: "descending with surrounding spaces", direction: "  Desc  ", expectedNormalized: "DESC", expectedOK: true},
-		{name: "nulls last", direction: "desc nulls last", expectedOK: false},
-		{name: "nulls first", direction: "ASC NULLS FIRST", expectedOK: false},
-		{name: "two directions", direction: "ASC DESC", expectedOK: false},
-		{name: "injection", direction: "DESC; DROP TABLE users", expectedOK: false},
-		{name: "comma separated", direction: "asc, desc", expectedOK: false},
+		{name: "empty means ascending", direction: "", expectedNormalized: "ASC"},
+		{name: "lower case ascending", direction: "asc", expectedNormalized: "ASC"},
+		{name: "descending with surrounding spaces", direction: "  Desc  ", expectedNormalized: "DESC"},
+		{name: "nulls last", direction: "desc nulls last", expectedError: errors.DatabaseInvalidOrderByDirection.Args("desc nulls last")},
+		{name: "nulls first", direction: "ASC NULLS FIRST", expectedError: errors.DatabaseInvalidOrderByDirection.Args("ASC NULLS FIRST")},
+		{name: "two directions", direction: "ASC DESC", expectedError: errors.DatabaseInvalidOrderByDirection.Args("ASC DESC")},
+		{name: "injection", direction: "DESC; DROP TABLE users", expectedError: errors.DatabaseInvalidOrderByDirection.Args("DESC; DROP TABLE users")},
+		{name: "comma separated", direction: "asc, desc", expectedError: errors.DatabaseInvalidOrderByDirection.Args("asc, desc")},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			normalized, ok := NormalizeOrderDirection(test.direction)
+			normalized, err := NormalizeOrderDirection(test.direction)
 
-			assert.Equal(t, test.expectedOK, ok)
+			if test.expectedError != nil {
+				assert.EqualError(t, err, test.expectedError.Error())
+				assert.Empty(t, normalized)
+				return
+			}
+
+			assert.NoError(t, err)
 			assert.Equal(t, test.expectedNormalized, normalized)
 		})
 	}

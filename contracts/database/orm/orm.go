@@ -139,9 +139,9 @@ type Query interface {
 	// DEPRECATED Use OrderByRaw instead.
 	Order(value any) Query
 	// OrderBy specifies the order should be ascending.
-	// The column must be a plain column name (group, users.group) and the direction must be ASC or DESC.
-	// A plain column is quoted by the connection that runs the query; anything else fails and must go
-	// through OrderByRaw.
+	// The column must be a plain column name (group, users.group) or a JSON selector (data->name), and the
+	// direction must be ASC or DESC. A plain column and a JSON selector are quoted or compiled by the
+	// connection that runs the query; anything else fails and must go through OrderByRaw.
 	OrderBy(column string, direction ...string) Query
 	// OrderByDesc specifies the order should be descending.
 	// The column follows the OrderBy rule.

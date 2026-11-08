@@ -648,16 +648,23 @@ func (r *Query) OrderBy(column string, direction ...string) contractsorm.Query {
 		orderDirection = direction[0]
 	}
 
-	if !utils.IsPlainIdentifier(column) {
+	// A plain column is passed to gorm as a column, so the connection that builds the query quotes it. A JSON
+	// selector is compiled by the grammar, and the direction has to live in the SQL string because gorm ignores
+	// Desc on an expression.
+	jsonSelector := utils.IsJsonSelector(column)
+	if !jsonSelector && !utils.IsPlainIdentifier(column) {
 		return r.withError(errors.DatabaseInvalidOrderByColumn.Args(column))
 	}
 
-	normalizedDirection, ok := utils.NormalizeOrderDirection(orderDirection)
-	if !ok {
-		return r.withError(errors.DatabaseInvalidOrderByDirection.Args(orderDirection))
+	normalizedDirection, err := utils.NormalizeOrderDirection(orderDirection)
+	if err != nil {
+		return r.withError(err)
 	}
 
-	// A plain column is passed to gorm as a column, so the connection that builds the query quotes it.
+	if jsonSelector {
+		return r.addOrder(fmt.Sprintf("%s %s", r.grammar.CompileJsonSelector(column), normalizedDirection))
+	}
+
 	if normalizedDirection == "DESC" {
 		return r.addOrder(clause.OrderByColumn{Column: clause.Column{Name: column}, Desc: true})
 	}

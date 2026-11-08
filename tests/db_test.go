@@ -2360,6 +2360,26 @@ func (s *DBTestSuite) TestJsonWhereClauses() {
 	}
 }
 
+func (s *DBTestSuite) TestOrderByJsonSelector() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			data := []JsonData{
+				{Data: `{"string":"first","int":1}`},
+				{Data: `{"string":"second","int":2}`},
+			}
+			result, err := query.DB().Table("json_data").Insert(&data)
+			s.Equal(int64(2), result.RowsAffected)
+			s.NoError(err)
+
+			var items []JsonData
+			s.NoError(query.DB().Table("json_data").OrderBy("data->string", "desc").Find(&items))
+			s.Len(items, 2)
+			s.JSONEq(data[1].Data, items[0].Data)
+			s.JSONEq(data[0].Data, items[1].Data)
+		})
+	}
+}
+
 func (s *DBTestSuite) TestJsonColumnsUpdate() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {

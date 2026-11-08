@@ -1077,8 +1077,13 @@ func (s *QueryTestSuite) TestOrderByValidation() {
 	s.Equal([]string{"users.age ASC"}, s.query.OrderBy("users.age").(*Query).conditions.OrderBy)
 	s.Equal([]string{"age ASC", "id DESC"}, s.query.OrderBy("age").OrderBy("id", "desc").(*Query).conditions.OrderBy)
 
+	s.mockGrammar.EXPECT().CompileJsonSelector("data->name").Return("json_extract(`data`, '$.name')").Once()
+	s.Equal([]string{"json_extract(`data`, '$.name') ASC"}, s.query.OrderBy("data->name").(*Query).conditions.OrderBy)
+
+	s.mockGrammar.EXPECT().CompileJsonSelector("data->name").Return("json_extract(`data`, '$.name')").Once()
+	s.Equal([]string{"json_extract(`data`, '$.name') DESC"}, s.query.OrderBy("data->name", "desc").(*Query).conditions.OrderBy)
+
 	s.ErrorIs(s.query.OrderBy("LOWER(name)").(*Query).err, errors.DatabaseInvalidOrderByColumn)
-	s.ErrorIs(s.query.OrderBy("data->name").(*Query).err, errors.DatabaseInvalidOrderByColumn)
 	s.ErrorIs(s.query.OrderBy("id; DROP TABLE users").(*Query).err, errors.DatabaseInvalidOrderByColumn)
 	s.ErrorIs(s.query.OrderByDesc("LOWER(name)").(*Query).err, errors.DatabaseInvalidOrderByColumn)
 	s.ErrorIs(s.query.OrderBy("order", "DESC NULLS LAST").(*Query).err, errors.DatabaseInvalidOrderByDirection)
