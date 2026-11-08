@@ -1508,6 +1508,7 @@ func TestOrderByValidation(t *testing.T) {
 
 			if test.expectedError != nil {
 				assert.EqualError(t, query.conditions.err, test.expectedError.Error())
+				assert.Empty(t, query.conditions.order)
 				return
 			}
 

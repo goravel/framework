@@ -89,6 +89,7 @@ type Query interface {
 	// Join specifies JOIN conditions for the query.
 	Join(query string, args ...any) Query
 	// Latest retrieves the latest record from the database, default column is "created_at"
+	// The column follows the OrderBy rule.
 	Latest(column ...string) Query
 	// LeftJoin specifies LEFT JOIN conditions for the query.
 	LeftJoin(query string, args ...any) Query

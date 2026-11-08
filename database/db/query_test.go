@@ -1083,6 +1083,11 @@ func (s *QueryTestSuite) TestOrderByValidation() {
 	s.ErrorIs(s.query.OrderByDesc("LOWER(name)").(*Query).err, errors.DatabaseInvalidOrderByColumn)
 	s.ErrorIs(s.query.OrderBy("order", "DESC NULLS LAST").(*Query).err, errors.DatabaseInvalidOrderByDirection)
 	s.ErrorIs(s.query.OrderBy("id", "ASC; DROP TABLE users").(*Query).err, errors.DatabaseInvalidOrderByDirection)
+
+	// a rejection is joined with an error the chain already carries
+	q := s.query.Where("age", 25).OrWhereColumn("a").OrderBy("LOWER(name)").(*Query)
+	s.ErrorIs(q.err, errors.DatabaseInvalidArgumentNumber)
+	s.ErrorIs(q.err, errors.DatabaseInvalidOrderByColumn)
 }
 
 func (s *QueryTestSuite) TestOrderByRejectsUnsafeInput() {

@@ -115,6 +115,7 @@ type Query interface {
 	// Join specifying JOIN conditions for the query.
 	Join(query string, args ...any) Query
 	// Latest orders the query by the given column descending, default column is "created_at".
+	// The column follows the OrderBy rule.
 	Latest(column ...string) Query
 	// LeftJoin adds a LEFT JOIN to the query. Pass the table and its condition without the keyword,
 	// e.g. "posts ON posts.user_id = users.id", the "LEFT JOIN" keyword is added automatically.
