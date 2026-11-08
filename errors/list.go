@@ -368,14 +368,15 @@ var (
 
 	UnknownFileExtension = New("unknown file extension")
 
-	ValidationDataInvalidType       = New("data must be map[string]any or map[string][]string or struct")
-	ValidationDuplicateFilter       = New("duplicate filter name: %s")
-	ValidationDuplicateRule         = New("duplicate rule name: %s")
-	ValidationEmptyData             = New("data can't be empty")
-	ValidationEmptyRules            = New("rules can't be empty")
-	ValidationFilterRegisterFailed  = New("filter register failed: %v")
-	ValidationInvalidFilterType     = New("invalid filter type for field %s, must be string or []string")
-	ValidationInvalidRuleType       = New("invalid rule type for field %s, must be string or []string")
+	ValidationDataInvalidType      = New("data must be map[string]any or map[string][]string or struct")
+	ValidationDuplicateFilter      = New("duplicate filter name: %s")
+	ValidationDuplicateRule        = New("duplicate rule name: %s")
+	ValidationEmptyData            = New("data can't be empty")
+	ValidationEmptyRules           = New("rules can't be empty")
+	ValidationFilterRegisterFailed = New("filter register failed: %v")
+	ValidationInvalidFilterType    = New("invalid filter type for field %s, must be string or []string")
+	ValidationInvalidRuleType      = New("invalid rule type for field %s, must be string or []string")
+	// Plural is intentional: Laravel's message says "parameters" for every count.
 	ValidationRuleMissingParameters = New("validation rule %s requires at least %d parameters")
 	ValidationRuleRegisterFailed    = New("rule register failed: %v")
 	ValidationUnknownRule           = New("unknown validation rule: %s")

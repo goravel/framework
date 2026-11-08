@@ -274,7 +274,7 @@ func TestMakeRuleParameterCountOrder(t *testing.T) {
 	rules := map[string]any{"zeta": "same", "alpha": "required_if", "middle": "after"}
 	for range 20 {
 		_, err := NewValidation().Make(context.Background(), map[string]any{"zeta": "1", "middle": "1"}, rules)
-		require.EqualError(t, err, "validation rule required_if requires at least 2 parameters")
+		require.EqualError(t, err, "validation rule alpha.required_if requires at least 2 parameters")
 	}
 }
 

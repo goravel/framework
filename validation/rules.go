@@ -227,10 +227,10 @@ var implicitRules = map[string]bool{
 }
 
 // minRuleParameters is the minimum number of parameters a builtin rule needs to
-// evaluate its condition; below that it would pass silently or reject every value.
-// The entries mirror Laravel's requireParameterCount guard: the dependent rules and
-// the comparison rules that take a field name or literal. Size, numeric and database
-// rules are absent because they already fail when a parameter is missing.
+// evaluate its condition. The entries mirror Laravel's requireParameterCount for the
+// dependent rules and the comparison rules that take a field name or literal. The
+// remaining guards Laravel applies — size, numeric, database and pattern rules — are
+// out of scope for this change; a missing parameter there still fails validation.
 var minRuleParameters = map[string]int{
 	"accepted_if":       2,
 	"declined_if":       2,

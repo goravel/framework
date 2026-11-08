@@ -104,7 +104,7 @@ func (r *Validation) Make(ctx context.Context, data any, rules map[string]any, o
 			}
 			if _, ok := builtinRules[pr.Name]; ok {
 				if required, ok := minRuleParameters[pr.Name]; ok && len(pr.Parameters) < required {
-					return nil, errors.ValidationRuleMissingParameters.Args(pr.Name, required)
+					return nil, errors.ValidationRuleMissingParameters.Args(field+"."+pr.Name, required)
 				}
 				continue
 			}
