@@ -578,8 +578,17 @@ func (s *FactoryTestSuite) TestFake_RequestBuildingAssertion() {
 }
 
 func (s *FactoryTestSuite) TestFactory_Reset() {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte("real_response"))
+	}))
+	defer server.Close()
+
+	// Keep the post-Reset call hermetic too.
+	s.factory.factoryConfig.Clients["github"] = Config{BaseUrl: server.URL}
+
 	s.factory.Fake(map[string]any{
-		"https://api.github.com/zen": "fake_response",
+		server.URL + "/zen": "fake_response",
 	})
 
 	req := s.factory.Client("github")
@@ -591,15 +600,14 @@ func (s *FactoryTestSuite) TestFactory_Reset() {
 
 	s.factory.Reset()
 
-	// We expect a real network call (or failure) but definitely NOT the mock
+	// After Reset the request must reach the server, not the mock.
 	reqReal := s.factory.Client("github")
 	respReal, errReal := reqReal.Get("/zen")
+	s.NoError(errReal)
 
-	if errReal == nil {
-		realBody, err := respReal.Body()
-		s.NoError(err)
-		s.NotEqual("fake_response", realBody)
-	}
+	realBody, err := respReal.Body()
+	s.NoError(err)
+	s.Equal("real_response", realBody)
 }
 
 func (s *FactoryTestSuite) TestFactory_AllowStrayRequests() {
@@ -627,11 +635,23 @@ func (s *FactoryTestSuite) TestFactory_AllowStrayRequests() {
 }
 
 func (s *FactoryTestSuite) TestFactory_Assertions_Negatives() {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte("real_server_hit"))
+	}))
+	defer server.Close()
+
+	// Keep the unmatched request off the public API.
+	s.factory.factoryConfig.Clients["github"] = Config{BaseUrl: server.URL}
+
 	s.factory.Fake(nil)
 
 	s.True(s.factory.AssertNothingSent())
-	_, err := s.factory.Client("github").Get("/")
+	resp, err := s.factory.Client("github").Get("/")
 	s.NoError(err)
+	body, err := resp.Body()
+	s.NoError(err)
+	s.Equal("real_server_hit", body)
 	s.False(s.factory.AssertNothingSent())
 
 	s.True(s.factory.AssertNotSent(func(req client.Request) bool {
