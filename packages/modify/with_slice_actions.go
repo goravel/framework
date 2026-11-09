@@ -1032,10 +1032,6 @@ func foundationSetupMiddleware(middleware string) modify.Action {
 	}
 }
 
-// consolePackageImportPath is the contracts/console import the command slices are
-// typed with, shared by AddCommand and the WithCommandHooks helpers.
-const consolePackageImportPath = "github.com/goravel/framework/contracts/console"
-
 // foundationSetupCommandHook registers a hook in the foundation.Setup() chain,
 // adding WithCommandHooks when it does not exist. consoleName is the local name of
 // the console package, registered reports whether the hook is in the chain
@@ -1262,8 +1258,10 @@ func returnedCompositeLit(body *dst.BlockStmt) *dst.CompositeLit {
 	return nil
 }
 
-// withCallCompositeLit returns the composite literal the function literal
-// argument of a With* call returns, or nil when the call does not take one.
+// withCallCompositeLit returns the composite literal returned by the function
+// literal argument of a With* call. It returns nil when the call has no
+// argument, the argument is not a function literal, or no return statement
+// yields a composite literal.
 func withCallCompositeLit(withCall *dst.CallExpr) *dst.CompositeLit {
 	if len(withCall.Args) == 0 {
 		return nil

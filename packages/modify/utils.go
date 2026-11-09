@@ -14,6 +14,10 @@ import (
 	"github.com/goravel/framework/support/path"
 )
 
+// consolePackageImportPath is the contracts/console import the command slices are
+// typed with, shared by AddCommand and the WithCommandHooks helpers.
+const consolePackageImportPath = "github.com/goravel/framework/contracts/console"
+
 // AddCommand adds command to the foundation.Setup() chain in the Boot function.
 func AddCommand(pkg, command string) error {
 	config := withSliceConfig{
