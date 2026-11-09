@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -25,9 +26,20 @@ func TestContainerTestSuite(t *testing.T) {
 
 func (s *ContainerTestSuite) SetupTest() {
 	supportdocker.TestPortUsing = false
-	s.mockDatabaseDriver = mocksdocker.NewDatabaseDriver(s.T())
-	s.mockDatabaseDriver.EXPECT().Driver().Return("test").Once()
-	s.container = NewContainer(s.mockDatabaseDriver)
+	s.container, s.mockDatabaseDriver = s.newMockContainer()
+}
+
+// newMockContainer keeps the registry files in a temp dir, so cleanup here leaves the machine's records alone.
+func (s *ContainerTestSuite) newMockContainer() (*Container, *mocksdocker.DatabaseDriver) {
+	mockDatabaseDriver := mocksdocker.NewDatabaseDriver(s.T())
+	mockDatabaseDriver.EXPECT().Driver().Return("test").Once()
+
+	container := NewContainer(mockDatabaseDriver)
+	tempDir := s.T().TempDir()
+	container.file = filepath.Join(tempDir, "goravel_docker.txt")
+	container.lockFile = filepath.Join(tempDir, "goravel_docker.lock")
+
+	return container, mockDatabaseDriver
 }
 
 func (s *ContainerTestSuite) TestAddAndAll() {
@@ -113,15 +125,28 @@ func (s *ContainerTestSuite) TestCleanupContainers() {
 	s.container.Track()
 
 	s.NoError(CleanupContainers())
-	s.Empty(containers)
+	s.Empty(trackedContainers)
+
+	s.NoError(CleanupContainers())
 }
 
 func (s *ContainerTestSuite) TestCleanupContainersReturnsError() {
 	s.mockDatabaseDriver.EXPECT().Shutdown().Return(assert.AnError).Once()
 	s.container.Track()
-	defer func() {
-		_ = CleanupContainers()
-	}()
 
 	s.ErrorIs(CleanupContainers(), assert.AnError)
+	s.Empty(trackedContainers)
+}
+
+func (s *ContainerTestSuite) TestCleanupContainersStopsEveryContainer() {
+	secondContainer, secondMockDatabaseDriver := s.newMockContainer()
+	secondMockDatabaseDriver.EXPECT().Shutdown().Return(assert.AnError).Once()
+
+	s.mockDatabaseDriver.EXPECT().Shutdown().Return(nil).Once()
+	s.container.Track()
+	secondContainer.Track()
+
+	// The failing container is tracked last, so the successful one only stops if cleanup keeps going.
+	s.ErrorIs(CleanupContainers(), assert.AnError)
+	s.Empty(trackedContainers)
 }
