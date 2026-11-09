@@ -48,7 +48,6 @@ func (s *ServiceProviderTestSuite) TestRegister() {
 	config.EXPECT().GetString("vite.hot_file", DefaultHotFile).Return(DefaultHotFile).Once()
 	config.EXPECT().GetString("vite.build_directory", DefaultBuildDirectory).Return(DefaultBuildDirectory).Once()
 	config.EXPECT().GetString("vite.manifest", DefaultManifestFilename).Return(DefaultManifestFilename).Once()
-	config.EXPECT().GetString("vite.dev_url", "").Return("").Once()
 
 	s.app.EXPECT().Singleton(binding.Vite, mock.Anything).Run(func(_ any, callback func(app foundation.Application) (any, error)) {
 		s.app.EXPECT().MakeConfig().Return(config).Once()

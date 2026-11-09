@@ -75,14 +75,13 @@ type Vite struct {
 	buildDirectory   string
 	buildRoot        string // buildDirectory resolved to an absolute path, once
 	manifestFilename string
-	devURL           string // dev server URL used when the hot file is absent; "" means use the manifest
 
 	manifestMu sync.Mutex
 	manifests  map[string]*manifest
 }
 
-// NewVite reads vite.hot_file, vite.build_directory, vite.manifest and vite.dev_url
-// from the configuration, falling back to the defaults. goravel-vite-plugin reads the
+// NewVite reads vite.hot_file, vite.build_directory and vite.manifest from the
+// configuration, falling back to the defaults. goravel-vite-plugin reads the
 // same values through `artisan vite:inputs`, so config/vite.go is the single source of truth.
 func NewVite(config config.Config) *Vite {
 	v := &Vite{
@@ -97,7 +96,6 @@ func NewVite(config config.Config) *Vite {
 		v.hotFile = config.GetString("vite.hot_file", DefaultHotFile)
 		v.buildDirectory = config.GetString("vite.build_directory", DefaultBuildDirectory)
 		v.manifestFilename = config.GetString("vite.manifest", DefaultManifestFilename)
-		v.devURL = normalizeDevURL(config.GetString("vite.dev_url", ""))
 	}
 
 	v.hotPath = resolveHotPath(v.hotFile)
@@ -128,7 +126,7 @@ func Funcs(v contractsvite.Vite) template.FuncMap {
 
 func (r *Vite) Asset(asset string) (string, error) {
 	asset = normalizeEntry(asset)
-	if url, ok := r.devServerURL(); ok {
+	if url, ok := r.hotURL(); ok {
 		return url + "/" + asset, nil
 	}
 
@@ -194,18 +192,13 @@ func (r *Vite) ManifestFilename() string {
 }
 
 func (r *Vite) IsRunningHot() bool {
-	if info, err := os.Stat(r.HotFile()); err == nil && !info.IsDir() {
-		return true
-	}
+	info, err := os.Stat(r.HotFile())
 
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	return r.devURL != ""
+	return err == nil && !info.IsDir()
 }
 
 func (r *Vite) ReactRefresh() template.HTML {
-	url, ok := r.devServerURL()
+	url, ok := r.hotURL()
 	if !ok {
 		return ""
 	}
@@ -225,8 +218,8 @@ func (r *Vite) Tags(entries ...string) (template.HTML, error) {
 	}
 	entries = normalized
 
-	if url, ok := r.devServerURL(); ok {
-		return r.devTags(url, entries), nil
+	if url, ok := r.hotURL(); ok {
+		return r.hotTags(url, entries), nil
 	}
 
 	m, err := r.manifest()
@@ -270,31 +263,14 @@ func (r *Vite) UseManifestFilename(filename string) *Vite {
 	return r
 }
 
-// UseDevURL sets the dev server URL used when the hot file is absent; empty (the
-// default) resolves assets from the manifest. Like the other setters it lives on
-// *Vite, not the contract: render-time changes would desync goravel-vite-plugin.
-func (r *Vite) UseDevURL(url string) *Vite {
-	r.mu.Lock()
-	r.devURL = normalizeDevURL(url)
-	r.mu.Unlock()
-
-	return r
-}
-
 // normalizeEntry strips a leading slash so "/resources/js/app.js" and
 // "resources/js/app.js" name the same manifest key and dev-server path.
 func normalizeEntry(entry string) string {
 	return strings.TrimPrefix(entry, "/")
 }
 
-// normalizeDevURL trims an env-supplied dev URL and its trailing slash, so
-// "http://localhost:5173/" and "http://localhost:5173" render identical tags.
-func normalizeDevURL(url string) string {
-	return strings.TrimRight(strings.TrimSpace(url), "/")
-}
-
-// devTags loads the Vite client, then every entry from the dev server.
-func (r *Vite) devTags(url string, entries []string) template.HTML {
+// hotTags loads the Vite client, then every entry from the dev server.
+func (r *Vite) hotTags(url string, entries []string) template.HTML {
 	var b strings.Builder
 	b.WriteString(scriptTag(url + "/@vite/client"))
 	for _, entry := range entries {
@@ -384,22 +360,14 @@ func (m *manifest) imports(name string, visited map[string]struct{}) []string {
 	return out
 }
 
-// devServerURL returns the dev server URL: the hot file while it exists, otherwise
-// vite.dev_url. The hot file always wins, so a running `npm run dev` overrides a
-// stale VITE_DEV_URL.
-func (r *Vite) devServerURL() (string, bool) {
-	if content, err := os.ReadFile(r.HotFile()); err == nil {
-		return normalizeDevURL(string(content)), true
-	}
-
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	if r.devURL == "" {
+// hotURL returns the dev server URL while the hot file exists.
+func (r *Vite) hotURL() (string, bool) {
+	content, err := os.ReadFile(r.HotFile())
+	if err != nil {
 		return "", false
 	}
 
-	return r.devURL, true
+	return strings.TrimRight(strings.TrimSpace(string(content)), "/"), true
 }
 
 // assetBase is the public URL of the build directory, prefixed with app.asset_url.

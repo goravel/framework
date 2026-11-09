@@ -80,7 +80,6 @@ func newTestVite(t *testing.T, assetURL string) *Vite {
 	config.EXPECT().GetString("vite.hot_file", DefaultHotFile).Return(DefaultHotFile).Once()
 	config.EXPECT().GetString("vite.build_directory", DefaultBuildDirectory).Return(DefaultBuildDirectory).Once()
 	config.EXPECT().GetString("vite.manifest", DefaultManifestFilename).Return(DefaultManifestFilename).Once()
-	config.EXPECT().GetString("vite.dev_url", "").Return("").Once()
 	config.EXPECT().GetString("app.asset_url").Return(assetURL).Maybe()
 
 	return NewVite(config)
@@ -91,21 +90,17 @@ func TestNewVite_ReadsConfig(t *testing.T) {
 	config.EXPECT().GetString("vite.hot_file", DefaultHotFile).Return("storage/vite.hot").Once()
 	config.EXPECT().GetString("vite.build_directory", DefaultBuildDirectory).Return("dist").Once()
 	config.EXPECT().GetString("vite.manifest", DefaultManifestFilename).Return("my-manifest.json").Once()
-	config.EXPECT().GetString("vite.dev_url", "").Return("http://localhost:5173/").Once()
 
 	setupProject(t)
 	vite := NewVite(config)
 	assert.Equal(t, "storage/vite.hot", vite.hotFile)
 	assert.Equal(t, "dist", vite.BuildDirectory())
 	assert.Equal(t, "my-manifest.json", vite.ManifestFilename())
-	assert.Equal(t, "http://localhost:5173", vite.devURL)
-	assert.True(t, vite.IsRunningHot()) // dev_url counts as a running dev server
 
 	vite = NewVite(nil)
 	assert.Equal(t, DefaultHotFile, vite.hotFile)
 	assert.Equal(t, DefaultBuildDirectory, vite.buildDirectory)
 	assert.Equal(t, DefaultManifestFilename, vite.manifestFilename)
-	assert.Equal(t, "", vite.devURL)
 	assert.False(t, vite.IsRunningHot())
 }
 
@@ -175,46 +170,6 @@ func TestTags_Hot(t *testing.T) {
 			`window.$RefreshSig$ = () => (type) => type;`+
 			`window.__vite_plugin_react_preamble_installed__ = true;</script>`,
 	), vite.ReactRefresh())
-}
-
-func TestDevURL_Tags(t *testing.T) {
-	setupProject(t) // no public/hot is written
-	vite := newTestVite(t, "").UseDevURL("http://[::1]:5173/")
-
-	tags, err := vite.Tags("resources/css/app.css", "/resources/js/app.js")
-	require.NoError(t, err)
-	assert.Equal(t, template.HTML(
-		`<script type="module" src="http://[::1]:5173/@vite/client"></script>`+
-			`<link rel="stylesheet" href="http://[::1]:5173/resources/css/app.css">`+
-			`<script type="module" src="http://[::1]:5173/resources/js/app.js"></script>`,
-	), tags)
-
-	url, err := vite.Asset("resources/images/logo.svg")
-	require.NoError(t, err)
-	assert.Equal(t, "http://[::1]:5173/resources/images/logo.svg", url)
-
-	assert.Contains(t, string(vite.ReactRefresh()), "http://[::1]:5173/@react-refresh")
-}
-
-func TestDevURL_HotFileWins(t *testing.T) {
-	public := setupProject(t)
-	writeFile(t, filepath.Join(public, "hot"), "http://127.0.0.1:5199\n")
-	vite := newTestVite(t, "").UseDevURL("http://localhost:5173")
-
-	tags, err := vite.Tags("resources/js/app.js")
-	require.NoError(t, err)
-	assert.Contains(t, string(tags), "http://127.0.0.1:5199/@vite/client")
-	assert.NotContains(t, string(tags), "localhost:5173")
-}
-
-func TestDevURL_EmptyUsesManifest(t *testing.T) {
-	setupProject(t) // neither hot file nor dev_url
-	vite := newTestVite(t, "")
-
-	assert.False(t, vite.IsRunningHot())
-	tags, err := vite.Tags("resources/js/app.js")
-	require.Error(t, err)
-	assert.Empty(t, tags)
 }
 
 func TestTags_HotEscapesURL(t *testing.T) {
