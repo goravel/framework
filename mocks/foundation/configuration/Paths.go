@@ -596,6 +596,54 @@ func (_c *Paths_Filters_Call) RunAndReturn(run func(string) configuration.Paths)
 	return _c
 }
 
+// Hooks provides a mock function with given fields: path
+func (_m *Paths) Hooks(path string) configuration.Paths {
+	ret := _m.Called(path)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Hooks")
+	}
+
+	var r0 configuration.Paths
+	if rf, ok := ret.Get(0).(func(string) configuration.Paths); ok {
+		r0 = rf(path)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(configuration.Paths)
+		}
+	}
+
+	return r0
+}
+
+// Paths_Hooks_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Hooks'
+type Paths_Hooks_Call struct {
+	*mock.Call
+}
+
+// Hooks is a helper method to define mock.On call
+//   - path string
+func (_e *Paths_Expecter) Hooks(path interface{}) *Paths_Hooks_Call {
+	return &Paths_Hooks_Call{Call: _e.mock.On("Hooks", path)}
+}
+
+func (_c *Paths_Hooks_Call) Run(run func(path string)) *Paths_Hooks_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Paths_Hooks_Call) Return(_a0 configuration.Paths) *Paths_Hooks_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Paths_Hooks_Call) RunAndReturn(run func(string) configuration.Paths) *Paths_Hooks_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Jobs provides a mock function with given fields: path
 func (_m *Paths) Jobs(path string) configuration.Paths {
 	ret := _m.Called(path)
