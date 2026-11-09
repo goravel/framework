@@ -25,6 +25,8 @@ type Paths interface {
 	Factories(path string) Paths
 	// Filters sets the path for the filters directory, default is "app/http/filters".
 	Filters(path string) Paths
+	// Hooks sets the path for the command hooks directory, default is "app/console/hooks".
+	Hooks(path string) Paths
 	// Jobs sets the path for the jobs directory, default is "app/jobs".
 	Jobs(path string) Paths
 	// Lang sets the path for the language files directory, default is "lang".

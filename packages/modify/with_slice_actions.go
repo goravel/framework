@@ -1,17 +1,23 @@
 package modify
 
 import (
+	"bytes"
 	"go/token"
+	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/dave/dst"
+	"github.com/dave/dst/decorator"
 	"github.com/dave/dst/dstutil"
 
 	contractsmatch "github.com/goravel/framework/contracts/packages/match"
 	"github.com/goravel/framework/contracts/packages/modify"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages/match"
+	"github.com/goravel/framework/support/color"
 	supportfile "github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/path"
 )
@@ -378,36 +384,21 @@ func (r *withSliceHandler) removeItemFromFile(pkg, item string) error {
 //	    }
 //	})
 func (r *withSliceHandler) appendToExisting(withCall *dst.CallExpr, itemExpr dst.Expr) {
-	if len(withCall.Args) == 0 {
+	compositeLit := withCallCompositeLit(withCall)
+	if compositeLit == nil {
 		return
 	}
 
-	// Check if the argument is a function literal (new API: func() []Type)
-	funcLit, ok := withCall.Args[0].(*dst.FuncLit)
-	if !ok {
-		return
+	// Add proper formatting for multi-line arrays
+	if len(compositeLit.Elts) > 0 {
+		compositeLit.Elts[0].Decorations().Before = dst.NewLine
 	}
 
-	// Find the return statement and its composite literal
-	for _, stmt := range funcLit.Body.List {
-		if retStmt, ok := stmt.(*dst.ReturnStmt); ok {
-			if len(retStmt.Results) > 0 {
-				if compositeLit, ok := retStmt.Results[0].(*dst.CompositeLit); ok {
-					// Add proper formatting for multi-line arrays
-					if len(compositeLit.Elts) > 0 {
-						compositeLit.Elts[0].Decorations().Before = dst.NewLine
-					}
+	// Add newline before new item and after (for closing brace)
+	itemExpr.Decorations().Before = dst.NewLine
+	itemExpr.Decorations().After = dst.NewLine
 
-					// Add newline before new item and after (for closing brace)
-					itemExpr.Decorations().Before = dst.NewLine
-					itemExpr.Decorations().After = dst.NewLine
-
-					compositeLit.Elts = append(compositeLit.Elts, itemExpr)
-					return
-				}
-			}
-		}
-	}
+	compositeLit.Elts = append(compositeLit.Elts, itemExpr)
 }
 
 // createWithMethod creates a new WithMethod call and inserts it into the chain.
@@ -500,17 +491,22 @@ func (r *withSliceHandler) createWithMethod(setupCall *dst.CallExpr, parentOfSet
 	parentOfSetup.X = newWithCall
 }
 
-// findFoundationSetupCalls walks the chain to find Setup() and WithMethod() calls.
+// findFoundationSetupCalls walks the chain to find Setup() and the configured WithMethod() calls.
+func (r *withSliceHandler) findFoundationSetupCalls(callExpr *dst.CallExpr) (setupCall, withCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr) {
+	return findSetupCalls(callExpr, r.config.withMethodName)
+}
+
+// findSetupCalls walks the chain to find foundation.Setup() and the withMethod call.
 //
 // Example: For a chain like:
 //
-//	foundation.Setup().WithCommands(Commands).WithMigrations(Migrations).Boot()
+//	foundation.Setup().WithCommands(Commands).WithMigrations(Migrations).Create()
 //
-// If withMethodName="WithCommands", returns:
+// With withMethod="WithCommands" it returns:
 //   - setupCall: the CallExpr for "foundation.Setup()"
 //   - withCall: the CallExpr for "WithCommands(Commands)" (if it exists)
-//   - parentOfSetup: the SelectorExpr representing the next method after Setup (e.g., ".WithCommands")
-func (r *withSliceHandler) findFoundationSetupCalls(callExpr *dst.CallExpr) (setupCall, withCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr) {
+//   - parentOfSetup: the SelectorExpr of the method called on Setup, e.g. ".WithCommands"
+func findSetupCalls(callExpr *dst.CallExpr, withMethod string) (setupCall, withCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr) {
 	current := callExpr
 	for current != nil {
 		if sel, ok := current.Fun.(*dst.SelectorExpr); ok {
@@ -525,7 +521,7 @@ func (r *withSliceHandler) findFoundationSetupCalls(callExpr *dst.CallExpr) (set
 						}
 					}
 					// Check if this is the WithMethod
-					if innerSel.Sel.Name == r.config.withMethodName {
+					if innerSel.Sel.Name == withMethod {
 						withCall = innerCall
 					}
 				}
@@ -802,30 +798,15 @@ func (r *withSliceHandler) removeInline(item string) modify.Action {
 //	    }
 //	})
 func (r *withSliceHandler) removeFromExisting(withCall *dst.CallExpr, itemExpr dst.Expr) {
-	if len(withCall.Args) == 0 {
+	compositeLit := withCallCompositeLit(withCall)
+	if compositeLit == nil {
 		return
 	}
 
-	// Check if the argument is a function literal (new API: func() []Type)
-	funcLit, ok := withCall.Args[0].(*dst.FuncLit)
-	if !ok {
-		return
-	}
-
-	// Find the return statement and its composite literal
-	for _, stmt := range funcLit.Body.List {
-		if retStmt, ok := stmt.(*dst.ReturnStmt); ok {
-			if len(retStmt.Results) > 0 {
-				if compositeLit, ok := retStmt.Results[0].(*dst.CompositeLit); ok {
-					// Use slices.DeleteFunc to remove the matching item
-					compositeLit.Elts = slices.DeleteFunc(compositeLit.Elts, func(ex dst.Expr) bool {
-						return match.EqualNode(itemExpr).MatchNode(ex)
-					})
-					return
-				}
-			}
-		}
-	}
+	// Use slices.DeleteFunc to remove the matching item
+	compositeLit.Elts = slices.DeleteFunc(compositeLit.Elts, func(ex dst.Expr) bool {
+		return match.EqualNode(itemExpr).MatchNode(ex)
+	})
 }
 
 // addMiddlewareAppendCall adds a new handler.Append() call to the function literal.
@@ -989,35 +970,6 @@ func createWithMiddleware(setupCall *dst.CallExpr, parentOfSetup *dst.SelectorEx
 	parentOfSetup.X = newWithMiddlewareCall
 }
 
-// findFoundationSetupCallsForMiddleware walks the chain to find Setup() and WithMiddleware() calls.
-func findFoundationSetupCallsForMiddleware(callExpr *dst.CallExpr) (setupCall, withMiddlewareCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr) {
-	current := callExpr
-	for current != nil {
-		if sel, ok := current.Fun.(*dst.SelectorExpr); ok {
-			if innerCall, ok := sel.X.(*dst.CallExpr); ok {
-				if innerSel, ok := innerCall.Fun.(*dst.SelectorExpr); ok {
-					// Check if this is the Setup() call
-					if innerSel.Sel.Name == "Setup" {
-						if ident, ok := innerSel.X.(*dst.Ident); ok && ident.Name == "foundation" {
-							setupCall = innerCall
-							parentOfSetup = sel
-							break
-						}
-					}
-					// Check if this is WithMiddleware
-					if innerSel.Sel.Name == "WithMiddleware" {
-						withMiddlewareCall = innerCall
-					}
-				}
-				current = innerCall
-				continue
-			}
-		}
-		break
-	}
-	return
-}
-
 // findMiddlewareAppendCall finds the handler.Append() call in the function literal.
 func findMiddlewareAppendCall(funcLit *dst.FuncLit) *dst.CallExpr {
 	for _, stmt := range funcLit.Body.List {
@@ -1065,7 +1017,7 @@ func foundationSetupMiddleware(middleware string) modify.Action {
 			return
 		}
 
-		setupCall, withMiddlewareCall, parentOfSetup := findFoundationSetupCallsForMiddleware(callExpr)
+		setupCall, withMiddlewareCall, parentOfSetup := findSetupCalls(callExpr, "WithMiddleware")
 		if setupCall == nil || parentOfSetup == nil {
 			return
 		}
@@ -1077,6 +1029,362 @@ func foundationSetupMiddleware(middleware string) modify.Action {
 		} else {
 			createWithMiddleware(setupCall, parentOfSetup, middlewareExpr)
 		}
+	}
+}
+
+// foundationSetupCommandHook registers a hook in the foundation.Setup() chain,
+// adding WithCommandHooks when it does not exist. consoleName is the local name of
+// the console package, registered reports whether the hook is in the chain
+// afterwards, and namedHook reports a WithCommandHooks argument that must be
+// resolved to its declaration.
+func foundationSetupCommandHook(key, hook string, consoleName *string, registered *bool, namedHook *string) modify.Action {
+	return func(cursor *dstutil.Cursor) {
+		var callExpr *dst.CallExpr
+
+		switch stmt := cursor.Node().(type) {
+		case *dst.ExprStmt:
+			if !containsFoundationSetup(stmt) {
+				return
+			}
+			var ok bool
+			callExpr, ok = stmt.X.(*dst.CallExpr)
+			if !ok {
+				return
+			}
+		case *dst.ReturnStmt:
+			if !containsFoundationSetup(stmt) {
+				return
+			}
+			if len(stmt.Results) == 0 {
+				return
+			}
+			var ok bool
+			callExpr, ok = stmt.Results[0].(*dst.CallExpr)
+			if !ok {
+				return
+			}
+		default:
+			return
+		}
+
+		setupCall, withCommandHooksCall, parentOfSetup := findSetupCalls(callExpr, "WithCommandHooks")
+		if setupCall == nil || parentOfSetup == nil {
+			return
+		}
+
+		hookExpr := MustParseExpr(hook).(dst.Expr)
+
+		if withCommandHooksCall != nil {
+			if len(withCommandHooksCall.Args) > 0 {
+				if ident, ok := withCommandHooksCall.Args[0].(*dst.Ident); ok {
+					*namedHook = ident.Name
+
+					return
+				}
+			}
+
+			*registered = appendToExistingCommandHook(withCommandHooksCall, key, hook, hookExpr)
+
+			return
+		}
+
+		*registered = createWithCommandHooks(setupCall, parentOfSetup, key, *consoleName, hookExpr)
+	}
+}
+
+// appendToExistingCommandHook adds the hook to the WithCommandHooks map of the
+// existing call, creating the entry for key when missing. It reports whether the
+// hook is in the chain.
+func appendToExistingCommandHook(withCall *dst.CallExpr, key, hook string, hookExpr dst.Expr) bool {
+	mapLit := withCallCompositeLit(withCall)
+	if mapLit == nil {
+		return false
+	}
+
+	return appendCommandHookToMap(mapLit, key, hook, hookExpr)
+}
+
+// appendCommandHookToMap adds the hook to the map literal under key, creating
+// the entry when missing. It reports whether the hook is in the map.
+func appendCommandHookToMap(mapLit *dst.CompositeLit, key, hook string, hookExpr dst.Expr) bool {
+	keyExpr := &dst.BasicLit{Kind: token.STRING, Value: strconv.Quote(key)}
+
+	if i := KeyIndex(mapLit.Elts, keyExpr); i >= 0 {
+		kv, ok := mapLit.Elts[i].(*dst.KeyValueExpr)
+		if !ok {
+			return false
+		}
+
+		hooksLit, ok := kv.Value.(*dst.CompositeLit)
+		if !ok {
+			return false
+		}
+
+		if ExprExists(hooksLit.Elts, hookExpr) {
+			color.Warningln(errors.PackageRegistrationDuplicate.Args(hook))
+
+			return true
+		}
+
+		if len(hooksLit.Elts) > 0 {
+			hooksLit.Elts[0].Decorations().Before = dst.NewLine
+		}
+
+		hookExpr.Decorations().Before = dst.NewLine
+		hookExpr.Decorations().After = dst.NewLine
+		hooksLit.Elts = append(hooksLit.Elts, hookExpr)
+
+		return true
+	}
+
+	if len(mapLit.Elts) > 0 {
+		mapLit.Elts[0].Decorations().Before = dst.NewLine
+	}
+
+	mapLit.Elts = append(mapLit.Elts, WrapNewline(&dst.KeyValueExpr{
+		Key:   keyExpr,
+		Value: &dst.CompositeLit{Elts: []dst.Expr{hookExpr}},
+	}))
+
+	return true
+}
+
+// appendToNamedCommandHook resolves name in the bootstrap package at dir and
+// appends hook to the map its declaration returns, leaving app.go untouched. It
+// reports whether the hook was appended and adds the hook package import to the
+// declaration's file.
+func appendToNamedCommandHook(dir, name, pkg, key, hook string) (bool, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return false, err
+	}
+
+	hookExpr := MustParseExpr(hook).(dst.Expr)
+
+	for _, entry := range entries {
+		fileName := entry.Name()
+		if entry.IsDir() || !strings.HasSuffix(fileName, ".go") || strings.HasSuffix(fileName, "_test.go") {
+			continue
+		}
+
+		filePath := filepath.Join(dir, fileName)
+		content, err := supportfile.GetContent(filePath)
+		if err != nil {
+			return false, err
+		}
+
+		file, err := decorator.Parse(content)
+		if err != nil {
+			return false, err
+		}
+
+		mapLit := commandHookMapLit(file, name)
+		if mapLit == nil {
+			continue
+		}
+
+		if !appendCommandHookToMap(mapLit, key, hook, hookExpr) {
+			return false, nil
+		}
+
+		var buf bytes.Buffer
+		if err := decorator.Fprint(&buf, file); err != nil {
+			return false, err
+		}
+
+		if err := supportfile.PutContent(filePath, buf.String()); err != nil {
+			return false, err
+		}
+
+		return true, addImportsToFile(filePath, pkg)
+	}
+
+	return false, nil
+}
+
+// commandHookMapLit returns the map literal returned by the named hook
+// declaration, for either a function or a func-valued var. It returns nil when
+// name has no such declaration or the declaration does not return a literal.
+func commandHookMapLit(file *dst.File, name string) *dst.CompositeLit {
+	for _, decl := range file.Decls {
+		switch decl := decl.(type) {
+		case *dst.FuncDecl:
+			if decl.Name.Name == name && decl.Body != nil {
+				return returnedCompositeLit(decl.Body)
+			}
+		case *dst.GenDecl:
+			if decl.Tok != token.VAR {
+				continue
+			}
+
+			for _, spec := range decl.Specs {
+				valueSpec, ok := spec.(*dst.ValueSpec)
+				if !ok || len(valueSpec.Values) != 1 {
+					continue
+				}
+
+				if !slices.ContainsFunc(valueSpec.Names, func(ident *dst.Ident) bool {
+					return ident.Name == name
+				}) {
+					continue
+				}
+
+				funcLit, ok := valueSpec.Values[0].(*dst.FuncLit)
+				if !ok || funcLit.Body == nil {
+					continue
+				}
+
+				return returnedCompositeLit(funcLit.Body)
+			}
+		}
+	}
+
+	return nil
+}
+
+// returnedCompositeLit returns the first composite literal returned from body.
+func returnedCompositeLit(body *dst.BlockStmt) *dst.CompositeLit {
+	for _, stmt := range body.List {
+		retStmt, ok := stmt.(*dst.ReturnStmt)
+		if !ok || len(retStmt.Results) == 0 {
+			continue
+		}
+
+		if mapLit, ok := retStmt.Results[0].(*dst.CompositeLit); ok {
+			return mapLit
+		}
+	}
+
+	return nil
+}
+
+// withCallCompositeLit returns the composite literal returned by the function
+// literal argument of a With* call. It returns nil when the call has no
+// argument, the argument is not a function literal, or no return statement
+// yields a composite literal.
+func withCallCompositeLit(withCall *dst.CallExpr) *dst.CompositeLit {
+	if len(withCall.Args) == 0 {
+		return nil
+	}
+
+	funcLit, ok := withCall.Args[0].(*dst.FuncLit)
+	if !ok {
+		return nil
+	}
+
+	return returnedCompositeLit(funcLit.Body)
+}
+
+// createWithCommandHooks inserts a new WithCommandHooks call after
+// foundation.Setup(), spelling the hook type with consoleName. It reports whether
+// the call was created.
+func createWithCommandHooks(setupCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr, key, consoleName string, hookExpr dst.Expr) bool {
+	if consoleName == "" {
+		return false
+	}
+
+	mapType := func() dst.Expr {
+		return &dst.MapType{
+			Key: &dst.Ident{Name: "string"},
+			Value: &dst.ArrayType{
+				Elt: &dst.SelectorExpr{
+					X:   &dst.Ident{Name: consoleName},
+					Sel: &dst.Ident{Name: "CommandHook"},
+				},
+			},
+		}
+	}
+
+	hookExpr.Decorations().Before = dst.NewLine
+	hookExpr.Decorations().After = dst.NewLine
+
+	entry := &dst.KeyValueExpr{
+		Key:   &dst.BasicLit{Kind: token.STRING, Value: strconv.Quote(key)},
+		Value: &dst.CompositeLit{Elts: []dst.Expr{hookExpr}},
+	}
+	entry.Decorations().Before = dst.NewLine
+	entry.Decorations().After = dst.NewLine
+
+	mapLit := &dst.CompositeLit{
+		Type: mapType(),
+		Elts: []dst.Expr{entry},
+	}
+
+	funcArg := &dst.FuncLit{
+		Type: &dst.FuncType{
+			Params:  &dst.FieldList{},
+			Results: &dst.FieldList{List: []*dst.Field{{Type: mapType()}}},
+		},
+		Body: &dst.BlockStmt{
+			List: []dst.Stmt{
+				&dst.ReturnStmt{
+					Results: []dst.Expr{mapLit},
+					Decs: dst.ReturnStmtDecorations{
+						NodeDecs: dst.NodeDecs{Before: dst.NewLine, After: dst.NewLine},
+					},
+				},
+			},
+		},
+	}
+
+	newWithCall := &dst.CallExpr{
+		Fun: &dst.SelectorExpr{
+			X: setupCall,
+			Sel: &dst.Ident{
+				Name: "WithCommandHooks",
+				Decs: dst.IdentDecorations{NodeDecs: dst.NodeDecs{Before: dst.NewLine}},
+			},
+		},
+		Args: []dst.Expr{funcArg},
+	}
+
+	parentOfSetup.X = newWithCall
+
+	return true
+}
+
+// captureImportName records the local name of the import at importPath.
+func captureImportName(importPath string, localName *string) modify.Action {
+	return func(cursor *dstutil.Cursor) {
+		decl, ok := cursor.Node().(*dst.GenDecl)
+		if !ok {
+			return
+		}
+
+		for _, spec := range decl.Specs {
+			importSpec, ok := spec.(*dst.ImportSpec)
+			if !ok || importSpec.Path.Value != strconv.Quote(importPath) {
+				continue
+			}
+
+			if importSpec.Name == nil {
+				return
+			}
+
+			if name := importSpec.Name.Name; name == "_" || name == "." {
+				*localName = ""
+			} else {
+				*localName = name
+			}
+
+			return
+		}
+	}
+}
+
+// addCommandHookImports adds the hook package and console imports once the hook
+// is registered.
+func addCommandHookImports(pkg string, registered *bool) modify.Action {
+	addHookPkg := AddImport(pkg)
+	addConsole := AddImport(consolePackageImportPath)
+
+	return func(cursor *dstutil.Cursor) {
+		if !*registered {
+			return
+		}
+
+		addHookPkg(cursor)
+		addConsole(cursor)
 	}
 }
 
@@ -1111,7 +1419,7 @@ func foundationSetupRouting(route string) modify.Action {
 			return
 		}
 
-		setupCall, withRoutingCall, parentOfSetup := findFoundationSetupCallsForRouting(callExpr)
+		setupCall, withRoutingCall, parentOfSetup := findSetupCalls(callExpr, "WithRouting")
 		if setupCall == nil || parentOfSetup == nil {
 			return
 		}
@@ -1158,7 +1466,7 @@ func removeRouteFromSetup(route string) modify.Action {
 			return
 		}
 
-		_, withRoutingCall, _ := findFoundationSetupCallsForRouting(callExpr)
+		_, withRoutingCall, _ := findSetupCalls(callExpr, "WithRouting")
 		if withRoutingCall == nil || len(withRoutingCall.Args) == 0 {
 			return
 		}
@@ -1172,35 +1480,6 @@ func removeRouteFromSetup(route string) modify.Action {
 		routeStmt := &dst.ExprStmt{X: routeExpr}
 		removeRouteFromFuncBody(funcLit.Body, routeStmt)
 	}
-}
-
-// findFoundationSetupCallsForRouting finds the Setup() call and WithRouting() call in the chain.
-func findFoundationSetupCallsForRouting(callExpr *dst.CallExpr) (setupCall *dst.CallExpr, withRoutingCall *dst.CallExpr, parentOfSetup *dst.SelectorExpr) {
-	current := callExpr
-	for current != nil {
-		if sel, ok := current.Fun.(*dst.SelectorExpr); ok {
-			if innerCall, ok := sel.X.(*dst.CallExpr); ok {
-				if innerSel, ok := innerCall.Fun.(*dst.SelectorExpr); ok {
-					// Check if this is the Setup() call
-					if innerSel.Sel.Name == "Setup" {
-						if ident, ok := innerSel.X.(*dst.Ident); ok && ident.Name == "foundation" {
-							setupCall = innerCall
-							parentOfSetup = sel
-							break
-						}
-					}
-					// Check if this is WithRouting
-					if innerSel.Sel.Name == "WithRouting" {
-						withRoutingCall = innerCall
-					}
-				}
-				current = innerCall
-				continue
-			}
-		}
-		break
-	}
-	return
 }
 
 // createWithRouting creates a new WithRouting call and inserts it into the chain.

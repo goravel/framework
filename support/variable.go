@@ -25,6 +25,8 @@ type Paths struct {
 	Factories string
 	// The filters directory path, default is "app/filters".
 	Filters string
+	// The hooks directory path, default is "app/console/hooks".
+	Hooks string
 	// The jobs directory path, default is "app/jobs".
 	Jobs string
 	// The language files directory path, default is "lang".
@@ -102,6 +104,7 @@ var (
 			Facades:       "app/facades",
 			Factories:     "database/factories",
 			Filters:       "app/filters",
+			Hooks:         "app/console/hooks",
 			Jobs:          "app/jobs",
 			Lang:          "lang",
 			Listeners:     "app/listeners",
