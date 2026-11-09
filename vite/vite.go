@@ -24,13 +24,23 @@ import (
 )
 
 const (
-	// DefaultBuildDirectory is where goravel-vite-plugin writes the build, relative to the project root.
-	DefaultBuildDirectory = "public/build"
-	// DefaultHotFile is where goravel-vite-plugin announces the dev server, relative to the project root.
-	DefaultHotFile = "public/hot"
+	defaultBuildSubdirectory = "build"
+	defaultHotFilename       = "hot"
 	// DefaultManifestFilename is where Vite writes the manifest, relative to the build directory.
 	DefaultManifestFilename = ".vite/manifest.json"
 )
+
+// DefaultBuildDirectory returns the default build directory, relative to the
+// project root: the configured public directory joined with "build".
+func DefaultBuildDirectory() string {
+	return path.Join(support.Config.Paths.Public, defaultBuildSubdirectory)
+}
+
+// DefaultHotFile returns the default hot file, relative to the project root: the
+// configured public directory joined with "hot".
+func DefaultHotFile() string {
+	return path.Join(support.Config.Paths.Public, defaultHotFilename)
+}
 
 var _ contractsvite.Vite = (*Vite)(nil)
 
@@ -84,56 +94,39 @@ type Vite struct {
 // configuration, falling back to the defaults. goravel-vite-plugin reads the
 // same values through `artisan vite:inputs`, so config/vite.go is the single source of truth.
 func NewVite(config config.Config) *Vite {
+	defaultHot, defaultBuild := DefaultHotFile(), DefaultBuildDirectory()
 	v := &Vite{
 		config:           config,
-		hotFile:          DefaultHotFile,
-		buildDirectory:   DefaultBuildDirectory,
+		hotFile:          defaultHot,
+		buildDirectory:   defaultBuild,
 		manifestFilename: DefaultManifestFilename,
 		manifests:        make(map[string]*manifest),
 	}
 
 	if config != nil {
-		v.hotFile = config.GetString("vite.hot_file", DefaultHotFile)
-		v.buildDirectory = config.GetString("vite.build_directory", DefaultBuildDirectory)
+		v.hotFile = config.GetString("vite.hot_file", defaultHot)
+		v.buildDirectory = config.GetString("vite.build_directory", defaultBuild)
 		v.manifestFilename = config.GetString("vite.manifest", DefaultManifestFilename)
 	}
 
 	v.hotFile = normalizeEntry(v.hotFile)
 	v.hotPath = resolveHotPath(v.hotFile)
-	v.buildDirectory = normalizeBuildDirectory(v.buildDirectory)
+	v.buildDirectory = normalizeEntry(v.buildDirectory)
 	v.buildRoot = resolveBuildRoot(v.buildDirectory)
 
 	return v
 }
 
-// normalizeBuildDirectory returns the build directory relative to the public
-// directory, as the URL and vite:inputs report it. The project-root path
-// "public/build" becomes "build" when paths.public is "public"; a directory
-// outside the public directory is returned as it is.
-func normalizeBuildDirectory(directory string) string {
-	directory = normalizeEntry(directory)
-
-	public := strings.Trim(support.Config.Paths.Public, "/")
-	switch {
-	case public == "":
-		return directory
-	case directory == public:
-		return ""
-	}
-
-	return strings.TrimPrefix(directory, public+"/")
-}
-
-// resolveHotPath is the absolute path of the hot file, which is always given
-// relative to the project root: a leading slash is trimmed so it can never escape it.
+// resolveHotPath is the absolute path of the hot file, always resolved against the
+// project root.
 func resolveHotPath(hotFile string) string {
 	return paths.Abs(normalizeEntry(hotFile))
 }
 
-// resolveBuildRoot is the absolute path of a build directory already made
-// relative to the public directory, so it always sits inside paths.public.
+// resolveBuildRoot is the absolute path of the build directory, always resolved
+// against the project root, the same way as the hot file.
 func resolveBuildRoot(directory string) string {
-	return paths.Abs(support.Config.Paths.Public, directory)
+	return paths.Abs(normalizeEntry(directory))
 }
 
 // Funcs returns the template functions the service provider registers, for
@@ -194,9 +187,10 @@ func (r *Vite) Content(asset string) (string, error) {
 
 func (r *Vite) BuildDirectory() string {
 	r.mu.RLock()
-	defer r.mu.RUnlock()
+	directory := r.buildDirectory
+	r.mu.RUnlock()
 
-	return r.buildDirectory
+	return paths.PublicRelative(directory)
 }
 
 func (r *Vite) HotFile() string {
@@ -253,14 +247,14 @@ func (r *Vite) Tags(entries ...string) (template.HTML, error) {
 }
 
 // UseBuildDirectory sets the build directory, given relative to the project root
-// as in config/vite.go with the public directory prefix optional; BuildDirectory
-// returns it relative to the public directory. Default "public/build". The setters
-// live on *Vite, not the contract: the shared instance is configured from
-// config/vite.go, which goravel-vite-plugin reads too, so a change at render time
-// would desync the build. They exist for tests and for applications that construct
-// their own Vite.
+// as in config/vite.go; BuildDirectory returns it relative to the public directory.
+// Like the hot file it lives under the public directory. Default "<paths.public>/build".
+// The setters live on *Vite, not the contract: the shared instance is configured
+// from config/vite.go, which goravel-vite-plugin reads too, so a change at render
+// time would desync the build. They exist for tests and for applications that
+// construct their own Vite.
 func (r *Vite) UseBuildDirectory(directory string) *Vite {
-	directory = normalizeBuildDirectory(directory)
+	directory = normalizeEntry(directory)
 	r.mu.Lock()
 	r.buildDirectory = directory
 	r.buildRoot = resolveBuildRoot(directory)
@@ -270,7 +264,7 @@ func (r *Vite) UseBuildDirectory(directory string) *Vite {
 }
 
 // UseHotFile sets the hot file, which is always read from the project root: a
-// leading slash is trimmed so it can never escape it. Default "public/hot".
+// leading slash is trimmed so it can never escape it. Default "<paths.public>/hot".
 func (r *Vite) UseHotFile(hotFile string) *Vite {
 	hotFile = normalizeEntry(hotFile)
 	r.mu.Lock()
@@ -401,7 +395,7 @@ func (r *Vite) hotURL() (string, bool) {
 // It is read once per Tags or Asset call, not once per emitted tag.
 func (r *Vite) assetBase() string {
 	r.mu.RLock()
-	directory := r.buildDirectory
+	directory := paths.PublicRelative(r.buildDirectory)
 	r.mu.RUnlock()
 
 	prefix := ""

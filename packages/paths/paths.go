@@ -175,6 +175,22 @@ func Abs(paths ...string) string {
 	return abs
 }
 
+// PublicRelative returns directory as a public URL sees it: relative to the
+// configured public directory. "public/build" becomes "build" when the public
+// directory is "public"; a directory outside the public directory is returned
+// as it is.
+func PublicRelative(directory string) string {
+	public := strings.Trim(support.Config.Paths.Public, "/")
+	if public == "" {
+		return directory
+	}
+	if directory == public {
+		return ""
+	}
+
+	return strings.TrimPrefix(directory, public+"/")
+}
+
 // pkg extracts the last component of a file path string.
 // For example, "app/http/controllers" returns "controllers".
 func pkg(path string) string {
