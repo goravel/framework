@@ -33,28 +33,11 @@ func init() {
 
 		// Inputs and Assets
 		//
-		// Entries and assets used outside resources/views, such as the Inertia root
-		// template. ` + "`vite:inputs`" + ` merges them with the calls it finds in views.
-		// Inputs are the entries built by ` + "`vite build`" + `, assets are the files passed
-		// to ` + "`viteAsset`" + `. Paths are relative to the project root, for example:
-		//
-		//   "inputs": []string{"resources/inertia/app.ts", "resources/js/app.js"},
+		// Entries and assets used outside views; ` + "`vite:inputs`" + ` merges them with view calls.
+		//   "inputs": []string{"resources/inertia/app.ts"},
 		//   "assets": []string{"resources/images/logo.svg"},
 		"inputs": []string{},
 		"assets": []string{},
-
-		// Dev URL
-		//
-		// The Vite dev server URL, used when the hot file is absent; usually set through
-		// the VITE_DEV_URL environment variable. The dev server writes the hot file when
-		// it starts and removes it when it stops, so it is absent whenever the dev server
-		// is not running, such as in production or a build-only environment. It is also
-		// absent when the dev server runs somewhere the application cannot read that file
-		// from, such as another container or a remote machine; set this to the server's
-		// address, for example "http://localhost:5173", so the tags still reach it. The
-		// hot file wins when both are present. Leave it empty in production so the tags
-		// come from the build manifest.
-		"dev_url": config.Env("VITE_DEV_URL", ""),
 	})
 }
 `
