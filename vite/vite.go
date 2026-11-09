@@ -106,31 +106,48 @@ func NewVite(config config.Config) *Vite {
 	return v
 }
 
-// normalizePath trims a leading slash so "/public/build" and "public/build" agree.
+// normalizePath trims a leading slash from a project-root spelling, so
+// "/public/hot" is read under the project while "/srv/app/hot" stays absolute.
 func normalizePath(value string) string {
-	return strings.TrimPrefix(value, "/")
+	relative := normalizeEntry(value)
+	if relative == value {
+		return value
+	}
+
+	if relative == "hot" || relative == "build" ||
+		relative == support.Config.Paths.Public || strings.HasPrefix(relative, support.Config.Paths.Public+"/") {
+		return relative
+	}
+
+	return value
 }
 
 // normalizeBuildDirectory returns the build directory relative to the public
-// directory. A value that already starts with the public directory, such as
-// "public/build", is read from the project root and stripped back to "build".
+// directory. The project-root spelling, such as the default "public/build", is
+// stripped back to "build"; the conventional "public" prefix is accepted even
+// when paths.public is renamed.
 func normalizeBuildDirectory(directory string) string {
-	directory = normalizePath(directory)
-	if directory == support.Config.Paths.Public {
-		return ""
+	directory = normalizeEntry(directory)
+	for _, prefix := range []string{support.Config.Paths.Public, "public"} {
+		if directory == prefix {
+			return ""
+		}
+
+		directory = strings.TrimPrefix(directory, prefix+"/")
 	}
 
-	return strings.TrimPrefix(directory, support.Config.Paths.Public+"/")
+	return directory
 }
 
-// resolveHotPath is the absolute path of a hot file given relative to the project root.
+// resolveHotPath is the absolute path of a hot file; a relative path is read from
+// the project root and a genuine absolute path is left alone.
 func resolveHotPath(hotFile string) string {
 	return paths.Abs(normalizePath(hotFile))
 }
 
 // resolveBuildRoot is the absolute path of a build directory. The value is relative
-// to the public directory; a value that starts with the public directory, such as
-// "public/build", is accepted and resolves to the same place.
+// to the public directory; the project-root spelling, such as "public/build", is
+// accepted and resolves to the same place.
 func resolveBuildRoot(directory string) string {
 	return paths.Abs(support.Config.Paths.Public, normalizeBuildDirectory(directory))
 }
@@ -251,12 +268,12 @@ func (r *Vite) Tags(entries ...string) (template.HTML, error) {
 	return r.buildTags(m, r.assetBase(), entries)
 }
 
-// UseBuildDirectory sets the build directory relative to the public directory.
-// Default "public/build"; normalization reads "build" and "public/build" alike. The
-// setters live on *Vite, not the contract: the shared instance is configured from
-// config/vite.go, which goravel-vite-plugin reads too, so a change at render time
-// would desync the build. They exist for tests and for applications that construct
-// their own Vite.
+// UseBuildDirectory sets the build directory, relative to the public directory,
+// from either "build" or the project-root form "public/build"; BuildDirectory
+// returns the bare form. Default "public/build". The setters live on *Vite, not
+// the contract: the shared instance is configured from config/vite.go, which
+// goravel-vite-plugin reads too, so a change at render time would desync the
+// build. They exist for tests and for applications that construct their own Vite.
 func (r *Vite) UseBuildDirectory(directory string) *Vite {
 	directory = normalizeBuildDirectory(directory)
 	r.mu.Lock()

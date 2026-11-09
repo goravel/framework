@@ -19,12 +19,12 @@ type Vite interface {
 	IsRunningHot() bool
 	// ManifestFilename returns the manifest file name inside the build directory.
 	ManifestFilename() string
+	// ManifestHash returns an asset version derived from the build manifest, or ""
+	// when there is none, it cannot be read or parsed, or the dev server runs.
+	ManifestHash() string
 	// ReactRefresh returns the @vitejs/plugin-react preamble while the dev server runs.
 	ReactRefresh() template.HTML
 	// Tags returns the stylesheet, modulepreload and module script tags for the
 	// entries; while the dev server runs, the Vite client plus one tag per entry.
 	Tags(entries ...string) (template.HTML, error)
-	// ManifestHash returns an asset version derived from the build manifest, or ""
-	// when there is none, it cannot be read or parsed, or the dev server runs.
-	ManifestHash() string
 }

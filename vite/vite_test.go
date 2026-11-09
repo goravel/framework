@@ -114,16 +114,27 @@ func TestHotFile(t *testing.T) {
 	writeFile(t, filepath.Join(public, "hot"), "http://localhost:5173\n")
 	assert.True(t, vite.IsRunningHot())
 
-	// A hot file is resolved against the project root, with or without a leading slash.
+	// A relative hot file is resolved against the project root; a leading slash is
+	// only trimmed for a project-root spelling such as "/public/hot".
 	vite.UseHotFile("storage/hot")
 	assert.Equal(t, filepath.Join(support.RelativePath, "storage", "hot"), vite.HotFile())
-	vite.UseHotFile("/storage/hot")
-	assert.Equal(t, filepath.Join(support.RelativePath, "storage", "hot"), vite.HotFile())
 	assert.False(t, vite.IsRunningHot())
+
+	// A genuine absolute path is used as is, and HotFile round-trips through UseHotFile.
+	absolute := filepath.Join(t.TempDir(), "hot")
+	writeFile(t, absolute, "http://localhost:5173")
+	vite.UseHotFile(absolute)
+	assert.Equal(t, absolute, vite.HotFile())
+	assert.True(t, vite.IsRunningHot())
+	vite.UseHotFile(vite.HotFile())
+	assert.Equal(t, absolute, vite.HotFile())
+	assert.True(t, vite.IsRunningHot())
 
 	// A directory is not a hot file.
 	require.NoError(t, os.MkdirAll(filepath.Join(support.RelativePath, "storage"), 0o755))
 	vite.UseHotFile("storage")
+	assert.False(t, vite.IsRunningHot())
+	vite.UseHotFile(filepath.Dir(absolute))
 	assert.False(t, vite.IsRunningHot())
 }
 
@@ -409,7 +420,7 @@ func TestManifestHash_FromManifest(t *testing.T) {
 	sum := md5.Sum([]byte(sampleManifest))
 	assert.Equal(t, hex.EncodeToString(sum[:]), vite.ManifestHash())
 
-	// Tags reuses the manifest ManifestHash hashed, so a render leaves the hash untouched.
+	// Tags reuses the manifest hash, so a render leaves ManifestHash unchanged.
 	cached := vite.manifests[manifestPath]
 	_, err := vite.Tags("resources/js/app.js")
 	require.NoError(t, err)
@@ -448,8 +459,8 @@ func TestManifestHash_MovesWithRebuild(t *testing.T) {
 	writeFile(t, manifestPath, `{"a.js": {"file": "a-1.js"}}`)
 	vite := newTestVite(t, "")
 
-	firstVersion := vite.ManifestHash()
-	assert.NotEmpty(t, firstVersion)
+	firstHash := vite.ManifestHash()
+	assert.NotEmpty(t, firstHash)
 	tags, err := vite.Tags("a.js")
 	require.NoError(t, err)
 	assert.Contains(t, string(tags), "a-1.js")
@@ -463,17 +474,17 @@ func TestManifestHash_MovesWithRebuild(t *testing.T) {
 	future := info.ModTime().Add(time.Second)
 	require.NoError(t, os.Chtimes(manifestPath, future, future))
 
-	secondVersion := vite.ManifestHash()
+	secondHash := vite.ManifestHash()
 	sum := md5.Sum([]byte(sameLength))
-	assert.Equal(t, hex.EncodeToString(sum[:]), secondVersion)
-	assert.NotEqual(t, firstVersion, secondVersion)
+	assert.Equal(t, hex.EncodeToString(sum[:]), secondHash)
+	assert.NotEqual(t, firstHash, secondHash)
 	tags, err = vite.Tags("a.js")
 	require.NoError(t, err)
 	assert.Contains(t, string(tags), "a-2.js")
 
 	// A rebuild that changes the size is picked up as well.
 	writeFile(t, manifestPath, `{"a.js": {"file": "a-3.js"}, "b.js": {"file": "b-1.js"}}`)
-	assert.NotEqual(t, secondVersion, vite.ManifestHash())
+	assert.NotEqual(t, secondHash, vite.ManifestHash())
 	tags, err = vite.Tags("a.js")
 	require.NoError(t, err)
 	assert.Contains(t, string(tags), "a-3.js")
@@ -482,49 +493,87 @@ func TestManifestHash_MovesWithRebuild(t *testing.T) {
 func TestBuildDirectoryNormalized(t *testing.T) {
 	public := setupProject(t)
 
-	for _, directory := range []string{"build", "/build", "public/build", "/public/build"} {
-		t.Run(directory, func(t *testing.T) {
+	tests := []struct {
+		name      string
+		value     string
+		directory string
+		root      string
+	}{
+		{name: "bare", value: "build", directory: "build", root: filepath.Join(public, "build")},
+		{name: "leading slash", value: "/build", directory: "build", root: filepath.Join(public, "build")},
+		{name: "public prefix", value: "public/build", directory: "build", root: filepath.Join(public, "build")},
+		{name: "slash and public prefix", value: "/public/build", directory: "build", root: filepath.Join(public, "build")},
+		{name: "public directory itself", value: "public", directory: "", root: public},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			config := mocksconfig.NewConfig(t)
 			config.EXPECT().GetString("vite.hot_file", DefaultHotFile).Return(DefaultHotFile).Once()
-			config.EXPECT().GetString("vite.build_directory", DefaultBuildDirectory).Return(directory).Once()
+			config.EXPECT().GetString("vite.build_directory", DefaultBuildDirectory).Return(test.value).Once()
 			config.EXPECT().GetString("vite.manifest", DefaultManifestFilename).Return(DefaultManifestFilename).Once()
 
 			vite := NewVite(config)
-			assert.Equal(t, "build", vite.BuildDirectory())
-			assert.Equal(t, filepath.Join(public, "build"), vite.buildPath())
+			assert.Equal(t, test.directory, vite.BuildDirectory())
+			assert.Equal(t, test.root, vite.buildPath())
 
-			// The setter reads the same spellings.
-			vite.UseBuildDirectory(directory)
-			assert.Equal(t, "build", vite.BuildDirectory())
-			assert.Equal(t, filepath.Join(public, "build"), vite.buildPath())
+			// The setter normalizes the same spellings as the constructor.
+			vite.UseBuildDirectory(test.value)
+			assert.Equal(t, test.directory, vite.BuildDirectory())
+			assert.Equal(t, test.root, vite.buildPath())
 		})
 	}
 }
 
 func TestHotFileNormalized(t *testing.T) {
 	public := setupProject(t)
+	absolute := filepath.Join(t.TempDir(), "hot")
 
-	tests := map[string]string{
-		"public/hot":  filepath.Join(public, "hot"),
-		"/public/hot": filepath.Join(public, "hot"),
-		"hot":         filepath.Join(support.RelativePath, "hot"),
+	tests := []struct {
+		name     string
+		value    string
+		expected string
+	}{
+		{name: "public prefix", value: "public/hot", expected: filepath.Join(public, "hot")},
+		{name: "slash and public prefix", value: "/public/hot", expected: filepath.Join(public, "hot")},
+		{name: "bare", value: "hot", expected: filepath.Join(support.RelativePath, "hot")},
+		{name: "genuine absolute path", value: absolute, expected: absolute},
 	}
 
-	for hotFile, expected := range tests {
-		t.Run(hotFile, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			config := mocksconfig.NewConfig(t)
-			config.EXPECT().GetString("vite.hot_file", DefaultHotFile).Return(hotFile).Once()
+			config.EXPECT().GetString("vite.hot_file", DefaultHotFile).Return(test.value).Once()
 			config.EXPECT().GetString("vite.build_directory", DefaultBuildDirectory).Return(DefaultBuildDirectory).Once()
 			config.EXPECT().GetString("vite.manifest", DefaultManifestFilename).Return(DefaultManifestFilename).Once()
 
 			vite := NewVite(config)
-			assert.Equal(t, expected, vite.HotFile())
+			assert.Equal(t, test.expected, vite.HotFile())
 
-			// The setter reads the same spellings.
-			vite.UseHotFile(hotFile)
-			assert.Equal(t, expected, vite.HotFile())
+			// The setter normalizes the same spellings as the constructor.
+			vite.UseHotFile(test.value)
+			assert.Equal(t, test.expected, vite.HotFile())
 		})
 	}
+}
+
+func TestBuildDirectoryNormalized_CustomPublicDirectory(t *testing.T) {
+	setupProject(t)
+	public := support.Config.Paths.Public
+	support.Config.Paths.Public = "static"
+	t.Cleanup(func() { support.Config.Paths.Public = public })
+	require.NoError(t, os.MkdirAll(filepath.Join(support.RelativePath, "static"), 0o755))
+
+	// The shipped default keeps the conventional "public" prefix, which is read
+	// relative to whatever paths.public names.
+	config := mocksconfig.NewConfig(t)
+	config.EXPECT().GetString("vite.hot_file", DefaultHotFile).Return(DefaultHotFile).Once()
+	config.EXPECT().GetString("vite.build_directory", DefaultBuildDirectory).Return(DefaultBuildDirectory).Once()
+	config.EXPECT().GetString("vite.manifest", DefaultManifestFilename).Return(DefaultManifestFilename).Once()
+
+	vite := NewVite(config)
+	assert.Equal(t, "build", vite.BuildDirectory())
+	assert.Equal(t, filepath.Join(support.RelativePath, "static", "build"), vite.buildPath())
 }
 
 func TestUseBuildDirectory(t *testing.T) {
