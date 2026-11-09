@@ -50,15 +50,15 @@ type manifest struct {
 	chunks map[string]chunk
 	// importsOf is each chunk's transitive imports in preload order, computed once
 	// when the manifest is parsed so a render does not re-walk the graph.
-	importsOf map[string][]string
-	version   string // md5 of the manifest file, so ManifestHash and the tags come from the same bytes
-	size      int64
-	modTime   int64
+	importsOf    map[string][]string
+	manifestHash string // md5 of the manifest file, so ManifestHash and the tags come from the same bytes
+	size         int64
+	modTime      int64
 }
 
 // newManifest indexes the parsed chunks.
-func newManifest(chunks map[string]chunk, size, modTime int64, version string) *manifest {
-	m := &manifest{chunks: chunks, importsOf: make(map[string][]string, len(chunks)), version: version, size: size, modTime: modTime}
+func newManifest(chunks map[string]chunk, size, modTime int64, manifestHash string) *manifest {
+	m := &manifest{chunks: chunks, importsOf: make(map[string][]string, len(chunks)), manifestHash: manifestHash, size: size, modTime: modTime}
 	for name := range chunks {
 		m.importsOf[name] = m.imports(name, nil)
 	}
@@ -98,91 +98,40 @@ func NewVite(config config.Config) *Vite {
 		v.manifestFilename = config.GetString("vite.manifest", DefaultManifestFilename)
 	}
 
-	v.hotFile = normalizeHotFile(v.hotFile)
-	v.buildDirectory = normalizeBuildDirectory(v.buildDirectory)
+	v.hotFile = normalizeEntry(v.hotFile)
 	v.hotPath = resolveHotPath(v.hotFile)
+	v.buildDirectory = normalizeBuildDirectory(v.buildDirectory)
 	v.buildRoot = resolveBuildRoot(v.buildDirectory)
 
 	return v
 }
 
-// publicPrefixes lists the spellings that stand for the public directory in a
-// project-root path: the configured one plus the conventional "public". The hot
-// file trims a leading slash from either spelling; both settings then alias the
-// conventional prefix to the configured one.
-func publicPrefixes() []string {
-	switch support.Config.Paths.Public {
-	case "", "public":
-		return []string{"public"}
-	}
-
-	return []string{support.Config.Paths.Public, "public"}
-}
-
-// trimProjectSlash trims a leading slash from a public prefix, so "/static/hot" is
-// read under the project while "/srv/app/hot" stays a genuine absolute path.
-func trimProjectSlash(value string) string {
-	relative := normalizeEntry(value)
-	if relative == value {
-		return value
-	}
-
-	for _, prefix := range publicPrefixes() {
-		if relative == prefix || strings.HasPrefix(relative, prefix+"/") {
-			return relative
-		}
-	}
-
-	return value
-}
-
-// aliasPublicPrefix rewrites the conventional "public" prefix to the configured
-// public directory, so a value written for the default stub follows a renamed
-// paths.public. A value already under the configured directory is left alone. The
-// caller has already dropped a leading slash.
-func aliasPublicPrefix(value string) string {
-	public := support.Config.Paths.Public
-	if public == "" || public == "public" || value == public || strings.HasPrefix(value, public+"/") {
-		return value
-	}
-
-	if value != "public" && !strings.HasPrefix(value, "public/") {
-		return value
-	}
-
-	return public + strings.TrimPrefix(value, "public")
-}
-
-// normalizeHotFile drops a leading slash from a public prefix and aliases the
-// conventional one, so a genuine absolute path stays absolute.
-func normalizeHotFile(value string) string {
-	return aliasPublicPrefix(trimProjectSlash(value))
-}
-
 // normalizeBuildDirectory returns the build directory relative to the public
-// directory, with the conventional "public" prefix aliased to the configured one.
-// The trade-off: with a renamed public directory, a real project/public/build
-// cannot be expressed.
+// directory, as the URL and vite:inputs report it. The project-root path
+// "public/build" becomes "build" when paths.public is "public"; a directory
+// outside the public directory is returned as it is.
 func normalizeBuildDirectory(directory string) string {
-	directory = aliasPublicPrefix(normalizeEntry(directory))
-	public := support.Config.Paths.Public
-	if public == "" {
-		return directory
-	}
+	directory = normalizeEntry(directory)
 
-	if directory == public {
+	public := strings.Trim(support.Config.Paths.Public, "/")
+	switch {
+	case public == "":
+		return directory
+	case directory == public:
 		return ""
 	}
 
 	return strings.TrimPrefix(directory, public+"/")
 }
 
-// resolveHotPath is the absolute path of an already-normalized hot file.
+// resolveHotPath is the absolute path of the hot file, which is always given
+// relative to the project root: a leading slash is trimmed so it can never escape it.
 func resolveHotPath(hotFile string) string {
-	return paths.Abs(hotFile)
+	return paths.Abs(normalizeEntry(hotFile))
 }
 
-// resolveBuildRoot is the absolute path of an already-normalized build directory.
+// resolveBuildRoot is the absolute path of a build directory already made
+// relative to the public directory, so it always sits inside paths.public.
 func resolveBuildRoot(directory string) string {
 	return paths.Abs(support.Config.Paths.Public, directory)
 }
@@ -303,12 +252,13 @@ func (r *Vite) Tags(entries ...string) (template.HTML, error) {
 	return r.buildTags(m, r.assetBase(), entries)
 }
 
-// UseBuildDirectory sets the build directory, relative to the public directory,
-// from either "build" or the project-root form "public/build"; BuildDirectory
-// returns the bare form. Default "public/build". The setters live on *Vite, not
-// the contract: the shared instance is configured from config/vite.go, which
-// goravel-vite-plugin reads too, so a change at render time would desync the
-// build. They exist for tests and for applications that construct their own Vite.
+// UseBuildDirectory sets the build directory, given relative to the project root
+// as in config/vite.go with the public directory prefix optional; BuildDirectory
+// returns it relative to the public directory. Default "public/build". The setters
+// live on *Vite, not the contract: the shared instance is configured from
+// config/vite.go, which goravel-vite-plugin reads too, so a change at render time
+// would desync the build. They exist for tests and for applications that construct
+// their own Vite.
 func (r *Vite) UseBuildDirectory(directory string) *Vite {
 	directory = normalizeBuildDirectory(directory)
 	r.mu.Lock()
@@ -319,12 +269,13 @@ func (r *Vite) UseBuildDirectory(directory string) *Vite {
 	return r
 }
 
-// UseHotFile sets the hot file; a relative path resolves against the project root. Default "public/hot".
-func (r *Vite) UseHotFile(path string) *Vite {
-	path = normalizeHotFile(path)
+// UseHotFile sets the hot file, which is always read from the project root: a
+// leading slash is trimmed so it can never escape it. Default "public/hot".
+func (r *Vite) UseHotFile(hotFile string) *Vite {
+	hotFile = normalizeEntry(hotFile)
 	r.mu.Lock()
-	r.hotFile = path
-	r.hotPath = resolveHotPath(path)
+	r.hotFile = hotFile
+	r.hotPath = resolveHotPath(hotFile)
 	r.mu.Unlock()
 
 	return r
@@ -530,7 +481,7 @@ func (r *Vite) ManifestHash() string {
 		return ""
 	}
 
-	return m.version
+	return m.manifestHash
 }
 
 func scriptTag(src string) string {
