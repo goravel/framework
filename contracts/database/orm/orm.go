@@ -76,9 +76,11 @@ type Query interface {
 	Exec(sql string, values ...any) (*db.Result, error)
 	// Exists returns true if matching records exist; otherwise, it returns false.
 	Exists() (bool, error)
-	// Find finds records that match given conditions.
+	// Find finds records that match given conditions. A single string cond is bound to the primary key when the
+	// model's primary key is a string (e.g. UUID, ULID); use Where for raw SQL conditions.
 	Find(dest any, conds ...any) error
-	// FindOrFail finds records that match given conditions or throws an error.
+	// FindOrFail finds records that match given conditions or throws an error. A single string cond is bound to the
+	// primary key when the model's primary key is a string (e.g. UUID, ULID); use Where for raw SQL conditions.
 	FindOrFail(dest any, conds ...any) error
 	// First finds record that match given conditions.
 	First(dest any) error
@@ -314,6 +316,7 @@ type ToSql interface {
 	Count() string
 	Create(value any) string
 	Delete(value ...any) string
+	// Find binds a single string cond to the primary key when the model's primary key is a string, like Query.Find.
 	Find(dest any, conds ...any) string
 	First(dest any) string
 	ForceDelete(value ...any) string
