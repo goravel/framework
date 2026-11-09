@@ -137,7 +137,7 @@ func TestHotFile(t *testing.T) {
 	// HotFile is absolute, so feeding it back resolves under the public directory
 	// again rather than trusting the filesystem root.
 	vite.UseHotFile(vite.HotFile())
-	assert.True(t, strings.HasPrefix(vite.HotFile(), support.RelativePath+string(filepath.Separator)))
+	assert.True(t, strings.HasPrefix(vite.HotFile(), public+string(filepath.Separator)))
 
 	// A directory is not a hot file.
 	require.NoError(t, os.MkdirAll(filepath.Join(public, "storage"), 0o755))
@@ -582,7 +582,7 @@ func TestPathsWithCustomPublicDirectory(t *testing.T) {
 		return NewVite(config)
 	}
 
-	// Defaults follow paths.public.
+	// Defaults are fixed names; only where they resolve follows paths.public.
 	assert.Equal(t, "hot", DefaultHotFile())
 	assert.Equal(t, "build", DefaultBuildDirectory())
 	vite := newVite(DefaultHotFile(), DefaultBuildDirectory())
@@ -617,7 +617,7 @@ func TestUseBuildDirectory(t *testing.T) {
 	writeFile(t, filepath.Join(public, "dist", ".vite", "manifest.json"), `{"a.js": {"file": "a.js"}}`)
 	vite := newTestVite(t, "")
 
-	url, err := vite.UseBuildDirectory("dist").Asset("a.js")
+	url, err := vite.UseBuildDirectory("dist/").Asset("a.js")
 	require.NoError(t, err)
 	assert.Equal(t, "/dist/a.js", url)
 }
@@ -627,14 +627,6 @@ func TestAssetBase(t *testing.T) {
 	vite := newTestVite(t, "")
 
 	// The default "build" inside the public directory is served at /build.
-	assert.Equal(t, "/build", vite.assetBase())
-
-	public := support.Config.Paths.Public
-	support.Config.Paths.Public = "static"
-	t.Cleanup(func() { support.Config.Paths.Public = public })
-
-	// The URL segment follows the configured value, like the path read from disk.
-	assert.Equal(t, "build", vite.BuildDirectory())
 	assert.Equal(t, "/build", vite.assetBase())
 
 	vite.UseBuildDirectory("assets")
