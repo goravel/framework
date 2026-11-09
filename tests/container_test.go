@@ -12,6 +12,7 @@ import (
 	"github.com/goravel/framework/contracts/testing/docker"
 	mocksdocker "github.com/goravel/framework/mocks/testing/docker"
 	supportdocker "github.com/goravel/framework/support/docker"
+	supportfile "github.com/goravel/framework/support/file"
 )
 
 type ContainerTestSuite struct {
@@ -120,12 +121,32 @@ func (s *ContainerTestSuite) TestBuilds() {
 	s.Len(result, 3)
 }
 
+func (s *ContainerTestSuite) TestAddRewritesNullFile() {
+	s.Require().NoError(supportfile.PutContent(s.container.file, "null"))
+	s.mockDatabaseDriver.EXPECT().Config().Return(docker.DatabaseConfig{
+		ContainerID: "test-container",
+		Port:        5432,
+	}).Once()
+
+	s.NoError(s.container.add())
+
+	containers, err := s.container.all()
+	s.Require().NoError(err)
+	s.Equal(map[string]docker.DatabaseConfig{
+		"test": {ContainerID: "test-container", Port: 5432},
+	}, containers)
+}
+
 func (s *ContainerTestSuite) TestCleanupContainers() {
+	s.Require().NoError(s.container.write(map[string]docker.DatabaseConfig{
+		"test": {ContainerID: "this-process-container"},
+	}))
 	s.mockDatabaseDriver.EXPECT().Shutdown().Return(nil).Once()
 	s.container.Track()
 
 	s.NoError(CleanupContainers())
 	s.Empty(trackedContainers)
+	s.NoFileExists(s.container.file)
 
 	s.NoError(CleanupContainers())
 }
@@ -149,4 +170,21 @@ func (s *ContainerTestSuite) TestCleanupContainersStopsEveryContainer() {
 	// The failing container is tracked last, so the successful one only stops if cleanup keeps going.
 	s.ErrorIs(CleanupContainers(), assert.AnError)
 	s.Empty(trackedContainers)
+}
+
+func (s *ContainerTestSuite) TestCleanupContainersKeepsOtherRecords() {
+	s.Require().NoError(s.container.write(map[string]docker.DatabaseConfig{
+		"test":            {ContainerID: "this-process-container"},
+		"other-container": {ContainerID: "other-process-container"},
+	}))
+	s.mockDatabaseDriver.EXPECT().Shutdown().Return(nil).Once()
+	s.container.Track()
+
+	s.NoError(CleanupContainers())
+
+	containers, err := s.container.all()
+	s.Require().NoError(err)
+	s.Equal(map[string]docker.DatabaseConfig{
+		"other-container": {ContainerID: "other-process-container"},
+	}, containers)
 }

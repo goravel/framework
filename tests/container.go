@@ -105,14 +105,6 @@ func (r *Container) Built() bool {
 	return r.built
 }
 
-func (r *Container) Remove() error {
-	if err := file.Remove(r.lockFile); err != nil {
-		return err
-	}
-
-	return file.Remove(r.file)
-}
-
 // Track registers the container so CleanupContainers can stop it when the test process finishes.
 // Track only containers this process built. A mock-backed container must be drained before its
 // test ends, or the post-run cleanup calls into a finished test.
@@ -174,6 +166,9 @@ func (r *Container) add() error {
 		return err
 	}
 
+	if databaseConfigs == nil {
+		databaseConfigs = make(map[string]docker.DatabaseConfig)
+	}
 	databaseConfigs[r.name] = r.databaseDriver.Config()
 
 	return r.write(databaseConfigs)
