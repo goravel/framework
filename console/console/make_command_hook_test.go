@@ -60,7 +60,30 @@ func commandHooks() map[string][]console.CommandHook {
 }
 
 func Boot() contractsfoundation.Application {
-	return foundation.Setup().WithCommandHooks(commandHooks).Create()
+	return foundation.Setup().WithCommandHooks(commandHooks()).Create()
+}
+`
+
+	commandHookBootstrapAppWithResolvableNamedHooks = `package bootstrap
+
+import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation"
+)
+
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithCommandHooks(CommandHooks).Create()
+}
+`
+
+	commandHookBootstrapNamedHooks = `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/console"
+)
+
+func CommandHooks() map[string][]console.CommandHook {
+	return map[string][]console.CommandHook{}
 }
 `
 )
@@ -179,6 +202,36 @@ func TestMakeCommandHook(t *testing.T) {
 		assert.Contains(t, appContent, "&hooks.Existing{}")
 		assert.Contains(t, appContent, "&hooks.AuditLog{}")
 		assert.Equal(t, 1, strings.Count(appContent, "WithCommandHooks("))
+	})
+
+	t.Run("named CommandHooks function in a sibling file is registered", func(t *testing.T) {
+		resetHooks()
+		bootstrapPath := filepath.Join("bootstrap", "app.go")
+		namedHooksPath := filepath.Join("bootstrap", "command_hooks.go")
+		assert.NoError(t, file.PutContent(bootstrapPath, commandHookBootstrapAppWithResolvableNamedHooks))
+		assert.NoError(t, file.PutContent(namedHooksPath, commandHookBootstrapNamedHooks))
+		defer func() {
+			assert.NoError(t, file.Remove(namedHooksPath))
+		}()
+
+		mockContext := mocksconsole.NewContext(t)
+		mockContext.EXPECT().Option("command").Return("migrate").Once()
+		mockContext.EXPECT().Arguments().Return([]string{"AuditLog"}).Once()
+		mockContext.EXPECT().OptionBool("force").Return(false).Once()
+		mockContext.EXPECT().Success("Command hook created successfully").Once()
+		mockContext.EXPECT().Success("Command hook registered successfully").Once()
+
+		assert.Nil(t, makeCommandHook.Handle(mockContext))
+
+		appContent, err := file.GetContent(bootstrapPath)
+		assert.NoError(t, err)
+		assert.Equal(t, commandHookBootstrapAppWithResolvableNamedHooks, appContent)
+
+		namedHooksContent, err := file.GetContent(namedHooksPath)
+		assert.NoError(t, err)
+		assert.Contains(t, namedHooksContent, `"migrate": {`)
+		assert.Contains(t, namedHooksContent, "&hooks.AuditLog{}")
+		assert.Contains(t, namedHooksContent, "github.com/goravel/framework/app/console/hooks")
 	})
 
 	t.Run("hooks call that cannot be edited reports an error", func(t *testing.T) {

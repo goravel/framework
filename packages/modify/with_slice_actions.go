@@ -1,13 +1,16 @@
 package modify
 
 import (
+	"bytes"
 	"go/token"
+	"os"
 	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/dave/dst"
+	"github.com/dave/dst/decorator"
 	"github.com/dave/dst/dstutil"
 
 	contractsmatch "github.com/goravel/framework/contracts/packages/match"
@@ -1064,9 +1067,10 @@ const consolePackageImportPath = "github.com/goravel/framework/contracts/console
 
 // foundationSetupCommandHook registers a hook in the foundation.Setup() chain,
 // adding WithCommandHooks when it does not exist. consoleName is the local name of
-// the console package and registered reports whether the hook is in the chain
-// afterwards.
-func foundationSetupCommandHook(key, hook string, consoleName *string, registered *bool) modify.Action {
+// the console package, registered reports whether the hook is in the chain
+// afterwards, and namedHook reports a WithCommandHooks argument that must be
+// resolved to its declaration.
+func foundationSetupCommandHook(key, hook string, consoleName *string, registered *bool, namedHook *string) modify.Action {
 	return func(cursor *dstutil.Cursor) {
 		var callExpr *dst.CallExpr
 
@@ -1104,6 +1108,14 @@ func foundationSetupCommandHook(key, hook string, consoleName *string, registere
 		hookExpr := MustParseExpr(hook).(dst.Expr)
 
 		if withCommandHooksCall != nil {
+			if len(withCommandHooksCall.Args) > 0 {
+				if ident, ok := withCommandHooksCall.Args[0].(*dst.Ident); ok {
+					*namedHook = ident.Name
+
+					return
+				}
+			}
+
 			*registered = appendToExistingCommandHook(withCommandHooksCall, key, hook, hookExpr)
 
 			return
@@ -1137,49 +1149,164 @@ func appendToExistingCommandHook(withCall *dst.CallExpr, key, hook string, hookE
 			continue
 		}
 
-		keyExpr := &dst.BasicLit{Kind: token.STRING, Value: strconv.Quote(key)}
+		return appendCommandHookToMap(mapLit, key, hook, hookExpr)
+	}
 
-		if i := KeyIndex(mapLit.Elts, keyExpr); i >= 0 {
-			kv, ok := mapLit.Elts[i].(*dst.KeyValueExpr)
-			if !ok {
-				return false
-			}
+	return false
+}
 
-			hooksLit, ok := kv.Value.(*dst.CompositeLit)
-			if !ok {
-				return false
-			}
+// appendCommandHookToMap adds the hook to the map literal under key, creating
+// the entry when missing. It reports whether the hook is in the map.
+func appendCommandHookToMap(mapLit *dst.CompositeLit, key, hook string, hookExpr dst.Expr) bool {
+	keyExpr := &dst.BasicLit{Kind: token.STRING, Value: strconv.Quote(key)}
 
-			if ExprExists(hooksLit.Elts, hookExpr) {
-				color.Warningln(errors.PackageRegistrationDuplicate.Args(hook))
+	if i := KeyIndex(mapLit.Elts, keyExpr); i >= 0 {
+		kv, ok := mapLit.Elts[i].(*dst.KeyValueExpr)
+		if !ok {
+			return false
+		}
 
-				return true
-			}
+		hooksLit, ok := kv.Value.(*dst.CompositeLit)
+		if !ok {
+			return false
+		}
 
-			if len(hooksLit.Elts) > 0 {
-				hooksLit.Elts[0].Decorations().Before = dst.NewLine
-			}
-
-			hookExpr.Decorations().Before = dst.NewLine
-			hookExpr.Decorations().After = dst.NewLine
-			hooksLit.Elts = append(hooksLit.Elts, hookExpr)
+		if ExprExists(hooksLit.Elts, hookExpr) {
+			color.Warningln(errors.PackageRegistrationDuplicate.Args(hook))
 
 			return true
 		}
 
-		if len(mapLit.Elts) > 0 {
-			mapLit.Elts[0].Decorations().Before = dst.NewLine
+		if len(hooksLit.Elts) > 0 {
+			hooksLit.Elts[0].Decorations().Before = dst.NewLine
 		}
 
-		mapLit.Elts = append(mapLit.Elts, WrapNewline(&dst.KeyValueExpr{
-			Key:   keyExpr,
-			Value: &dst.CompositeLit{Elts: []dst.Expr{hookExpr}},
-		}))
+		hookExpr.Decorations().Before = dst.NewLine
+		hookExpr.Decorations().After = dst.NewLine
+		hooksLit.Elts = append(hooksLit.Elts, hookExpr)
 
 		return true
 	}
 
-	return false
+	if len(mapLit.Elts) > 0 {
+		mapLit.Elts[0].Decorations().Before = dst.NewLine
+	}
+
+	mapLit.Elts = append(mapLit.Elts, WrapNewline(&dst.KeyValueExpr{
+		Key:   keyExpr,
+		Value: &dst.CompositeLit{Elts: []dst.Expr{hookExpr}},
+	}))
+
+	return true
+}
+
+// appendToNamedCommandHook resolves name in the bootstrap package at dir and
+// appends hook to the map its declaration returns, leaving app.go untouched. It
+// reports whether the hook was appended and adds the hook package import to the
+// declaration's file.
+func appendToNamedCommandHook(dir, name, pkg, key, hook string) (bool, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return false, err
+	}
+
+	hookExpr := MustParseExpr(hook).(dst.Expr)
+
+	for _, entry := range entries {
+		fileName := entry.Name()
+		if entry.IsDir() || !strings.HasSuffix(fileName, ".go") || strings.HasSuffix(fileName, "_test.go") {
+			continue
+		}
+
+		filePath := filepath.Join(dir, fileName)
+		content, err := supportfile.GetContent(filePath)
+		if err != nil {
+			return false, err
+		}
+
+		file, err := decorator.Parse(content)
+		if err != nil {
+			return false, err
+		}
+
+		mapLit := commandHookMapLit(file, name)
+		if mapLit == nil {
+			continue
+		}
+
+		if !appendCommandHookToMap(mapLit, key, hook, hookExpr) {
+			return false, nil
+		}
+
+		var buf bytes.Buffer
+		if err := decorator.Fprint(&buf, file); err != nil {
+			return false, err
+		}
+
+		if err := supportfile.PutContent(filePath, buf.String()); err != nil {
+			return false, err
+		}
+
+		return true, addImportsToFile(filePath, pkg)
+	}
+
+	return false, nil
+}
+
+// commandHookMapLit returns the map literal returned by the named hook
+// declaration, for either a function or a func-valued var. It returns nil when
+// name has no such declaration or the declaration does not return a literal.
+func commandHookMapLit(file *dst.File, name string) *dst.CompositeLit {
+	for _, decl := range file.Decls {
+		switch decl := decl.(type) {
+		case *dst.FuncDecl:
+			if decl.Name.Name == name && decl.Body != nil {
+				return returnedCompositeLit(decl.Body)
+			}
+		case *dst.GenDecl:
+			if decl.Tok != token.VAR {
+				continue
+			}
+
+			for _, spec := range decl.Specs {
+				valueSpec, ok := spec.(*dst.ValueSpec)
+				if !ok || len(valueSpec.Values) != 1 {
+					continue
+				}
+
+				if !slices.ContainsFunc(valueSpec.Names, func(ident *dst.Ident) bool {
+					return ident.Name == name
+				}) {
+					continue
+				}
+
+				funcLit, ok := valueSpec.Values[0].(*dst.FuncLit)
+				if !ok || funcLit.Body == nil {
+					continue
+				}
+
+				return returnedCompositeLit(funcLit.Body)
+			}
+		}
+	}
+
+	return nil
+}
+
+// returnedCompositeLit returns the first composite literal returned from body.
+func returnedCompositeLit(body *dst.BlockStmt) *dst.CompositeLit {
+	for _, stmt := range body.List {
+		retStmt, ok := stmt.(*dst.ReturnStmt)
+		if !ok || len(retStmt.Results) == 0 {
+			continue
+		}
+
+		if mapLit, ok := retStmt.Results[0].(*dst.CompositeLit); ok {
+			return mapLit
+		}
+	}
+
+	return nil
 }
 
 // createWithCommandHooks inserts a new WithCommandHooks call after

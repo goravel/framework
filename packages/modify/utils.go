@@ -1,6 +1,7 @@
 package modify
 
 import (
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -33,8 +34,9 @@ func AddCommand(pkg, command string) error {
 
 // AddCommandHook registers a hook in bootstrap/app.go under a command signature
 // or '*' pattern, e.g. "migrate" or "make:*". It creates the WithCommandHooks
-// call when missing and reports whether the hook is in the chain afterwards. A
-// file without a foundation.Setup() chain returns false without an error.
+// call when missing and resolves a named argument to its declaration in the
+// bootstrap package. A file without a foundation.Setup() chain returns false
+// without an error.
 func AddCommandHook(pkg, key, hook string) (bool, error) {
 	appFilePath := path.Bootstrap("app.go")
 
@@ -44,16 +46,29 @@ func AddCommandHook(pkg, key, hook string) (bool, error) {
 
 	consoleName := "console"
 	registered := false
+	namedHook := ""
 
 	if err := GoFile(appFilePath).
 		FindOrCreate(match.Imports(), createImport).
 		Modify(captureImportName(consolePackageImportPath, &consoleName)).
 		Find(match.FoundationSetup()).
-		Modify(foundationSetupCommandHook(key, hook, &consoleName, &registered)).
+		Modify(foundationSetupCommandHook(key, hook, &consoleName, &registered, &namedHook)).
 		FindOrCreate(match.Imports(), createImport).
 		Modify(addCommandHookImports(pkg, &registered)).
 		Apply(); err != nil {
 		return false, err
+	}
+
+	if namedHook != "" {
+		registered, err := appendToNamedCommandHook(filepath.Dir(appFilePath), namedHook, pkg, key, hook)
+		if err != nil {
+			return false, err
+		}
+		if !registered {
+			return false, errors.PackageCommandHookNotRegistered.Args(hook)
+		}
+
+		return true, nil
 	}
 
 	if !registered {
