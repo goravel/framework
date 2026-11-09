@@ -635,7 +635,9 @@ func (r *Query) Omit(columns ...string) contractsorm.Query {
 	return r.setConditions(conditions)
 }
 
-// DEPRECATED: Use OrderByRaw instead
+// Order specifies the order in which the results should be returned.
+// DEPRECATED: Use OrderByRaw instead.
+// Order is raw by definition: value is put into the SQL as is, so never pass user input to it.
 func (r *Query) Order(value any) contractsorm.Query {
 	return r.OrderByRaw(fmt.Sprintf("%s", value))
 }
@@ -644,22 +646,30 @@ func (r *Query) OrderBy(column string, direction ...string) contractsorm.Query {
 	var orderDirection string
 	if len(direction) > 0 {
 		orderDirection = direction[0]
-	} else {
-		orderDirection = "ASC"
 	}
 
-	// A plain column is passed to gorm as a column, so the connection that builds the query quotes it.
-	// gorm can only express ASC and DESC for it, any other direction keeps the raw form.
-	if isPlainIdentifier(column) {
-		switch strings.ToUpper(strings.TrimSpace(orderDirection)) {
-		case "ASC":
-			return r.addOrder(clause.OrderByColumn{Column: clause.Column{Name: column}})
-		case "DESC":
-			return r.addOrder(clause.OrderByColumn{Column: clause.Column{Name: column}, Desc: true})
-		}
+	// A plain column is passed to gorm as a column, so the connection that builds the query quotes it. A JSON
+	// selector is compiled by the grammar, and the direction has to live in the SQL string because gorm ignores
+	// Desc on an expression.
+	jsonSelector := utils.IsJsonSelector(column)
+	if !jsonSelector && !utils.IsPlainIdentifier(column) {
+		return r.withError(errors.DatabaseInvalidOrderByColumn.Args(column))
 	}
 
-	return r.OrderByRaw(fmt.Sprintf("%s %s", column, orderDirection))
+	normalizedDirection, err := utils.NormalizeOrderDirection(orderDirection)
+	if err != nil {
+		return r.withError(err)
+	}
+
+	if jsonSelector {
+		return r.addOrder(fmt.Sprintf("%s %s", r.grammar.CompileJsonSelector(column), normalizedDirection))
+	}
+
+	if normalizedDirection == "DESC" {
+		return r.addOrder(clause.OrderByColumn{Column: clause.Column{Name: column}, Desc: true})
+	}
+
+	return r.addOrder(clause.OrderByColumn{Column: clause.Column{Name: column}})
 }
 
 func (r *Query) OrderByDesc(column string) contractsorm.Query {

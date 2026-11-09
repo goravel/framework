@@ -115,6 +115,7 @@ type Query interface {
 	// Join specifying JOIN conditions for the query.
 	Join(query string, args ...any) Query
 	// Latest orders the query by the given column descending, default column is "created_at".
+	// The column follows the OrderBy rule.
 	Latest(column ...string) Query
 	// LeftJoin adds a LEFT JOIN to the query. Pass the table and its condition without the keyword,
 	// e.g. "posts ON posts.user_id = users.id", the "LEFT JOIN" keyword is added automatically.
@@ -134,13 +135,18 @@ type Query interface {
 	// Omit specifies columns that should be omitted from the query.
 	Omit(columns ...string) Query
 	// Order specifies the order in which the results should be returned.
+	// Order is raw by definition, so never pass user input to it.
 	// DEPRECATED Use OrderByRaw instead.
 	Order(value any) Query
 	// OrderBy specifies the order should be ascending.
+	// The column must be a plain column name (group, users.group) or a JSON selector (data->name), and the
+	// direction must be ASC or DESC. A plain column and a JSON selector are quoted or compiled by the
+	// connection that runs the query; anything else fails and must go through OrderByRaw.
 	OrderBy(column string, direction ...string) Query
 	// OrderByDesc specifies the order should be descending.
+	// The column follows the OrderBy rule.
 	OrderByDesc(column string) Query
-	// OrderByRaw specifies the order should be raw.
+	// OrderByRaw specifies the order should be raw. It is put into the SQL as is, so never pass user input to it.
 	OrderByRaw(raw string) Query
 	// OrWhere add an "or where" clause to the query.
 	OrWhere(query any, args ...any) Query

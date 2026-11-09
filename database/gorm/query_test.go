@@ -1425,18 +1425,18 @@ func TestQuoteColumns(t *testing.T) {
 			expectedOrder: []any{clause.OrderByColumn{Column: order, Desc: true}},
 		},
 		{
-			name: "OrderBy with custom direction is not quoted",
-			query: func(query contractsorm.Query) contractsorm.Query {
-				return query.OrderBy("order", "DESC NULLS LAST")
-			},
-			expectedOrder: []any{"order DESC NULLS LAST"},
-		},
-		{
 			name: "OrderByDesc",
 			query: func(query contractsorm.Query) contractsorm.Query {
 				return query.OrderByDesc("order")
 			},
 			expectedOrder: []any{clause.OrderByColumn{Column: order, Desc: true}},
+		},
+		{
+			name: "OrderBy qualified column",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrderBy("users.order")
+			},
+			expectedOrder: []any{clause.OrderByColumn{Column: clause.Column{Name: "users.order"}}},
 		},
 		{
 			name: "table qualified column",
@@ -1466,13 +1466,6 @@ func TestQuoteColumns(t *testing.T) {
 			},
 			expectedWhere: []contractsdriver.Where{{Query: "`group` IS NULL"}},
 		},
-		{
-			name: "expression in OrderBy is not quoted",
-			query: func(query contractsorm.Query) contractsorm.Query {
-				return query.OrderByDesc("LOWER(name)")
-			},
-			expectedOrder: []any{"LOWER(name) DESC"},
-		},
 	}
 
 	for _, test := range tests {
@@ -1482,6 +1475,53 @@ func TestQuoteColumns(t *testing.T) {
 			query := test.query(NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, nil, nil)).(*Query)
 
 			assert.Equal(t, test.expectedWhere, query.conditions.where)
+			assert.Equal(t, test.expectedOrder, query.conditions.order)
+		})
+	}
+}
+
+func TestOrderByValidation(t *testing.T) {
+	newQuery := func(grammar contractsdriver.Grammar) *Query {
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, grammar, nil, nil, nil, nil)
+	}
+
+	tests := []struct {
+		name          string
+		column        string
+		direction     []string
+		jsonSelector  string
+		expectedOrder []any
+		expectedError error
+	}{
+		{name: "plain column", column: "group", expectedOrder: []any{clause.OrderByColumn{Column: clause.Column{Name: "group"}}}},
+		{name: "plain column desc", column: "group", direction: []string{"desc"}, expectedOrder: []any{clause.OrderByColumn{Column: clause.Column{Name: "group"}, Desc: true}}},
+		{name: "json selector", column: "data->name", jsonSelector: "data->name", expectedOrder: []any{"json_extract(`data`, '$.name') ASC"}},
+		{name: "json selector desc", column: "data->name", direction: []string{"desc"}, jsonSelector: "data->name", expectedOrder: []any{"json_extract(`data`, '$.name') DESC"}},
+		{name: "expression", column: "LOWER(name)", expectedError: errors.DatabaseInvalidOrderByColumn.Args("LOWER(name)")},
+		{name: "quoted column", column: "`group`", expectedError: errors.DatabaseInvalidOrderByColumn.Args("`group`")},
+		{name: "injected column", column: "id; DROP TABLE users", expectedError: errors.DatabaseInvalidOrderByColumn.Args("id; DROP TABLE users")},
+		{name: "nulls direction", column: "order", direction: []string{"DESC NULLS LAST"}, expectedError: errors.DatabaseInvalidOrderByDirection.Args("DESC NULLS LAST")},
+		{name: "injected direction", column: "order", direction: []string{"ASC; DROP TABLE users"}, expectedError: errors.DatabaseInvalidOrderByDirection.Args("ASC; DROP TABLE users")},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var grammar contractsdriver.Grammar
+			if test.jsonSelector != "" {
+				mockGrammar := mocksdriver.NewGrammar(t)
+				mockGrammar.EXPECT().CompileJsonSelector(test.jsonSelector).Return("json_extract(`data`, '$.name')").Once()
+				grammar = mockGrammar
+			}
+
+			query := newQuery(grammar).OrderBy(test.column, test.direction...).(*Query)
+
+			if test.expectedError != nil {
+				assert.EqualError(t, query.conditions.err, test.expectedError.Error())
+				assert.Empty(t, query.conditions.order)
+				return
+			}
+
+			assert.NoError(t, query.conditions.err)
 			assert.Equal(t, test.expectedOrder, query.conditions.order)
 		})
 	}
@@ -1712,6 +1752,11 @@ func TestWhereClauses(t *testing.T) {
 			name:      "WhereNot without conditions is ignored",
 			query:     func() contractsorm.Query { return newQuery().WhereNot(map[string]any{}) },
 			expectSql: "SELECT * FROM `users`",
+		},
+		{
+			name:        "OrderBy with an unsafe column",
+			query:       func() contractsorm.Query { return newQuery().OrderBy("id; DROP TABLE users") },
+			expectError: errors.DatabaseInvalidOrderByColumn.Args("id; DROP TABLE users"),
 		},
 	}
 

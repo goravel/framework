@@ -118,6 +118,8 @@ var (
 	DatabaseUnsupportedType             = New("unsupported type: %s, expected %s")
 	DatabaseInvalidArgumentNumber       = New("invalid argument number: %d, expected %s")
 	DatabaseInvalidPaginationLimit      = New("invalid pagination limit: %d, must be greater than 0")
+	DatabaseInvalidOrderByColumn        = New("invalid order by column: %s, expected a plain column name or a JSON selector, use OrderByRaw for an expression")
+	DatabaseInvalidOrderByDirection     = New("invalid order by direction: %s, expected ASC or DESC, use OrderByRaw for any other direction")
 	DatabaseTransactionNotStarted       = New("transaction not started")
 	DatabaseFailedToGetSql              = New("failed to get sql: %v")
 	DatabaseDataIsEmpty                 = New("data can't be empty")
