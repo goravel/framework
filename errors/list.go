@@ -378,8 +378,10 @@ var (
 	ValidationFilterRegisterFailed = New("filter register failed: %v")
 	ValidationInvalidFilterType    = New("invalid filter type for field %s, must be string or []string")
 	ValidationInvalidRuleType      = New("invalid rule type for field %s, must be string or []string")
-	ValidationRuleRegisterFailed   = New("rule register failed: %v")
-	ValidationUnknownRule          = New("unknown validation rule: %s")
+	// Plural is intentional: Laravel's message says "parameters" for every count.
+	ValidationRuleMissingParameters = New("validation rule %s requires at least %d parameters")
+	ValidationRuleRegisterFailed    = New("rule register failed: %v")
+	ValidationUnknownRule           = New("unknown validation rule: %s")
 
 	ViewCompileFailed      = New("failed to compile views: %v")
 	ViewFSRequired         = New("view filesystem is required")
