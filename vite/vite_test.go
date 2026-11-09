@@ -598,12 +598,6 @@ func TestPathsWithCustomPublicDirectory(t *testing.T) {
 	assert.Equal(t, "build", vite.BuildDirectory())
 	assert.Equal(t, filepath.Join(support.RelativePath, "static", "build"), vite.buildPath())
 
-	// A bare name is relative to the project root, not the public directory.
-	vite = newVite("/static/hot", "build")
-	assert.Equal(t, filepath.Join(support.RelativePath, "static", "hot"), vite.HotFile())
-	assert.Equal(t, "build", vite.BuildDirectory())
-	assert.Equal(t, filepath.Join(support.RelativePath, "build"), vite.buildPath())
-
 	// A "public/" prefix is a directory name here, not an alias: it stays literal.
 	vite = newVite("/static/hot", "public/build")
 	assert.Equal(t, "public/build", vite.BuildDirectory())
@@ -620,11 +614,11 @@ func TestPathsWithCustomPublicDirectory(t *testing.T) {
 }
 
 func TestUseBuildDirectory(t *testing.T) {
-	setupProject(t)
-	writeFile(t, filepath.Join(support.RelativePath, "dist", ".vite", "manifest.json"), `{"a.js": {"file": "a.js"}}`)
+	public := setupProject(t)
+	writeFile(t, filepath.Join(public, "dist", ".vite", "manifest.json"), `{"a.js": {"file": "a.js"}}`)
 	vite := newTestVite(t, "")
 
-	url, err := vite.UseBuildDirectory("/dist/").Asset("a.js")
+	url, err := vite.UseBuildDirectory("/public/dist/").Asset("a.js")
 	require.NoError(t, err)
 	assert.Equal(t, "/dist/a.js", url)
 }
@@ -640,12 +634,12 @@ func TestAssetBase(t *testing.T) {
 	support.Config.Paths.Public = "static"
 	t.Cleanup(func() { support.Config.Paths.Public = public })
 
-	vite.UseBuildDirectory("static/build")
+	// The URL segment is fixed when the directory is set, like the path read from disk.
+	assert.Equal(t, "build", vite.BuildDirectory())
 	assert.Equal(t, "/build", vite.assetBase())
 
-	// A directory outside the public directory keeps its project-root path.
-	vite.UseBuildDirectory("a/build")
-	assert.Equal(t, "/a/build", vite.assetBase())
+	vite.UseBuildDirectory("static/build")
+	assert.Equal(t, "/build", vite.assetBase())
 }
 
 func TestFuncs(t *testing.T) {

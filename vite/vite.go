@@ -31,7 +31,9 @@ const (
 )
 
 // DefaultBuildDirectory returns the default build directory, relative to the
-// project root: the configured public directory joined with "build".
+// project root: the configured public directory joined with "build". The build
+// directory has to live under the public directory: the application serves it
+// from there and goravel-vite-plugin prefixes it with the public directory.
 func DefaultBuildDirectory() string {
 	return path.Join(support.Config.Paths.Public, defaultBuildSubdirectory)
 }
@@ -84,6 +86,7 @@ type Vite struct {
 	hotPath          string // hotFile resolved to an absolute path, once, so a render does not call getwd
 	buildDirectory   string
 	buildRoot        string // buildDirectory resolved to an absolute path, once
+	buildPublic      string // buildDirectory relative to the public directory, the URL segment and vite:inputs value
 	manifestFilename string
 
 	manifestMu sync.Mutex
@@ -113,6 +116,7 @@ func NewVite(config config.Config) *Vite {
 	v.hotPath = resolveHotPath(v.hotFile)
 	v.buildDirectory = normalizeEntry(v.buildDirectory)
 	v.buildRoot = resolveBuildRoot(v.buildDirectory)
+	v.buildPublic = paths.PublicRelative(v.buildDirectory)
 
 	return v
 }
@@ -124,7 +128,9 @@ func resolveHotPath(hotFile string) string {
 }
 
 // resolveBuildRoot is the absolute path of the build directory, always resolved
-// against the project root, the same way as the hot file.
+// against the project root, the same way as the hot file. The directory has to
+// live under the public directory, which the application serves and
+// goravel-vite-plugin prefixes, so both read the same files.
 func resolveBuildRoot(directory string) string {
 	return paths.Abs(normalizeEntry(directory))
 }
@@ -187,10 +193,9 @@ func (r *Vite) Content(asset string) (string, error) {
 
 func (r *Vite) BuildDirectory() string {
 	r.mu.RLock()
-	directory := r.buildDirectory
-	r.mu.RUnlock()
+	defer r.mu.RUnlock()
 
-	return paths.PublicRelative(directory)
+	return r.buildPublic
 }
 
 func (r *Vite) HotFile() string {
@@ -248,7 +253,8 @@ func (r *Vite) Tags(entries ...string) (template.HTML, error) {
 
 // UseBuildDirectory sets the build directory, given relative to the project root
 // as in config/vite.go; BuildDirectory returns it relative to the public directory.
-// Like the hot file it lives under the public directory. Default "<paths.public>/build".
+// It has to live under the public directory, like the hot file, or the plugin and
+// the application disagree on where the build is. Default "<paths.public>/build".
 // The setters live on *Vite, not the contract: the shared instance is configured
 // from config/vite.go, which goravel-vite-plugin reads too, so a change at render
 // time would desync the build. They exist for tests and for applications that
@@ -258,6 +264,7 @@ func (r *Vite) UseBuildDirectory(directory string) *Vite {
 	r.mu.Lock()
 	r.buildDirectory = directory
 	r.buildRoot = resolveBuildRoot(directory)
+	r.buildPublic = paths.PublicRelative(directory)
 	r.mu.Unlock()
 
 	return r
@@ -395,7 +402,7 @@ func (r *Vite) hotURL() (string, bool) {
 // It is read once per Tags or Asset call, not once per emitted tag.
 func (r *Vite) assetBase() string {
 	r.mu.RLock()
-	directory := paths.PublicRelative(r.buildDirectory)
+	directory := r.buildPublic
 	r.mu.RUnlock()
 
 	prefix := ""

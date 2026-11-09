@@ -883,6 +883,7 @@ func TestPublicRelative(t *testing.T) {
 		{name: "outside the public directory", public: "public", directory: "a/build", expected: "a/build"},
 		{name: "nested public directory", public: "public/web", directory: "public/web/build", expected: "build"},
 		{name: "renamed public directory", public: "static", directory: "static/build", expected: "build"},
+		{name: "slash-padded public directory", public: "/public/", directory: "public/build", expected: "build"},
 		{name: "name that only looks like the public directory", public: "static", directory: "public/build", expected: "public/build"},
 		{name: "empty public directory", public: "", directory: "public/build", expected: "public/build"},
 	}

@@ -17,7 +17,7 @@ func init() {
 		// Build Directory
 		//
 		// The directory ` + "`vite build`" + ` writes to, relative to the project root.
-		// Like the hot file it lives under the public directory, which the
+		// Like the hot file it has to live under the public directory, which the
 		// application serves as its web root; goravel-vite-plugin reads these
 		// paths from the application.
 		"build_directory": "public/build",
