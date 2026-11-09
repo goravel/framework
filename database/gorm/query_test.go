@@ -464,6 +464,13 @@ func TestFindWithStringPrimaryKey(t *testing.T) {
 			expectSql: "SELECT * FROM `test_models` WHERE name = 'goravel'",
 		},
 		{
+			name: "Find keeps a raw condition when the model has no primary key",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&NoPrimaryKeyModel{}, "name = 'goravel'")
+			},
+			expectSql: "SELECT * FROM `no_primary_key_models` WHERE name = 'goravel'",
+		},
+		{
 			name: "Find keeps a raw condition when the model can't be parsed",
 			run: func(query contractsorm.Query) error {
 				return query.Table("users").Find(&[]map[string]any{}, "name = 'goravel'")
@@ -2142,6 +2149,10 @@ type TestModel struct {
 
 type StringPrimaryKeyModel struct {
 	ID   string `gorm:"primaryKey"`
+	Name string
+}
+
+type NoPrimaryKeyModel struct {
 	Name string
 }
 
