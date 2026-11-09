@@ -16,18 +16,14 @@ func init() {
 	config.Add("vite", map[string]any{
 		// Build Directory
 		//
-		// The directory ` + "`vite build`" + ` writes to, relative to the project root.
-		// Like the hot file it has to live under the public directory, which the
-		// application serves as its web root; goravel-vite-plugin reads these
-		// paths from the application.
-		"build_directory": "public/build",
+		// The directory ` + "`vite build`" + ` writes to, inside the public directory.
+		"build_directory": "build",
 
 		// Hot File
 		//
-		// The file the dev server announces its URL in, relative to the project
-		// root. Like the build directory it lives under the public directory.
+		// The file the dev server announces its URL in, inside the public directory.
 		// While it exists, {{ vite }} points every tag at the dev server.
-		"hot_file": "public/hot",
+		"hot_file": "hot",
 
 		// Manifest
 		//

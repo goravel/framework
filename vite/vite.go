@@ -30,18 +30,15 @@ const (
 	DefaultManifestFilename = ".vite/manifest.json"
 )
 
-// DefaultBuildDirectory returns the default build directory, relative to the
-// project root: the configured public directory joined with "build". The build
-// directory has to live under the public directory: the application serves it
-// from there and goravel-vite-plugin prefixes it with the public directory.
+// DefaultBuildDirectory returns the default build directory, inside the public
+// directory.
 func DefaultBuildDirectory() string {
-	return path.Join(support.Config.Paths.Public, defaultBuildSubdirectory)
+	return defaultBuildSubdirectory
 }
 
-// DefaultHotFile returns the default hot file, relative to the project root: the
-// configured public directory joined with "hot".
+// DefaultHotFile returns the default hot file, inside the public directory.
 func DefaultHotFile() string {
-	return path.Join(support.Config.Paths.Public, defaultHotFilename)
+	return defaultHotFilename
 }
 
 var _ contractsvite.Vite = (*Vite)(nil)
@@ -86,7 +83,6 @@ type Vite struct {
 	hotPath          string // hotFile resolved to an absolute path, once, so a render does not call getwd
 	buildDirectory   string
 	buildRoot        string // buildDirectory resolved to an absolute path, once
-	buildPublic      string // buildDirectory relative to the public directory, the URL segment and vite:inputs value
 	manifestFilename string
 
 	manifestMu sync.Mutex
@@ -116,23 +112,20 @@ func NewVite(config config.Config) *Vite {
 	v.hotPath = resolveHotPath(v.hotFile)
 	v.buildDirectory = normalizeEntry(v.buildDirectory)
 	v.buildRoot = resolveBuildRoot(v.buildDirectory)
-	v.buildPublic = paths.PublicRelative(v.buildDirectory)
 
 	return v
 }
 
-// resolveHotPath is the absolute path of the hot file, always resolved against the
-// project root.
+// resolveHotPath is the absolute path of the hot file, resolved against the
+// public directory.
 func resolveHotPath(hotFile string) string {
-	return paths.Abs(normalizeEntry(hotFile))
+	return paths.Abs(support.Config.Paths.Public, normalizeEntry(hotFile))
 }
 
-// resolveBuildRoot is the absolute path of the build directory, always resolved
-// against the project root, the same way as the hot file. The directory has to
-// live under the public directory, which the application serves and
-// goravel-vite-plugin prefixes, so both read the same files.
+// resolveBuildRoot is the absolute path of the build directory, resolved against
+// the public directory.
 func resolveBuildRoot(directory string) string {
-	return paths.Abs(normalizeEntry(directory))
+	return paths.Abs(support.Config.Paths.Public, normalizeEntry(directory))
 }
 
 // Funcs returns the template functions the service provider registers, for
@@ -195,7 +188,7 @@ func (r *Vite) BuildDirectory() string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	return r.buildPublic
+	return r.buildDirectory
 }
 
 func (r *Vite) HotFile() string {
@@ -251,10 +244,8 @@ func (r *Vite) Tags(entries ...string) (template.HTML, error) {
 	return r.buildTags(m, r.assetBase(), entries)
 }
 
-// UseBuildDirectory sets the build directory, given relative to the project root
-// as in config/vite.go; BuildDirectory returns it relative to the public directory.
-// It has to live under the public directory, like the hot file, or the plugin and
-// the application disagree on where the build is. Default "<paths.public>/build".
+// UseBuildDirectory sets the build directory, given relative to the public
+// directory as in config/vite.go. Default "build".
 // The setters live on *Vite, not the contract: the shared instance is configured
 // from config/vite.go, which goravel-vite-plugin reads too, so a change at render
 // time would desync the build. They exist for tests and for applications that
@@ -264,14 +255,12 @@ func (r *Vite) UseBuildDirectory(directory string) *Vite {
 	r.mu.Lock()
 	r.buildDirectory = directory
 	r.buildRoot = resolveBuildRoot(directory)
-	r.buildPublic = paths.PublicRelative(directory)
 	r.mu.Unlock()
 
 	return r
 }
 
-// UseHotFile sets the hot file, which is always read from the project root: a
-// leading slash is trimmed so it can never escape it. Default "<paths.public>/hot".
+// UseHotFile sets the hot file, given relative to the public directory. Default "hot".
 func (r *Vite) UseHotFile(hotFile string) *Vite {
 	hotFile = normalizeEntry(hotFile)
 	r.mu.Lock()
@@ -402,7 +391,7 @@ func (r *Vite) hotURL() (string, bool) {
 // It is read once per Tags or Asset call, not once per emitted tag.
 func (r *Vite) assetBase() string {
 	r.mu.RLock()
-	directory := r.buildPublic
+	directory := r.buildDirectory
 	r.mu.RUnlock()
 
 	prefix := ""
