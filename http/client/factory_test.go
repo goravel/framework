@@ -585,7 +585,9 @@ func (s *FactoryTestSuite) TestFactory_Reset() {
 	defer server.Close()
 
 	// Keep the post-Reset call hermetic too.
-	s.factory.factoryConfig.Clients["github"] = Config{BaseUrl: server.URL}
+	githubConfig := s.factory.factoryConfig.Clients["github"]
+	githubConfig.BaseUrl = server.URL
+	s.factory.factoryConfig.Clients["github"] = githubConfig
 
 	s.factory.Fake(map[string]any{
 		server.URL + "/zen": "fake_response",
@@ -603,7 +605,7 @@ func (s *FactoryTestSuite) TestFactory_Reset() {
 	// After Reset the request must reach the server, not the mock.
 	reqReal := s.factory.Client("github")
 	respReal, errReal := reqReal.Get("/zen")
-	s.NoError(errReal)
+	s.Require().NoError(errReal)
 
 	realBody, err := respReal.Body()
 	s.NoError(err)
@@ -642,13 +644,15 @@ func (s *FactoryTestSuite) TestFactory_Assertions_Negatives() {
 	defer server.Close()
 
 	// Keep the unmatched request off the public API.
-	s.factory.factoryConfig.Clients["github"] = Config{BaseUrl: server.URL}
+	githubConfig := s.factory.factoryConfig.Clients["github"]
+	githubConfig.BaseUrl = server.URL
+	s.factory.factoryConfig.Clients["github"] = githubConfig
 
 	s.factory.Fake(nil)
 
 	s.True(s.factory.AssertNothingSent())
 	resp, err := s.factory.Client("github").Get("/")
-	s.NoError(err)
+	s.Require().NoError(err)
 	body, err := resp.Body()
 	s.NoError(err)
 	s.Equal("real_server_hit", body)
