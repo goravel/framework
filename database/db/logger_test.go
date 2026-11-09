@@ -62,8 +62,8 @@ func TestNewLogger(t *testing.T) {
 			tt.setup()
 			logger := NewLogger(mockConfig, nil)
 
-			assert.Equal(t, tt.wantLevel, logger.(*Logger).level)
-			assert.Equal(t, tt.wantSlow, logger.(*Logger).slowThreshold)
+			assert.Equal(t, tt.wantLevel, logger.level)
+			assert.Equal(t, tt.wantSlow, logger.slowThreshold)
 		})
 	}
 }
