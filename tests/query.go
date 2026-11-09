@@ -319,6 +319,9 @@ func (r *TestQueryBuilder) single(driver, prefix, timezone string, singular bool
 	if err != nil {
 		panic(err)
 	}
+	if container.Built() {
+		container.Track()
+	}
 
 	// goravel/*:docker.go#resetConfigPort
 	mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.write", connection)).Return(nil)
