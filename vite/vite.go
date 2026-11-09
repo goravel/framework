@@ -98,7 +98,7 @@ func NewVite(config config.Config) *Vite {
 		v.manifestFilename = config.GetString("vite.manifest", DefaultManifestFilename)
 	}
 
-	v.hotFile = aliasPublicPrefix(trimProjectSlash(v.hotFile))
+	v.hotFile = normalizeHotFile(v.hotFile)
 	v.buildDirectory = normalizeBuildDirectory(v.buildDirectory)
 	v.hotPath = resolveHotPath(v.hotFile)
 	v.buildRoot = resolveBuildRoot(v.buildDirectory)
@@ -106,12 +106,13 @@ func NewVite(config config.Config) *Vite {
 	return v
 }
 
-// publicPrefixes lists the project-root spellings that stand for the public
-// directory: the configured one plus the conventional "public". The hot file trims
-// them and reads the rest from the project root; the build directory aliases and
-// strips them.
+// publicPrefixes lists the spellings that stand for the public directory in a
+// project-root path: the configured one plus the conventional "public". The hot
+// file trims a leading slash from either spelling; both settings then alias the
+// conventional prefix to the configured one.
 func publicPrefixes() []string {
-	if support.Config.Paths.Public == "public" {
+	switch support.Config.Paths.Public {
+	case "", "public":
 		return []string{"public"}
 	}
 
@@ -137,13 +138,25 @@ func trimProjectSlash(value string) string {
 
 // aliasPublicPrefix rewrites the conventional "public" prefix to the configured
 // public directory, so a value written for the default stub follows a renamed
-// paths.public. The caller has already dropped a leading slash.
+// paths.public. A value already under the configured directory is left alone. The
+// caller has already dropped a leading slash.
 func aliasPublicPrefix(value string) string {
-	if support.Config.Paths.Public == "public" || (value != "public" && !strings.HasPrefix(value, "public/")) {
+	public := support.Config.Paths.Public
+	if public == "" || public == "public" || value == public || strings.HasPrefix(value, public+"/") {
 		return value
 	}
 
-	return support.Config.Paths.Public + strings.TrimPrefix(value, "public")
+	if value != "public" && !strings.HasPrefix(value, "public/") {
+		return value
+	}
+
+	return public + strings.TrimPrefix(value, "public")
+}
+
+// normalizeHotFile drops a leading slash from a public prefix and aliases the
+// conventional one, so a genuine absolute path stays absolute.
+func normalizeHotFile(value string) string {
+	return aliasPublicPrefix(trimProjectSlash(value))
 }
 
 // normalizeBuildDirectory returns the build directory relative to the public
@@ -152,17 +165,21 @@ func aliasPublicPrefix(value string) string {
 // cannot be expressed.
 func normalizeBuildDirectory(directory string) string {
 	directory = aliasPublicPrefix(normalizeEntry(directory))
-	if directory == support.Config.Paths.Public {
+	public := support.Config.Paths.Public
+	if public == "" {
+		return directory
+	}
+
+	if directory == public {
 		return ""
 	}
 
-	return strings.TrimPrefix(directory, support.Config.Paths.Public+"/")
+	return strings.TrimPrefix(directory, public+"/")
 }
 
-// resolveHotPath is the absolute path of a hot file; a relative path is read from
-// the project root and a genuine absolute path is left alone.
+// resolveHotPath is the absolute path of an already-normalized hot file.
 func resolveHotPath(hotFile string) string {
-	return paths.Abs(aliasPublicPrefix(trimProjectSlash(hotFile)))
+	return paths.Abs(hotFile)
 }
 
 // resolveBuildRoot is the absolute path of an already-normalized build directory.
@@ -304,7 +321,7 @@ func (r *Vite) UseBuildDirectory(directory string) *Vite {
 
 // UseHotFile sets the hot file; a relative path resolves against the project root. Default "public/hot".
 func (r *Vite) UseHotFile(path string) *Vite {
-	path = aliasPublicPrefix(trimProjectSlash(path))
+	path = normalizeHotFile(path)
 	r.mu.Lock()
 	r.hotFile = path
 	r.hotPath = resolveHotPath(path)

@@ -605,6 +605,50 @@ func TestPathsNormalized_CustomPublicDirectory(t *testing.T) {
 	}
 }
 
+func TestPathsNormalized_NestedPublicDirectory(t *testing.T) {
+	setupProject(t)
+	public := support.Config.Paths.Public
+	support.Config.Paths.Public = "public/web"
+	t.Cleanup(func() { support.Config.Paths.Public = public })
+
+	config := mocksconfig.NewConfig(t)
+	config.EXPECT().GetString("vite.hot_file", DefaultHotFile).Return(DefaultHotFile).Once()
+	config.EXPECT().GetString("vite.build_directory", DefaultBuildDirectory).Return(DefaultBuildDirectory).Once()
+	config.EXPECT().GetString("vite.manifest", DefaultManifestFilename).Return(DefaultManifestFilename).Once()
+
+	// The alias runs once: "public/hot" becomes "public/web/hot", not "public/web/web/hot".
+	hot := filepath.Join(support.RelativePath, "public", "web", "hot")
+	build := filepath.Join(support.RelativePath, "public", "web", "build")
+	vite := NewVite(config)
+	assert.Equal(t, hot, vite.HotFile())
+	assert.Equal(t, "build", vite.BuildDirectory())
+	assert.Equal(t, build, vite.buildPath())
+
+	// A value already under the configured directory survives the setters unchanged.
+	vite.UseHotFile("public/web/hot").UseBuildDirectory("public/web/build")
+	assert.Equal(t, hot, vite.HotFile())
+	assert.Equal(t, "build", vite.BuildDirectory())
+	assert.Equal(t, build, vite.buildPath())
+}
+
+func TestPathsNormalized_EmptyPublicDirectory(t *testing.T) {
+	setupProject(t)
+	public := support.Config.Paths.Public
+	support.Config.Paths.Public = ""
+	t.Cleanup(func() { support.Config.Paths.Public = public })
+
+	config := mocksconfig.NewConfig(t)
+	config.EXPECT().GetString("vite.hot_file", DefaultHotFile).Return(DefaultHotFile).Once()
+	config.EXPECT().GetString("vite.build_directory", DefaultBuildDirectory).Return(DefaultBuildDirectory).Once()
+	config.EXPECT().GetString("vite.manifest", DefaultManifestFilename).Return(DefaultManifestFilename).Once()
+
+	// An empty config value must not alias the hot file to the filesystem root.
+	vite := NewVite(config)
+	assert.Equal(t, filepath.Join(support.RelativePath, "public", "hot"), vite.HotFile())
+	assert.Equal(t, "public/build", vite.BuildDirectory())
+	assert.Equal(t, filepath.Join(support.RelativePath, "public", "build"), vite.buildPath())
+}
+
 func TestUseBuildDirectory(t *testing.T) {
 	public := setupProject(t)
 	writeFile(t, filepath.Join(public, "dist", ".vite", "manifest.json"), `{"a.js": {"file": "a.js"}}`)
