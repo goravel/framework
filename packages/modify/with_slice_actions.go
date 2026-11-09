@@ -384,36 +384,21 @@ func (r *withSliceHandler) removeItemFromFile(pkg, item string) error {
 //	    }
 //	})
 func (r *withSliceHandler) appendToExisting(withCall *dst.CallExpr, itemExpr dst.Expr) {
-	if len(withCall.Args) == 0 {
+	compositeLit := withCallCompositeLit(withCall)
+	if compositeLit == nil {
 		return
 	}
 
-	// Check if the argument is a function literal (new API: func() []Type)
-	funcLit, ok := withCall.Args[0].(*dst.FuncLit)
-	if !ok {
-		return
+	// Add proper formatting for multi-line arrays
+	if len(compositeLit.Elts) > 0 {
+		compositeLit.Elts[0].Decorations().Before = dst.NewLine
 	}
 
-	// Find the return statement and its composite literal
-	for _, stmt := range funcLit.Body.List {
-		if retStmt, ok := stmt.(*dst.ReturnStmt); ok {
-			if len(retStmt.Results) > 0 {
-				if compositeLit, ok := retStmt.Results[0].(*dst.CompositeLit); ok {
-					// Add proper formatting for multi-line arrays
-					if len(compositeLit.Elts) > 0 {
-						compositeLit.Elts[0].Decorations().Before = dst.NewLine
-					}
+	// Add newline before new item and after (for closing brace)
+	itemExpr.Decorations().Before = dst.NewLine
+	itemExpr.Decorations().After = dst.NewLine
 
-					// Add newline before new item and after (for closing brace)
-					itemExpr.Decorations().Before = dst.NewLine
-					itemExpr.Decorations().After = dst.NewLine
-
-					compositeLit.Elts = append(compositeLit.Elts, itemExpr)
-					return
-				}
-			}
-		}
-	}
+	compositeLit.Elts = append(compositeLit.Elts, itemExpr)
 }
 
 // createWithMethod creates a new WithMethod call and inserts it into the chain.
@@ -813,30 +798,15 @@ func (r *withSliceHandler) removeInline(item string) modify.Action {
 //	    }
 //	})
 func (r *withSliceHandler) removeFromExisting(withCall *dst.CallExpr, itemExpr dst.Expr) {
-	if len(withCall.Args) == 0 {
+	compositeLit := withCallCompositeLit(withCall)
+	if compositeLit == nil {
 		return
 	}
 
-	// Check if the argument is a function literal (new API: func() []Type)
-	funcLit, ok := withCall.Args[0].(*dst.FuncLit)
-	if !ok {
-		return
-	}
-
-	// Find the return statement and its composite literal
-	for _, stmt := range funcLit.Body.List {
-		if retStmt, ok := stmt.(*dst.ReturnStmt); ok {
-			if len(retStmt.Results) > 0 {
-				if compositeLit, ok := retStmt.Results[0].(*dst.CompositeLit); ok {
-					// Use slices.DeleteFunc to remove the matching item
-					compositeLit.Elts = slices.DeleteFunc(compositeLit.Elts, func(ex dst.Expr) bool {
-						return match.EqualNode(itemExpr).MatchNode(ex)
-					})
-					return
-				}
-			}
-		}
-	}
+	// Use slices.DeleteFunc to remove the matching item
+	compositeLit.Elts = slices.DeleteFunc(compositeLit.Elts, func(ex dst.Expr) bool {
+		return match.EqualNode(itemExpr).MatchNode(ex)
+	})
 }
 
 // addMiddlewareAppendCall adds a new handler.Append() call to the function literal.
@@ -1062,7 +1032,8 @@ func foundationSetupMiddleware(middleware string) modify.Action {
 	}
 }
 
-// consolePackageImportPath is the contracts/console import a WithCommandHooks call needs.
+// consolePackageImportPath is the contracts/console import the command slices are
+// typed with, shared by AddCommand and the WithCommandHooks helpers.
 const consolePackageImportPath = "github.com/goravel/framework/contracts/console"
 
 // foundationSetupCommandHook registers a hook in the foundation.Setup() chain,
@@ -1129,30 +1100,12 @@ func foundationSetupCommandHook(key, hook string, consoleName *string, registere
 // existing call, creating the entry for key when missing. It reports whether the
 // hook is in the chain.
 func appendToExistingCommandHook(withCall *dst.CallExpr, key, hook string, hookExpr dst.Expr) bool {
-	if len(withCall.Args) == 0 {
+	mapLit := withCallCompositeLit(withCall)
+	if mapLit == nil {
 		return false
 	}
 
-	funcLit, ok := withCall.Args[0].(*dst.FuncLit)
-	if !ok {
-		return false
-	}
-
-	for _, stmt := range funcLit.Body.List {
-		retStmt, ok := stmt.(*dst.ReturnStmt)
-		if !ok || len(retStmt.Results) == 0 {
-			continue
-		}
-
-		mapLit, ok := retStmt.Results[0].(*dst.CompositeLit)
-		if !ok {
-			continue
-		}
-
-		return appendCommandHookToMap(mapLit, key, hook, hookExpr)
-	}
-
-	return false
+	return appendCommandHookToMap(mapLit, key, hook, hookExpr)
 }
 
 // appendCommandHookToMap adds the hook to the map literal under key, creating
@@ -1307,6 +1260,21 @@ func returnedCompositeLit(body *dst.BlockStmt) *dst.CompositeLit {
 	}
 
 	return nil
+}
+
+// withCallCompositeLit returns the composite literal the function literal
+// argument of a With* call returns, or nil when the call does not take one.
+func withCallCompositeLit(withCall *dst.CallExpr) *dst.CompositeLit {
+	if len(withCall.Args) == 0 {
+		return nil
+	}
+
+	funcLit, ok := withCall.Args[0].(*dst.FuncLit)
+	if !ok {
+		return nil
+	}
+
+	return returnedCompositeLit(funcLit.Body)
 }
 
 // createWithCommandHooks inserts a new WithCommandHooks call after

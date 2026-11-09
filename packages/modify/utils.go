@@ -22,7 +22,7 @@ func AddCommand(pkg, command string) error {
 		helperFuncName:  "Commands",
 		typePackage:     "console",
 		typeName:        "Command",
-		typeImportPath:  "github.com/goravel/framework/contracts/console",
+		typeImportPath:  consolePackageImportPath,
 		fileExistsError: errors.PackageCommandsFileExists,
 		stubTemplate:    commands,
 		matcherFunc:     match.Commands,
