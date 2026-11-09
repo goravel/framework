@@ -564,24 +564,29 @@ func TestPathsNormalized_CustomPublicDirectory(t *testing.T) {
 	t.Cleanup(func() { support.Config.Paths.Public = public })
 
 	tests := []struct {
-		name    string
-		hotFile string
-		build   string
-		hot     string
+		name           string
+		hotFile        string
+		buildDirectory string
+		wantHotPath    string
 	}{
 		{
-			name:    "configured public prefix",
-			hotFile: "/static/hot",
-			build:   "static/build",
-			hot:     filepath.Join(support.RelativePath, "static", "hot"),
+			name:           "configured public prefix",
+			hotFile:        "/static/hot",
+			buildDirectory: "static/build",
+			wantHotPath:    filepath.Join(support.RelativePath, "static", "hot"),
 		},
 		{
-			// The conventional prefix is stripped and the remainder resolves under
-			// paths.public; a root-relative hot file keeps its own directory.
-			name:    "conventional public prefix",
-			hotFile: "/public/hot",
-			build:   "public/build",
-			hot:     filepath.Join(support.RelativePath, "public", "hot"),
+			// The conventional prefix follows a renamed paths.public for both settings.
+			name:           "conventional public prefix",
+			hotFile:        "/public/hot",
+			buildDirectory: "public/build",
+			wantHotPath:    filepath.Join(support.RelativePath, "static", "hot"),
+		},
+		{
+			name:           "shipped default",
+			hotFile:        DefaultHotFile,
+			buildDirectory: DefaultBuildDirectory,
+			wantHotPath:    filepath.Join(support.RelativePath, "static", "hot"),
 		},
 	}
 
@@ -589,13 +594,13 @@ func TestPathsNormalized_CustomPublicDirectory(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			config := mocksconfig.NewConfig(t)
 			config.EXPECT().GetString("vite.hot_file", DefaultHotFile).Return(test.hotFile).Once()
-			config.EXPECT().GetString("vite.build_directory", DefaultBuildDirectory).Return(test.build).Once()
+			config.EXPECT().GetString("vite.build_directory", DefaultBuildDirectory).Return(test.buildDirectory).Once()
 			config.EXPECT().GetString("vite.manifest", DefaultManifestFilename).Return(DefaultManifestFilename).Once()
 
 			vite := NewVite(config)
 			assert.Equal(t, "build", vite.BuildDirectory())
 			assert.Equal(t, filepath.Join(support.RelativePath, "static", "build"), vite.buildPath())
-			assert.Equal(t, test.hot, vite.HotFile())
+			assert.Equal(t, test.wantHotPath, vite.HotFile())
 		})
 	}
 }
