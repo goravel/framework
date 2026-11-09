@@ -13,7 +13,7 @@ func TestStubs_Config(t *testing.T) {
 	assert.Contains(t, content, `"goravel/app/facades"`)
 	assert.Contains(t, content, "config := facades.Config()")
 	assert.Contains(t, content, `config.Add("vite", map[string]any{`)
-	assert.Contains(t, content, `"build_directory": "build",`)
+	assert.Contains(t, content, `"build_directory": "public/build",`)
 	assert.Contains(t, content, `"hot_file": "public/hot",`)
 	assert.Contains(t, content, `"manifest": ".vite/manifest.json",`)
 	assert.Contains(t, content, `"inputs": []string{},`)

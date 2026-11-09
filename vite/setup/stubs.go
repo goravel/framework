@@ -16,9 +16,10 @@ func init() {
 	config.Add("vite", map[string]any{
 		// Build Directory
 		//
-		// The directory inside the public directory that ` + "`vite build`" + ` writes to.
+		// The directory ` + "`vite build`" + ` writes to, relative to the project root
+		// (the public directory prefix is optional).
 		// goravel-vite-plugin reads these paths from the application.
-		"build_directory": "build",
+		"build_directory": "public/build",
 
 		// Hot File
 		//

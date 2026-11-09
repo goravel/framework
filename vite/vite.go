@@ -24,8 +24,8 @@ import (
 )
 
 const (
-	// DefaultBuildDirectory is where goravel-vite-plugin writes the build, inside the public directory.
-	DefaultBuildDirectory = "build"
+	// DefaultBuildDirectory is where goravel-vite-plugin writes the build, relative to the project root.
+	DefaultBuildDirectory = "public/build"
 	// DefaultHotFile is where goravel-vite-plugin announces the dev server, relative to the project root.
 	DefaultHotFile = "public/hot"
 	// DefaultManifestFilename is where Vite writes the manifest, relative to the build directory.
@@ -51,7 +51,7 @@ type manifest struct {
 	// importsOf is each chunk's transitive imports in preload order, computed once
 	// when the manifest is parsed so a render does not re-walk the graph.
 	importsOf map[string][]string
-	version   string // md5 of the manifest file, so Version and the tags come from the same bytes
+	version   string // md5 of the manifest file, so ManifestHash and the tags come from the same bytes
 	size      int64
 	modTime   int64
 }
@@ -98,20 +98,41 @@ func NewVite(config config.Config) *Vite {
 		v.manifestFilename = config.GetString("vite.manifest", DefaultManifestFilename)
 	}
 
+	v.hotFile = normalizePath(v.hotFile)
+	v.buildDirectory = normalizeBuildDirectory(v.buildDirectory)
 	v.hotPath = resolveHotPath(v.hotFile)
 	v.buildRoot = resolveBuildRoot(v.buildDirectory)
 
 	return v
 }
 
-// resolveHotPath is the absolute path of a hot file given relative to the project root.
-func resolveHotPath(hotFile string) string {
-	return paths.Abs(hotFile)
+// normalizePath trims a leading slash so "/public/build" and "public/build" agree.
+func normalizePath(value string) string {
+	return strings.TrimPrefix(value, "/")
 }
 
-// resolveBuildRoot is the absolute path of a build directory given relative to the public directory.
+// normalizeBuildDirectory returns the build directory relative to the public
+// directory. A value that already starts with the public directory, such as
+// "public/build", is read from the project root and stripped back to "build".
+func normalizeBuildDirectory(directory string) string {
+	directory = normalizePath(directory)
+	if directory == support.Config.Paths.Public {
+		return ""
+	}
+
+	return strings.TrimPrefix(directory, support.Config.Paths.Public+"/")
+}
+
+// resolveHotPath is the absolute path of a hot file given relative to the project root.
+func resolveHotPath(hotFile string) string {
+	return paths.Abs(normalizePath(hotFile))
+}
+
+// resolveBuildRoot is the absolute path of a build directory. The value is relative
+// to the public directory; a value that starts with the public directory, such as
+// "public/build", is accepted and resolves to the same place.
 func resolveBuildRoot(directory string) string {
-	return paths.Abs(support.Config.Paths.Public, directory)
+	return paths.Abs(support.Config.Paths.Public, normalizeBuildDirectory(directory))
 }
 
 // Funcs returns the template functions the service provider registers, for
@@ -230,12 +251,14 @@ func (r *Vite) Tags(entries ...string) (template.HTML, error) {
 	return r.buildTags(m, r.assetBase(), entries)
 }
 
-// UseBuildDirectory sets the build directory inside the public directory. Default
-// "build". The setters live on *Vite, not the contract: the shared instance is
-// configured from config/vite.go, which goravel-vite-plugin reads too, so a
-// change at render time would desync the build. They exist for tests and for
-// applications that construct their own Vite.
+// UseBuildDirectory sets the build directory relative to the public directory.
+// Default "public/build"; normalization reads "build" and "public/build" alike. The
+// setters live on *Vite, not the contract: the shared instance is configured from
+// config/vite.go, which goravel-vite-plugin reads too, so a change at render time
+// would desync the build. They exist for tests and for applications that construct
+// their own Vite.
 func (r *Vite) UseBuildDirectory(directory string) *Vite {
+	directory = normalizeBuildDirectory(directory)
 	r.mu.Lock()
 	r.buildDirectory = directory
 	r.buildRoot = resolveBuildRoot(directory)
@@ -246,6 +269,7 @@ func (r *Vite) UseBuildDirectory(directory string) *Vite {
 
 // UseHotFile sets the hot file; a relative path resolves against the project root. Default "public/hot".
 func (r *Vite) UseHotFile(path string) *Vite {
+	path = normalizePath(path)
 	r.mu.Lock()
 	r.hotFile = path
 	r.hotPath = resolveHotPath(path)
@@ -440,10 +464,15 @@ func (r *Vite) manifest() (*manifest, error) {
 	return m, nil
 }
 
-// Version returns an asset version derived from the build manifest — the md5 of the
-// manifest file — or "" when no manifest exists, e.g. during development. It is read
-// through the same cache as Tags, so a rebuild is picked up by Tags and Version together.
-func (r *Vite) Version() string {
+// ManifestHash returns an asset version derived from the build manifest — the md5
+// of the manifest file — or "" while the dev server runs or there is no readable
+// manifest. It is read through the same cache as Tags, so a rebuild is picked up
+// by Tags and ManifestHash together.
+func (r *Vite) ManifestHash() string {
+	if r.IsRunningHot() {
+		return ""
+	}
+
 	m, err := r.manifest()
 	if err != nil {
 		return ""

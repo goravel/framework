@@ -24,7 +24,7 @@ type Vite interface {
 	// Tags returns the stylesheet, modulepreload and module script tags for the
 	// entries; while the dev server runs, the Vite client plus one tag per entry.
 	Tags(entries ...string) (template.HTML, error)
-	// Version returns an asset version derived from the build manifest, or "" when
-	// there is none, or it cannot be read or parsed.
-	Version() string
+	// ManifestHash returns an asset version derived from the build manifest, or ""
+	// when there is none, it cannot be read or parsed, or the dev server runs.
+	ManifestHash() string
 }

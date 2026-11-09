@@ -99,7 +99,7 @@ func TestNewVite_ReadsConfig(t *testing.T) {
 
 	vite = NewVite(nil)
 	assert.Equal(t, DefaultHotFile, vite.hotFile)
-	assert.Equal(t, DefaultBuildDirectory, vite.buildDirectory)
+	assert.Equal(t, "build", vite.buildDirectory)
 	assert.Equal(t, DefaultManifestFilename, vite.manifestFilename)
 	assert.False(t, vite.IsRunningHot())
 }
@@ -114,19 +114,16 @@ func TestHotFile(t *testing.T) {
 	writeFile(t, filepath.Join(public, "hot"), "http://localhost:5173\n")
 	assert.True(t, vite.IsRunningHot())
 
-	// A relative hot file is resolved against the project root, an absolute one is used as is.
+	// A hot file is resolved against the project root, with or without a leading slash.
 	vite.UseHotFile("storage/hot")
+	assert.Equal(t, filepath.Join(support.RelativePath, "storage", "hot"), vite.HotFile())
+	vite.UseHotFile("/storage/hot")
 	assert.Equal(t, filepath.Join(support.RelativePath, "storage", "hot"), vite.HotFile())
 	assert.False(t, vite.IsRunningHot())
 
-	absolute := filepath.Join(t.TempDir(), "hot")
-	writeFile(t, absolute, "http://localhost:5173")
-	vite.UseHotFile(absolute)
-	assert.Equal(t, absolute, vite.HotFile())
-	assert.True(t, vite.IsRunningHot())
-
 	// A directory is not a hot file.
-	vite.UseHotFile(t.TempDir())
+	require.NoError(t, os.MkdirAll(filepath.Join(support.RelativePath, "storage"), 0o755))
+	vite.UseHotFile("storage")
 	assert.False(t, vite.IsRunningHot())
 }
 
@@ -403,45 +400,55 @@ func TestManifest_ReloadedWhenChanged(t *testing.T) {
 	assert.NotSame(t, first, vite.manifests[manifestPath])
 }
 
-func TestVersion_FromManifest(t *testing.T) {
+func TestManifestHash_FromManifest(t *testing.T) {
 	public := setupProject(t)
 	manifestPath := filepath.Join(public, "build", ".vite", "manifest.json")
 	writeFile(t, manifestPath, sampleManifest)
 	vite := newTestVite(t, "")
 
 	sum := md5.Sum([]byte(sampleManifest))
-	assert.Equal(t, hex.EncodeToString(sum[:]), vite.Version())
+	assert.Equal(t, hex.EncodeToString(sum[:]), vite.ManifestHash())
 
-	// Tags reuses the manifest Version hashed, so a render leaves the version untouched.
+	// Tags reuses the manifest ManifestHash hashed, so a render leaves the hash untouched.
 	cached := vite.manifests[manifestPath]
 	_, err := vite.Tags("resources/js/app.js")
 	require.NoError(t, err)
 	assert.Same(t, cached, vite.manifests[manifestPath])
-	assert.Equal(t, hex.EncodeToString(sum[:]), vite.Version())
+	assert.Equal(t, hex.EncodeToString(sum[:]), vite.ManifestHash())
 }
 
-func TestVersion_EmptyWithoutManifest(t *testing.T) {
+func TestManifestHash_EmptyWithoutManifest(t *testing.T) {
 	setupProject(t)
 	vite := newTestVite(t, "")
 
-	assert.Equal(t, "", vite.Version())
+	assert.Equal(t, "", vite.ManifestHash())
 }
 
-func TestVersion_InvalidManifest(t *testing.T) {
+func TestManifestHash_EmptyWhileRunningHot(t *testing.T) {
+	public := setupProject(t)
+	writeFile(t, filepath.Join(public, "build", ".vite", "manifest.json"), sampleManifest)
+	writeFile(t, filepath.Join(public, "hot"), "http://localhost:5173")
+	vite := newTestVite(t, "")
+
+	assert.True(t, vite.IsRunningHot())
+	assert.Equal(t, "", vite.ManifestHash())
+}
+
+func TestManifestHash_InvalidManifest(t *testing.T) {
 	public := setupProject(t)
 	writeFile(t, filepath.Join(public, "build", ".vite", "manifest.json"), "{not json")
 	vite := newTestVite(t, "")
 
-	assert.Equal(t, "", vite.Version())
+	assert.Equal(t, "", vite.ManifestHash())
 }
 
-func TestVersion_MovesWithRebuild(t *testing.T) {
+func TestManifestHash_MovesWithRebuild(t *testing.T) {
 	public := setupProject(t)
 	manifestPath := filepath.Join(public, "build", ".vite", "manifest.json")
 	writeFile(t, manifestPath, `{"a.js": {"file": "a-1.js"}}`)
 	vite := newTestVite(t, "")
 
-	firstVersion := vite.Version()
+	firstVersion := vite.ManifestHash()
 	assert.NotEmpty(t, firstVersion)
 	tags, err := vite.Tags("a.js")
 	require.NoError(t, err)
@@ -456,7 +463,7 @@ func TestVersion_MovesWithRebuild(t *testing.T) {
 	future := info.ModTime().Add(time.Second)
 	require.NoError(t, os.Chtimes(manifestPath, future, future))
 
-	secondVersion := vite.Version()
+	secondVersion := vite.ManifestHash()
 	sum := md5.Sum([]byte(sameLength))
 	assert.Equal(t, hex.EncodeToString(sum[:]), secondVersion)
 	assert.NotEqual(t, firstVersion, secondVersion)
@@ -466,10 +473,58 @@ func TestVersion_MovesWithRebuild(t *testing.T) {
 
 	// A rebuild that changes the size is picked up as well.
 	writeFile(t, manifestPath, `{"a.js": {"file": "a-3.js"}, "b.js": {"file": "b-1.js"}}`)
-	assert.NotEqual(t, secondVersion, vite.Version())
+	assert.NotEqual(t, secondVersion, vite.ManifestHash())
 	tags, err = vite.Tags("a.js")
 	require.NoError(t, err)
 	assert.Contains(t, string(tags), "a-3.js")
+}
+
+func TestBuildDirectoryNormalized(t *testing.T) {
+	public := setupProject(t)
+
+	for _, directory := range []string{"build", "/build", "public/build", "/public/build"} {
+		t.Run(directory, func(t *testing.T) {
+			config := mocksconfig.NewConfig(t)
+			config.EXPECT().GetString("vite.hot_file", DefaultHotFile).Return(DefaultHotFile).Once()
+			config.EXPECT().GetString("vite.build_directory", DefaultBuildDirectory).Return(directory).Once()
+			config.EXPECT().GetString("vite.manifest", DefaultManifestFilename).Return(DefaultManifestFilename).Once()
+
+			vite := NewVite(config)
+			assert.Equal(t, "build", vite.BuildDirectory())
+			assert.Equal(t, filepath.Join(public, "build"), vite.buildPath())
+
+			// The setter reads the same spellings.
+			vite.UseBuildDirectory(directory)
+			assert.Equal(t, "build", vite.BuildDirectory())
+			assert.Equal(t, filepath.Join(public, "build"), vite.buildPath())
+		})
+	}
+}
+
+func TestHotFileNormalized(t *testing.T) {
+	public := setupProject(t)
+
+	tests := map[string]string{
+		"public/hot":  filepath.Join(public, "hot"),
+		"/public/hot": filepath.Join(public, "hot"),
+		"hot":         filepath.Join(support.RelativePath, "hot"),
+	}
+
+	for hotFile, expected := range tests {
+		t.Run(hotFile, func(t *testing.T) {
+			config := mocksconfig.NewConfig(t)
+			config.EXPECT().GetString("vite.hot_file", DefaultHotFile).Return(hotFile).Once()
+			config.EXPECT().GetString("vite.build_directory", DefaultBuildDirectory).Return(DefaultBuildDirectory).Once()
+			config.EXPECT().GetString("vite.manifest", DefaultManifestFilename).Return(DefaultManifestFilename).Once()
+
+			vite := NewVite(config)
+			assert.Equal(t, expected, vite.HotFile())
+
+			// The setter reads the same spellings.
+			vite.UseHotFile(hotFile)
+			assert.Equal(t, expected, vite.HotFile())
+		})
+	}
 }
 
 func TestUseBuildDirectory(t *testing.T) {

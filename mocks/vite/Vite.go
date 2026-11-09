@@ -313,6 +313,51 @@ func (_c *Vite_ManifestFilename_Call) RunAndReturn(run func() string) *Vite_Mani
 	return _c
 }
 
+// ManifestHash provides a mock function with no fields
+func (_m *Vite) ManifestHash() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for ManifestHash")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Vite_ManifestHash_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ManifestHash'
+type Vite_ManifestHash_Call struct {
+	*mock.Call
+}
+
+// ManifestHash is a helper method to define mock.On call
+func (_e *Vite_Expecter) ManifestHash() *Vite_ManifestHash_Call {
+	return &Vite_ManifestHash_Call{Call: _e.mock.On("ManifestHash")}
+}
+
+func (_c *Vite_ManifestHash_Call) Run(run func()) *Vite_ManifestHash_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Vite_ManifestHash_Call) Return(_a0 string) *Vite_ManifestHash_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Vite_ManifestHash_Call) RunAndReturn(run func() string) *Vite_ManifestHash_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ReactRefresh provides a mock function with no fields
 func (_m *Vite) ReactRefresh() template.HTML {
 	ret := _m.Called()
@@ -423,51 +468,6 @@ func (_c *Vite_Tags_Call) Return(_a0 template.HTML, _a1 error) *Vite_Tags_Call {
 }
 
 func (_c *Vite_Tags_Call) RunAndReturn(run func(...string) (template.HTML, error)) *Vite_Tags_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// Version provides a mock function with no fields
-func (_m *Vite) Version() string {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for Version")
-	}
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
-// Vite_Version_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Version'
-type Vite_Version_Call struct {
-	*mock.Call
-}
-
-// Version is a helper method to define mock.On call
-func (_e *Vite_Expecter) Version() *Vite_Version_Call {
-	return &Vite_Version_Call{Call: _e.mock.On("Version")}
-}
-
-func (_c *Vite_Version_Call) Run(run func()) *Vite_Version_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Vite_Version_Call) Return(_a0 string) *Vite_Version_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Vite_Version_Call) RunAndReturn(run func() string) *Vite_Version_Call {
 	_c.Call.Return(run)
 	return _c
 }
