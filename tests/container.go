@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/goravel/framework/contracts/testing/docker"
@@ -13,6 +14,11 @@ import (
 	supportdocker "github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
+)
+
+var (
+	containersMutex sync.Mutex
+	containers      []*Container
 )
 
 type Container struct {
@@ -97,6 +103,42 @@ func (r *Container) Remove() error {
 	}
 
 	return file.Remove(r.file)
+}
+
+// Track registers the container so CleanupContainers can stop it when the test process finishes.
+// Call it once after a successful Build; never track a container backed by a mock.
+func (r *Container) Track() {
+	containersMutex.Lock()
+	defer containersMutex.Unlock()
+
+	containers = append(containers, r)
+}
+
+// Shutdown stops the container this driver built and clears the temp files that mark it reusable.
+func (r *Container) Shutdown() error {
+	if err := r.databaseDriver.Shutdown(); err != nil {
+		return err
+	}
+
+	return r.Remove()
+}
+
+// CleanupContainers stops every container this process built. It is called once from TestMain
+// and is safe to call again.
+func CleanupContainers() error {
+	containersMutex.Lock()
+	pending := containers
+	containers = nil
+	containersMutex.Unlock()
+
+	var errs []error
+	for i := len(pending) - 1; i >= 0; i-- {
+		if err := pending[i].Shutdown(); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	return errors.Join(errs...)
 }
 
 func (r *Container) add() error {

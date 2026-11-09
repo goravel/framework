@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
@@ -105,4 +106,22 @@ func (s *ContainerTestSuite) TestBuilds() {
 	result, err := s.container.Builds(3)
 	s.NoError(err)
 	s.Len(result, 3)
+}
+
+func (s *ContainerTestSuite) TestCleanupContainers() {
+	s.mockDatabaseDriver.EXPECT().Shutdown().Return(nil).Once()
+	s.container.Track()
+
+	s.NoError(CleanupContainers())
+	s.Empty(containers)
+}
+
+func (s *ContainerTestSuite) TestCleanupContainersReturnsError() {
+	s.mockDatabaseDriver.EXPECT().Shutdown().Return(assert.AnError).Once()
+	s.container.Track()
+	defer func() {
+		_ = CleanupContainers()
+	}()
+
+	s.ErrorIs(CleanupContainers(), assert.AnError)
 }
