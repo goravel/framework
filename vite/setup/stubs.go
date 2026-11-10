@@ -16,20 +16,27 @@ func init() {
 	config.Add("vite", map[string]any{
 		// Build Directory
 		//
-		// The directory inside the public directory that ` + "`vite build`" + ` writes to.
-		// goravel-vite-plugin reads these paths from the application.
+		// The directory ` + "`vite build`" + ` writes to, inside the public directory.
 		"build_directory": "build",
 
 		// Hot File
 		//
-		// The file the dev server announces its URL in, relative to the project
-		// root. While it exists, {{ vite }} points every tag at the dev server.
-		"hot_file": "public/hot",
+		// The file the dev server announces its URL in, inside the public directory.
+		// While it exists, {{ vite }} points every tag at the dev server.
+		"hot_file": "hot",
 
 		// Manifest
 		//
 		// The manifest ` + "`vite build`" + ` writes, relative to the build directory.
 		"manifest": ".vite/manifest.json",
+
+		// Inputs and Assets
+		//
+		// Entries and assets used outside views; ` + "`vite:inputs`" + ` merges them with view calls.
+		//   "inputs": []string{"resources/inertia/app.ts"},
+		//   "assets": []string{"resources/images/logo.svg"},
+		"inputs": []string{},
+		"assets": []string{},
 	})
 }
 `

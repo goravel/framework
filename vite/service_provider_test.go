@@ -45,8 +45,8 @@ func (s *ServiceProviderTestSuite) TestRelationship() {
 
 func (s *ServiceProviderTestSuite) TestRegister() {
 	config := mocksconfig.NewConfig(s.T())
-	config.EXPECT().GetString("vite.hot_file", DefaultHotFile).Return(DefaultHotFile).Once()
-	config.EXPECT().GetString("vite.build_directory", DefaultBuildDirectory).Return(DefaultBuildDirectory).Once()
+	config.EXPECT().GetString("vite.hot_file", DefaultHotFile()).Return(DefaultHotFile()).Once()
+	config.EXPECT().GetString("vite.build_directory", DefaultBuildDirectory()).Return(DefaultBuildDirectory()).Once()
 	config.EXPECT().GetString("vite.manifest", DefaultManifestFilename).Return(DefaultManifestFilename).Once()
 
 	s.app.EXPECT().Singleton(binding.Vite, mock.Anything).Run(func(_ any, callback func(app foundation.Application) (any, error)) {
@@ -69,6 +69,7 @@ func (s *ServiceProviderTestSuite) TestBoot() {
 		view := mocksview.NewView(s.T())
 		s.app.EXPECT().MakeView().Return(view).Once()
 		s.app.EXPECT().MakeVite().Return(NewVite(nil)).Once()
+		s.app.EXPECT().MakeConfig().Return(mocksconfig.NewConfig(s.T())).Once()
 		view.EXPECT().AddFuncs(mock.Anything).Run(func(funcs template.FuncMap) {
 			s.Len(funcs, 3)
 			s.Contains(funcs, "vite")
@@ -93,6 +94,7 @@ func (s *ServiceProviderTestSuite) TestBoot() {
 		view := mocksview.NewView(s.T())
 		s.app.EXPECT().MakeView().Return(view).Once()
 		s.app.EXPECT().MakeVite().Return(nil).Once()
+		s.app.EXPECT().MakeConfig().Return(mocksconfig.NewConfig(s.T())).Once()
 		s.expectInputsCommand()
 
 		output := color.CaptureOutput(func(io.Writer) {

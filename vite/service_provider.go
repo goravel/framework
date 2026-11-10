@@ -52,6 +52,6 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 	}
 
 	app.Commands([]contractsconsole.Command{
-		console.NewInputsCommand(view, vite),
+		console.NewInputsCommand(view, vite, app.MakeConfig()),
 	})
 }
