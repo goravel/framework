@@ -126,16 +126,15 @@ func TestHotFile(t *testing.T) {
 	assert.Equal(t, filepath.Join(public, "srv", "app", "hot"), vite.HotFile())
 	assert.False(t, vite.IsRunningHot())
 
-	// A genuine absolute path is not used as is either; it is re-rooted under the
-	// public directory, so it can never name the file it passed in. The spelling of
-	// the re-rooted value is platform specific, so the invariant is asserted.
-	absolute := filepath.Join(t.TempDir(), "hot")
+	// An absolute path is re-rooted under the public directory too, so the resolved
+	// hot file can never be the path that was set.
+	absolute := filepath.Join(t.TempDir(), "absolute-hot")
 	writeFile(t, absolute, "http://localhost:5173")
 	vite.UseHotFile(absolute)
 	hot := vite.HotFile()
 	assert.NotEqual(t, absolute, hot)
 	assert.True(t, strings.HasPrefix(hot, public+string(filepath.Separator)), hot)
-	assert.Equal(t, "hot", filepath.Base(hot))
+	assert.Equal(t, "absolute-hot", filepath.Base(hot))
 	assert.False(t, vite.IsRunningHot())
 
 	// HotFile is absolute, so feeding it back resolves under the public directory
@@ -158,16 +157,19 @@ func TestHotFile(t *testing.T) {
 // invariant is asserted.
 func TestHotFile_UntrustedValuesStayUnderPublic(t *testing.T) {
 	public := setupProject(t)
-	absolute := filepath.Join(t.TempDir(), "hot")
+	absolute := filepath.Join(t.TempDir(), "absolute-hot")
+	// The file exists, so IsRunningHot would catch the value being read as is.
+	writeFile(t, absolute, "http://localhost:5173")
 
 	tests := []struct {
 		name  string
 		value string
+		base  string
 	}{
-		{name: "filesystem root", value: filepath.Join(string(filepath.Separator), "srv", "app", "hot")},
-		{name: "absolute path", value: absolute},
-		{name: "windows drive letter", value: `C:\Users\app\hot`},
-		{name: "windows unc share", value: `\\server\share\hot`},
+		{name: "filesystem root", value: filepath.Join(string(filepath.Separator), "srv", "app", "root-hot"), base: "root-hot"},
+		{name: "absolute path", value: absolute, base: "absolute-hot"},
+		{name: "windows drive letter", value: `C:\Users\app\drive-hot`, base: "drive-hot"},
+		{name: "windows unc share", value: `\\server\share\share-hot`, base: "share-hot"},
 	}
 
 	for _, test := range tests {
@@ -178,7 +180,7 @@ func TestHotFile_UntrustedValuesStayUnderPublic(t *testing.T) {
 			hot := vite.HotFile()
 			assert.NotEqual(t, test.value, hot)
 			assert.True(t, strings.HasPrefix(hot, public+string(filepath.Separator)), hot)
-			assert.Equal(t, "hot", filepath.Base(hot))
+			assert.Equal(t, test.base, filepath.Base(hot))
 			assert.False(t, vite.IsRunningHot())
 		})
 	}
