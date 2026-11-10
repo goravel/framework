@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -20,5 +21,11 @@ func TestMain(m *testing.M) {
 	sqlite.App = mockApp
 	sqlserver.App = mockApp
 
-	os.Exit(m.Run())
+	exitCode := m.Run()
+
+	if err := CleanupContainers(); err != nil {
+		fmt.Fprintf(os.Stderr, "clean up test containers failed: %v\n", err)
+	}
+
+	os.Exit(exitCode)
 }

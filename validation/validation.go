@@ -2,6 +2,7 @@ package validation
 
 import (
 	"context"
+	"maps"
 	"net/http"
 	"net/url"
 	"slices"
@@ -92,14 +93,19 @@ func (r *Validation) Make(ctx context.Context, data any, rules map[string]any, o
 		customRulesMap[cr.Signature()] = cr
 	}
 
-	// Validate that all rule names are known (builtin, custom, or control)
-	for field, fieldRules := range parsedRules {
-		for _, pr := range fieldRules {
+	// Reject unknown rules, and guarded rules given too few parameters: the latter
+	// would otherwise pass silently or reject every value. Fields are visited in
+	// sorted order so the reported error is stable.
+	for _, field := range slices.Sorted(maps.Keys(parsedRules)) {
+		for _, pr := range parsedRules[field] {
 			// skip control rules
 			if slices.Contains([]string{"bail", "sometimes", "nullable"}, pr.Name) {
 				continue
 			}
 			if _, ok := builtinRules[pr.Name]; ok {
+				if required, ok := minRuleParameters[pr.Name]; ok && len(pr.Parameters) < required {
+					return nil, errors.ValidationRuleMissingParameters.Args(field+"."+pr.Name, required)
+				}
 				continue
 			}
 			if _, ok := excludeRules[pr.Name]; ok {

@@ -2258,6 +2258,45 @@ func (s *QueryTestSuite) TestFind() {
 	}
 }
 
+func (s *QueryTestSuite) TestFind_StringPrimaryKey() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			entity := UlidEntity{ID: "01AN4Z07BY79KA1307SR9X4MV4", Name: "find_string_primary_key"}
+			s.Nil(query.Query().Create(&entity))
+
+			other := UlidEntity{ID: "01AN4Z07BY79KA1307SR9X4MV5", Name: "find_string_primary_key_other"}
+			s.Nil(query.Query().Create(&other))
+
+			var found UlidEntity
+			s.Nil(query.Query().Find(&found, entity.ID))
+			s.Equal(entity.ID, found.ID)
+			s.Equal(entity.Name, found.Name)
+
+			var foundOrFail UlidEntity
+			s.Nil(query.Query().FindOrFail(&foundOrFail, entity.ID))
+			s.Equal(entity.ID, foundOrFail.ID)
+
+			var notFound UlidEntity
+			s.ErrorIs(query.Query().FindOrFail(&notFound, "01AN4Z07BY79KA1307SR9X4MV6"), errors.OrmRecordNotFound)
+
+			// The value must be bound as a parameter, not concatenated into the SQL.
+			var entities []UlidEntity
+			s.Nil(query.Query().Find(&entities, "1 = 1 OR 1 = 1"))
+			s.Empty(entities)
+
+			// A slice of keys keeps working as before.
+			var entitiesByKeys []UlidEntity
+			s.Nil(query.Query().Find(&entitiesByKeys, []string{entity.ID, other.ID}))
+			s.Len(entitiesByKeys, 2)
+
+			// Conditions with arguments keep working as before.
+			var foundWithCondition UlidEntity
+			s.Nil(query.Query().Find(&foundWithCondition, "id = ?", entity.ID))
+			s.Equal(entity.ID, foundWithCondition.ID)
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestFindOrFail() {
 	for _, query := range s.queries {
 		tests := []struct {
@@ -3075,6 +3114,36 @@ func (s *QueryTestSuite) TestOrderBy() {
 			s.Nil(query.Query().Where("name = ?", "order_asc_user").OrderBy("id", "DESC").Get(&users2))
 			s.True(len(users2) == 2)
 			s.True(users2[0].ID == user1.ID)
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestOrderByRejectsUnsafeInput() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			user := User{Name: "order_unsafe_user", Avatar: "order_unsafe_avatar"}
+			s.Nil(query.Query().Create(&user))
+
+			var users []User
+			s.ErrorIs(query.Query().Where("name = ?", "order_unsafe_user").OrderBy("id; DROP TABLE users").Get(&users),
+				errors.DatabaseInvalidOrderByColumn)
+			s.ErrorIs(query.Query().Where("name = ?", "order_unsafe_user").OrderBy("LOWER(name)").Get(&users),
+				errors.DatabaseInvalidOrderByColumn)
+			s.ErrorIs(query.Query().Where("name = ?", "order_unsafe_user").OrderBy("id", "DESC NULLS LAST").Get(&users),
+				errors.DatabaseInvalidOrderByDirection)
+
+			// OrderByRaw is the escape hatch for expressions
+			s.Nil(query.Query().Where("name = ?", "order_unsafe_user").OrderByRaw("LOWER(name)").Get(&users))
+			s.Len(users, 1)
+
+			// a plain identifier still works and is quoted on the Postgres path
+			s.Nil(query.Query().Where("name = ?", "order_unsafe_user").OrderBy("id", "DESC").Get(&users))
+			s.Len(users, 1)
+
+			// the table is intact after the rejected statements
+			count, err := query.Query().Model(&User{}).Where("name = ?", "order_unsafe_user").Count()
+			s.Nil(err)
+			s.Equal(int64(1), count)
 		})
 	}
 }
@@ -5228,6 +5297,24 @@ func (s *QueryTestSuite) TestJsonWhereClauses() {
 					tt.assert(items)
 				})
 			}
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestOrderByJsonSelector() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			data := []JsonData{
+				{Data: `{"string":"first","int":1}`},
+				{Data: `{"string":"second","int":2}`},
+			}
+			s.NoError(query.Query().Create(&data))
+
+			var items []JsonData
+			s.NoError(query.Query().OrderBy("data->string", "desc").Find(&items))
+			s.Len(items, 2)
+			s.JSONEq(data[1].Data, items[0].Data)
+			s.JSONEq(data[0].Data, items[1].Data)
 		})
 	}
 }

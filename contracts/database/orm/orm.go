@@ -76,9 +76,11 @@ type Query interface {
 	Exec(sql string, values ...any) (*db.Result, error)
 	// Exists returns true if matching records exist; otherwise, it returns false.
 	Exists() (bool, error)
-	// Find finds records that match given conditions.
+	// Find finds records that match given conditions. A single string cond is bound to the primary key when the
+	// model's primary key is a string (e.g. UUID, ULID); use Where for raw SQL conditions.
 	Find(dest any, conds ...any) error
-	// FindOrFail finds records that match given conditions or throws an error.
+	// FindOrFail finds records that match given conditions or throws an error. A single string cond is bound to the
+	// primary key when the model's primary key is a string (e.g. UUID, ULID); use Where for raw SQL conditions.
 	FindOrFail(dest any, conds ...any) error
 	// First finds record that match given conditions.
 	First(dest any) error
@@ -115,6 +117,7 @@ type Query interface {
 	// Join specifying JOIN conditions for the query.
 	Join(query string, args ...any) Query
 	// Latest orders the query by the given column descending, default column is "created_at".
+	// The column follows the OrderBy rule.
 	Latest(column ...string) Query
 	// LeftJoin adds a LEFT JOIN to the query. Pass the table and its condition without the keyword,
 	// e.g. "posts ON posts.user_id = users.id", the "LEFT JOIN" keyword is added automatically.
@@ -134,13 +137,18 @@ type Query interface {
 	// Omit specifies columns that should be omitted from the query.
 	Omit(columns ...string) Query
 	// Order specifies the order in which the results should be returned.
+	// Order is raw by definition, so never pass user input to it.
 	// DEPRECATED Use OrderByRaw instead.
 	Order(value any) Query
 	// OrderBy specifies the order should be ascending.
+	// The column must be a plain column name (group, users.group) or a JSON selector (data->name), and the
+	// direction must be ASC or DESC. A plain column and a JSON selector are quoted or compiled by the
+	// connection that runs the query; anything else fails and must go through OrderByRaw.
 	OrderBy(column string, direction ...string) Query
 	// OrderByDesc specifies the order should be descending.
+	// The column follows the OrderBy rule.
 	OrderByDesc(column string) Query
-	// OrderByRaw specifies the order should be raw.
+	// OrderByRaw specifies the order should be raw. It is put into the SQL as is, so never pass user input to it.
 	OrderByRaw(raw string) Query
 	// OrWhere add an "or where" clause to the query.
 	OrWhere(query any, args ...any) Query
@@ -314,6 +322,7 @@ type ToSql interface {
 	Count() string
 	Create(value any) string
 	Delete(value ...any) string
+	// Find binds a single string cond to the primary key when the model's primary key is a string, like Query.Find.
 	Find(dest any, conds ...any) string
 	First(dest any) string
 	ForceDelete(value ...any) string
