@@ -34,6 +34,7 @@ const (
 	Testing      = "Testing"
 	Validation   = "Validation"
 	View         = "View"
+	Vite         = "Vite"
 )
 
 var FacadeToBinding = map[string]string{
@@ -68,4 +69,5 @@ var FacadeToBinding = map[string]string{
 	Testing:      binding.Testing,
 	Validation:   binding.Validation,
 	View:         binding.View,
+	Vite:         binding.Vite,
 }

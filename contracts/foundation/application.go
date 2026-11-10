@@ -34,6 +34,7 @@ import (
 	"github.com/goravel/framework/contracts/translation"
 	"github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/contracts/view"
+	"github.com/goravel/framework/contracts/vite"
 )
 
 type Runner interface {
@@ -70,6 +71,9 @@ type Application interface {
 	// CommandsFilter returns the positive-list of command signatures to keep
 	// (set via WithCommandsFilter). nil means no filter.
 	CommandsFilter() []string
+	// CommandHooks returns the hooks that run around Artisan commands, keyed by
+	// command signature or '*' pattern (set via WithCommandHooks).
+	CommandHooks() map[string][]console.CommandHook
 	// Context gets the application context.
 	Context() context.Context
 	// GetJson get the JSON implementation.
@@ -204,6 +208,8 @@ type Application interface {
 	MakeValidation() validation.Validation
 	// MakeView resolves the view instance.
 	MakeView() view.View
+	// MakeVite resolves the vite instance.
+	MakeVite() vite.Vite
 	// MakeSeeder resolves the seeder instance.
 	MakeSeeder() seeder.Facade
 	// MakeWith resolves the given type with the given parameters from the container.

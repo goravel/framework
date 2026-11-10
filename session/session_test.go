@@ -309,9 +309,20 @@ func (s *SessionTestSuite) TestSave() {
 func (s *SessionTestSuite) TestSetID() {
 	s.True(s.session.isValidID(s.session.GetID()))
 
-	s.session.SetID("wrongId")
-	s.NotEqual("wrongId", s.session.GetID())
-	s.True(s.session.isValidID(s.session.GetID()))
+	for _, id := range []string{
+		"wrongId",
+		strings.Repeat("/", 27) + "../../../.env",
+		strings.Repeat("a", 39) + "-",
+		strings.Repeat("a", 41),
+	} {
+		s.session.SetID(id)
+		s.NotEqual(id, s.session.GetID())
+		s.True(s.session.isValidID(s.session.GetID()))
+	}
+
+	validID := str.Random(40)
+	s.session.SetID(validID)
+	s.Equal(validID, s.session.GetID())
 
 	session := NewSession(s.getSessionName(), s.driver, s.json)
 	s.True(session.isValidID(session.GetID()))

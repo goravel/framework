@@ -2,10 +2,12 @@ package validation
 
 import (
 	"fmt"
+	"maps"
 	"mime/multipart"
 	"net/url"
 	"reflect"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -112,10 +114,8 @@ func getAttributeType(attribute string, value any, rules map[string][]ParsedRule
 // matchesOtherValue checks if otherValue matches any of the comparison values.
 func matchesOtherValue(otherValue any, comparisonValues []string) bool {
 	otherStr := fmt.Sprintf("%v", otherValue)
-	for _, cv := range comparisonValues {
-		if otherStr == cv {
-			return true
-		}
+	if slices.Contains(comparisonValues, otherStr) {
+		return true
 	}
 	// Handle boolean matching
 	if b, ok := otherValue.(bool); ok {
@@ -349,7 +349,7 @@ func toAnySlice(val any) ([]any, bool) {
 			return nil, false
 		}
 		out := make([]any, rv.Len())
-		for i := 0; i < rv.Len(); i++ {
+		for i := range rv.Len() {
 			out[i] = rv.Index(i).Interface()
 		}
 		return out, true
@@ -478,7 +478,7 @@ func collectKeys(data any, prefix string, keys *[]string) {
 			return
 		}
 		if rv.Kind() == reflect.Slice || rv.Kind() == reflect.Array {
-			for i := 0; i < rv.Len(); i++ {
+			for i := range rv.Len() {
 				fullKey := strconv.Itoa(i)
 				if prefix != "" {
 					fullKey = prefix + "." + strconv.Itoa(i)
@@ -547,7 +547,7 @@ func structToMap(rv reflect.Value) map[string]any {
 	result := make(map[string]any)
 	rt := rv.Type()
 
-	for i := 0; i < rt.NumField(); i++ {
+	for i := range rt.NumField() {
 		field := rt.Field(i)
 		if !field.IsExported() {
 			continue
@@ -575,9 +575,7 @@ func structToMap(rv reflect.Value) map[string]any {
 		val := rv.Field(i)
 		if field.Anonymous && val.Kind() == reflect.Struct {
 			embedded := structToMap(val)
-			for k, v := range embedded {
-				result[k] = v
-			}
+			maps.Copy(result, embedded)
 			continue
 		}
 
@@ -602,7 +600,7 @@ func normalizeValue(rv reflect.Value) any {
 		return structToMap(rv)
 	case reflect.Slice, reflect.Array:
 		result := make([]any, rv.Len())
-		for i := 0; i < rv.Len(); i++ {
+		for i := range rv.Len() {
 			result[i] = normalizeValue(rv.Index(i))
 		}
 		return result

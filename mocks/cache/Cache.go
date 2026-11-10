@@ -1098,6 +1098,67 @@ func (_c *Cache_Store_Call) RunAndReturn(run func(string) cache.Driver) *Cache_S
 	return _c
 }
 
+// Tags provides a mock function with given fields: names
+func (_m *Cache) Tags(names ...string) cache.Repository {
+	_va := make([]interface{}, len(names))
+	for _i := range names {
+		_va[_i] = names[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Tags")
+	}
+
+	var r0 cache.Repository
+	if rf, ok := ret.Get(0).(func(...string) cache.Repository); ok {
+		r0 = rf(names...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(cache.Repository)
+		}
+	}
+
+	return r0
+}
+
+// Cache_Tags_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Tags'
+type Cache_Tags_Call struct {
+	*mock.Call
+}
+
+// Tags is a helper method to define mock.On call
+//   - names ...string
+func (_e *Cache_Expecter) Tags(names ...interface{}) *Cache_Tags_Call {
+	return &Cache_Tags_Call{Call: _e.mock.On("Tags",
+		append([]interface{}{}, names...)...)}
+}
+
+func (_c *Cache_Tags_Call) Run(run func(names ...string)) *Cache_Tags_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Cache_Tags_Call) Return(_a0 cache.Repository) *Cache_Tags_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Cache_Tags_Call) RunAndReturn(run func(...string) cache.Repository) *Cache_Tags_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // WithContext provides a mock function with given fields: ctx
 func (_m *Cache) WithContext(ctx context.Context) cache.Driver {
 	ret := _m.Called(ctx)

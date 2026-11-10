@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
+	"maps"
 )
 
 //go:embed lang
@@ -37,9 +38,7 @@ func flattenMessages(prefix string, m map[string]any) map[string]string {
 		case string:
 			result[key] = val
 		case map[string]any:
-			for fk, fv := range flattenMessages(key, val) {
-				result[fk] = fv
-			}
+			maps.Copy(result, flattenMessages(key, val))
 		}
 	}
 	return result

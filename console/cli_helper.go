@@ -1,10 +1,12 @@
 package console
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"sort"
 	"strings"
 	"text/tabwriter"
@@ -162,11 +164,8 @@ func findAlternatives(name string, collection []string) (result []string) {
 			sortedAlternatives = append(sortedAlternatives, scoredItem{item, score})
 		}
 	}
-	sort.Slice(sortedAlternatives, func(i, j int) bool {
-		if sortedAlternatives[i].score == sortedAlternatives[j].score {
-			return sortedAlternatives[i].name < sortedAlternatives[j].name
-		}
-		return sortedAlternatives[i].score < sortedAlternatives[j].score
+	slices.SortFunc(sortedAlternatives, func(a, b scoredItem) int {
+		return cmp.Or(cmp.Compare(a.score, b.score), strings.Compare(a.name, b.name))
 	})
 	for _, item := range sortedAlternatives {
 		result = append(result, item.name)
@@ -186,8 +185,8 @@ func getFlagDefaultText(flag cli.DocGenerationFlag) string {
 
 func getFlagName(flag cli.Flag) string {
 	names := flag.Names()
-	sort.Slice(names, func(i, j int) bool {
-		return len(names[i]) < len(names[j])
+	slices.SortFunc(names, func(a, b string) int {
+		return cmp.Compare(len(a), len(b))
 	})
 	prefixed := cli.FlagNamePrefixer(names, "")
 	// If there is no short name, add some padding to align flag name.
@@ -384,10 +383,17 @@ func sortVisibleFlags(cmd *cli.Command) []cli.Flag {
 	for i := range globalFlags {
 		globalFlagNames[getFlagName(globalFlags[i])] = struct{}{}
 	}
-	sort.Slice(flags, func(i, j int) bool {
-		_, isGlobalI := globalFlagNames[getFlagName(flags[i])]
-		_, isGlobalJ := globalFlagNames[getFlagName(flags[j])]
-		return !isGlobalI && isGlobalJ
+	// Stable sort keeps the by-name order from above inside each group.
+	slices.SortStableFunc(flags, func(a, b cli.Flag) int {
+		_, isGlobalA := globalFlagNames[getFlagName(a)]
+		_, isGlobalB := globalFlagNames[getFlagName(b)]
+		switch {
+		case !isGlobalA && isGlobalB:
+			return -1
+		case isGlobalA && !isGlobalB:
+			return 1
+		}
+		return 0
 	})
 
 	return flags

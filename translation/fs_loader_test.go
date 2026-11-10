@@ -75,14 +75,10 @@ func Benchmark_FSLoad(b *testing.B) {
 	s := new(FSLoaderTestSuite)
 	s.SetT(&testing.T{})
 	s.SetupTest()
-	b.StartTimer()
-	b.ResetTimer()
 
 	loader := NewFSLoader(s.mockFS, s.json)
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_, err := loader.Load("en", "test")
 		s.NoError(err)
 	}
-
-	b.StopTimer()
 }

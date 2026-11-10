@@ -108,16 +108,13 @@ func Benchmark_Load(b *testing.B) {
 	s.SetT(&testing.T{})
 	s.SetupSuite()
 	s.SetupTest()
-	b.StartTimer()
-	b.ResetTimer()
 
 	paths := []string{"./lang"}
 	loader := NewFileLoader(paths, s.json)
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_, err := loader.Load("en", "test")
 		s.NoError(err)
 	}
 
-	b.StopTimer()
 	s.TearDownSuite()
 }

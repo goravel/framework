@@ -868,7 +868,7 @@ func Benchmark_base64Wrap(b *testing.B) {
 	if _, err := rand.Read(file); err != nil {
 		panic(err)
 	}
-	for i := 0; i <= b.N; i++ {
+	for b.Loop() {
 		base64Wrap(io.Discard, file)
 	}
 }

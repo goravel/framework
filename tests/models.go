@@ -491,6 +491,18 @@ func (r *Product) Connection() string {
 	return "sqlite"
 }
 
+type PostgresProduct struct {
+	Product
+}
+
+func (r *PostgresProduct) Connection() string {
+	return "postgres"
+}
+
+func (r *PostgresProduct) TableName() string {
+	return "products"
+}
+
 type Review struct {
 	Model
 	SoftDeletes

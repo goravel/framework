@@ -2,7 +2,7 @@ package docker
 
 import (
 	"fmt"
-	"math/rand"
+	"math/rand/v2"
 	"net"
 	"strings"
 
@@ -81,7 +81,7 @@ func IsPortUsing(port int) bool {
 
 func ValidPort() int {
 	for range 60 {
-		random := rand.Intn(10000) + 10000
+		random := rand.IntN(10000) + 10000
 		if !IsPortUsing(random) {
 			return random
 		}

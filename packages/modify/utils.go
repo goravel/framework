@@ -1,6 +1,7 @@
 package modify
 
 import (
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -9,8 +10,13 @@ import (
 
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages/match"
+	supportfile "github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/path"
 )
+
+// consolePackageImportPath is the contracts/console import the command slices are
+// typed with, shared by AddCommand and the WithCommandHooks helpers.
+const consolePackageImportPath = "github.com/goravel/framework/contracts/console"
 
 // AddCommand adds command to the foundation.Setup() chain in the Boot function.
 func AddCommand(pkg, command string) error {
@@ -20,7 +26,7 @@ func AddCommand(pkg, command string) error {
 		helperFuncName:  "Commands",
 		typePackage:     "console",
 		typeName:        "Command",
-		typeImportPath:  "github.com/goravel/framework/contracts/console",
+		typeImportPath:  consolePackageImportPath,
 		fileExistsError: errors.PackageCommandsFileExists,
 		stubTemplate:    commands,
 		matcherFunc:     match.Commands,
@@ -28,6 +34,52 @@ func AddCommand(pkg, command string) error {
 
 	handler := newWithSliceHandler(config)
 	return handler.AddItem(pkg, command)
+}
+
+// AddCommandHook registers a hook in bootstrap/app.go under a command signature
+// or '*' pattern, e.g. "migrate" or "make:*". It creates the WithCommandHooks
+// call when missing and resolves a named argument to its declaration in the
+// bootstrap package. A file without a foundation.Setup() chain returns false
+// without an error.
+func AddCommandHook(pkg, key, hook string) (bool, error) {
+	appFilePath := path.Bootstrap("app.go")
+
+	if !supportfile.Contains(appFilePath, "foundation.Setup().") {
+		return false, nil
+	}
+
+	consoleName := "console"
+	registered := false
+	namedHook := ""
+
+	if err := GoFile(appFilePath).
+		FindOrCreate(match.Imports(), createImport).
+		Modify(captureImportName(consolePackageImportPath, &consoleName)).
+		Find(match.FoundationSetup()).
+		Modify(foundationSetupCommandHook(key, hook, &consoleName, &registered, &namedHook)).
+		FindOrCreate(match.Imports(), createImport).
+		Modify(addCommandHookImports(pkg, &registered)).
+		Apply(); err != nil {
+		return false, err
+	}
+
+	if namedHook != "" {
+		registered, err := appendToNamedCommandHook(filepath.Dir(appFilePath), namedHook, pkg, key, hook)
+		if err != nil {
+			return false, err
+		}
+		if !registered {
+			return false, errors.PackageCommandHookNotRegistered.Args(hook)
+		}
+
+		return true, nil
+	}
+
+	if !registered {
+		return false, errors.PackageCommandHookNotRegistered.Args(hook)
+	}
+
+	return true, nil
 }
 
 // AddFilter adds filter to the foundation.Setup() chain in the Boot function.

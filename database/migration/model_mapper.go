@@ -3,7 +3,7 @@ package migration
 import (
 	"fmt"
 	"reflect"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -271,7 +271,9 @@ func renderIndexes(sch *schema.Schema, fields []*schema.Field) []string {
 	}
 
 	indexes := sch.ParseIndexes()
-	sort.Slice(indexes, func(i, j int) bool { return indexes[i].Name < indexes[j].Name })
+	slices.SortFunc(indexes, func(a, b *schema.Index) int {
+		return strings.Compare(a.Name, b.Name)
+	})
 
 	for _, idx := range indexes {
 		if len(idx.Fields) == 0 {

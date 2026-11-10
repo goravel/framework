@@ -27,6 +27,9 @@ type Option struct {
 	Locale   string
 }
 
+// Bool returns a pointer to the value.
+//
+// Deprecated: Use new(value) instead, Bool will be removed in a future version.
 func Bool(value bool) *bool {
 	return &value
 }

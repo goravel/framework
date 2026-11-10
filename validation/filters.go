@@ -294,7 +294,7 @@ func callFilterFunc(ctx context.Context, filter validatecontract.Filter, val any
 
 	// Check for error return
 	if len(results) == 2 {
-		if errVal, ok := results[1].Interface().(error); ok && errVal != nil {
+		if errVal, ok := reflect.TypeAssert[error](results[1]); ok && errVal != nil {
 			return val, errVal
 		}
 	}

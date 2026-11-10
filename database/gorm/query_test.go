@@ -2,17 +2,28 @@ package gorm
 
 import (
 	"context"
+	"database/sql"
+	"database/sql/driver"
+	"fmt"
+	"io"
 	"reflect"
+	"sync/atomic"
 	"testing"
+	"testing/synctest"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	gormio "gorm.io/gorm"
+	"gorm.io/gorm/clause"
+	gormtests "gorm.io/gorm/utils/tests"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
+	contractsdb "github.com/goravel/framework/contracts/database/db"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/support/convert"
+	mocksdriver "github.com/goravel/framework/mocks/database/driver"
 )
 
 func TestAddGlobalScopes(t *testing.T) {
@@ -275,6 +286,50 @@ func TestAddWhere(t *testing.T) {
 	}, query1.conditions.where)
 }
 
+func TestCursor(t *testing.T) {
+	// The consumer receives one row and cancels the context. When it is canceled, the producer is blocked
+	// sending the third row, and the second one is in the buffer: the producer replaces it with the error.
+	cancelAfterFirstRow := func(t *testing.T) (chan contractsdb.Row, *cursorDriver, func()) {
+		ctx, cancel := context.WithCancel(context.Background())
+		query, fake, closeDB := newCursorQuery(t, ctx, 3)
+
+		ch := query.Cursor()
+		first := <-ch
+		assert.NoError(t, first.Err())
+
+		synctest.Wait()
+		cancel()
+		synctest.Wait()
+
+		return ch, fake, closeDB
+	}
+
+	t.Run("stop reading after canceling the context", func(t *testing.T) {
+		// synctest fails if the producer goroutine is still blocked when the test ends.
+		synctest.Test(t, func(t *testing.T) {
+			_, fake, closeDB := cancelAfterFirstRow(t)
+			defer closeDB()
+
+			assert.True(t, fake.closed.Load())
+		})
+	})
+
+	t.Run("keep reading after canceling the context", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			ch, fake, closeDB := cancelAfterFirstRow(t)
+			defer closeDB()
+
+			var errs []error
+			for row := range ch {
+				errs = append(errs, row.Err())
+			}
+
+			assert.Equal(t, []error{context.Canceled}, errs)
+			assert.True(t, fake.closed.Load())
+		})
+	})
+}
+
 func TestFilterFindConditions(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -310,6 +365,148 @@ func TestFilterFindConditions(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFindWithStringPrimaryKey(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	var (
+		sql  string
+		vars []any
+	)
+	assert.NoError(t, db.Callback().Query().After("gorm:query").Register("test:capture", func(tx *gormio.DB) {
+		sql = tx.Statement.SQL.String()
+		vars = tx.Statement.Vars
+	}))
+
+	newQuery := func() contractsorm.Query {
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, nil, nil, nil, nil, nil)
+	}
+
+	tests := []struct {
+		name        string
+		run         func(query contractsorm.Query) error
+		expectSql   string
+		expectVars  []any
+		expectError error
+	}{
+		{
+			name: "Find binds a string primary key",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&StringPrimaryKeyModel{}, "01AN4Z07BY79KA1307SR9X4MV4")
+			},
+			expectSql:  "SELECT * FROM `string_primary_key_models` WHERE `string_primary_key_models`.`id` = ?",
+			expectVars: []any{"01AN4Z07BY79KA1307SR9X4MV4"},
+		},
+		{
+			name: "Find binds a string primary key that looks like SQL",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&[]StringPrimaryKeyModel{}, "1 = 1 OR 1 = 1")
+			},
+			expectSql:  "SELECT * FROM `string_primary_key_models` WHERE `string_primary_key_models`.`id` = ?",
+			expectVars: []any{"1 = 1 OR 1 = 1"},
+		},
+		{
+			name: "Find binds a string primary key of the model",
+			run: func(query contractsorm.Query) error {
+				return query.Model(&StringPrimaryKeyModel{}).Find(&[]map[string]any{}, "01AN4Z07BY79KA1307SR9X4MV4")
+			},
+			expectSql:  "SELECT * FROM `string_primary_key_models` WHERE `string_primary_key_models`.`id` = ?",
+			expectVars: []any{"01AN4Z07BY79KA1307SR9X4MV4"},
+		},
+		{
+			name: "FindOrFail binds a string primary key",
+			run: func(query contractsorm.Query) error {
+				return query.FindOrFail(&StringPrimaryKeyModel{}, "01AN4Z07BY79KA1307SR9X4MV4")
+			},
+			expectSql:   "SELECT * FROM `string_primary_key_models` WHERE `string_primary_key_models`.`id` = ?",
+			expectVars:  []any{"01AN4Z07BY79KA1307SR9X4MV4"},
+			expectError: errors.OrmRecordNotFound,
+		},
+		{
+			name: "Find with a slice of string primary keys",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&[]StringPrimaryKeyModel{}, []string{"01AN4Z07BY79KA1307SR9X4MV4", "01AN4Z07BY79KA1307SR9X4MV5"})
+			},
+			expectSql:  "SELECT * FROM `string_primary_key_models` WHERE `string_primary_key_models`.`id` IN (?,?)",
+			expectVars: []any{"01AN4Z07BY79KA1307SR9X4MV4", "01AN4Z07BY79KA1307SR9X4MV5"},
+		},
+		{
+			name: "Find with a condition and arguments on a string primary key model",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&StringPrimaryKeyModel{}, "id = ?", "01AN4Z07BY79KA1307SR9X4MV4")
+			},
+			expectSql:  "SELECT * FROM `string_primary_key_models` WHERE id = ?",
+			expectVars: []any{"01AN4Z07BY79KA1307SR9X4MV4"},
+		},
+		{
+			name: "Find with a numeric primary key",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&TestModel{}, 1)
+			},
+			expectSql:  "SELECT * FROM `test_models` WHERE `test_models`.`id` = ?",
+			expectVars: []any{1},
+		},
+		{
+			name: "Find with a numeric string on a numeric primary key",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&TestModel{}, "1")
+			},
+			expectSql:  "SELECT * FROM `test_models` WHERE `test_models`.`id` = ?",
+			expectVars: []any{"1"},
+		},
+		{
+			name: "Find keeps a raw condition on a numeric primary key model",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&TestModel{}, "name = 'goravel'")
+			},
+			expectSql: "SELECT * FROM `test_models` WHERE name = 'goravel'",
+		},
+		{
+			name: "Find keeps a raw condition when the model has no primary key",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&NoPrimaryKeyModel{}, "name = 'goravel'")
+			},
+			expectSql: "SELECT * FROM `no_primary_key_models` WHERE name = 'goravel'",
+		},
+		{
+			name: "Find keeps a raw condition when the model can't be parsed",
+			run: func(query contractsorm.Query) error {
+				return query.Table("users").Find(&[]map[string]any{}, "name = 'goravel'")
+			},
+			expectSql: "SELECT * FROM `users` WHERE name = 'goravel'",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			sql, vars = "", nil
+
+			err := test.run(newQuery())
+			if test.expectError != nil {
+				assert.ErrorIs(t, err, test.expectError)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, test.expectSql, sql)
+			if len(test.expectVars) == 0 {
+				assert.Empty(t, vars)
+			} else {
+				assert.Equal(t, test.expectVars, vars)
+			}
+		})
+	}
+}
+
+func TestToSqlFindWithStringPrimaryKey(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, nil, nil, nil, nil, nil)
+
+	assert.Equal(t, "SELECT * FROM `string_primary_key_models` WHERE `string_primary_key_models`.`id` = ?",
+		NewToSql(query, nil, false).Find(&StringPrimaryKeyModel{}, "1 = 1 OR 1 = 1"))
 }
 
 func TestGetDeletedAtColumnName(t *testing.T) {
@@ -405,6 +602,309 @@ func TestGetObserver(t *testing.T) {
 
 	assert.Nil(t, query.getObserver(Product{}))
 	assert.Equal(t, &UserObserver{}, query.getObserver(User{}))
+}
+
+func TestIncrementAndDecrement(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	var (
+		sql  string
+		vars []any
+	)
+	assert.NoError(t, db.Callback().Update().After("gorm:update").Register("test:capture", func(tx *gormio.DB) {
+		sql = tx.Statement.SQL.String()
+		vars = tx.Statement.Vars
+	}))
+
+	newQuery := func(t *testing.T) contractsorm.Query {
+		mockGrammar := mocksdriver.NewGrammar(t)
+		mockGrammar.EXPECT().CompileJsonColumnsUpdate(mock.Anything).RunAndReturn(func(values map[string]any) (map[string]any, error) {
+			return values, nil
+		}).Maybe()
+
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, mockGrammar, nil, nil, nil, nil)
+	}
+
+	tests := []struct {
+		name        string
+		run         func(query contractsorm.Query) error
+		expectSql   string
+		expectVars  []any
+		expectError error
+	}{
+		{
+			name: "Increment with default amount",
+			run: func(query contractsorm.Query) error {
+				return query.Table("users").Where("id", 1).Increment("votes")
+			},
+			expectSql:  "UPDATE `users` SET `votes`=`votes` + ? WHERE `id` = ?",
+			expectVars: []any{uint64(1), 1},
+		},
+		{
+			name: "Increment with amount",
+			run: func(query contractsorm.Query) error {
+				return query.Table("users").Where("id", 1).Increment("votes", 5)
+			},
+			expectSql:  "UPDATE `users` SET `votes`=`votes` + ? WHERE `id` = ?",
+			expectVars: []any{uint64(5), 1},
+		},
+		{
+			name: "Decrement with default amount",
+			run: func(query contractsorm.Query) error {
+				return query.Table("users").Where("id", 1).Decrement("votes")
+			},
+			expectSql:  "UPDATE `users` SET `votes`=`votes` - ? WHERE `id` = ?",
+			expectVars: []any{uint64(1), 1},
+		},
+		{
+			name: "Decrement with amount",
+			run: func(query contractsorm.Query) error {
+				return query.Table("users").Where("id", 1).Decrement("votes", 3)
+			},
+			expectSql:  "UPDATE `users` SET `votes`=`votes` - ? WHERE `id` = ?",
+			expectVars: []any{uint64(3), 1},
+		},
+		{
+			name: "Increment with qualified column",
+			run: func(query contractsorm.Query) error {
+				return query.Table("users").Where("id", 1).Increment("users.votes")
+			},
+			expectSql:  "UPDATE `users` SET `users`.`votes`=`users`.`votes` + ? WHERE `id` = ?",
+			expectVars: []any{uint64(1), 1},
+		},
+		{
+			name: "Increment rejects JSON path columns",
+			run: func(query contractsorm.Query) error {
+				return query.Table("users").Where("id", 1).Increment("data->views")
+			},
+			expectError: errors.OrmQueryIncrementJsonColumn.Args("data->views"),
+		},
+		{
+			name: "Decrement rejects JSON path columns",
+			run: func(query contractsorm.Query) error {
+				return query.Table("users").Where("id", 1).Decrement("data->stats->views", 2)
+			},
+			expectError: errors.OrmQueryIncrementJsonColumn.Args("data->stats->views"),
+		},
+		{
+			name: "Increment applies global scopes and soft deletes",
+			run: func(query contractsorm.Query) error {
+				return query.Model(&IncrementModel{}).Where("id", 1).Increment("votes")
+			},
+			expectSql:  "UPDATE `increment_models` SET `votes`=`votes` + ? WHERE `id` = ? AND `active` = ? AND `increment_models`.`deleted_at` IS NULL",
+			expectVars: []any{uint64(1), 1, true},
+		},
+		{
+			name: "Increment does not apply global scopes when they are disabled",
+			run: func(query contractsorm.Query) error {
+				return query.Model(&IncrementModel{}).WithoutGlobalScopes().WithTrashed().Where("id", 1).Increment("votes")
+			},
+			expectSql:  "UPDATE `increment_models` SET `votes`=`votes` + ? WHERE `id` = ?",
+			expectVars: []any{uint64(1), 1},
+		},
+		{
+			name: "Increment fires the updating event on a model with primary key",
+			run: func(query contractsorm.Query) error {
+				return query.Model(&IncrementEventModel{ID: 1}).Increment("votes")
+			},
+			expectError: errors.New("updating"),
+		},
+		{
+			name: "Increment does not fire events on a model without primary key",
+			run: func(query contractsorm.Query) error {
+				return query.Model(&IncrementEventModel{}).Where("id", 1).Increment("votes")
+			},
+			expectSql:  "UPDATE `increment_event_models` SET `votes`=`votes` + ? WHERE `id` = ?",
+			expectVars: []any{uint64(1), 1},
+		},
+		{
+			name: "Decrement does not fire events when they are disabled",
+			run: func(query contractsorm.Query) error {
+				return query.Model(&IncrementEventModel{ID: 1}).WithoutEvents().Decrement("votes")
+			},
+			expectSql:  "UPDATE `increment_event_models` SET `votes`=`votes` - ? WHERE `id` = ?",
+			expectVars: []any{uint64(1), uint(1)},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			sql, vars = "", nil
+
+			err := test.run(newQuery(t))
+			if test.expectError != nil {
+				assert.EqualError(t, err, test.expectError.Error())
+				return
+			}
+
+			assert.NoError(t, err)
+			assert.Equal(t, test.expectSql, sql)
+			assert.Equal(t, test.expectVars, vars)
+		})
+	}
+}
+
+func TestIncrementAndDecrementTouchUpdatedAt(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	var sql string
+	assert.NoError(t, db.Callback().Update().After("gorm:update").Register("test:capture", func(tx *gormio.DB) {
+		sql = tx.Statement.SQL.String()
+	}))
+
+	mockGrammar := mocksdriver.NewGrammar(t)
+	mockGrammar.EXPECT().CompileJsonColumnsUpdate(mock.Anything).RunAndReturn(func(values map[string]any) (map[string]any, error) {
+		return values, nil
+	}).Once()
+
+	model := &IncrementTimestampModel{ID: 1, Votes: 1}
+	query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, mockGrammar, nil, nil, nil, nil)
+
+	assert.NoError(t, query.Model(model).Increment("votes"))
+	assert.Equal(t, "UPDATE `increment_timestamp_models` SET `votes`=`votes` + ?,`updated_at`=? WHERE `id` = ?", sql)
+	assert.False(t, model.UpdatedAt.IsZero())
+	// No row is affected in DryRun mode, so the column is not synced in memory.
+	assert.Equal(t, 1, model.Votes)
+}
+
+func TestIncrementAndDecrementSyncTheModel(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+	// DryRun affects no rows: pretend one row was updated so the in-memory sync runs.
+	assert.NoError(t, db.Callback().Update().After("gorm:update").Register("test:rows", func(tx *gormio.DB) {
+		tx.RowsAffected = 1
+	}))
+
+	newQuery := func() contractsorm.Query {
+		mockGrammar := mocksdriver.NewGrammar(t)
+		mockGrammar.EXPECT().CompileJsonColumnsUpdate(mock.Anything).RunAndReturn(func(values map[string]any) (map[string]any, error) {
+			return values, nil
+		}).Maybe()
+
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, mockGrammar, nil, nil, nil, nil)
+	}
+
+	ptr := 10
+	model := &IncrementSyncModel{ID: 1, Int: 5, Uint: 5, Float: 1.5, Ptr: &ptr, Name: "goravel", NullInt: sql.NullInt64{Int64: 2, Valid: true}}
+
+	assert.NoError(t, newQuery().Model(model).Increment("int", 2))
+	assert.NoError(t, newQuery().Model(model).Decrement("uint"))
+	assert.NoError(t, newQuery().Model(model).Increment("float", 3))
+	assert.NoError(t, newQuery().Model(model).Decrement("ptr", 4))
+	// Nil pointers, non numeric and unknown fields are left alone.
+	assert.NoError(t, newQuery().Model(model).Increment("nil_ptr"))
+	assert.NoError(t, newQuery().Model(model).Increment("name"))
+	assert.NoError(t, newQuery().Model(model).Increment("unknown"))
+
+	assert.Equal(t, 7, model.Int)
+	assert.Equal(t, uint(4), model.Uint)
+	assert.Equal(t, 4.5, model.Float)
+	assert.Equal(t, 6, *model.Ptr)
+	assert.Nil(t, model.NilPtr)
+	assert.Equal(t, "goravel", model.Name)
+
+	// Decrementing the other numeric kinds.
+	assert.NoError(t, newQuery().Model(model).Decrement("int"))
+	assert.NoError(t, newQuery().Model(model).Increment("uint", 6))
+	assert.NoError(t, newQuery().Model(model).Decrement("float", 2))
+	assert.Equal(t, 6, model.Int)
+	assert.Equal(t, uint(10), model.Uint)
+	assert.Equal(t, 2.5, model.Float)
+
+	// Unsigned values that would underflow are left untouched instead of wrapping around.
+	assert.NoError(t, newQuery().Model(model).Decrement("uint", 11))
+	assert.Equal(t, uint(10), model.Uint)
+
+	// sql.Null* fields are set through GORM, NULL values are left alone.
+	assert.NoError(t, newQuery().Model(model).Increment("null_int", 3))
+	assert.Equal(t, sql.NullInt64{Int64: 5, Valid: true}, model.NullInt)
+	assert.NoError(t, newQuery().Model(model).Increment("null_int_invalid"))
+	assert.Equal(t, sql.NullInt64{}, model.NullIntInvalid)
+
+	// A model without a primary key value has no condition to update by: GORM
+	// refuses the update and the struct isn't touched.
+	unsaved := &IncrementSyncModel{Int: 1}
+	assert.ErrorIs(t, newQuery().Model(unsaved).Increment("int"), gormio.ErrMissingWhereClause)
+	assert.Equal(t, 1, unsaved.Int)
+}
+
+func TestJoinClauses(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	newQuery := func() contractsorm.Query {
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, nil, nil, nil, nil, nil).Table("users")
+	}
+
+	tests := []struct {
+		name       string
+		query      func() contractsorm.Query
+		expectSql  string
+		expectVars []any
+	}{
+		{
+			name:      "Join",
+			query:     func() contractsorm.Query { return newQuery().Join("JOIN posts ON posts.user_id = users.id") },
+			expectSql: "SELECT * FROM `users` JOIN posts ON posts.user_id = users.id",
+		},
+		{
+			name:      "LeftJoin",
+			query:     func() contractsorm.Query { return newQuery().LeftJoin("posts ON posts.user_id = users.id") },
+			expectSql: "SELECT * FROM `users` LEFT JOIN posts ON posts.user_id = users.id",
+		},
+		{
+			name: "LeftJoin with args",
+			query: func() contractsorm.Query {
+				return newQuery().LeftJoin("posts ON posts.user_id = users.id AND posts.published = ?", true).Where("users.id", 1)
+			},
+			expectSql:  "SELECT * FROM `users` LEFT JOIN posts ON posts.user_id = users.id AND posts.published = ? WHERE `users`.`id` = ?",
+			expectVars: []any{true, 1},
+		},
+		{
+			name:      "RightJoin",
+			query:     func() contractsorm.Query { return newQuery().RightJoin("posts ON posts.user_id = users.id") },
+			expectSql: "SELECT * FROM `users` RIGHT JOIN posts ON posts.user_id = users.id",
+		},
+		{
+			name: "RightJoin with args",
+			query: func() contractsorm.Query {
+				return newQuery().RightJoin("posts ON posts.user_id = users.id AND posts.id > ?", 10)
+			},
+			expectSql:  "SELECT * FROM `users` RIGHT JOIN posts ON posts.user_id = users.id AND posts.id > ?",
+			expectVars: []any{10},
+		},
+		{
+			name:      "CrossJoin",
+			query:     func() contractsorm.Query { return newQuery().CrossJoin("roles") },
+			expectSql: "SELECT * FROM `users` CROSS JOIN roles",
+		},
+		{
+			name: "mixed joins keep the call order",
+			query: func() contractsorm.Query {
+				return newQuery().
+					CrossJoin("roles").
+					LeftJoin("posts ON posts.user_id = users.id").
+					Join("JOIN addresses ON addresses.user_id = users.id").
+					RightJoin("books ON books.user_id = users.id")
+			},
+			expectSql: "SELECT * FROM `users` CROSS JOIN roles LEFT JOIN posts ON posts.user_id = users.id JOIN addresses ON addresses.user_id = users.id RIGHT JOIN books ON books.user_id = users.id",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			statement := test.query().(*Query).buildConditions().instance.Find(&[]map[string]any{}).Statement
+			assert.NoError(t, statement.Error)
+			assert.Equal(t, test.expectSql, statement.SQL.String())
+			if len(test.expectVars) == 0 {
+				assert.Empty(t, statement.Vars)
+			} else {
+				assert.Equal(t, test.expectVars, statement.Vars)
+			}
+		})
+	}
 }
 
 func TestModelToStruct(t *testing.T) {
@@ -682,25 +1182,25 @@ func TestModelToStruct(t *testing.T) {
 		},
 		{
 			name:        "pointer to string",
-			input:       convert.Pointer("test"),
+			input:       new("test"),
 			expectError: true,
 			expectedErr: errors.OrmQueryInvalidModel.Args(""),
 		},
 		{
 			name:        "pointer to int",
-			input:       convert.Pointer(123),
+			input:       new(123),
 			expectError: true,
 			expectedErr: errors.OrmQueryInvalidModel.Args(""),
 		},
 		{
 			name:        "pointer to float",
-			input:       convert.Pointer(123.45),
+			input:       new(123.45),
 			expectError: true,
 			expectedErr: errors.OrmQueryInvalidModel.Args(""),
 		},
 		{
 			name:        "pointer to bool",
-			input:       convert.Pointer(true),
+			input:       new(true),
 			expectError: true,
 			expectedErr: errors.OrmQueryInvalidModel.Args(""),
 		},
@@ -896,7 +1396,7 @@ func TestModelToStruct(t *testing.T) {
 				assert.NotNil(t, result)
 				// The result should be a different instance
 				assert.NotSame(t, &TestModel{ID: 1, Name: "test"}, result)
-				assert.Equal(t, reflect.TypeOf(&TestModel{}), reflect.TypeOf(result))
+				assert.Equal(t, reflect.TypeFor[*TestModel](), reflect.TypeOf(result))
 			},
 		},
 	}
@@ -937,6 +1437,238 @@ func TestObserverEvent(t *testing.T) {
 	assert.Nil(t, getObserverEvent("error", &UserObserver{}))
 }
 
+func TestQuoteColumns(t *testing.T) {
+	group := clause.Column{Name: "group"}
+	order := clause.Column{Name: "order"}
+
+	tests := []struct {
+		name          string
+		query         func(contractsorm.Query) contractsorm.Query
+		expectedWhere []contractsdriver.Where
+		expectedOrder []any
+	}{
+		{
+			name: "WhereIn",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereIn("group", []any{"a"})
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? IN ?", Args: []any{group, []any{"a"}}}},
+		},
+		{
+			name: "OrWhereIn",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrWhereIn("group", []any{"a"})
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? IN ?", Args: []any{group, []any{"a"}}, Or: true}},
+		},
+		{
+			name: "WhereNotIn",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNotIn("group", []any{"a"})
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? NOT IN ?", Args: []any{group, []any{"a"}}}},
+		},
+		{
+			name: "OrWhereNotIn",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrWhereNotIn("group", []any{"a"})
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? NOT IN ?", Args: []any{group, []any{"a"}}, Or: true}},
+		},
+		{
+			name: "WhereBetween",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereBetween("order", 1, 2)
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? BETWEEN ? AND ?", Args: []any{order, 1, 2}}},
+		},
+		{
+			name: "WhereNotBetween",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNotBetween("order", 1, 2)
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? NOT BETWEEN ? AND ?", Args: []any{order, 1, 2}}},
+		},
+		{
+			name: "OrWhereBetween",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrWhereBetween("order", 1, 2)
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? BETWEEN ? AND ?", Args: []any{order, 1, 2}, Or: true}},
+		},
+		{
+			name: "OrWhereNotBetween",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrWhereNotBetween("order", 1, 2)
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? NOT BETWEEN ? AND ?", Args: []any{order, 1, 2}, Or: true}},
+		},
+		{
+			name: "WhereNull",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNull("group")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? IS NULL", Args: []any{group}}},
+		},
+		{
+			name: "OrWhereNull",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrWhereNull("group")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? IS NULL", Args: []any{group}, Or: true}},
+		},
+		{
+			name: "WhereNotNull",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNotNull("group")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? IS NOT NULL", Args: []any{group}}},
+		},
+		{
+			name: "WhereAll",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereAll([]string{"group", "order"}, "a")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? = ? AND ? = ?", Args: []any{group, "a", order, "a"}}},
+		},
+		{
+			name: "WhereAny",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereAny([]string{"group", "order"}, "a")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "(? = ? OR ? = ?)", Args: []any{group, "a", order, "a"}}},
+		},
+		{
+			name: "WhereNone",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNone([]string{"group", "order"}, "LIKE", "a")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "NOT (? LIKE ?) AND NOT (? LIKE ?)", Args: []any{group, "a", order, "a"}}},
+		},
+		{
+			name: "WhereNone with equal operator",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNone([]string{"group"}, "a")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? <> ?", Args: []any{group, "a"}}},
+		},
+		{
+			name: "OrderBy",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrderBy("order")
+			},
+			expectedOrder: []any{clause.OrderByColumn{Column: order}},
+		},
+		{
+			name: "OrderBy with lower case direction",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrderBy("order", "desc")
+			},
+			expectedOrder: []any{clause.OrderByColumn{Column: order, Desc: true}},
+		},
+		{
+			name: "OrderByDesc",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrderByDesc("order")
+			},
+			expectedOrder: []any{clause.OrderByColumn{Column: order, Desc: true}},
+		},
+		{
+			name: "OrderBy qualified column",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrderBy("users.order")
+			},
+			expectedOrder: []any{clause.OrderByColumn{Column: clause.Column{Name: "users.order"}}},
+		},
+		{
+			name: "table qualified column",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNull("users.group")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "? IS NULL", Args: []any{clause.Column{Name: "users.group"}}}},
+		},
+		{
+			name: "expression is not quoted",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNull("LOWER(name)")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "LOWER(name) IS NULL"}},
+		},
+		{
+			name: "json selector is not quoted",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNull("data->name")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "data->name IS NULL"}},
+		},
+		{
+			name: "quoted column is not quoted again",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNull("`group`")
+			},
+			expectedWhere: []contractsdriver.Where{{Query: "`group` IS NULL"}},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// No gorm instance: the column is quoted when the query is built, by the connection that runs it,
+			// so these methods must not need one (e.g. when the database is not configured).
+			query := test.query(NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, nil, nil)).(*Query)
+
+			assert.Equal(t, test.expectedWhere, query.conditions.where)
+			assert.Equal(t, test.expectedOrder, query.conditions.order)
+		})
+	}
+}
+
+func TestOrderByValidation(t *testing.T) {
+	newQuery := func(grammar contractsdriver.Grammar) *Query {
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, grammar, nil, nil, nil, nil)
+	}
+
+	tests := []struct {
+		name          string
+		column        string
+		direction     []string
+		jsonSelector  string
+		expectedOrder []any
+		expectedError error
+	}{
+		{name: "plain column", column: "group", expectedOrder: []any{clause.OrderByColumn{Column: clause.Column{Name: "group"}}}},
+		{name: "plain column desc", column: "group", direction: []string{"desc"}, expectedOrder: []any{clause.OrderByColumn{Column: clause.Column{Name: "group"}, Desc: true}}},
+		{name: "json selector", column: "data->name", jsonSelector: "data->name", expectedOrder: []any{"json_extract(`data`, '$.name') ASC"}},
+		{name: "json selector desc", column: "data->name", direction: []string{"desc"}, jsonSelector: "data->name", expectedOrder: []any{"json_extract(`data`, '$.name') DESC"}},
+		{name: "expression", column: "LOWER(name)", expectedError: errors.DatabaseInvalidOrderByColumn.Args("LOWER(name)")},
+		{name: "quoted column", column: "`group`", expectedError: errors.DatabaseInvalidOrderByColumn.Args("`group`")},
+		{name: "injected column", column: "id; DROP TABLE users", expectedError: errors.DatabaseInvalidOrderByColumn.Args("id; DROP TABLE users")},
+		{name: "nulls direction", column: "order", direction: []string{"DESC NULLS LAST"}, expectedError: errors.DatabaseInvalidOrderByDirection.Args("DESC NULLS LAST")},
+		{name: "injected direction", column: "order", direction: []string{"ASC; DROP TABLE users"}, expectedError: errors.DatabaseInvalidOrderByDirection.Args("ASC; DROP TABLE users")},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var grammar contractsdriver.Grammar
+			if test.jsonSelector != "" {
+				mockGrammar := mocksdriver.NewGrammar(t)
+				mockGrammar.EXPECT().CompileJsonSelector(test.jsonSelector).Return("json_extract(`data`, '$.name')").Once()
+				grammar = mockGrammar
+			}
+
+			query := newQuery(grammar).OrderBy(test.column, test.direction...).(*Query)
+
+			if test.expectedError != nil {
+				assert.EqualError(t, query.conditions.err, test.expectedError.Error())
+				assert.Empty(t, query.conditions.order)
+				return
+			}
+
+			assert.NoError(t, query.conditions.err)
+			assert.Equal(t, test.expectedOrder, query.conditions.order)
+		})
+	}
+}
+
 func TestWhen(t *testing.T) {
 	query := &Query{}
 	trueQuery := &Query{}
@@ -955,6 +1687,437 @@ func TestWhen(t *testing.T) {
 	assert.Same(t, trueQuery, query.When(true, callback, falseCallback))
 	assert.Same(t, query, query.When(false, callback))
 	assert.Same(t, falseQuery, query.When(false, callback, falseCallback))
+}
+
+func TestWhereClauses(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	newQuery := func() contractsorm.Query {
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, nil, nil, nil, nil, nil).Table("users")
+	}
+
+	tests := []struct {
+		name        string
+		query       func() contractsorm.Query
+		expectSql   string
+		expectVars  []any
+		expectError error
+	}{
+		{
+			name:       "WhereLike",
+			query:      func() contractsorm.Query { return newQuery().WhereLike("name", "%goravel%") },
+			expectSql:  "SELECT * FROM `users` WHERE `name` LIKE ?",
+			expectVars: []any{"%goravel%"},
+		},
+		{
+			name:       "OrWhereLike",
+			query:      func() contractsorm.Query { return newQuery().Where("id", 1).OrWhereLike("name", "%goravel%") },
+			expectSql:  "SELECT * FROM `users` WHERE `id` = ? OR `name` LIKE ?",
+			expectVars: []any{1, "%goravel%"},
+		},
+		{
+			name:       "WhereNotLike",
+			query:      func() contractsorm.Query { return newQuery().WhereNotLike("name", "%goravel%") },
+			expectSql:  "SELECT * FROM `users` WHERE `name` NOT LIKE ?",
+			expectVars: []any{"%goravel%"},
+		},
+		{
+			name:       "OrWhereNotLike",
+			query:      func() contractsorm.Query { return newQuery().Where("id", 1).OrWhereNotLike("name", "%goravel%") },
+			expectSql:  "SELECT * FROM `users` WHERE `id` = ? OR `name` NOT LIKE ?",
+			expectVars: []any{1, "%goravel%"},
+		},
+		{
+			name:      "WhereColumn with one column",
+			query:     func() contractsorm.Query { return newQuery().WhereColumn("created_at", "updated_at") },
+			expectSql: "SELECT * FROM `users` WHERE `created_at` = `updated_at`",
+		},
+		{
+			name:      "WhereColumn with operator",
+			query:     func() contractsorm.Query { return newQuery().WhereColumn("updated_at", ">", "created_at") },
+			expectSql: "SELECT * FROM `users` WHERE `updated_at` > `created_at`",
+		},
+		{
+			name:        "WhereColumn with invalid argument number",
+			query:       func() contractsorm.Query { return newQuery().WhereColumn("updated_at") },
+			expectError: errors.DatabaseInvalidArgumentNumber.Args(0, "1 or 2"),
+		},
+		{
+			name: "OrWhereColumn",
+			query: func() contractsorm.Query {
+				return newQuery().Where("id", 1).OrWhereColumn("updated_at", ">", "created_at")
+			},
+			expectSql:  "SELECT * FROM `users` WHERE `id` = ? OR `updated_at` > `created_at`",
+			expectVars: []any{1},
+		},
+		{
+			name:        "OrWhereColumn with invalid argument number",
+			query:       func() contractsorm.Query { return newQuery().OrWhereColumn("a", "b", "c", "d") },
+			expectError: errors.DatabaseInvalidArgumentNumber.Args(3, "1 or 2"),
+		},
+		{
+			name: "WhereRaw",
+			query: func() contractsorm.Query {
+				return newQuery().WhereRaw("age > ? AND data->>'role' = ?", []any{18, "admin"})
+			},
+			expectSql:  "SELECT * FROM `users` WHERE age > ? AND data->>'role' = ?",
+			expectVars: []any{18, "admin"},
+		},
+		{
+			name: "OrWhereRaw",
+			query: func() contractsorm.Query {
+				return newQuery().Where("id", 1).OrWhereRaw("age IN ?", []any{[]any{18, 19}})
+			},
+			expectSql:  "SELECT * FROM `users` WHERE `id` = ? OR age IN (?,?)",
+			expectVars: []any{1, 18, 19},
+		},
+		{
+			name:       "OrWhereNotNull",
+			query:      func() contractsorm.Query { return newQuery().Where("id", 1).OrWhereNotNull("bio") },
+			expectSql:  "SELECT * FROM `users` WHERE `id` = ? OR `bio` IS NOT NULL",
+			expectVars: []any{1},
+		},
+		{
+			name:       "WhereNot with column and value",
+			query:      func() contractsorm.Query { return newQuery().WhereNot("status", "banned") },
+			expectSql:  "SELECT * FROM `users` WHERE NOT (`status` = ?)",
+			expectVars: []any{"banned"},
+		},
+		{
+			name: "WhereNot with placeholder",
+			query: func() contractsorm.Query {
+				return newQuery().Where("id > ?", 1).WhereNot("age > ? OR name = ?", 18, "goravel")
+			},
+			expectSql:  "SELECT * FROM `users` WHERE id > ? AND NOT (age > ? OR name = ?)",
+			expectVars: []any{1, 18, "goravel"},
+		},
+		{
+			name:       "WhereNot with map negates the whole group",
+			query:      func() contractsorm.Query { return newQuery().WhereNot(map[string]any{"name": "goravel", "age": 18}) },
+			expectSql:  "SELECT * FROM `users` WHERE NOT (`users`.`age` = ? AND `users`.`name` = ?)",
+			expectVars: []any{18, "goravel"},
+		},
+		{
+			name: "WhereNot with nested closure",
+			query: func() contractsorm.Query {
+				return newQuery().WhereNot(func(query contractsorm.Query) contractsorm.Query {
+					return query.Where("name", "goravel").OrWhere("age", 18)
+				})
+			},
+			expectSql:  "SELECT * FROM `users` WHERE NOT (`name` = ? OR `age` = ?)",
+			expectVars: []any{"goravel", 18},
+		},
+		{
+			name:       "OrWhereNot",
+			query:      func() contractsorm.Query { return newQuery().Where("id", 1).OrWhereNot("status", "banned") },
+			expectSql:  "SELECT * FROM `users` WHERE `id` = ? OR NOT (`status` = ?)",
+			expectVars: []any{1, "banned"},
+		},
+		{
+			name: "WhereExists",
+			query: func() contractsorm.Query {
+				return newQuery().Where("active", true).WhereExists(func() contractsorm.Query {
+					return newQuery().Table("posts").Select("1").WhereColumn("posts.user_id", "users.id").Where("posts.published", true)
+				})
+			},
+			expectSql:  "SELECT * FROM `users` WHERE `active` = ? AND EXISTS (SELECT 1 FROM `posts` WHERE `posts`.`user_id` = `users`.`id` AND `posts`.`published` = ?)",
+			expectVars: []any{true, true},
+		},
+		{
+			name: "WhereExists with invalid sub query",
+			query: func() contractsorm.Query {
+				return newQuery().WhereExists(func() contractsorm.Query { return nil })
+			},
+			expectError: errors.OrmQueryInvalidSubQuery,
+		},
+		{
+			name: "WhereExists with typed nil sub query",
+			query: func() contractsorm.Query {
+				return newQuery().WhereExists(func() contractsorm.Query {
+					var sub *Query
+					return sub
+				})
+			},
+			expectError: errors.OrmQueryInvalidSubQuery,
+		},
+		{
+			name: "WhereExists propagates the sub query error",
+			query: func() contractsorm.Query {
+				return newQuery().WhereExists(func() contractsorm.Query {
+					return newQuery().Table("orders").WhereColumn("orders.user_id")
+				})
+			},
+			expectError: errors.DatabaseInvalidArgumentNumber.Args(0, "1 or 2"),
+		},
+		{
+			name: "WhereExists applies the sub query global scopes",
+			query: func() contractsorm.Query {
+				return newQuery().WhereExists(func() contractsorm.Query {
+					return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, nil, nil, nil, nil, nil).
+						Model(&ModelWithGlobalScopes{}).Select("1").WhereColumn("model_with_global_scopes.user_id", "users.id")
+				})
+			},
+			expectSql:  "SELECT * FROM `users` WHERE EXISTS (SELECT 1 FROM `model_with_global_scopes` WHERE `model_with_global_scopes`.`user_id` = `users`.`id` AND `active` = ? AND `verified` = ?)",
+			expectVars: []any{true, true},
+		},
+		{
+			name: "Where group propagates the error of a nested condition",
+			query: func() contractsorm.Query {
+				return newQuery().Where(func(query contractsorm.Query) contractsorm.Query {
+					return query.WhereColumn("updated_at")
+				})
+			},
+			expectError: errors.DatabaseInvalidArgumentNumber.Args(0, "1 or 2"),
+		},
+		{
+			name: "WhereNot group propagates the error of a nested condition",
+			query: func() contractsorm.Query {
+				return newQuery().WhereNot(func(query contractsorm.Query) contractsorm.Query {
+					return query.Where("id", 1).OrWhereColumn("a", "b", "c", "d")
+				})
+			},
+			expectError: errors.DatabaseInvalidArgumentNumber.Args(3, "1 or 2"),
+		},
+		{
+			name: "Nested groups propagate the error of the innermost condition",
+			query: func() contractsorm.Query {
+				return newQuery().Where(func(query contractsorm.Query) contractsorm.Query {
+					return query.Where("id", 1).OrWhere(func(query contractsorm.Query) contractsorm.Query {
+						return query.WhereNone([]string{"name"}, "=", "a", "b")
+					})
+				})
+			},
+			expectError: errors.DatabaseInvalidArgumentNumber.Args(3, "1 or 2"),
+		},
+		{
+			name:      "WhereNot without conditions is ignored",
+			query:     func() contractsorm.Query { return newQuery().WhereNot(map[string]any{}) },
+			expectSql: "SELECT * FROM `users`",
+		},
+		{
+			name:        "OrderBy with an unsafe column",
+			query:       func() contractsorm.Query { return newQuery().OrderBy("id; DROP TABLE users") },
+			expectError: errors.DatabaseInvalidOrderByColumn.Args("id; DROP TABLE users"),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			query := test.query().(*Query).buildConditions()
+			if test.expectError != nil {
+				assert.EqualError(t, query.instance.Error, test.expectError.Error())
+				return
+			}
+
+			statement := query.instance.Find(&[]map[string]any{}).Statement
+			assert.NoError(t, statement.Error)
+			assert.Equal(t, test.expectSql, statement.SQL.String())
+			if len(test.expectVars) == 0 {
+				assert.Empty(t, statement.Vars)
+			} else {
+				assert.Equal(t, test.expectVars, statement.Vars)
+			}
+		})
+	}
+}
+
+func TestWhereNotWithJsonSelector(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	mockGrammar := mocksdriver.NewGrammar(t)
+	mockGrammar.EXPECT().CompileJsonSelector("data->string").Return("json_extract(`data`, '$.string')").Once()
+	mockGrammar.EXPECT().CompileJsonValues("first").Return([]any{"first"}).Once()
+
+	query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, mockGrammar, nil, nil, nil, nil).
+		Table("users").
+		WhereNot("data->string", "first").(*Query).
+		buildConditions()
+
+	statement := query.instance.Find(&[]map[string]any{}).Statement
+	assert.NoError(t, statement.Error)
+	assert.Equal(t, "SELECT * FROM `users` WHERE NOT (json_extract(`data`, '$.string') = ?)", statement.SQL.String())
+	assert.Equal(t, []any{"first"}, statement.Vars)
+}
+
+func TestWithErrorSurvivesModelConnection(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	// Product uses the "sqlite" connection, so buildConditions switches to that connection's query.
+	query := NewQuery(context.Background(), nil, contractsdatabase.Config{Connection: "mysql"}, db, nil, nil, nil, nil, nil).
+		Model(&Product{}).
+		WhereColumn("name").(*Query)
+	query.queries = map[string]*Query{
+		"sqlite": NewQuery(context.Background(), nil, contractsdatabase.Config{Connection: "sqlite"}, db.Session(&gormio.Session{}), nil, nil, nil, nil, nil),
+	}
+
+	built := query.buildConditions()
+
+	assert.Equal(t, "sqlite", built.dbConfig.Connection)
+	assert.EqualError(t, built.instance.Error, "invalid argument number: 0, expected 1 or 2")
+}
+
+func TestArgumentErrorsSurviveModelConnection(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	tests := []struct {
+		name  string
+		query func(contractsorm.Query) contractsorm.Query
+	}{
+		{
+			name: "WhereAll",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereAll([]string{"name"}, "=", "a", "b")
+			},
+		},
+		{
+			name: "WhereAny",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereAny([]string{"name"}, "=", "a", "b")
+			},
+		},
+		{
+			name: "WhereNone",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.WhereNone([]string{"name"}, "=", "a", "b")
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// Product uses the "sqlite" connection, so buildConditions switches to that connection's query.
+			query := test.query(NewQuery(context.Background(), nil, contractsdatabase.Config{Connection: "mysql"}, db, nil, nil, nil, nil, nil).
+				Model(&Product{})).(*Query)
+			query.queries = map[string]*Query{
+				"sqlite": NewQuery(context.Background(), nil, contractsdatabase.Config{Connection: "sqlite"}, db.Session(&gormio.Session{}), nil, nil, nil, nil, nil),
+			}
+
+			built := query.buildConditions()
+
+			assert.Equal(t, "sqlite", built.dbConfig.Connection)
+			assert.EqualError(t, built.instance.Error, errors.DatabaseInvalidArgumentNumber.Args(3, "1 or 2").Error())
+		})
+	}
+}
+
+func TestJsonContainsErrorInsideGroup(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	mockGrammar := mocksdriver.NewGrammar(t)
+	mockGrammar.EXPECT().CompileJsonContains("data->tags", "a", false).Return("", nil, assert.AnError).Once()
+
+	query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, mockGrammar, nil, nil, nil, nil).
+		Table("users").
+		Where(func(query contractsorm.Query) contractsorm.Query {
+			return query.WhereJsonContains("data->tags", "a")
+		}).(*Query).
+		buildConditions()
+
+	assert.EqualError(t, query.instance.Error, errors.OrmJsonContainsInvalidBinding.Args(assert.AnError).Error())
+}
+
+func TestLatest(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	newQuery := func() contractsorm.Query {
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, nil, nil, nil, nil, nil).Table("users")
+	}
+
+	tests := []struct {
+		name      string
+		query     func() contractsorm.Query
+		expectSql string
+	}{
+		{
+			name:      "default column",
+			query:     func() contractsorm.Query { return newQuery().Latest() },
+			expectSql: "SELECT * FROM `users` ORDER BY `created_at` DESC",
+		},
+		{
+			name:      "empty column falls back to default",
+			query:     func() contractsorm.Query { return newQuery().Latest("") },
+			expectSql: "SELECT * FROM `users` ORDER BY `created_at` DESC",
+		},
+		{
+			name:      "custom column",
+			query:     func() contractsorm.Query { return newQuery().Latest("id") },
+			expectSql: "SELECT * FROM `users` ORDER BY `id` DESC",
+		},
+		{
+			name:      "combined with other orders",
+			query:     func() contractsorm.Query { return newQuery().Latest("updated_at").OrderBy("id") },
+			expectSql: "SELECT * FROM `users` ORDER BY `updated_at` DESC,`id`",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			query := test.query().(*Query).buildConditions()
+			statement := query.instance.Find(&[]map[string]any{}).Statement
+			assert.NoError(t, statement.Error)
+			assert.Equal(t, test.expectSql, statement.SQL.String())
+		})
+	}
+}
+
+func TestBuildWhereColumn(t *testing.T) {
+	query, args, err := buildWhereColumn("a", "b")
+	assert.NoError(t, err)
+	assert.Equal(t, "? = ?", query)
+	assert.Equal(t, []any{clause.Column{Name: "a"}, clause.Column{Name: "b"}}, args)
+
+	query, args, err = buildWhereColumn("a", "<>", "LOWER(b)")
+	assert.NoError(t, err)
+	assert.Equal(t, "? <> LOWER(b)", query)
+	assert.Equal(t, []any{clause.Column{Name: "a"}}, args)
+
+	_, _, err = buildWhereColumn("a")
+	assert.EqualError(t, err, errors.DatabaseInvalidArgumentNumber.Args(0, "1 or 2").Error())
+
+	_, _, err = buildWhereColumn("a", "b", "c", "d")
+	assert.EqualError(t, err, errors.DatabaseInvalidArgumentNumber.Args(3, "1 or 2").Error())
+}
+
+func TestValueWithNonPointerDest(t *testing.T) {
+	var name string
+	err := (&Query{}).Value("name", name)
+
+	assert.EqualError(t, err, errors.DatabaseUnsupportedType.Args(reflect.String, "pointer").Error())
+}
+
+func TestValueAndDoesntExist(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	newQuery := func(db *gormio.DB) contractsorm.Query {
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, nil, nil, nil, nil, nil).Table("users")
+	}
+
+	// Value scans, which GORM refuses in dry run mode: the query is built and
+	// the error is returned without touching dest.
+	name := "unchanged"
+	assert.ErrorIs(t, newQuery(db).Where("id", 1).Value("name", &name), gormio.ErrDryRunModeUnsupported)
+	assert.Equal(t, "unchanged", name)
+
+	doesntExist, err := newQuery(db).Where("id", 1).DoesntExist()
+	assert.NoError(t, err)
+	assert.True(t, doesntExist)
+
+	// Errors of the underlying query are returned.
+	failing := db.Session(&gormio.Session{})
+	_ = failing.AddError(assert.AnError)
+
+	assert.ErrorIs(t, newQuery(failing).Value("name", &name), assert.AnError)
+
+	doesntExist, err = newQuery(failing).DoesntExist()
+	assert.ErrorIs(t, err, assert.AnError)
+	assert.False(t, doesntExist)
 }
 
 type User struct {
@@ -1029,6 +2192,15 @@ type TestModel struct {
 	Name string `json:"name"`
 }
 
+type StringPrimaryKeyModel struct {
+	ID   string `gorm:"primaryKey"`
+	Name string
+}
+
+type NoPrimaryKeyModel struct {
+	Name string
+}
+
 // TestInterfaceModel is an interface type for testing
 type TestInterfaceModel interface {
 	GetID() uint
@@ -1085,4 +2257,114 @@ type ModelWithEmptyGlobalScopes struct {
 
 func (m *ModelWithEmptyGlobalScopes) GlobalScopes() map[string]func(contractsorm.Query) contractsorm.Query {
 	return map[string]func(contractsorm.Query) contractsorm.Query{}
+}
+
+// cursorDriver is a database/sql driver whose queries return `rows` rows with an "id" column, and that
+// records when the rows are closed.
+type cursorDriver struct {
+	rows   int
+	closed atomic.Bool
+}
+
+func (r *cursorDriver) Open(string) (driver.Conn, error) { return &cursorConn{driver: r}, nil }
+
+type cursorConn struct{ driver *cursorDriver }
+
+func (r *cursorConn) Prepare(string) (driver.Stmt, error) { return &cursorStmt{driver: r.driver}, nil }
+func (r *cursorConn) Close() error                        { return nil }
+func (r *cursorConn) Begin() (driver.Tx, error)           { return nil, fmt.Errorf("not supported") }
+
+type cursorStmt struct{ driver *cursorDriver }
+
+func (r *cursorStmt) Close() error  { return nil }
+func (r *cursorStmt) NumInput() int { return -1 }
+func (r *cursorStmt) Exec([]driver.Value) (driver.Result, error) {
+	return nil, fmt.Errorf("not supported")
+}
+func (r *cursorStmt) Query([]driver.Value) (driver.Rows, error) {
+	return &cursorRows{driver: r.driver}, nil
+}
+
+type cursorRows struct {
+	driver *cursorDriver
+	next   int
+}
+
+func (r *cursorRows) Columns() []string { return []string{"id"} }
+func (r *cursorRows) Close() error {
+	r.driver.closed.Store(true)
+	return nil
+}
+func (r *cursorRows) Next(dest []driver.Value) error {
+	if r.next >= r.driver.rows {
+		return io.EOF
+	}
+	r.next++
+	dest[0] = int64(r.next)
+	return nil
+}
+
+var cursorDriverID atomic.Int64
+
+// newCursorQuery returns a query on a new cursorDriver, and a function that closes its database.
+func newCursorQuery(t *testing.T, ctx context.Context, rows int) (*Query, *cursorDriver, func()) {
+	fake := &cursorDriver{rows: rows}
+	name := fmt.Sprintf("goravel-orm-cursor-%d", cursorDriverID.Add(1))
+	sql.Register(name, fake)
+
+	sqlDB, err := sql.Open(name, "")
+	assert.NoError(t, err)
+
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{ConnPool: sqlDB})
+	assert.NoError(t, err)
+
+	query := NewQuery(ctx, nil, contractsdatabase.Config{}, db.WithContext(ctx), nil, nil, nil, nil, nil)
+
+	return query.Table("users").(*Query), fake, func() { _ = sqlDB.Close() }
+}
+
+type IncrementSyncModel struct {
+	ID     uint `gorm:"primaryKey"`
+	Int    int
+	Uint   uint
+	Float  float64
+	Ptr    *int
+	NilPtr *int
+	Name   string
+
+	NullInt        sql.NullInt64
+	NullIntInvalid sql.NullInt64
+}
+
+type IncrementModel struct {
+	ID        uint `gorm:"primaryKey"`
+	Votes     int
+	DeletedAt gormio.DeletedAt
+}
+
+func (m *IncrementModel) GlobalScopes() map[string]func(contractsorm.Query) contractsorm.Query {
+	return map[string]func(contractsorm.Query) contractsorm.Query{
+		"active": func(query contractsorm.Query) contractsorm.Query {
+			return query.Where("active", true)
+		},
+	}
+}
+
+type IncrementEventModel struct {
+	ID    uint `gorm:"primaryKey"`
+	Votes int
+}
+
+func (m *IncrementEventModel) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.Event) error {
+	return map[contractsorm.EventType]func(contractsorm.Event) error{
+		contractsorm.EventUpdating: func(event contractsorm.Event) error {
+			return errors.New("updating")
+		},
+	}
+}
+
+type IncrementTimestampModel struct {
+	ID        uint `gorm:"primaryKey"`
+	Votes     int
+	UpdatedAt time.Time
 }

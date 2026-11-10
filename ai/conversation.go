@@ -411,8 +411,7 @@ func (r *conversation) runMiddlewarePipeline(ctx context.Context, prompt contrac
 	next := destination
 	activeMiddlewares := slices.Clone(r.middlewares)
 
-	for i := len(activeMiddlewares) - 1; i >= 0; i-- {
-		middleware := activeMiddlewares[i]
+	for _, middleware := range slices.Backward(activeMiddlewares) {
 		nextHandler := next
 		next = contractsai.Next(func(ctx context.Context, prompt contractsai.AgentPrompt) (contractsai.AgentResponse, error) {
 			return middleware.Handle(ctx, prompt, nextHandler)

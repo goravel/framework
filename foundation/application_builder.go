@@ -1,6 +1,8 @@
 package foundation
 
 import (
+	"html/template"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/stats"
@@ -23,6 +25,7 @@ func Setup() foundation.ApplicationBuilder {
 type ApplicationBuilder struct {
 	app                        foundation.Application
 	callback                   func()
+	commandHooks               func() map[string][]console.CommandHook
 	commands                   func() []console.Command
 	config                     func()
 	configuredServiceProviders func() []foundation.ServiceProvider
@@ -44,6 +47,7 @@ type ApplicationBuilder struct {
 	runners                    func() []foundation.Runner
 	schedule                   func() []schedule.Event
 	seeders                    func() []seeder.Seeder
+	viewFuncs                  func() template.FuncMap
 }
 
 func NewApplicationBuilder(app foundation.Application) *ApplicationBuilder {
@@ -58,6 +62,20 @@ func (r *ApplicationBuilder) Create() foundation.Application {
 
 func (r *ApplicationBuilder) WithCallback(callback func()) foundation.ApplicationBuilder {
 	r.callback = callback
+
+	return r
+}
+
+// WithCommandHooks registers a callback that returns the hooks to run around
+// Artisan commands, keyed by command signature or '*' pattern, matched like
+// WithCommandsFilter. The callback runs once at Build() time and the map
+// reaches the Artisan application when the console provider constructs it.
+// For a command, the hooks of every matching key run, broadest key outermost:
+// "*" first, then the other '*' patterns from fewest to most literal
+// characters, then the exact signature; hooks in slice order within a key.
+// Before hooks run first to last and After hooks last to first.
+func (r *ApplicationBuilder) WithCommandHooks(fn func() map[string][]console.CommandHook) foundation.ApplicationBuilder {
+	r.commandHooks = fn
 
 	return r
 }
@@ -199,6 +217,12 @@ func (r *ApplicationBuilder) WithSchedule(fn func() []schedule.Event) foundation
 
 func (r *ApplicationBuilder) WithSeeders(fn func() []seeder.Seeder) foundation.ApplicationBuilder {
 	r.seeders = fn
+
+	return r
+}
+
+func (r *ApplicationBuilder) WithViewFuncs(fn func() template.FuncMap) foundation.ApplicationBuilder {
+	r.viewFuncs = fn
 
 	return r
 }

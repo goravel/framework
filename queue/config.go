@@ -178,7 +178,7 @@ func configuredQueue(config contractsconfig.Config, connection string) string {
 // duplicate names to match Laravel's semantics.
 func splitQueueNames(queue string) []string {
 	queueNames := make([]string, 0, strings.Count(queue, ",")+1)
-	for _, queueName := range strings.Split(queue, ",") {
+	for queueName := range strings.SplitSeq(queue, ",") {
 		queueName = strings.TrimSpace(queueName)
 		if queueName != "" {
 			queueNames = append(queueNames, queueName)

@@ -3,7 +3,7 @@ package ai
 import (
 	"context"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 
 	contractsai "github.com/goravel/framework/contracts/ai"
@@ -53,7 +53,7 @@ func newFailoverProvider(providers []resolvedProvider) contractsai.Provider {
 		return providers[0].provider
 	}
 
-	return &failoverProvider{providers: append([]resolvedProvider(nil), providers...)}
+	return &failoverProvider{providers: slices.Clone(providers)}
 }
 
 func (e *failoverError) Error() string {
@@ -215,7 +215,7 @@ func NewFailoverRules(provider string, patterns map[contractsai.FailoverReason][
 			reasons = append(reasons, string(reason))
 		}
 	}
-	sort.Strings(reasons)
+	slices.Sort(reasons)
 
 	var rules []failoverRule
 	for _, reasonValue := range reasons {

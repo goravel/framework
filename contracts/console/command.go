@@ -30,6 +30,30 @@ type Shutdownable interface {
 	Shutdown(ctx Context) error
 }
 
+// CommandHook runs around the Handle of a command. Hooks are registered
+// through ApplicationBuilder.WithCommandHooks as a map from a command
+// signature ("migrate") or '*' pattern ("make:*", "*") to the hooks for it,
+// matched like the commands filter. When a command runs, the hooks of every
+// matching key run, broadest key outermost: "*" first, then the other '*'
+// patterns from fewest to most literal characters, then the exact signature.
+// Keys of equal specificity run in string order, and the hooks of one key run
+// in slice order. Before hooks run first to last, then Handle, then After
+// hooks last to first.
+type CommandHook interface {
+	// Before runs before Handle. Returning false or an error skips Handle and
+	// every After.
+	Before(ctx Context) (proceed bool, err error)
+	// After runs after Handle and receives its error. The returned error
+	// replaces it.
+	After(ctx Context, handleErr error) error
+	// Flags are added to every matching command and read in the hooks through
+	// ctx.Option*. A name or alias that clashes with the command's own flags,
+	// another matching hook's flags, or the reserved help, h and no-ansi flags
+	// fails command registration. A Required flag is required on every
+	// matching command, even when Before skips Handle. Return nil for none.
+	Flags() []command.Flag
+}
+
 type Context interface {
 	context.Context
 	// Ask prompts the user for input.

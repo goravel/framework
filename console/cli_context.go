@@ -204,7 +204,7 @@ func (r *CliContext) NewLine(times ...int) {
 	if len(times) > 0 && times[0] > 0 {
 		numLines = times[0]
 	}
-	for i := 0; i < numLines; i++ {
+	for range numLines {
 		color.Default().Println()
 	}
 }

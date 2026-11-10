@@ -27,7 +27,7 @@ func ToSliceE[T int8 | int16 | int32 | int64 | uint | uint8 | uint16 | uint32 | 
 	case reflect.Slice, reflect.Array:
 		s := reflect.ValueOf(i)
 		a := make([]T, s.Len())
-		for j := 0; j < s.Len(); j++ {
+		for j := range s.Len() {
 			switch any(a).(type) {
 			case []int8:
 				val, err := cast.ToInt8E(s.Index(j).Interface())
@@ -119,7 +119,7 @@ func ToAnySlice[T any](s ...T) []any {
 		if v.Kind() == reflect.Slice {
 			// Handle slice case
 			result := make([]any, v.Len())
-			for i := 0; i < v.Len(); i++ {
+			for i := range v.Len() {
 				result[i] = v.Index(i).Interface()
 			}
 			return result

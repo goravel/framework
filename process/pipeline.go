@@ -218,7 +218,7 @@ func (r *Pipeline) start(configurer func(contractsprocess.Pipe)) (contractsproce
 				cancel()
 			}
 
-			for j := 0; j < started; j++ {
+			for j := range started {
 				if commands[j].Process != nil {
 					_ = kill(commands[j].Process)
 				}

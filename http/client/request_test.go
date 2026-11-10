@@ -354,29 +354,23 @@ func (s *RequestTestSuite) TestConcurrentRequests() {
 	defer cancel()
 
 	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		resp, err := reqTimeout.WithContext(ctx).Get(server.URL)
 		s.Error(err, "Should timeout")
 		s.Nil(resp)
-	}()
+	})
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		resp, err := reqWithParams.WithUrlParameter("hello", "world").Get(server.URL)
 		s.NoError(err)
 		s.NotNil(resp)
-	}()
+	})
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		resp, err := req.Get(server.URL)
 		s.NoError(err)
 		s.NotNil(resp)
-	}()
+	})
 
 	wg.Wait()
 }

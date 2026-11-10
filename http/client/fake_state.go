@@ -1,9 +1,10 @@
 package client
 
 import (
+	"cmp"
 	"net/http"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 	"sync"
 
@@ -29,21 +30,21 @@ func NewFakeState(json foundation.Json, mocks map[string]any) *FakeState {
 	// 1. Exact matches (no wildcards) take precedence over wildcards.
 	// 2. Longer patterns take precedence over shorter ones.
 	// 3. Alphabetical order determines priority for identical specificity.
-	sort.Slice(rules, func(i, j int) bool {
-		pI, pJ := rules[i].pattern, rules[j].pattern
+	slices.SortFunc(rules, func(a, b *FakeRule) int {
+		wildA := strings.Contains(a.pattern, "*")
+		wildB := strings.Contains(b.pattern, "*")
 
-		noWildI := !strings.Contains(pI, "*")
-		noWildJ := !strings.Contains(pJ, "*")
-
-		if noWildI != noWildJ {
-			return noWildI
+		if wildA != wildB {
+			if wildA {
+				return 1
+			}
+			return -1
 		}
 
-		if len(pI) != len(pJ) {
-			return len(pI) > len(pJ)
-		}
-
-		return pI < pJ
+		return cmp.Or(
+			cmp.Compare(len(b.pattern), len(a.pattern)),
+			strings.Compare(a.pattern, b.pattern),
+		)
 	})
 
 	return &FakeState{
@@ -100,12 +101,7 @@ func (r *FakeState) AllowStrayRequests(patterns []string) {
 func (r *FakeState) AssertSent(f func(client.Request) bool) bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	for _, recorded := range r.recorded {
-		if f(recorded) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(r.recorded, f)
 }
 
 func (r *FakeState) AssertSentCount(count int) bool {

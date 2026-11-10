@@ -17,7 +17,7 @@ import (
 
 func TestShowCommandHelp_HelpPrinterCustom(t *testing.T) {
 	output := &bytes.Buffer{}
-	cliApp := NewApplication("artisan", "Goravel Framework", "artisan command [options] [arguments...]", "v1.16.0", true)
+	cliApp := NewApplication("artisan", "Goravel Framework", "artisan command [options] [arguments...]", "v1.16.0", true, nil)
 	cliApp.writer = output
 	cliApp.Register([]contractsconsole.Command{
 		&TestFooCommand{},

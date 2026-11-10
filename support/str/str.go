@@ -175,7 +175,7 @@ func (s *String) Dirname(levels ...int) *String {
 	}
 
 	dir := s.value
-	for i := 0; i < defaultLevels; i++ {
+	for range defaultLevels {
 		dir = filepath.Dir(dir)
 	}
 

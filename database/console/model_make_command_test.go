@@ -10,6 +10,7 @@ import (
 
 	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/schema"
+	frameworkerrors "github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	"github.com/goravel/framework/support/file"
@@ -23,14 +24,15 @@ func TestModelMakeCommand(t *testing.T) {
 	mockContext := mocksconsole.NewContext(t)
 
 	// Test: Empty model name
-	mockContext.EXPECT().Argument(0).Return("").Once()
+	mockContext.EXPECT().Option("table").Return("").Once()
+	mockContext.EXPECT().Arguments().Return([]string{""}).Once()
 	mockContext.EXPECT().Ask("Enter the model name", mock.Anything).Return("", errors.New("the model name cannot be empty")).Once()
 	mockContext.EXPECT().Error("the model name cannot be empty").Once()
 	assert.Nil(t, modelMakeCommand.Handle(mockContext))
 	assert.False(t, file.Exists("app/models/user.go"))
 
 	// Test: Create model successfully
-	mockContext.EXPECT().Argument(0).Return("User").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"User"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Option("table").Return("").Once()
 	mockContext.EXPECT().Success("Model created successfully").Once()
@@ -53,13 +55,14 @@ type User struct {
 	assert.Equal(t, expectedUserContent, userModel)
 
 	// Test: Model already exists
-	mockContext.EXPECT().Argument(0).Return("User").Once()
+	mockContext.EXPECT().Option("table").Return("").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"User"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Error("the model already exists. Use the --force or -f flag to overwrite").Once()
 	assert.Nil(t, modelMakeCommand.Handle(mockContext))
 
 	// Test: Create model in subdirectory
-	mockContext.EXPECT().Argument(0).Return("User/Phone").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"User/Phone"}).Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Option("table").Return("").Once()
 	mockContext.EXPECT().Success("Model created successfully").Once()
@@ -84,9 +87,9 @@ type Phone struct {
 	assert.Equal(t, expectedPhoneContent, phoneModel)
 
 	// Test: Create model from table schema
-	mockContext.EXPECT().Argument(0).Return("Product").Once()
-	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Option("table").Return("products").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"Product"}).Times(2)
+	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 
 	// Table exists
 	mockSchema.EXPECT().HasTable("products").Return(true).Once()
@@ -140,17 +143,15 @@ func (r *Product) TableName() string {
 	assert.Equal(t, expectedContent, model)
 
 	// Test: Table doesn't exist
-	mockContext.EXPECT().Argument(0).Return("Invalid").Once()
-	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Option("table").Return("nonexistent").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"Invalid"}).Once()
 	mockSchema.EXPECT().HasTable("nonexistent").Return(false).Once()
 	mockContext.EXPECT().Error("table nonexistent not found").Once()
 	assert.Nil(t, modelMakeCommand.Handle(mockContext))
 
 	//Test: Error fetching columns
-	mockContext.EXPECT().Argument(0).Return("Error").Once()
-	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Option("table").Return("error_table").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"Error"}).Once()
 	mockSchema.EXPECT().HasTable("error_table").Return(true).Once()
 	mockSchema.EXPECT().GetColumns("error_table").Return(nil, errors.New("database connection error")).Once()
 	mockContext.EXPECT().Error("database connection error").Once()
@@ -540,4 +541,74 @@ func TestGenerateField(t *testing.T) {
 	assert.Equal(t, "any", field.Type)
 	assert.Equal(t, "`json:\"custom_field\" db:\"custom_field\"`", field.Tags)
 	assert.Empty(t, field.Imports)
+}
+
+func TestModelMakeCommand_MultipleNames(t *testing.T) {
+	t.Cleanup(func() {
+		_ = file.Remove("app")
+	})
+
+	mockSchema := mocksschema.NewSchema(t)
+	mockArtisan := mocksconsole.NewArtisan(t)
+
+	modelMakeCommand := NewModelMakeCommand(mockArtisan, mockSchema)
+	mockContext := mocksconsole.NewContext(t)
+
+	mockContext.EXPECT().Option("table").Return("").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"User", "Post"}).Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
+	mockContext.EXPECT().Success("Model created successfully").Times(2)
+	assert.Nil(t, modelMakeCommand.Handle(mockContext))
+
+	assert.FileExists(t, "app/models/user.go")
+	assert.FileExists(t, "app/models/post.go")
+}
+
+func TestModelMakeCommand_TableOptionRequiresSingleName(t *testing.T) {
+	t.Cleanup(func() {
+		_ = file.Remove("app")
+	})
+
+	mockSchema := mocksschema.NewSchema(t)
+	mockArtisan := mocksconsole.NewArtisan(t)
+
+	modelMakeCommand := NewModelMakeCommand(mockArtisan, mockSchema)
+	mockContext := mocksconsole.NewContext(t)
+
+	mockContext.EXPECT().Option("table").Return("users").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"User", "Post"}).Once()
+
+	assert.Equal(t, frameworkerrors.ConsoleTableOptionSingleName, modelMakeCommand.Handle(mockContext))
+	assert.NoFileExists(t, "app/models/user.go")
+	assert.NoFileExists(t, "app/models/post.go")
+}
+
+// TestModelMakeCommand_MultipleNamesPartialFailure verifies that a failure for
+// one name (e.g. the file already exists) does not stop the remaining names.
+func TestModelMakeCommand_MultipleNamesPartialFailure(t *testing.T) {
+	t.Cleanup(func() {
+		_ = file.Remove("app")
+	})
+
+	mockSchema := mocksschema.NewSchema(t)
+	mockArtisan := mocksconsole.NewArtisan(t)
+
+	modelMakeCommand := NewModelMakeCommand(mockArtisan, mockSchema)
+	mockContext := mocksconsole.NewContext(t)
+
+	mockContext.EXPECT().Option("table").Return("").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"User"}).Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Once()
+	mockContext.EXPECT().Success("Model created successfully").Once()
+	assert.Nil(t, modelMakeCommand.Handle(mockContext))
+
+	mockContext.EXPECT().Option("table").Return("").Once()
+	mockContext.EXPECT().Arguments().Return([]string{"User", "Post"}).Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
+	mockContext.EXPECT().Error("the model already exists. Use the --force or -f flag to overwrite").Once()
+	mockContext.EXPECT().Success("Model created successfully").Once()
+	assert.Nil(t, modelMakeCommand.Handle(mockContext))
+
+	assert.FileExists(t, "app/models/user.go")
+	assert.FileExists(t, "app/models/post.go")
 }

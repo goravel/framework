@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/goravel/framework/contracts/testing/docker"
@@ -15,6 +16,11 @@ import (
 	"github.com/goravel/framework/support/str"
 )
 
+var (
+	containersMutex   sync.Mutex
+	trackedContainers []*Container
+)
+
 type Container struct {
 	databaseDriver docker.DatabaseDriver
 	file           string
@@ -22,6 +28,7 @@ type Container struct {
 	name           string
 	username       string
 	password       string
+	built          bool
 }
 
 func NewContainer(databaseDriver docker.DatabaseDriver) *Container {
@@ -66,6 +73,8 @@ func (r *Container) Build() (docker.DatabaseDriver, error) {
 		if err := r.add(); err != nil {
 			return nil, err
 		}
+
+		r.built = true
 	}
 
 	database := fmt.Sprintf("goravel_%s", str.Random(6))
@@ -75,7 +84,7 @@ func (r *Container) Build() (docker.DatabaseDriver, error) {
 
 func (r *Container) Builds(num int) ([]docker.DatabaseDriver, error) {
 	var databaseDrivers []docker.DatabaseDriver
-	for i := 0; i < num; i++ {
+	for range num {
 		databaseDriver, err := r.Build()
 		if err != nil {
 			return nil, err
@@ -91,12 +100,64 @@ func (r *Container) Ready() error {
 	return r.databaseDriver.Ready()
 }
 
-func (r *Container) Remove() error {
-	if err := file.Remove(r.lockFile); err != nil {
+// Built reports whether this process started the container, as opposed to reusing one another run started.
+func (r *Container) Built() bool {
+	return r.built
+}
+
+// Track registers the container so CleanupContainers can stop it when the test process finishes.
+// Track only containers this process built. A mock-backed container must be drained before its
+// test ends, or the post-run cleanup calls into a finished test.
+func (r *Container) Track() {
+	containersMutex.Lock()
+	defer containersMutex.Unlock()
+
+	trackedContainers = append(trackedContainers, r)
+}
+
+// Shutdown stops the container and drops its record, so the next run does not reuse a stopped container.
+func (r *Container) Shutdown() error {
+	if err := r.databaseDriver.Shutdown(); err != nil {
 		return err
 	}
 
-	return file.Remove(r.file)
+	return r.remove()
+}
+
+// CleanupContainers stops every container this process built. It is called once from TestMain
+// and is safe to call again.
+func CleanupContainers() error {
+	containersMutex.Lock()
+	pending := trackedContainers
+	trackedContainers = nil
+	containersMutex.Unlock()
+
+	var errs []error
+	for i := len(pending) - 1; i >= 0; i-- {
+		if err := pending[i].Shutdown(); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	return errors.Join(errs...)
+}
+
+// remove deletes this container's record only: the file is shared with other test processes.
+func (r *Container) remove() error {
+	r.lock()
+	defer r.unlock()
+
+	databaseConfigs, err := r.all()
+	if err != nil {
+		return err
+	}
+
+	delete(databaseConfigs, r.name)
+	if len(databaseConfigs) == 0 {
+		return file.Remove(r.file)
+	}
+
+	return r.write(databaseConfigs)
 }
 
 func (r *Container) add() error {
@@ -109,6 +170,11 @@ func (r *Container) add() error {
 		databaseConfigs = make(map[string]docker.DatabaseConfig)
 	}
 	databaseConfigs[r.name] = r.databaseDriver.Config()
+
+	return r.write(databaseConfigs)
+}
+
+func (r *Container) write(databaseConfigs map[string]docker.DatabaseConfig) error {
 	f, err := os.OpenFile(r.file, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
 	if err != nil {
 		return err
@@ -121,11 +187,8 @@ func (r *Container) add() error {
 	}
 
 	_, err = f.WriteString(content)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 func (r *Container) all() (map[string]docker.DatabaseConfig, error) {

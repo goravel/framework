@@ -115,7 +115,7 @@ func (t *Translator) Get(key string, options ...translationcontract.Option) stri
 		if len(options) > 0 {
 			fallbackOptions = options[0]
 		}
-		fallbackOptions.Fallback = translationcontract.Bool(false)
+		fallbackOptions.Fallback = new(false)
 		fallbackOptions.Locale = fallbackLocale
 		return t.Get(key, fallbackOptions)
 	}

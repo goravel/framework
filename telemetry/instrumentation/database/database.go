@@ -6,6 +6,7 @@ import (
 	"database/sql/driver"
 	"errors"
 	"io"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -178,7 +179,7 @@ func (r *Instrument) endSpan(ctx context.Context, span trace.Span, start time.Ti
 		operation = unknownOperation
 	}
 
-	attrs := append([]telemetry.KeyValue{}, r.baseAttrs...)
+	attrs := slices.Clone(r.baseAttrs)
 	attrs = append(attrs, semconv.DBOperationName(operation))
 	if operationName(query) != "" {
 		attrs = append(attrs, semconv.DBQueryText(query))
@@ -197,7 +198,7 @@ func (r *Instrument) endSpan(ctx context.Context, span trace.Span, start time.Ti
 		attrs = append(attrs, telemetry.String(attrResolverMode, resolverMode))
 	}
 
-	metricAttrs := append([]telemetry.KeyValue{}, r.baseAttrs...)
+	metricAttrs := slices.Clone(r.baseAttrs)
 	metricAttrs = append(metricAttrs, semconv.DBOperationName(operation))
 	if table != "" {
 		metricAttrs = append(metricAttrs, semconv.DBCollectionName(table))

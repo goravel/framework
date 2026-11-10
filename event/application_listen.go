@@ -10,7 +10,7 @@ import (
 	"github.com/goravel/framework/errors"
 )
 
-var errorType = reflect.TypeOf((*error)(nil)).Elem()
+var errorType = reflect.TypeFor[error]()
 
 // listener is the internal representation every accepted listener form is
 // normalized to when it is registered, so that dispatching stays free of type
@@ -310,7 +310,7 @@ func newClosureListener(fn reflect.Value) *listener {
 				return errors.EventListenerTypeMismatch.Args(eventName, param.String(), evt)
 			}
 
-			if err, ok := fn.Call([]reflect.Value{value})[0].Interface().(error); ok {
+			if err, ok := reflect.TypeAssert[error](fn.Call([]reflect.Value{value})[0]); ok {
 				return err
 			}
 

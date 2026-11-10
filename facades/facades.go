@@ -35,6 +35,7 @@ import (
 	"github.com/goravel/framework/contracts/translation"
 	"github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/contracts/view"
+	"github.com/goravel/framework/contracts/vite"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation"
 )
@@ -169,4 +170,8 @@ func Validation() validation.Validation {
 
 func View() view.View {
 	return App().MakeView()
+}
+
+func Vite() vite.Vite {
+	return App().MakeVite()
 }

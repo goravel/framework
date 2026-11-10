@@ -1,6 +1,7 @@
 package event
 
 import (
+	"maps"
 	"slices"
 	"sync"
 
@@ -108,9 +109,7 @@ func (app *Application) Register(events map[event.Event][]event.Listener) {
 			app.events = map[event.Event][]event.Listener{}
 		}
 
-		for e, listeners := range cloned {
-			app.events[e] = listeners
-		}
+		maps.Copy(app.events, cloned)
 
 		for _, reg := range regs {
 			for _, listener := range reg.listeners {

@@ -51,23 +51,36 @@ type Query interface {
 	Count() (int64, error)
 	// Create inserts new record into the database.
 	Create(value any) error
+	// CrossJoin adds a CROSS JOIN to the query. Pass only the table expression, e.g. "roles", the
+	// "CROSS JOIN" keyword is added automatically. args only fill "?" placeholders in that expression.
+	CrossJoin(query string, args ...any) Query
 	// Cursor returns a cursor, use scan to iterate over the returned rows.
+	// If the iteration is stopped before the channel is closed (e.g. break), cancel the context passed to
+	// WithContext, otherwise the underlying goroutine, rows and connection are not released.
 	Cursor() chan db.Row
 	// DB gets the underlying database connection.
 	DB() (*sql.DB, error)
+	// Decrement decrements the given column's value by the given amount (default 1).
+	// When the query has a model with a primary key (Model(&user)), the column and updated_at
+	// of that model are also updated in memory. JSON path columns (data->x) are not supported.
+	Decrement(column string, value ...uint64) error
 	// Delete deletes records matching given conditions, if the conditions are empty will delete all records.
 	Delete(value ...any) (*db.Result, error)
 	// Distinct specifies distinct fields to query.
 	Distinct(columns ...string) Query
+	// DoesntExist determines if no rows exist for the current query.
+	DoesntExist() (bool, error)
 	// Driver gets the driver for the query.
 	Driver() string
 	// Exec executes raw sql
 	Exec(sql string, values ...any) (*db.Result, error)
 	// Exists returns true if matching records exist; otherwise, it returns false.
 	Exists() (bool, error)
-	// Find finds records that match given conditions.
+	// Find finds records that match given conditions. A single string cond is bound to the primary key when the
+	// model's primary key is a string (e.g. UUID, ULID); use Where for raw SQL conditions.
 	Find(dest any, conds ...any) error
-	// FindOrFail finds records that match given conditions or throws an error.
+	// FindOrFail finds records that match given conditions or throws an error. A single string cond is bound to the
+	// primary key when the model's primary key is a string (e.g. UUID, ULID); use Where for raw SQL conditions.
 	FindOrFail(dest any, conds ...any) error
 	// First finds record that match given conditions.
 	First(dest any) error
@@ -93,12 +106,22 @@ type Query interface {
 	GroupBy(column ...string) Query
 	// Having specifying HAVING conditions for the query.
 	Having(query any, args ...any) Query
+	// Increment increments the given column's value by the given amount (default 1).
+	// When the query has a model with a primary key (Model(&user)), the column and updated_at
+	// of that model are also updated in memory. JSON path columns (data->x) are not supported.
+	Increment(column string, value ...uint64) error
 	// InRandomOrder specifies the order randomly.
 	InRandomOrder() Query
 	// InTransaction checks if the query is in a transaction.
 	InTransaction() bool
 	// Join specifying JOIN conditions for the query.
 	Join(query string, args ...any) Query
+	// Latest orders the query by the given column descending, default column is "created_at".
+	// The column follows the OrderBy rule.
+	Latest(column ...string) Query
+	// LeftJoin adds a LEFT JOIN to the query. Pass the table and its condition without the keyword,
+	// e.g. "posts ON posts.user_id = users.id", the "LEFT JOIN" keyword is added automatically.
+	LeftJoin(query string, args ...any) Query
 	// Limit the number of records returned.
 	Limit(limit int) Query
 	// Load loads a relationship for the model.
@@ -114,18 +137,25 @@ type Query interface {
 	// Omit specifies columns that should be omitted from the query.
 	Omit(columns ...string) Query
 	// Order specifies the order in which the results should be returned.
+	// Order is raw by definition, so never pass user input to it.
 	// DEPRECATED Use OrderByRaw instead.
 	Order(value any) Query
 	// OrderBy specifies the order should be ascending.
+	// The column must be a plain column name (group, users.group) or a JSON selector (data->name), and the
+	// direction must be ASC or DESC. A plain column and a JSON selector are quoted or compiled by the
+	// connection that runs the query; anything else fails and must go through OrderByRaw.
 	OrderBy(column string, direction ...string) Query
 	// OrderByDesc specifies the order should be descending.
+	// The column follows the OrderBy rule.
 	OrderByDesc(column string) Query
-	// OrderByRaw specifies the order should be raw.
+	// OrderByRaw specifies the order should be raw. It is put into the SQL as is, so never pass user input to it.
 	OrderByRaw(raw string) Query
 	// OrWhere add an "or where" clause to the query.
 	OrWhere(query any, args ...any) Query
 	// OrWhereBetween adds an "or where column between x and y" clause to the query.
 	OrWhereBetween(column string, x, y any) Query
+	// OrWhereColumn adds an "or where" clause comparing two columns to the query.
+	OrWhereColumn(column1 string, column2 ...string) Query
 	// OrWhereIn adds an "or where column in" clause to the query.
 	OrWhereIn(column string, values []any) Query
 	// OrWhereJsonContains adds an "or where JSON contains" clause to the query.
@@ -138,12 +168,22 @@ type Query interface {
 	OrWhereJsonDoesntContainKey(column string) Query
 	// OrWhereJsonLength add an "or where JSON length" clause to the query.
 	OrWhereJsonLength(column string, length int) Query
+	// OrWhereLike adds an "or where column like" clause to the query.
+	OrWhereLike(column string, value string) Query
+	// OrWhereNot adds an "or where not" clause that negates the given conditions as a group.
+	OrWhereNot(query any, args ...any) Query
 	// OrWhereNotBetween adds an "or where column not between x and y" clause to the query.
 	OrWhereNotBetween(column string, x, y any) Query
 	// OrWhereNotIn adds an "or where column not in" clause to the query.
 	OrWhereNotIn(column string, values []any) Query
+	// OrWhereNotLike adds an "or where column not like" clause to the query.
+	OrWhereNotLike(column string, value string) Query
+	// OrWhereNotNull adds an "or where column is not null" clause to the query.
+	OrWhereNotNull(column string) Query
 	// OrWhereNull adds a "or where column is null" clause to the query.
 	OrWhereNull(column string) Query
+	// OrWhereRaw adds a raw "or where" clause to the query.
+	OrWhereRaw(raw string, args []any) Query
 	// Paginate the given query into a simple paginator.
 	Paginate(page, limit int, dest any, total *int64) error
 	// Pluck retrieves a single column from the database.
@@ -152,6 +192,9 @@ type Query interface {
 	Raw(sql string, values ...any) Query
 	// Restore restores a soft deleted model.
 	Restore(model ...any) (*db.Result, error)
+	// RightJoin adds a RIGHT JOIN to the query. Pass the table and its condition without the keyword,
+	// e.g. "posts ON posts.user_id = users.id", the "RIGHT JOIN" keyword is added automatically.
+	RightJoin(query string, args ...any) Query
 	// Rollback rolls back the changes in a transaction.
 	Rollback() error
 	// Save updates value in a database
@@ -187,6 +230,8 @@ type Query interface {
 	// UpdateOrCreate finds the first record that matches the given attributes
 	// or create a new one with those attributes if none was found.
 	UpdateOrCreate(dest any, attributes any, values any) error
+	// Value gets a single column's value from the first result of a query.
+	Value(column string, dest any) error
 	// When executes the callback if the condition is true, otherwise the falseCallback if it is given.
 	When(condition bool, callback func(query Query) Query, falseCallback ...func(query Query) Query) Query
 	// Where add a "where" clause to the query.
@@ -197,6 +242,10 @@ type Query interface {
 	WhereAny(columns []string, args ...any) Query
 	// WhereBetween adds a "where column between x and y" clause to the query.
 	WhereBetween(column string, x, y any) Query
+	// WhereColumn adds a "where" clause comparing two columns to the query.
+	WhereColumn(column1 string, column2 ...string) Query
+	// WhereExists adds an exists clause to the query.
+	WhereExists(query func() Query) Query
 	// WhereIn adds a "where column in" clause to the query.
 	WhereIn(column string, values []any) Query
 	// WhereJsonContains add a "where JSON contains" clause to the query.
@@ -209,16 +258,24 @@ type Query interface {
 	WhereJsonDoesntContainKey(column string) Query
 	// WhereJsonLength add a "where JSON length" clause to the query.
 	WhereJsonLength(column string, length int) Query
+	// WhereLike adds a "where like" clause to the query.
+	WhereLike(column string, value string) Query
 	// WhereNone adds a "where none of columns match" clause to the query.
 	WhereNone(columns []string, args ...any) Query
+	// WhereNot adds a "where not" clause that negates the given conditions as a group.
+	WhereNot(query any, args ...any) Query
 	// WhereNotBetween adds a "where column not between x and y" clause to the query.
 	WhereNotBetween(column string, x, y any) Query
 	// WhereNotIn adds a "where column not in" clause to the query.
 	WhereNotIn(column string, values []any) Query
+	// WhereNotLike adds a "where not like" clause to the query.
+	WhereNotLike(column string, value string) Query
 	// WhereNotNull adds a "where column is not null" clause to the query.
 	WhereNotNull(column string) Query
 	// WhereNull adds a "where column is null" clause to the query.
 	WhereNull(column string) Query
+	// WhereRaw adds a raw where clause to the query.
+	WhereRaw(raw string, args []any) Query
 	// WithoutEvents disables event firing for the query.
 	WithoutEvents() Query
 	// WithoutGlobalScopes disables all global scopes for the query.
@@ -265,6 +322,7 @@ type ToSql interface {
 	Count() string
 	Create(value any) string
 	Delete(value ...any) string
+	// Find binds a single string cond to the primary key when the model's primary key is a string, like Query.Find.
 	Find(dest any, conds ...any) string
 	First(dest any) string
 	ForceDelete(value ...any) string

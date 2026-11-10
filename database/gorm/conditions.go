@@ -7,6 +7,7 @@ import (
 
 type Conditions struct {
 	dest                any
+	err                 error
 	model               any
 	having              *contractsdriver.Having
 	limit               *int

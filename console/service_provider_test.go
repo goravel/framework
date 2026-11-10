@@ -1,7 +1,7 @@
 package console
 
 import (
-	"sort"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -32,13 +32,16 @@ func TestServiceProviderRegister(t *testing.T) {
 	t.Run("register artisan singleton", func(t *testing.T) {
 		app := mocksfoundation.NewApplication(t)
 		app.EXPECT().Singleton(binding.Artisan, mock.AnythingOfType("func(foundation.Application) (interface {}, error)")).Run(func(_ any, callback func(contractsfoundation.Application) (any, error)) {
+			hooks := map[string][]contractsconsole.CommandHook{"migrate": {mocksconsole.NewCommandHook(t)}}
 			callbackApp := mocksfoundation.NewApplication(t)
 			callbackApp.EXPECT().Version().Return("v1.18.0").Once()
+			callbackApp.EXPECT().CommandHooks().Return(hooks).Once()
 
 			instance, err := callback(callbackApp)
 
 			assert.NoError(t, err)
 			assert.IsType(t, &Application{}, instance)
+			assert.Equal(t, hooks, instance.(*Application).hooks)
 		}).Once()
 
 		provider.Register(app)
@@ -50,7 +53,7 @@ func signaturesOf(commands []contractsconsole.Command) []string {
 	for _, c := range commands {
 		sigs = append(sigs, c.Signature())
 	}
-	sort.Strings(sigs)
+	slices.Sort(sigs)
 	return sigs
 }
 
@@ -61,13 +64,13 @@ func TestServiceProviderBootNilAllowlistRegistersAll(t *testing.T) {
 	configFacade := mocksconfig.NewConfig(t)
 	processFacade := mocksprocess.NewProcess(t)
 
-	// nil allowlist means all four console/console/* commands are registered.
+	// nil allowlist means all five console/console/* commands are registered.
 	app.EXPECT().MakeArtisan().Return(artisan).Once()
 	app.EXPECT().MakeConfig().Return(configFacade).Once()
 	app.EXPECT().MakeProcess().Return(processFacade).Once()
 	app.EXPECT().CommandsFilter().Return(nil).Once()
 	artisan.EXPECT().Register(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
-		return len(commands) == 4
+		return len(commands) == 5
 	})).Once()
 
 	provider.Boot(app)
@@ -106,8 +109,8 @@ func TestServiceProviderBootAllowlistApplies(t *testing.T) {
 	app.EXPECT().CommandsFilter().Return([]string{"list", "make:*"}).Once()
 	artisan.EXPECT().Register(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
 		got := signaturesOf(commands)
-		want := []string{"list", "make:command"}
-		sort.Strings(want)
+		want := []string{"list", "make:command", "make:command-hook"}
+		slices.Sort(want)
 		if len(got) != len(want) {
 			return false
 		}

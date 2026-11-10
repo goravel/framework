@@ -16,6 +16,7 @@ import (
 	"net/url"
 	"reflect"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -225,6 +226,51 @@ var implicitRules = map[string]bool{
 	"prohibits": true,
 }
 
+// minRuleParameters is the minimum number of parameters a builtin rule needs to
+// evaluate its condition. The entries mirror Laravel's requireParameterCount for the
+// dependent rules and the comparison rules that take a field name or literal. The
+// remaining guards Laravel applies — size, numeric, database and pattern rules — are
+// out of scope for this change; a missing parameter there still fails validation.
+var minRuleParameters = map[string]int{
+	"accepted_if":       2,
+	"declined_if":       2,
+	"exclude_if":        2,
+	"exclude_unless":    2,
+	"missing_if":        2,
+	"missing_unless":    2,
+	"present_if":        2,
+	"present_unless":    2,
+	"prohibited_if":     2,
+	"prohibited_unless": 2,
+	"required_if":       2,
+	"required_unless":   2,
+
+	"exclude_with":           1,
+	"exclude_without":        1,
+	"missing_with":           1,
+	"missing_with_all":       1,
+	"present_with":           1,
+	"present_with_all":       1,
+	"prohibited_if_accepted": 1,
+	"prohibited_if_declined": 1,
+	"required_if_accepted":   1,
+	"required_if_declined":   1,
+
+	"after":           1,
+	"after_or_equal":  1,
+	"before":          1,
+	"before_or_equal": 1,
+	"date_equals":     1,
+	"date_format":     1,
+	"different":       1,
+	"gt":              1,
+	"gte":             1,
+	"in_array":        1,
+	"lt":              1,
+	"lte":             1,
+	"same":            1,
+}
+
 // excludeRules are rules that may cause a field to be excluded from validated data.
 var excludeRules = map[string]bool{
 	"exclude": true, "exclude_if": true, "exclude_unless": true,
@@ -358,10 +404,8 @@ func rulePresentUnless(ctx *RuleContext) bool {
 }
 
 func rulePresentWith(ctx *RuleContext) bool {
-	for _, field := range ctx.Parameters {
-		if ctx.Data.Has(field) {
-			return ctx.Data.Has(ctx.Attribute)
-		}
+	if slices.ContainsFunc(ctx.Parameters, ctx.Data.Has) {
+		return ctx.Data.Has(ctx.Attribute)
 	}
 	return true
 }
@@ -396,10 +440,8 @@ func ruleMissingUnless(ctx *RuleContext) bool {
 }
 
 func ruleMissingWith(ctx *RuleContext) bool {
-	for _, field := range ctx.Parameters {
-		if ctx.Data.Has(field) {
-			return !ctx.Data.Has(ctx.Attribute)
-		}
+	if slices.ContainsFunc(ctx.Parameters, ctx.Data.Has) {
+		return !ctx.Data.Has(ctx.Attribute)
 	}
 	return true
 }
@@ -1250,22 +1292,12 @@ func ruleUint(ctx *RuleContext) bool {
 
 func ruleIn(ctx *RuleContext) bool {
 	s := fmt.Sprintf("%v", ctx.Value)
-	for _, allowed := range ctx.Parameters {
-		if s == allowed {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(ctx.Parameters, s)
 }
 
 func ruleNotIn(ctx *RuleContext) bool {
 	s := fmt.Sprintf("%v", ctx.Value)
-	for _, disallowed := range ctx.Parameters {
-		if s == disallowed {
-			return false
-		}
-	}
-	return true
+	return !slices.Contains(ctx.Parameters, s)
 }
 
 func ruleInArray(ctx *RuleContext) bool {
@@ -1286,10 +1318,8 @@ func ruleInArray(ctx *RuleContext) bool {
 			}
 		}
 	case []string:
-		for _, item := range arr {
-			if item == s {
-				return true
-			}
+		if slices.Contains(arr, s) {
+			return true
 		}
 	}
 	return false
@@ -1432,12 +1462,7 @@ func ruleImage(ctx *RuleContext) bool {
 			return false
 		}
 		imageTypes := []string{"image/jpeg", "image/png", "image/gif", "image/bmp", "image/svg+xml", "image/webp"}
-		for _, t := range imageTypes {
-			if mtype.Is(t) {
-				return true
-			}
-		}
-		return false
+		return slices.ContainsFunc(imageTypes, mtype.Is)
 	}
 
 	if fh, ok := ctx.Value.(*multipart.FileHeader); ok {
@@ -1489,12 +1514,7 @@ func ruleMimetypes(ctx *RuleContext) bool {
 		if err != nil {
 			return false
 		}
-		for _, allowed := range ctx.Parameters {
-			if mtype.Is(allowed) {
-				return true
-			}
-		}
-		return false
+		return slices.ContainsFunc(ctx.Parameters, mtype.Is)
 	}
 
 	if fh, ok := ctx.Value.(*multipart.FileHeader); ok {

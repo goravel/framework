@@ -160,8 +160,7 @@ func BenchmarkSession_ManagerInteraction(b *testing.B) {
 	s.mockConfig.On("GetInt", "session.gc_interval").Return(30)
 	s.mockConfig.On("GetString", "session.cookie").Return("bench_cookie")
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 
 		driverInstance, err := s.manager.Driver()
 		if err != nil {
@@ -182,5 +181,4 @@ func BenchmarkSession_ManagerInteraction(b *testing.B) {
 		s.manager.ReleaseSession(session)
 
 	}
-	b.StopTimer()
 }

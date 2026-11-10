@@ -1,7 +1,7 @@
 package collect
 
 import (
-	"sort"
+	"slices"
 	"strconv"
 	"testing"
 
@@ -58,8 +58,8 @@ func TestGroupBy(t *testing.T) {
 func TestKeys(t *testing.T) {
 	keys1 := Keys[int, string](map[int]string{1: "foo", 2: "bar"})
 	keys2 := Keys[string, int](map[string]int{"foo": 1, "bar": 2})
-	sort.Ints(keys1)
-	sort.Strings(keys2)
+	slices.Sort(keys1)
+	slices.Sort(keys2)
 	assert.Equal(t, []int{1, 2}, keys1)
 	assert.Equal(t, []string{"bar", "foo"}, keys2)
 }
@@ -139,8 +139,8 @@ func TestUnique(t *testing.T) {
 func TestValues(t *testing.T) {
 	values1 := Values[string, int](map[string]int{"foo": 1, "bar": 2})
 	values2 := Values[int, string](map[int]string{1: "foo", 2: "bar"})
-	sort.Ints(values1)
-	sort.Strings(values2)
+	slices.Sort(values1)
+	slices.Sort(values2)
 	assert.Equal(t, []int{1, 2}, values1)
 	assert.Equal(t, []string{"bar", "foo"}, values2)
 }

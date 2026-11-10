@@ -32,6 +32,7 @@ const (
 	Testing      = "goravel.testing"
 	Validation   = "goravel.validation"
 	View         = "goravel.view"
+	Vite         = "goravel.vite"
 )
 
 type Relationship struct {
@@ -439,6 +440,14 @@ var (
 		View: {
 			Description: "Provides a simple yet powerful templating engine.",
 			PkgPath:     "github.com/goravel/framework/view",
+		},
+		Vite: {
+			Description: "Resolves assets built by Vite into the tags that load them.",
+			PkgPath:     "github.com/goravel/framework/vite",
+			Dependencies: []string{
+				Config,
+				View,
+			},
 		},
 	}
 )

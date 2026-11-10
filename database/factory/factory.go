@@ -54,7 +54,7 @@ func (f *FactoryImpl) Make(value any, attributes ...map[string]any) error {
 		if f.count != nil {
 			count = *f.count
 		}
-		for i := 0; i < count; i++ {
+		for range count {
 			elemValue := reflect.New(reflectValue.Type().Elem()).Interface()
 			attributes, err := getRawAttributes(elemValue, attributes...)
 			if err != nil {

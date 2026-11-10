@@ -149,8 +149,7 @@ func getExitCode(cmd *exec.Cmd, err error) int {
 	if cmd != nil && cmd.ProcessState != nil {
 		exitCode = cmd.ProcessState.ExitCode()
 	} else if err != nil {
-		var ee *exec.ExitError
-		if errors.As(err, &ee) {
+		if ee, ok := errors.AsType[*exec.ExitError](err); ok {
 			exitCode = ee.ExitCode()
 		}
 	} else {

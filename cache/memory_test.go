@@ -78,14 +78,12 @@ func (s *MemoryTestSuite) TestDecrementWithConcurrent() {
 		failed atomic.Int64
 	)
 	for range 1000 {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			// Assertions belong on the test goroutine, and err is shared.
 			if _, err := s.memory.Decrement("decrement_concurrent", 1); err != nil {
 				failed.Add(1)
 			}
-		}()
+		})
 	}
 
 	wg.Wait()
@@ -126,22 +124,18 @@ func (s *MemoryTestSuite) TestFlushWhileReading() {
 
 	var wg sync.WaitGroup
 	for range 50 {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for range 500 {
 				s.memory.Get("test-flush-while-reading")
 			}
-		}()
+		})
 	}
 	for range 10 {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for range 200 {
 				s.memory.Flush()
 			}
-		}()
+		})
 	}
 	wg.Wait()
 
@@ -229,9 +223,7 @@ func (s *MemoryTestSuite) TestAddWithConcurrent() {
 			start = make(chan struct{})
 		)
 		for range 8 {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
+			wg.Go(func() {
 				// Contend on the same expired item: a goroutine released after
 				// a winner has replaced it leaves through the "not expired"
 				// branch, which proves nothing about the swap.
@@ -239,7 +231,7 @@ func (s *MemoryTestSuite) TestAddWithConcurrent() {
 				if s.memory.Add(key, "goravel", NoExpiration) {
 					added.Add(1)
 				}
-			}()
+			})
 		}
 		close(start)
 		wg.Wait()
@@ -383,14 +375,12 @@ func (s *MemoryTestSuite) TestIncrementWithConcurrent() {
 		failed atomic.Int64
 	)
 	for range 1000 {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			// Assertions belong on the test goroutine, and err is shared.
 			if _, err := s.memory.Increment("increment_concurrent", 1); err != nil {
 				failed.Add(1)
 			}
-		}()
+		})
 	}
 
 	wg.Wait()

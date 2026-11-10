@@ -3,6 +3,7 @@ package ai
 import (
 	"bytes"
 	"context"
+	"slices"
 	"strings"
 
 	contractsai "github.com/goravel/framework/contracts/ai"
@@ -251,5 +252,5 @@ func cloneTranscriptionSegments(segments []contractsai.TranscriptionSegment) []c
 		return nil
 	}
 
-	return append([]contractsai.TranscriptionSegment(nil), segments...)
+	return slices.Clone(segments)
 }

@@ -24,7 +24,7 @@ func newCompositeTextMapPropagator(nameStr string) (propagation.TextMapPropagato
 
 	var propagators []propagation.TextMapPropagator
 
-	for _, name := range strings.Split(nameStr, ",") {
+	for name := range strings.SplitSeq(nameStr, ",") {
 		name = strings.TrimSpace(name)
 		if name == "" {
 			continue

@@ -254,7 +254,7 @@ func (r *Migrator) prepareDatabase() error {
 func (r *Migrator) printTitle(maxNameLength int) {
 	color.Default().Print(fmt.Sprintf("%-*s", maxNameLength, "Migration name"))
 	color.Default().Println(" | Batch / Status")
-	for i := 0; i < maxNameLength+17; i++ {
+	for range maxNameLength + 17 {
 		color.Default().Print("-")
 	}
 	color.Default().Println()

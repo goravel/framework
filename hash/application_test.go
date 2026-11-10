@@ -3,11 +3,11 @@ package hash
 import (
 	"testing"
 
-	"golang.org/x/crypto/bcrypt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/foundation"
@@ -210,11 +210,9 @@ func BenchmarkMakeHash(b *testing.B) {
 	s := new(ApplicationTestSuite)
 	s.SetT(&testing.T{})
 	s.SetupTest()
-	b.StartTimer()
-	b.ResetTimer()
 	for name, hasher := range s.hashers {
 		b.Run(name, func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
+			for b.Loop() {
 				_, err := hasher.Make("password")
 				if err != nil {
 					b.Fatal(err)
@@ -222,49 +220,42 @@ func BenchmarkMakeHash(b *testing.B) {
 			}
 		})
 	}
-	b.StopTimer()
 }
 
 func BenchmarkCheckHash(b *testing.B) {
 	s := new(ApplicationTestSuite)
 	s.SetT(&testing.T{})
 	s.SetupTest()
-	b.StartTimer()
-	b.ResetTimer()
 	for name, hasher := range s.hashers {
 		b.Run(name, func(b *testing.B) {
 			value, err := hasher.Make("password")
 			if err != nil {
 				b.Fatal(err)
 			}
-			for i := 0; i < b.N; i++ {
+			for b.Loop() {
 				if !hasher.Check("password", value) {
 					b.Fatal("hash check failed")
 				}
 			}
 		})
 	}
-	b.StopTimer()
 }
 
 func BenchmarkNeedsRehash(b *testing.B) {
 	s := new(ApplicationTestSuite)
 	s.SetT(&testing.T{})
 	s.SetupTest()
-	b.StartTimer()
-	b.ResetTimer()
 	for name, hasher := range s.hashers {
 		b.Run(name, func(b *testing.B) {
 			value, err := hasher.Make("password")
 			if err != nil {
 				b.Fatal(err)
 			}
-			for i := 0; i < b.N; i++ {
+			for b.Loop() {
 				hasher.NeedsRehash(value)
 			}
 		})
 	}
-	b.StopTimer()
 }
 
 func getArgon2idHasher(mockConfig *mocksconfig.Config) *Argon2id {

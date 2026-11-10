@@ -4,8 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
-
-	"github.com/goravel/framework/support/convert"
 )
 
 type ColumnDefinitionTestSuite struct {
@@ -38,28 +36,28 @@ func (s *ColumnDefinitionTestSuite) GetDefault() {
 func (s *ColumnDefinitionTestSuite) GetName() {
 	s.Empty(s.columnDefinition.GetName())
 
-	s.columnDefinition.name = convert.Pointer("name")
+	s.columnDefinition.name = new("name")
 	s.Equal("name", s.columnDefinition.GetName())
 }
 
 func (s *ColumnDefinitionTestSuite) GetLength() {
 	s.Equal(0, s.columnDefinition.GetLength())
 
-	s.columnDefinition.length = convert.Pointer(255)
+	s.columnDefinition.length = new(255)
 	s.Equal(255, s.columnDefinition.GetLength())
 }
 
 func (s *ColumnDefinitionTestSuite) GetNullable() {
 	s.False(s.columnDefinition.GetNullable())
 
-	s.columnDefinition.nullable = convert.Pointer(true)
+	s.columnDefinition.nullable = new(true)
 	s.True(s.columnDefinition.GetNullable())
 }
 
 func (s *ColumnDefinitionTestSuite) GetType() {
 	s.Empty(s.columnDefinition.GetType())
 
-	s.columnDefinition.ttype = convert.Pointer("string")
+	s.columnDefinition.ttype = new("string")
 	s.Equal("string", s.columnDefinition.GetType())
 }
 

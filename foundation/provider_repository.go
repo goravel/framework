@@ -2,7 +2,8 @@ package foundation
 
 import (
 	"fmt"
-	"sort"
+	"maps"
+	"slices"
 	"strings"
 
 	"github.com/goravel/framework/contracts/binding"
@@ -336,11 +337,7 @@ func (r *ProviderRepository) detectCycle(graph map[string][]string, bindingToPro
 	}
 
 	// Sort nodes to make cycle detection deterministic.
-	var nodes []string
-	for node := range graph {
-		nodes = append(nodes, node)
-	}
-	sort.Strings(nodes)
+	nodes := slices.Sorted(maps.Keys(graph))
 
 	for _, node := range nodes {
 		if !visited[node] {

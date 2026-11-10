@@ -1,8 +1,10 @@
 package console
 
 import (
+	"cmp"
 	"context"
 	"io"
+	"maps"
 	"os"
 	"os/signal"
 	stdpath "path"
@@ -28,10 +30,26 @@ var (
 		HideDefault: true,
 		Usage:       "Force disable ANSI output",
 	}
+	// helpFlag is the template for the help flag withDefaultFlags adds to
+	// every command. It is copied per command, as the alias is dropped when
+	// the command already has an "h" flag.
+	helpFlag = &cli.BoolFlag{
+		Name:        "help",
+		Aliases:     []string{"h"},
+		Usage:       "Show help",
+		HideDefault: true,
+	}
 )
+
+// defaultFlagNames returns every name and alias of the flags withDefaultFlags
+// adds to a command. Hook flags may not use them.
+func defaultFlagNames() []string {
+	return append(helpFlag.Names(), noANSIFlag.Names()...)
+}
 
 type Application struct {
 	commands   []console.Command
+	hooks      map[string][]console.CommandHook
 	name       string
 	usage      string
 	usageText  string
@@ -43,9 +61,12 @@ type Application struct {
 
 // NewApplication Create a new Artisan application.
 // Will add artisan flag to the command if useArtisan is true.
-func NewApplication(name, usage, usageText, version string, useArtisan bool) *Application {
+// hooks run around matching commands, keyed by command signature or '*'
+// pattern.
+func NewApplication(name, usage, usageText, version string, useArtisan bool, hooks map[string][]console.CommandHook) *Application {
 	ctx, _ := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	return &Application{
+		hooks:      hooks,
 		name:       name,
 		usage:      usage,
 		usageText:  usageText,
@@ -114,7 +135,7 @@ func (r *Application) Run(args []string, exitIfArtisan bool) error {
 	if artisanIndex != -1 {
 		command, err := r.command()
 		if err != nil {
-			return err
+			return r.fail(err, exitIfArtisan)
 		}
 
 		if artisanIndex+1 == len(args) {
@@ -123,15 +144,7 @@ func (r *Application) Run(args []string, exitIfArtisan bool) error {
 
 		cliArgs := append([]string{args[0]}, args[artisanIndex+1:]...)
 		if err := command.Run(r.ctx, cliArgs); err != nil {
-			if exitIfArtisan {
-				if !errors.Is(err, context.Canceled) {
-					color.Errorln(err.Error())
-					os.Exit(1)
-				}
-				os.Exit(0)
-			}
-
-			return err
+			return r.fail(err, exitIfArtisan)
 		}
 
 		if exitIfArtisan {
@@ -142,13 +155,31 @@ func (r *Application) Run(args []string, exitIfArtisan bool) error {
 	return nil
 }
 
+// fail reports an error from Run. When exitIfArtisan is set the error is
+// printed and the process exits, so a caller that discards the returned error
+// (the application boot) never hides it; otherwise it is returned as is.
+func (r *Application) fail(err error, exitIfArtisan bool) error {
+	if !exitIfArtisan {
+		return err
+	}
+
+	if errors.Is(err, context.Canceled) {
+		os.Exit(0)
+	}
+
+	color.Errorln(err.Error())
+	os.Exit(1)
+
+	return err
+}
+
 // SetCommands Set the commands for the application.
 func (r *Application) SetCommands(commands []console.Command) {
 	r.commands = commands
 }
 
 func (r *Application) command() (*cli.Command, error) {
-	cliCommands, err := commandsToCliCommands(r.commands)
+	cliCommands, err := commandsToCliCommands(r.commands, r.hooks)
 	if err != nil {
 		return nil, err
 	}
@@ -170,6 +201,12 @@ func (r *Application) command() (*cli.Command, error) {
 	return command, nil
 }
 
+// hookDecisionTimeout bounds how long a cancelled Shutdownable command waits
+// for its Before hooks to decide whether Handle runs. A hook that ignores
+// cancellation (a prompt, blocking I/O) would otherwise hold Ctrl-C forever,
+// so after this long Shutdown runs anyway, as it did before hooks existed.
+var hookDecisionTimeout = 5 * time.Second
+
 func shutdownCommand(shutdownable console.Shutdownable, cmd *cli.Command, arguments []command.Argument) error {
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer shutdownCancel()
@@ -177,13 +214,7 @@ func shutdownCommand(shutdownable console.Shutdownable, cmd *cli.Command, argume
 }
 
 // FilterCommandsByAllowlist returns the subset of commands whose Signature()
-// matches at least one entry in allowlist.
-//
-// Matching is signature-only (category never consulted):
-//   - Entries without '*' are exact-matched against command.Signature().
-//   - Entries containing '*' use glob matching via path.Match against
-//     command.Signature() (only '*' triggers the glob path; '?' is matched
-//     literally as an exact match).
+// matches at least one entry in allowlist, as decided by signatureMatches.
 //
 // Special cases:
 //   - allowlist == nil            → every command is kept (no filter applied).
@@ -192,45 +223,211 @@ func FilterCommandsByAllowlist(commands []console.Command, allowlist []string) [
 	if allowlist == nil {
 		return commands
 	}
-	exact := make(map[string]struct{}, len(allowlist))
-	var globs []string
+	patterns := make([]string, 0, len(allowlist))
 	for _, s := range allowlist {
-		s = strings.TrimSpace(s)
-		if s == "" {
-			continue
-		}
-		if strings.Contains(s, "*") {
-			globs = append(globs, s)
-		} else {
-			exact[s] = struct{}{}
+		if s = strings.TrimSpace(s); s != "" {
+			patterns = append(patterns, s)
 		}
 	}
-	if len(exact) == 0 && len(globs) == 0 {
+	if len(patterns) == 0 {
 		return nil
 	}
 	kept := make([]console.Command, 0, len(commands))
 	for _, cmd := range commands {
 		sig := cmd.Signature()
-		if _, ok := exact[sig]; ok {
+		if slices.ContainsFunc(patterns, func(pattern string) bool { return signatureMatches(pattern, sig) }) {
 			kept = append(kept, cmd)
-			continue
-		}
-		for _, pattern := range globs {
-			if ok, _ := stdpath.Match(pattern, sig); ok {
-				kept = append(kept, cmd)
-				break
-			}
 		}
 	}
 	return kept
 }
 
-func commandsToCliCommands(commands []console.Command) ([]*cli.Command, error) {
+// sortedHookKeys returns the keys of hooks outermost first. Keys are ranked by
+// specificity, broadest first, so a hook wraps every hook registered under a
+// more specific key: "*" first, then the other '*' patterns by literal length
+// ascending (the bytes that are not '*'), then exact signatures. Keys with the
+// same rank and literal length fall back to string order. Keys are trimmed
+// before ranking, as signatureMatches trims them before matching.
+func sortedHookKeys(hooks map[string][]console.CommandHook) []string {
+	keys := slices.Collect(maps.Keys(hooks))
+	slices.SortStableFunc(keys, func(a, b string) int {
+		a, b = strings.TrimSpace(a), strings.TrimSpace(b)
+		if c := cmp.Compare(hookRank(a), hookRank(b)); c != 0 {
+			return c
+		}
+		if c := cmp.Compare(hookLiteralLen(a), hookLiteralLen(b)); c != 0 {
+			return c
+		}
+		return strings.Compare(a, b)
+	})
+
+	return keys
+}
+
+// hookRank is the specificity of a trimmed hook key: 0 for "*", 1 for any
+// other '*' pattern, 2 for an exact signature.
+func hookRank(key string) int {
+	switch {
+	case key == "*":
+		return 0
+	case strings.Contains(key, "*"):
+		return 1
+	default:
+		return 2
+	}
+}
+
+// hookLiteralLen counts the bytes of key that are not '*'. A '*' pattern with
+// fewer literal bytes matches more signatures, so it sorts first.
+func hookLiteralLen(key string) int {
+	return len(key) - strings.Count(key, "*")
+}
+
+// hooksForCommand returns the hooks that apply to item, outermost first: the
+// matching keys in the order of keys (see sortedHookKeys), then the hooks of
+// each key in slice order.
+func hooksForCommand(item console.Command, keys []string, hooks map[string][]console.CommandHook) []console.CommandHook {
+	sig := item.Signature()
+	var matched []console.CommandHook
+	for _, pattern := range keys {
+		if !signatureMatches(pattern, sig) {
+			continue
+		}
+		for _, hook := range hooks[pattern] {
+			if hook != nil {
+				matched = append(matched, hook)
+			}
+		}
+	}
+
+	return matched
+}
+
+// commandFlags returns the CLI flags for item: its own flags, then the flags of
+// each matching hook in the order hooksForCommand returns them, then the
+// default help and no-ansi flags. A hook flag whose name or alias is already taken, or is reserved for
+// a default flag, is an error.
+func commandFlags(item console.Command, hooks []console.CommandHook) ([]cli.Flag, error) {
+	flags := convertFlags(item.Extend().Flags)
+
+	taken := map[string]bool{}
+	for _, name := range defaultFlagNames() {
+		taken[name] = true
+	}
+	for _, flag := range flags {
+		for _, name := range flag.Names() {
+			taken[name] = true
+		}
+	}
+
+	for _, hook := range hooks {
+		for _, flag := range convertFlags(hook.Flags()) {
+			names := flag.Names()
+			for _, name := range names {
+				if taken[name] {
+					return nil, errors.ConsoleCommandHookFlagConflict.Args(name)
+				}
+			}
+			for _, name := range names {
+				taken[name] = true
+			}
+			flags = append(flags, flag)
+		}
+	}
+
+	return withDefaultFlags(flags), nil
+}
+
+// signatureMatches reports whether pattern matches the command signature sig.
+// It owns the matching rules shared by FilterCommandsByAllowlist and command
+// hooks: pattern is trimmed, a blank pattern matches nothing, a pattern
+// containing '*' is a path.Match glob, and anything else must equal sig
+// exactly ('?' is literal).
+func signatureMatches(pattern, sig string) bool {
+	pattern = strings.TrimSpace(pattern)
+	if pattern == "" {
+		return false
+	}
+	if strings.Contains(pattern, "*") {
+		ok, err := stdpath.Match(pattern, sig)
+		return err == nil && ok
+	}
+
+	return pattern == sig
+}
+
+// handleWithHooks runs the Before hooks in order, then Handle, then the After
+// hooks in reverse order. A Before that returns false or an error skips Handle
+// and every After. started is closed just before Handle runs. A panic in Handle
+// or in an After hook becomes an error so the remaining After hooks still run
+// and see it.
+func handleWithHooks(ctx console.Context, item console.Command, hooks []console.CommandHook, started chan<- struct{}) (handled bool, err error) {
+	for _, hook := range hooks {
+		proceed, err := hook.Before(ctx)
+		if err != nil || !proceed {
+			return false, err
+		}
+	}
+
+	close(started)
+	err = handleRecovered(ctx, item)
+
+	for i := len(hooks) - 1; i >= 0; i-- {
+		err = afterRecovered(ctx, hooks[i], err)
+	}
+
+	return true, err
+}
+
+// afterRecovered calls hook.After, returning a panic as an error so the
+// remaining After hooks still run and see it.
+func afterRecovered(ctx console.Context, hook console.CommandHook, handleErr error) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.ConsoleCommandPanicInAfterHook.Args(r)
+		}
+	}()
+
+	return hook.After(ctx, handleErr)
+}
+
+// handleRecovered calls Handle, returning a panic as an error.
+func handleRecovered(ctx console.Context, item console.Command) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.ConsoleCommandPanicInHandle.Args(r)
+		}
+	}()
+
+	return item.Handle(ctx)
+}
+
+func isClosed(ch <-chan struct{}) bool {
+	select {
+	case <-ch:
+		return true
+	default:
+		return false
+	}
+}
+
+type handleResult struct {
+	err     error
+	handled bool
+}
+
+func commandsToCliCommands(commands []console.Command, hooks map[string][]console.CommandHook) ([]*cli.Command, error) {
 	cliCommands := make([]*cli.Command, len(commands))
+	hookKeys := sortedHookKeys(hooks)
 
 	for i, item := range commands {
 		arguments := item.Extend().Arguments
 		cliArguments, err := argumentsToCliArgs(arguments)
+		if err != nil {
+			return nil, errors.ConsoleCommandRegisterFailed.Args(item.Signature(), err)
+		}
+		itemHooks := hooksForCommand(item, hookKeys, hooks)
+		flags, err := commandFlags(item, itemHooks)
 		if err != nil {
 			return nil, errors.ConsoleCommandRegisterFailed.Args(item.Signature(), err)
 		}
@@ -239,44 +436,65 @@ func commandsToCliCommands(commands []console.Command) ([]*cli.Command, error) {
 			Usage: item.Description(),
 			Action: func(ctx context.Context, cmd *cli.Command) error {
 				cliCtx := NewCliContext(ctx, cmd, arguments)
-				if cliCtx.OptionBool("help") {
+				if cliCtx.OptionBool(helpFlag.Name) {
 					return cli.ShowCommandHelp(ctx, cmd, cmd.Name)
 				}
 
-				errCh := make(chan error, 1)
+				started := make(chan struct{})
+				resultCh := make(chan handleResult, 1)
 				go func() {
 					defer func() {
 						if r := recover(); r != nil {
-							errCh <- errors.ConsoleCommandPanicInHandle.Args(r)
+							resultCh <- handleResult{err: errors.ConsoleCommandPanicInHandle.Args(r), handled: isClosed(started)}
 						}
 					}()
-					errCh <- item.Handle(cliCtx)
+					handled, err := handleWithHooks(cliCtx, item, itemHooks, started)
+					resultCh <- handleResult{err: err, handled: handled}
 				}()
 
 				shutdownable, ok := item.(console.Shutdownable)
 
 				if ok {
 					select {
-					case handleErr := <-errCh:
+					case result := <-resultCh:
+						// Nothing to clean up when a Before hook skipped Handle.
+						if !result.handled {
+							return result.err
+						}
 						if err := shutdownCommand(shutdownable, cmd, arguments); err != nil {
 							color.Errorln("shutdown error:", err.Error())
 						}
-						return handleErr
+						return result.err
 					case <-ctx.Done():
+						// Wait for the Before hooks to decide, so Shutdown only
+						// runs for a Handle that was actually started. The wait
+						// is bounded: a hook that never observes cancellation
+						// must not block Ctrl-C.
+						select {
+						case <-started:
+						case result := <-resultCh:
+							if !result.handled {
+								if result.err != nil {
+									return result.err
+								}
+								return ctx.Err()
+							}
+						case <-time.After(hookDecisionTimeout):
+						}
 						return shutdownCommand(shutdownable, cmd, arguments)
 					}
 				}
 
 				select {
-				case err := <-errCh:
-					return err
+				case result := <-resultCh:
+					return result.err
 				case <-ctx.Done():
 					return ctx.Err()
 				}
 			},
 			Category:     item.Extend().Category,
 			ArgsUsage:    item.Extend().ArgsUsage,
-			Flags:        flagsToCliFlags(item.Extend().Flags),
+			Flags:        flags,
 			Arguments:    cliArguments,
 			OnUsageError: onUsageError,
 		}
@@ -285,7 +503,8 @@ func commandsToCliCommands(commands []console.Command) ([]*cli.Command, error) {
 	return cliCommands, nil
 }
 
-func flagsToCliFlags(flags []command.Flag) []cli.Flag {
+// convertFlags converts command flags to CLI flags, without the defaults.
+func convertFlags(flags []command.Flag) []cli.Flag {
 	var cliFlags []cli.Flag
 	for _, flag := range flags {
 		switch flag.Type() {
@@ -374,30 +593,25 @@ func flagsToCliFlags(flags []command.Flag) []cli.Flag {
 		}
 	}
 
-	var (
-		existHelp bool
-		existH    bool
-	)
+	return cliFlags
+}
+
+// withDefaultFlags appends the help flag (unless already defined) and the
+// no-ansi flag.
+func withDefaultFlags(cliFlags []cli.Flag) []cli.Flag {
+	taken := map[string]bool{}
 	for _, flag := range cliFlags {
-		names := flag.Names()
-		if slices.Contains(names, "help") {
-			existHelp = true
-		}
-		if slices.Contains(names, "h") {
-			existH = true
+		for _, name := range flag.Names() {
+			taken[name] = true
 		}
 	}
 
-	if !existHelp {
-		helpFlag := &cli.BoolFlag{
-			Name:        "help",
-			Usage:       "Show help",
-			HideDefault: true,
-		}
-		if !existH {
-			helpFlag.Aliases = []string{"h"}
-		}
-		cliFlags = append(cliFlags, helpFlag)
+	if !taken[helpFlag.Name] {
+		help := *helpFlag
+		help.Aliases = slices.DeleteFunc(slices.Clone(helpFlag.Aliases), func(alias string) bool {
+			return taken[alias]
+		})
+		cliFlags = append(cliFlags, &help)
 	}
 
 	cliFlags = append(cliFlags, noANSIFlag)

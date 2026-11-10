@@ -52,6 +52,7 @@ func (r *ToSql) Delete(dests ...any) string {
 
 func (r *ToSql) Find(dest any, conds ...any) string {
 	query := r.query.dest(dest).addGlobalScopes().buildConditions()
+	conds = stringPrimaryKeyConditions(query.instance, dest, conds)
 
 	return r.sql(query.instance.Session(&gorm.Session{DryRun: true}).Find(dest, conds...))
 }

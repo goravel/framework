@@ -236,6 +236,10 @@ func (r *Store) RememberForever(key string, callback func() (any, error)) (any, 
 	return "", nil
 }
 
+func (r *Store) Tags(names ...string) cache.Repository {
+	return r
+}
+
 func (r *Store) WithContext(ctx context.Context) cache.Driver {
 	return r
 }

@@ -26,6 +26,7 @@ import (
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/validation"
+	contractsview "github.com/goravel/framework/contracts/view"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation/configuration"
 	"github.com/goravel/framework/foundation/console"
@@ -77,6 +78,7 @@ type Application struct {
 	json               foundation.Json
 	bootedRunners      []string
 	commandsFilter     []string
+	commandHooks       map[string][]contractsconsole.CommandHook
 	runnerWg           sync.WaitGroup
 	runnersToRun       []*RunnerWithInfo
 }
@@ -117,10 +119,14 @@ func (r *Application) Build() foundation.Application {
 	if r.builder.commandsFilter != nil {
 		r.commandsFilter = r.builder.commandsFilter()
 	}
+	if r.builder.commandHooks != nil {
+		r.commandHooks = r.builder.commandHooks()
+	}
 	r.configureServiceProviders()
 	r.providerRepository.Register(r)
 	r.configureMiddleware()
 	r.providerRepository.Boot(r)
+	r.configureViews()
 	r.configureEventListeners()
 	r.configureCommands()
 	r.configureSchedule()
@@ -337,6 +343,14 @@ func (r *Application) SetBuilder(builder foundation.ApplicationBuilder) foundati
 // defaultCommands batch.
 func (r *Application) CommandsFilter() []string {
 	return r.commandsFilter
+}
+
+// CommandHooks returns the hooks that run around Artisan commands, keyed by
+// command signature or '*' pattern. nil means no hooks. Used by the console
+// service provider, which passes the map to the Artisan application when it
+// constructs it, the same way CommandsFilter reaches its command batch.
+func (r *Application) CommandHooks() map[string][]contractsconsole.CommandHook {
+	return r.commandHooks
 }
 
 func (r *Application) SetJson(j foundation.Json) {
@@ -707,6 +721,37 @@ func (r *Application) configureServiceProviders() {
 		configuredServiceProviders := r.builder.configuredServiceProviders()
 		if len(configuredServiceProviders) > 0 {
 			r.providerRepository.Add(configuredServiceProviders)
+		}
+	}
+}
+
+// configureViews hands the application's template functions to the view registry
+// and asks the route driver to compile the view set. It runs after every service
+// provider has booted, so views and functions registered in a provider's Boot
+// are part of the compiled set regardless of provider order. A compile error is
+// reported here but does not stop Build(): Artisan commands build the
+// application too. The driver keeps the error and returns it from its first
+// serve call, so an HTTP process still fails before it serves without a renderer.
+func (r *Application) configureViews() {
+	if r.builder.viewFuncs != nil {
+		if funcs := r.builder.viewFuncs(); len(funcs) > 0 {
+			viewFacade := r.MakeView()
+			if viewFacade == nil {
+				color.Errorln("View facade not found, please install it first: ./artisan package:install View")
+			} else {
+				viewFacade.AddFuncs(funcs)
+			}
+		}
+	}
+
+	routeFacade := r.MakeRoute()
+	if routeFacade == nil {
+		return
+	}
+
+	if compiler, ok := routeFacade.(contractsview.Compiler); ok {
+		if err := compiler.CompileViews(); err != nil {
+			color.Errorln(errors.ViewCompileFailed.Args(err).SetModule(errors.ModuleView).Error())
 		}
 	}
 }

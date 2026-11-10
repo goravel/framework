@@ -1,9 +1,10 @@
 package console
 
 import (
+	"cmp"
 	"fmt"
 	"runtime"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
@@ -130,8 +131,8 @@ func (info *information) Range(section string, ranger func(s string, items []fou
 		}
 	}
 	if len(sections) > 1 {
-		sort.Slice(sections, func(i, j int) bool {
-			return info.section[sections[i]] < info.section[sections[j]]
+		slices.SortFunc(sections, func(a, b string) int {
+			return cmp.Compare(info.section[a], info.section[b])
 		})
 	}
 	for i := range sections {

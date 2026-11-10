@@ -36,6 +36,7 @@ import (
 	mockstranslation "github.com/goravel/framework/mocks/translation"
 	mocksvalidate "github.com/goravel/framework/mocks/validation"
 	mocksview "github.com/goravel/framework/mocks/view"
+	mocksvite "github.com/goravel/framework/mocks/vite"
 	"github.com/goravel/framework/testing/utils"
 )
 
@@ -340,4 +341,11 @@ func (r *factory) View() *mocksview.View {
 	r.app.EXPECT().MakeView().Return(mockView)
 
 	return mockView
+}
+
+func (r *factory) Vite() *mocksvite.Vite {
+	mockVite := &mocksvite.Vite{}
+	r.app.EXPECT().MakeVite().Return(mockVite)
+
+	return mockVite
 }
