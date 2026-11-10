@@ -3,7 +3,6 @@ package vite
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"encoding/json"
 	"html/template"
 	"os"
 	"path/filepath"
@@ -12,15 +11,11 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/goravel/framework/errors"
 	mocksconfig "github.com/goravel/framework/mocks/config"
-	mocksconsole "github.com/goravel/framework/mocks/console"
-	mocksview "github.com/goravel/framework/mocks/view"
 	"github.com/goravel/framework/support"
-	"github.com/goravel/framework/vite/console"
 )
 
 const sampleManifest = `{
@@ -125,27 +120,15 @@ func TestHotFile(t *testing.T) {
 	assert.Equal(t, filepath.Join(public, "storage", "hot"), vite.HotFile())
 	assert.False(t, vite.IsRunningHot())
 
-	// A leading slash is trimmed, so an absolute-looking path is read under the
-	// public directory and cannot escape it.
-	vite.UseHotFile("/srv/app/hot")
-	assert.Equal(t, filepath.Join(public, "srv", "app", "hot"), vite.HotFile())
-	assert.False(t, vite.IsRunningHot())
-
-	// An absolute path is re-rooted under the public directory too, so the resolved
-	// hot file can never be the path that was set.
+	// An absolute path is used as is, so a hot file outside the public directory is
+	// read too, and setting the resolved path again changes nothing.
 	absolute := filepath.Join(t.TempDir(), "absolute-hot")
 	writeFile(t, absolute, "http://localhost:5173")
 	vite.UseHotFile(absolute)
-	hot := vite.HotFile()
-	assert.NotEqual(t, absolute, hot)
-	assert.True(t, strings.HasPrefix(hot, public+string(filepath.Separator)), hot)
-	assert.Equal(t, "absolute-hot", filepath.Base(hot))
-	assert.False(t, vite.IsRunningHot())
-
-	// HotFile is absolute, so feeding it back resolves under the public directory
-	// again rather than trusting the filesystem root.
+	assert.Equal(t, absolute, vite.HotFile())
+	assert.True(t, vite.IsRunningHot())
 	vite.UseHotFile(vite.HotFile())
-	assert.True(t, strings.HasPrefix(vite.HotFile(), public+string(filepath.Separator)))
+	assert.Equal(t, absolute, vite.HotFile())
 
 	// A directory is not a hot file.
 	require.NoError(t, os.MkdirAll(filepath.Join(public, "storage"), 0o755))
@@ -155,40 +138,36 @@ func TestHotFile(t *testing.T) {
 	assert.False(t, vite.IsRunningHot())
 }
 
-// TestHotFile_UntrustedValuesStayUnderPublic pins why the hot file resolves
-// against the public directory: a rooted, drive-letter or UNC value in
-// config/vite.go is re-rooted, never used as is, so it cannot make Goravel read a
-// file elsewhere on the machine. The spelling differs by platform, so only the
-// invariant is asserted.
-func TestHotFile_UntrustedValuesStayUnderPublic(t *testing.T) {
+// TestHotFile_ResolutionOrder pins the order of the rules: an absolute value is
+// used as is, a value naming the public directory relative to the project root
+// resolves from the project root, and everything else resolves under the public
+// directory.
+func TestHotFile_ResolutionOrder(t *testing.T) {
 	public := setupProject(t)
-	absolute := filepath.Join(t.TempDir(), "absolute-hot")
-	// The file exists, so IsRunningHot would catch the value being read as is.
-	writeFile(t, absolute, "http://localhost:5173")
 
 	tests := []struct {
-		name  string
-		value string
-		base  string
+		name     string
+		value    string
+		expected string
 	}{
-		{name: "filesystem root", value: filepath.Join(string(filepath.Separator), "srv", "app", "root-hot"), base: "root-hot"},
-		{name: "absolute path", value: absolute, base: "absolute-hot"},
-		{name: "windows drive letter", value: `C:\Users\app\drive-hot`, base: "drive-hot"},
-		{name: "windows unc share", value: `\\server\share\share-hot`, base: "share-hot"},
+		{name: "relative stays under the public directory", value: "storage/hot", expected: filepath.Join(public, "storage", "hot")},
+		{name: "public directory nested in the value", value: "storage/public/hot", expected: filepath.Join(public, "storage", "public", "hot")},
+		{name: "legacy project root form", value: `public\hot`, expected: filepath.Join(public, "hot")},
+		{name: "sibling of the public directory", value: "publicity/hot", expected: filepath.Join(public, "publicity", "hot")},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			vite := newTestVite(t, "")
-			vite.UseHotFile(test.value)
-
-			hot := vite.HotFile()
-			assert.NotEqual(t, test.value, hot)
-			assert.True(t, strings.HasPrefix(hot, public+string(filepath.Separator)), hot)
-			assert.Equal(t, test.base, filepath.Base(hot))
-			assert.False(t, vite.IsRunningHot())
+			assert.Equal(t, test.expected, newTestVite(t, "").UseHotFile(test.value).HotFile())
 		})
 	}
+
+	// An absolute value is honoured even outside the public directory.
+	absolute := filepath.Join(t.TempDir(), "absolute-hot")
+	writeFile(t, absolute, "http://localhost:5173")
+	vite := newTestVite(t, "").UseHotFile(absolute)
+	assert.Equal(t, absolute, vite.HotFile())
+	assert.True(t, vite.IsRunningHot())
 }
 
 func TestPathsResolvedOnce(t *testing.T) {
@@ -587,7 +566,7 @@ func TestHotFileNormalized(t *testing.T) {
 		expected string
 	}{
 		{name: "bare", value: "hot", expected: filepath.Join(public, "hot")},
-		{name: "leading slash", value: "/hot", expected: filepath.Join(public, "hot")},
+		{name: "dot prefix", value: "./hot", expected: filepath.Join(public, "hot")},
 		{name: "nested", value: "storage/hot", expected: filepath.Join(public, "storage", "hot")},
 		{name: "public directory prefix", value: "public/hot", expected: filepath.Join(public, "hot")},
 	}
@@ -609,9 +588,9 @@ func TestHotFileNormalized(t *testing.T) {
 	}
 }
 
-// TestHotFile_PublicDirectoryPrefix pins the older config form that named the hot
-// file relative to the project root ("public/hot"), which goravel/example still
-// uses, so it keeps resolving to the same file.
+// TestHotFile_PublicDirectoryPrefix pins the spellings of the older config form
+// that named the hot file relative to the project root ("public/hot"), which
+// goravel/example still uses, so it keeps resolving to the same file.
 func TestHotFile_PublicDirectoryPrefix(t *testing.T) {
 	public := setupProject(t)
 
@@ -621,10 +600,11 @@ func TestHotFile_PublicDirectoryPrefix(t *testing.T) {
 		expected string
 	}{
 		{name: "legacy form", value: "public/hot", expected: filepath.Join(public, "hot")},
-		{name: "legacy form with dot", value: "./public/hot", expected: filepath.Join(public, "hot")},
+		{name: "backslashes", value: `public\hot`, expected: filepath.Join(public, "hot")},
+		{name: "dot prefix", value: "./public/hot", expected: filepath.Join(public, "hot")},
+		{name: "trailing separator", value: "public/", expected: public},
 		{name: "public directory itself", value: "public", expected: public},
-		{name: "sibling name", value: "publicity/hot", expected: filepath.Join(public, "publicity", "hot")},
-		{name: "leaf", value: "storage/hot", expected: filepath.Join(public, "storage", "hot")},
+		{name: "different case", value: "Public/hot", expected: filepath.Join(support.RelativePath, "Public", "hot")},
 	}
 
 	for _, test := range tests {
@@ -646,38 +626,6 @@ func TestHotFile_PublicDirectoryPrefix(t *testing.T) {
 	t.Cleanup(func() { support.Config.Paths.Public = original })
 	assert.Equal(t, filepath.Join(support.Config.Paths.Public, "public", "hot"),
 		newTestVite(t, "").UseHotFile("public/hot").HotFile())
-}
-
-// TestHotFile_LegacyValueReported pins that a "public/hot" config reaches
-// vite:inputs unchanged, the string goravel/example asserts.
-func TestHotFile_LegacyValueReported(t *testing.T) {
-	setupProject(t)
-
-	config := mocksconfig.NewConfig(t)
-	config.EXPECT().GetString("vite.hot_file", DefaultHotFile()).Return("public/hot").Once()
-	config.EXPECT().GetString("vite.build_directory", DefaultBuildDirectory()).Return(DefaultBuildDirectory()).Once()
-	config.EXPECT().GetString("vite.manifest", DefaultManifestFilename).Return(DefaultManifestFilename).Once()
-	config.EXPECT().GetStringSlice("vite.inputs", []string{}).Return(nil).Once()
-	config.EXPECT().GetStringSlice("vite.assets", []string{}).Return(nil).Once()
-
-	views := mocksview.NewView(t)
-	views.EXPECT().Funcs().Return(template.FuncMap{}).Once()
-	views.EXPECT().RegisteredViews().Return(nil).Once()
-	views.EXPECT().RegisteredViewFS().Return(nil).Once()
-
-	var printed string
-	ctx := mocksconsole.NewContext(t)
-	ctx.EXPECT().Line(mock.Anything).Run(func(line string) { printed = line }).Once()
-
-	require.NoError(t, console.NewInputsCommand(views, NewVite(config), config).Handle(ctx))
-
-	var inputs struct {
-		Paths struct {
-			HotFile string `json:"hot_file"`
-		} `json:"paths"`
-	}
-	require.NoError(t, json.Unmarshal([]byte(printed), &inputs))
-	assert.Equal(t, "public/hot", inputs.Paths.HotFile)
 }
 
 // TestPathsWithCustomPublicDirectory pins that both paths are read inside the
@@ -711,8 +659,8 @@ func TestPathsWithCustomPublicDirectory(t *testing.T) {
 	assert.Equal(t, "public/build", vite.BuildDirectory())
 	assert.Equal(t, filepath.Join(support.RelativePath, "static", "public", "build"), vite.buildPath())
 
-	// Nested and leading-slash values resolve under the public directory.
-	vite = newVite("/storage/hot", "/assets/js")
+	// Nested values resolve under the public directory.
+	vite = newVite("storage/hot", "/assets/js")
 	assert.Equal(t, filepath.Join(support.RelativePath, "static", "storage", "hot"), vite.HotFile())
 	assert.Equal(t, "assets/js", vite.BuildDirectory())
 	assert.Equal(t, filepath.Join(support.RelativePath, "static", "assets", "js"), vite.buildPath())
@@ -721,7 +669,7 @@ func TestPathsWithCustomPublicDirectory(t *testing.T) {
 	support.Config.Paths.Public = ""
 	assert.Equal(t, "hot", DefaultHotFile())
 	assert.Equal(t, "build", DefaultBuildDirectory())
-	vite = newVite("/public/hot", "public/build")
+	vite = newVite("public/hot", "public/build")
 	assert.Equal(t, filepath.Join(support.RelativePath, "public", "hot"), vite.HotFile())
 	assert.Equal(t, "public/build", vite.BuildDirectory())
 	assert.Equal(t, filepath.Join(support.RelativePath, "public", "build"), vite.buildPath())
