@@ -108,6 +108,7 @@ func NewVite(config config.Config) *Vite {
 		v.manifestFilename = config.GetString("vite.manifest", DefaultManifestFilename)
 	}
 
+	v.hotFile = normalizeEntry(v.hotFile)
 	v.hotPath = resolveHotPath(v.hotFile)
 	v.buildDirectory = normalizeEntry(v.buildDirectory)
 	v.buildRoot = resolveBuildRoot(v.buildDirectory)
@@ -115,48 +116,10 @@ func NewVite(config config.Config) *Vite {
 	return v
 }
 
-// resolveHotPath is the absolute path of the hot file: an absolute value is used
-// as is, a value that names the public directory relative to the project root
-// ("public/hot") resolves against the project root, and anything else resolves
-// against the public directory.
+// resolveHotPath is the absolute path of the hot file, resolved against the
+// public directory.
 func resolveHotPath(hotFile string) string {
-	if filepath.IsAbs(hotFile) {
-		return paths.Abs(hotFile)
-	}
-
-	hotFile = normalizeEntry(hotFile)
-	if rest, ok := publicDirectoryRemainder(hotFile); ok {
-		return paths.Abs(path.Join(slashClean(support.Config.Paths.Public), rest))
-	}
-
-	return paths.Abs(support.Config.Paths.Public, hotFile)
-}
-
-// publicDirectoryRemainder returns what follows the configured public directory
-// when hotFile names it relative to the project root, the older "public/hot" form.
-// Both sides are compared as cleaned slash paths, case-insensitively, and a public
-// directory that is not project-relative never matches.
-func publicDirectoryRemainder(hotFile string) (string, bool) {
-	public := slashClean(support.Config.Paths.Public)
-	if public == "." || path.IsAbs(public) || filepath.VolumeName(support.Config.Paths.Public) != "" {
-		return "", false
-	}
-
-	value := slashClean(hotFile)
-	if len(value) == len(public) {
-		return "", strings.EqualFold(value, public)
-	}
-	if len(value) < len(public) || value[len(public)] != '/' || !strings.EqualFold(value[:len(public)], public) {
-		return "", false
-	}
-
-	return value[len(public)+1:], true
-}
-
-// slashClean rewrites a path to slash form and cleans it, so spellings that
-// differ only by separators compare equal on every OS.
-func slashClean(value string) string {
-	return path.Clean(strings.ReplaceAll(value, `\`, "/"))
+	return paths.Abs(support.Config.Paths.Public, normalizeEntry(hotFile))
 }
 
 // resolveBuildRoot is the absolute path of the build directory, resolved against
@@ -297,11 +260,9 @@ func (r *Vite) UseBuildDirectory(directory string) *Vite {
 	return r
 }
 
-// UseHotFile sets the hot file. Default "hot". A relative value is read under the
-// public directory, a value that names the public directory relative to the
-// project root ("public/hot") is read from the project root for older config
-// files, and an absolute value is used as is.
+// UseHotFile sets the hot file, given relative to the public directory. Default "hot".
 func (r *Vite) UseHotFile(hotFile string) *Vite {
+	hotFile = normalizeEntry(hotFile)
 	r.mu.Lock()
 	r.hotFile = hotFile
 	r.hotPath = resolveHotPath(hotFile)
