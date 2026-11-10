@@ -117,9 +117,31 @@ func NewVite(config config.Config) *Vite {
 }
 
 // resolveHotPath is the absolute path of the hot file, resolved against the
-// public directory.
+// public directory. A value that already names the public directory relative to
+// the project root ("public/hot") resolves against the project root, so an
+// existing config/vite.go keeps pointing at the same file.
 func resolveHotPath(hotFile string) string {
-	return paths.Abs(support.Config.Paths.Public, normalizeEntry(hotFile))
+	hotFile = normalizeEntry(hotFile)
+	if namesPublicDirectory(hotFile) {
+		return paths.Abs(hotFile)
+	}
+
+	return paths.Abs(support.Config.Paths.Public, hotFile)
+}
+
+// namesPublicDirectory reports whether hotFile starts with the public directory
+// relative to the project root, the older "public/hot" form. Both sides are
+// compared as slash paths, and a public directory that is not project-relative
+// never matches.
+func namesPublicDirectory(hotFile string) bool {
+	public := path.Clean(filepath.ToSlash(support.Config.Paths.Public))
+	if public == "." || path.IsAbs(public) || filepath.VolumeName(support.Config.Paths.Public) != "" {
+		return false
+	}
+
+	value := path.Clean(filepath.ToSlash(hotFile))
+
+	return value == public || strings.HasPrefix(value, public+"/")
 }
 
 // resolveBuildRoot is the absolute path of the build directory, resolved against
