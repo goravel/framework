@@ -557,6 +557,16 @@ func TestBuildDirectoryNormalized(t *testing.T) {
 	}
 }
 
+// expectedLeadingSeparator returns where the value "/hot" resolves: itself on Unix,
+// where it is absolute, and under the public directory on Windows.
+func expectedLeadingSeparator(public string) string {
+	if filepath.IsAbs("/hot") {
+		return "/hot"
+	}
+
+	return filepath.Join(public, "hot")
+}
+
 func TestHotFileNormalized(t *testing.T) {
 	public := setupProject(t)
 
@@ -567,6 +577,8 @@ func TestHotFileNormalized(t *testing.T) {
 	}{
 		{name: "bare", value: "hot", expected: filepath.Join(public, "hot")},
 		{name: "dot prefix", value: "./hot", expected: filepath.Join(public, "hot")},
+		// "/hot" is the filesystem root on Unix, and public/hot on Windows.
+		{name: "leading separator", value: "/hot", expected: expectedLeadingSeparator(public)},
 		{name: "nested", value: "storage/hot", expected: filepath.Join(public, "storage", "hot")},
 		{name: "public directory prefix", value: "public/hot", expected: filepath.Join(public, "hot")},
 	}
@@ -604,7 +616,7 @@ func TestHotFile_PublicDirectoryPrefix(t *testing.T) {
 		{name: "dot prefix", value: "./public/hot", expected: filepath.Join(public, "hot")},
 		{name: "trailing separator", value: "public/", expected: public},
 		{name: "public directory itself", value: "public", expected: public},
-		{name: "different case", value: "Public/hot", expected: filepath.Join(support.RelativePath, "Public", "hot")},
+		{name: "different case", value: "Public/hot", expected: filepath.Join(public, "hot")},
 	}
 
 	for _, test := range tests {

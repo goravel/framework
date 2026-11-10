@@ -125,29 +125,32 @@ func resolveHotPath(hotFile string) string {
 	}
 
 	hotFile = normalizeEntry(hotFile)
-	if namesPublicDirectory(hotFile) {
-		return paths.Abs(hotFile)
+	if rest, ok := publicDirectoryRemainder(hotFile); ok {
+		return paths.Abs(path.Join(slashClean(support.Config.Paths.Public), rest))
 	}
 
 	return paths.Abs(support.Config.Paths.Public, hotFile)
 }
 
-// namesPublicDirectory reports whether hotFile names the public directory
-// relative to the project root, the older "public/hot" form. Both sides are
-// compared as cleaned slash paths, case-insensitively, and a public directory
-// that is not project-relative never matches.
-func namesPublicDirectory(hotFile string) bool {
+// publicDirectoryRemainder returns what follows the configured public directory
+// when hotFile names it relative to the project root, the older "public/hot" form.
+// Both sides are compared as cleaned slash paths, case-insensitively, and a public
+// directory that is not project-relative never matches.
+func publicDirectoryRemainder(hotFile string) (string, bool) {
 	public := slashClean(support.Config.Paths.Public)
 	if public == "." || path.IsAbs(public) || filepath.VolumeName(support.Config.Paths.Public) != "" {
-		return false
+		return "", false
 	}
 
 	value := slashClean(hotFile)
-	if len(value) <= len(public) {
-		return strings.EqualFold(value, public)
+	if len(value) == len(public) {
+		return "", strings.EqualFold(value, public)
+	}
+	if len(value) < len(public) || value[len(public)] != '/' || !strings.EqualFold(value[:len(public)], public) {
+		return "", false
 	}
 
-	return strings.EqualFold(value[:len(public)], public) && value[len(public)] == '/'
+	return value[len(public)+1:], true
 }
 
 // slashClean rewrites a path to slash form and cleans it, so spellings that
