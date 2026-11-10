@@ -320,6 +320,7 @@ func (r *Query) Find(dest any, conds ...any) error {
 	if err := filterFindConditions(conds...); err != nil {
 		return err
 	}
+	conds = stringPrimaryKeyConditions(query.instance, dest, conds)
 	if err := query.instance.Find(dest, conds...).Error; err != nil {
 		return err
 	}
@@ -333,6 +334,7 @@ func (r *Query) FindOrFail(dest any, conds ...any) error {
 	if err := filterFindConditions(conds...); err != nil {
 		return err
 	}
+	conds = stringPrimaryKeyConditions(query.instance, dest, conds)
 
 	res := query.instance.Find(dest, conds...)
 	if err := res.Error; err != nil {
@@ -2436,6 +2438,38 @@ func filterFindConditions(conds ...any) error {
 	}
 
 	return nil
+}
+
+// stringPrimaryKeyConditions binds a single string condition to the primary key when the model has a string primary
+// key (e.g. UUID, ULID), like Find(&user, 1) does for numeric keys. Otherwise, gorm runs a non-numeric string as a raw
+// SQL condition: Find(&user, "01AN4Z07BY79KA1307SR9X4MV4") produces invalid SQL, and a value coming from user input
+// can inject SQL.
+func stringPrimaryKeyConditions(instance *gormio.DB, dest any, conds []any) []any {
+	if len(conds) != 1 {
+		return conds
+	}
+
+	value, ok := conds[0].(string)
+	if !ok {
+		return conds
+	}
+
+	model := instance.Statement.Model
+	if model == nil {
+		model = dest
+	}
+
+	statement := &gormio.Statement{DB: instance}
+	if err := statement.Parse(model); err != nil || statement.Schema.PrioritizedPrimaryField == nil {
+		return conds
+	}
+
+	field := statement.Schema.PrioritizedPrimaryField
+	if field.IndirectFieldType.Kind() != reflect.String {
+		return conds
+	}
+
+	return []any{clause.Eq{Column: clause.Column{Table: clause.CurrentTable, Name: field.DBName}, Value: value}}
 }
 
 func getDeletedAtColumn(model any) string {

@@ -177,6 +177,10 @@ func (s *ToSqlTestSuite) TestFind() {
 	toSql = gorm.NewToSql(s.query.(*gorm.Query), s.mockLog, true)
 	s.Equal("SELECT * FROM \"users\" WHERE \"users\".\"id\" = 1 AND \"users\".\"deleted_at\" IS NULL", toSql.Find(&User{}, 1))
 
+	// string primary key
+	toSql = gorm.NewToSql(s.query.(*gorm.Query), s.mockLog, false)
+	s.Equal("SELECT * FROM \"ulid_entities\" WHERE \"ulid_entities\".\"id\" = $1", toSql.Find(&UlidEntity{}, "01AN4Z07BY79KA1307SR9X4MV3"))
+
 	// global scopes
 	toSql = gorm.NewToSql(s.query.Model(&GlobalScope{}).Where("id", 1).(*gorm.Query), s.mockLog, false)
 	s.Equal("SELECT * FROM \"global_scopes\" WHERE \"id\" = $1 AND \"avatar\" = $2 AND \"name\" = $3 AND \"global_scopes\".\"deleted_at\" IS NULL", toSql.Find(&GlobalScope{}))

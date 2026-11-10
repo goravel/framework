@@ -367,6 +367,148 @@ func TestFilterFindConditions(t *testing.T) {
 	}
 }
 
+func TestFindWithStringPrimaryKey(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	var (
+		sql  string
+		vars []any
+	)
+	assert.NoError(t, db.Callback().Query().After("gorm:query").Register("test:capture", func(tx *gormio.DB) {
+		sql = tx.Statement.SQL.String()
+		vars = tx.Statement.Vars
+	}))
+
+	newQuery := func() contractsorm.Query {
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, nil, nil, nil, nil, nil)
+	}
+
+	tests := []struct {
+		name        string
+		run         func(query contractsorm.Query) error
+		expectSql   string
+		expectVars  []any
+		expectError error
+	}{
+		{
+			name: "Find binds a string primary key",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&StringPrimaryKeyModel{}, "01AN4Z07BY79KA1307SR9X4MV4")
+			},
+			expectSql:  "SELECT * FROM `string_primary_key_models` WHERE `string_primary_key_models`.`id` = ?",
+			expectVars: []any{"01AN4Z07BY79KA1307SR9X4MV4"},
+		},
+		{
+			name: "Find binds a string primary key that looks like SQL",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&[]StringPrimaryKeyModel{}, "1 = 1 OR 1 = 1")
+			},
+			expectSql:  "SELECT * FROM `string_primary_key_models` WHERE `string_primary_key_models`.`id` = ?",
+			expectVars: []any{"1 = 1 OR 1 = 1"},
+		},
+		{
+			name: "Find binds a string primary key of the model",
+			run: func(query contractsorm.Query) error {
+				return query.Model(&StringPrimaryKeyModel{}).Find(&[]map[string]any{}, "01AN4Z07BY79KA1307SR9X4MV4")
+			},
+			expectSql:  "SELECT * FROM `string_primary_key_models` WHERE `string_primary_key_models`.`id` = ?",
+			expectVars: []any{"01AN4Z07BY79KA1307SR9X4MV4"},
+		},
+		{
+			name: "FindOrFail binds a string primary key",
+			run: func(query contractsorm.Query) error {
+				return query.FindOrFail(&StringPrimaryKeyModel{}, "01AN4Z07BY79KA1307SR9X4MV4")
+			},
+			expectSql:   "SELECT * FROM `string_primary_key_models` WHERE `string_primary_key_models`.`id` = ?",
+			expectVars:  []any{"01AN4Z07BY79KA1307SR9X4MV4"},
+			expectError: errors.OrmRecordNotFound,
+		},
+		{
+			name: "Find with a slice of string primary keys",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&[]StringPrimaryKeyModel{}, []string{"01AN4Z07BY79KA1307SR9X4MV4", "01AN4Z07BY79KA1307SR9X4MV5"})
+			},
+			expectSql:  "SELECT * FROM `string_primary_key_models` WHERE `string_primary_key_models`.`id` IN (?,?)",
+			expectVars: []any{"01AN4Z07BY79KA1307SR9X4MV4", "01AN4Z07BY79KA1307SR9X4MV5"},
+		},
+		{
+			name: "Find with a condition and arguments on a string primary key model",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&StringPrimaryKeyModel{}, "id = ?", "01AN4Z07BY79KA1307SR9X4MV4")
+			},
+			expectSql:  "SELECT * FROM `string_primary_key_models` WHERE id = ?",
+			expectVars: []any{"01AN4Z07BY79KA1307SR9X4MV4"},
+		},
+		{
+			name: "Find with a numeric primary key",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&TestModel{}, 1)
+			},
+			expectSql:  "SELECT * FROM `test_models` WHERE `test_models`.`id` = ?",
+			expectVars: []any{1},
+		},
+		{
+			name: "Find with a numeric string on a numeric primary key",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&TestModel{}, "1")
+			},
+			expectSql:  "SELECT * FROM `test_models` WHERE `test_models`.`id` = ?",
+			expectVars: []any{"1"},
+		},
+		{
+			name: "Find keeps a raw condition on a numeric primary key model",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&TestModel{}, "name = 'goravel'")
+			},
+			expectSql: "SELECT * FROM `test_models` WHERE name = 'goravel'",
+		},
+		{
+			name: "Find keeps a raw condition when the model has no primary key",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&NoPrimaryKeyModel{}, "name = 'goravel'")
+			},
+			expectSql: "SELECT * FROM `no_primary_key_models` WHERE name = 'goravel'",
+		},
+		{
+			name: "Find keeps a raw condition when the model can't be parsed",
+			run: func(query contractsorm.Query) error {
+				return query.Table("users").Find(&[]map[string]any{}, "name = 'goravel'")
+			},
+			expectSql: "SELECT * FROM `users` WHERE name = 'goravel'",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			sql, vars = "", nil
+
+			err := test.run(newQuery())
+			if test.expectError != nil {
+				assert.ErrorIs(t, err, test.expectError)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, test.expectSql, sql)
+			if len(test.expectVars) == 0 {
+				assert.Empty(t, vars)
+			} else {
+				assert.Equal(t, test.expectVars, vars)
+			}
+		})
+	}
+}
+
+func TestToSqlFindWithStringPrimaryKey(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, nil, nil, nil, nil, nil)
+
+	assert.Equal(t, "SELECT * FROM `string_primary_key_models` WHERE `string_primary_key_models`.`id` = ?",
+		NewToSql(query, nil, false).Find(&StringPrimaryKeyModel{}, "1 = 1 OR 1 = 1"))
+}
+
 func TestGetDeletedAtColumnName(t *testing.T) {
 	type Test1 struct {
 		Deleted gormio.DeletedAt
@@ -2048,6 +2190,15 @@ func (r *Review) Connection() string {
 type TestModel struct {
 	ID   uint   `json:"id"`
 	Name string `json:"name"`
+}
+
+type StringPrimaryKeyModel struct {
+	ID   string `gorm:"primaryKey"`
+	Name string
+}
+
+type NoPrimaryKeyModel struct {
+	Name string
 }
 
 // TestInterfaceModel is an interface type for testing
