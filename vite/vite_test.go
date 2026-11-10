@@ -126,12 +126,16 @@ func TestHotFile(t *testing.T) {
 	assert.Equal(t, filepath.Join(public, "srv", "app", "hot"), vite.HotFile())
 	assert.False(t, vite.IsRunningHot())
 
-	// A genuine absolute path is not used as is either; it is read under the public directory.
+	// A genuine absolute path is not used as is either; it is re-rooted under the
+	// public directory, so it can never name the file it passed in. The spelling of
+	// the re-rooted value is platform specific, so the invariant is asserted.
 	absolute := filepath.Join(t.TempDir(), "hot")
 	writeFile(t, absolute, "http://localhost:5173")
 	vite.UseHotFile(absolute)
-	assert.NotEqual(t, absolute, vite.HotFile())
-	assert.Equal(t, filepath.Join(public, absolute), vite.HotFile())
+	hot := vite.HotFile()
+	assert.NotEqual(t, absolute, hot)
+	assert.True(t, strings.HasPrefix(hot, public+string(filepath.Separator)), hot)
+	assert.Equal(t, "hot", filepath.Base(hot))
 	assert.False(t, vite.IsRunningHot())
 
 	// HotFile is absolute, so feeding it back resolves under the public directory
@@ -145,6 +149,39 @@ func TestHotFile(t *testing.T) {
 	assert.False(t, vite.IsRunningHot())
 	vite.UseHotFile(filepath.Dir(absolute))
 	assert.False(t, vite.IsRunningHot())
+}
+
+// TestHotFile_UntrustedValuesStayUnderPublic pins why the hot file resolves
+// against the public directory: a rooted, drive-letter or UNC value in
+// config/vite.go is re-rooted, never used as is, so it cannot make Goravel read a
+// file elsewhere on the machine. The spelling differs by platform, so only the
+// invariant is asserted.
+func TestHotFile_UntrustedValuesStayUnderPublic(t *testing.T) {
+	public := setupProject(t)
+	absolute := filepath.Join(t.TempDir(), "hot")
+
+	tests := []struct {
+		name  string
+		value string
+	}{
+		{name: "filesystem root", value: filepath.Join(string(filepath.Separator), "srv", "app", "hot")},
+		{name: "absolute path", value: absolute},
+		{name: "windows drive letter", value: `C:\Users\app\hot`},
+		{name: "windows unc share", value: `\\server\share\hot`},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			vite := newTestVite(t, "")
+			vite.UseHotFile(test.value)
+
+			hot := vite.HotFile()
+			assert.NotEqual(t, test.value, hot)
+			assert.True(t, strings.HasPrefix(hot, public+string(filepath.Separator)), hot)
+			assert.Equal(t, "hot", filepath.Base(hot))
+			assert.False(t, vite.IsRunningHot())
+		})
+	}
 }
 
 func TestPathsResolvedOnce(t *testing.T) {
