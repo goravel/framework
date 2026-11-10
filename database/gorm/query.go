@@ -3,6 +3,7 @@ package gorm
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	"maps"
 	"reflect"
@@ -13,6 +14,7 @@ import (
 	"github.com/spf13/cast"
 	gormio "gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"gorm.io/gorm/schema"
 
 	"github.com/goravel/framework/contracts/config"
 	contractsdatabase "github.com/goravel/framework/contracts/database"
@@ -159,19 +161,46 @@ func (r *Query) Create(value any) error {
 	return query.create(value)
 }
 
+func (r *Query) CrossJoin(query string, args ...any) contractsorm.Query {
+	return r.addJoin("CROSS JOIN "+query, args...)
+}
+
 func (r *Query) Cursor() chan contractsdb.Row {
 	with := r.conditions.with
 	query := r.addGlobalScopes().buildConditions()
 	r.conditions.with = with
 
-	cursorChan := make(chan contractsdb.Row)
+	ctx := query.instance.Statement.Context
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	cursorChan := make(chan contractsdb.Row, 1)
+	// send blocks until the consumer receives the row or the query context is done. It allows the goroutine
+	// to exit (and release the rows and the connection) when the consumer stops ranging over the channel
+	// early (e.g. break) and cancels the context passed to WithContext.
+	send := func(row contractsdb.Row) bool {
+		select {
+		case cursorChan <- row:
+			return true
+		case <-ctx.Done():
+			return false
+		}
+	}
+
 	go func() {
 		var (
 			err  error
 			rows *sql.Rows
 		)
 		defer func() {
-			if err != nil {
+			// The buffer keeps the error for a consumer that is still reading after the context is done,
+			// replacing a row that it has not received yet.
+			if err != nil && !send(&Row{query: r, err: err}) {
+				select {
+				case <-cursorChan:
+				default:
+				}
 				cursorChan <- &Row{query: r, err: err}
 			}
 
@@ -188,7 +217,10 @@ func (r *Query) Cursor() chan contractsdb.Row {
 			if err = query.instance.ScanRows(rows, val); err != nil {
 				return
 			}
-			cursorChan <- &Row{query: r, row: val}
+			if !send(&Row{query: r, row: val}) {
+				err = ctx.Err()
+				return
+			}
 		}
 
 		if err = rows.Err(); err != nil {
@@ -200,6 +232,10 @@ func (r *Query) Cursor() chan contractsdb.Row {
 
 func (r *Query) DB() (*sql.DB, error) {
 	return r.instance.DB()
+}
+
+func (r *Query) Decrement(column string, value ...uint64) error {
+	return r.incrementOrDecrement(column, "-", value...)
 }
 
 func (r *Query) Delete(dests ...any) (*contractsdb.Result, error) {
@@ -244,6 +280,15 @@ func (r *Query) Distinct(columns ...string) contractsorm.Query {
 	return r.setConditions(query.conditions)
 }
 
+func (r *Query) DoesntExist() (bool, error) {
+	exists, err := r.Exists()
+	if err != nil {
+		return false, err
+	}
+
+	return !exists, nil
+}
+
 func (r *Query) Driver() string {
 	return r.dbConfig.Driver
 }
@@ -275,6 +320,7 @@ func (r *Query) Find(dest any, conds ...any) error {
 	if err := filterFindConditions(conds...); err != nil {
 		return err
 	}
+	conds = stringPrimaryKeyConditions(query.instance, dest, conds)
 	if err := query.instance.Find(dest, conds...).Error; err != nil {
 		return err
 	}
@@ -288,6 +334,7 @@ func (r *Query) FindOrFail(dest any, conds ...any) error {
 	if err := filterFindConditions(conds...); err != nil {
 		return err
 	}
+	conds = stringPrimaryKeyConditions(query.instance, dest, conds)
 
 	res := query.instance.Find(dest, conds...)
 	if err := res.Error; err != nil {
@@ -451,14 +498,25 @@ func (r *Query) Having(query any, args ...any) contractsorm.Query {
 	return r.setConditions(conditions)
 }
 
-func (r *Query) Join(query string, args ...any) contractsorm.Query {
-	conditions := r.conditions
-	conditions.join = deep.Append(conditions.join, contractsdriver.Join{
-		Query: query,
-		Args:  args,
-	})
+func (r *Query) Increment(column string, value ...uint64) error {
+	return r.incrementOrDecrement(column, "+", value...)
+}
 
-	return r.setConditions(conditions)
+func (r *Query) Join(query string, args ...any) contractsorm.Query {
+	return r.addJoin(query, args...)
+}
+
+func (r *Query) LeftJoin(query string, args ...any) contractsorm.Query {
+	return r.addJoin("LEFT JOIN "+query, args...)
+}
+
+func (r *Query) Latest(column ...string) contractsorm.Query {
+	col := "created_at"
+	if len(column) > 0 && column[0] != "" {
+		col = column[0]
+	}
+
+	return r.OrderByDesc(col)
 }
 
 func (r *Query) Limit(limit int) contractsorm.Query {
@@ -579,7 +637,9 @@ func (r *Query) Omit(columns ...string) contractsorm.Query {
 	return r.setConditions(conditions)
 }
 
-// DEPRECATED: Use OrderByRaw instead
+// Order specifies the order in which the results should be returned.
+// DEPRECATED: Use OrderByRaw instead.
+// Order is raw by definition: value is put into the SQL as is, so never pass user input to it.
 func (r *Query) Order(value any) contractsorm.Query {
 	return r.OrderByRaw(fmt.Sprintf("%s", value))
 }
@@ -588,23 +648,38 @@ func (r *Query) OrderBy(column string, direction ...string) contractsorm.Query {
 	var orderDirection string
 	if len(direction) > 0 {
 		orderDirection = direction[0]
-	} else {
-		orderDirection = "ASC"
 	}
-	return r.OrderByRaw(fmt.Sprintf("%s %s", column, orderDirection))
+
+	// A plain column is passed to gorm as a column, so the connection that builds the query quotes it. A JSON
+	// selector is compiled by the grammar, and the direction has to live in the SQL string because gorm ignores
+	// Desc on an expression.
+	jsonSelector := utils.IsJsonSelector(column)
+	if !jsonSelector && !utils.IsPlainIdentifier(column) {
+		return r.withError(errors.DatabaseInvalidOrderByColumn.Args(column))
+	}
+
+	normalizedDirection, err := utils.NormalizeOrderDirection(orderDirection)
+	if err != nil {
+		return r.withError(err)
+	}
+
+	if jsonSelector {
+		return r.addOrder(fmt.Sprintf("%s %s", r.grammar.CompileJsonSelector(column), normalizedDirection))
+	}
+
+	if normalizedDirection == "DESC" {
+		return r.addOrder(clause.OrderByColumn{Column: clause.Column{Name: column}, Desc: true})
+	}
+
+	return r.addOrder(clause.OrderByColumn{Column: clause.Column{Name: column}})
 }
 
 func (r *Query) OrderByDesc(column string) contractsorm.Query {
-	return r.OrderByRaw(fmt.Sprintf("%s DESC", column))
+	return r.OrderBy(column, "DESC")
 }
 
 func (r *Query) OrderByRaw(raw string) contractsorm.Query {
-	var rawAny any = raw
-
-	conditions := r.conditions
-	conditions.order = deep.Append(r.conditions.order, rawAny)
-
-	return r.setConditions(conditions)
+	return r.addOrder(raw)
 }
 
 func (r *Query) Instance() *gormio.DB {
@@ -704,6 +779,10 @@ func (r *Query) Restore(dests ...any) (*contractsdb.Result, error) {
 	return &contractsdb.Result{
 		RowsAffected: res.RowsAffected,
 	}, res.Error
+}
+
+func (r *Query) RightJoin(query string, args ...any) contractsorm.Query {
+	return r.addJoin("RIGHT JOIN "+query, args...)
 }
 
 func (r *Query) Rollback() error {
@@ -944,6 +1023,16 @@ func (r *Query) UpdateOrCreate(dest any, attributes any, values any) error {
 	return r.Create(dest)
 }
 
+func (r *Query) Value(column string, dest any) error {
+	destValue := reflect.ValueOf(dest)
+	if destValue.Kind() != reflect.Pointer {
+		return errors.DatabaseUnsupportedType.Args(destValue.Kind(), "pointer")
+	}
+
+	query := r.addGlobalScopes().buildConditions()
+	return query.instance.Select(column).Limit(1).Scan(dest).Error
+}
+
 func (r *Query) When(condition bool, callback func(query contractsorm.Query) contractsorm.Query, falseCallback ...func(query contractsorm.Query) contractsorm.Query) contractsorm.Query {
 	if condition {
 		return callback(r)
@@ -966,16 +1055,15 @@ func (r *Query) Where(query any, args ...any) contractsorm.Query {
 func (r *Query) WhereAll(columns []string, args ...any) contractsorm.Query {
 	op, value, err := utils.PrepareWhereOperatorAndValue(args...)
 	if err != nil {
-		query := r.new(r.instance.Session(&gormio.Session{}))
-		_ = query.instance.AddError(err)
-		return query
+		return r.withError(err)
 	}
 
 	var conditions []string
 	var conditionArgs []any
 	for _, column := range columns {
-		conditions = append(conditions, fmt.Sprintf("%s %v ?", column, op))
-		conditionArgs = append(conditionArgs, value)
+		columnQuery, columnArgs := columnCondition(column)
+		conditions = append(conditions, fmt.Sprintf("%s %v ?", columnQuery, op))
+		conditionArgs = append(append(conditionArgs, columnArgs...), value)
 	}
 
 	query := strings.Join(conditions, " AND ")
@@ -990,16 +1078,15 @@ func (r *Query) WhereAll(columns []string, args ...any) contractsorm.Query {
 func (r *Query) WhereAny(columns []string, args ...any) contractsorm.Query {
 	op, value, err := utils.PrepareWhereOperatorAndValue(args...)
 	if err != nil {
-		query := r.new(r.instance.Session(&gormio.Session{}))
-		_ = query.instance.AddError(err)
-		return query
+		return r.withError(err)
 	}
 
 	var conditions []string
 	var conditionArgs []any
 	for _, column := range columns {
-		conditions = append(conditions, fmt.Sprintf("%s %v ?", column, op))
-		conditionArgs = append(conditionArgs, value)
+		columnQuery, columnArgs := columnCondition(column)
+		conditions = append(conditions, fmt.Sprintf("%s %v ?", columnQuery, op))
+		conditionArgs = append(append(conditionArgs, columnArgs...), value)
 	}
 
 	query := fmt.Sprintf("(%s)", strings.Join(conditions, " OR "))
@@ -1012,7 +1099,9 @@ func (r *Query) WhereAny(columns []string, args ...any) contractsorm.Query {
 }
 
 func (r *Query) WhereIn(column string, values []any) contractsorm.Query {
-	return r.Where(fmt.Sprintf("%s IN ?", column), values)
+	query, args := columnCondition(column)
+
+	return r.Where(fmt.Sprintf("%s IN ?", query), append(args, values)...)
 }
 
 func (r *Query) WhereJsonContains(column string, value any) contractsorm.Query {
@@ -1056,7 +1145,9 @@ func (r *Query) WhereJsonLength(column string, length int) contractsorm.Query {
 }
 
 func (r *Query) OrWhereIn(column string, values []any) contractsorm.Query {
-	return r.OrWhere(fmt.Sprintf("%s IN ?", column), values)
+	query, args := columnCondition(column)
+
+	return r.OrWhere(fmt.Sprintf("%s IN ?", query), append(args, values)...)
 }
 
 func (r *Query) OrWhereJsonContains(column string, value any) contractsorm.Query {
@@ -1105,50 +1196,104 @@ func (r *Query) OrWhereJsonLength(column string, length int) contractsorm.Query 
 }
 
 func (r *Query) WhereNotIn(column string, values []any) contractsorm.Query {
-	return r.Where(fmt.Sprintf("%s NOT IN ?", column), values)
+	query, args := columnCondition(column)
+
+	return r.Where(fmt.Sprintf("%s NOT IN ?", query), append(args, values)...)
 }
 
 func (r *Query) OrWhereNotIn(column string, values []any) contractsorm.Query {
-	return r.OrWhere(fmt.Sprintf("%s NOT IN ?", column), values)
+	query, args := columnCondition(column)
+
+	return r.OrWhere(fmt.Sprintf("%s NOT IN ?", query), append(args, values)...)
 }
 
 func (r *Query) WhereBetween(column string, x, y any) contractsorm.Query {
-	return r.Where(fmt.Sprintf("%s BETWEEN ? AND ?", column), x, y)
+	query, args := columnCondition(column)
+
+	return r.Where(fmt.Sprintf("%s BETWEEN ? AND ?", query), append(args, x, y)...)
 }
 
 func (r *Query) WhereNotBetween(column string, x, y any) contractsorm.Query {
-	return r.Where(fmt.Sprintf("%s NOT BETWEEN ? AND ?", column), x, y)
+	query, args := columnCondition(column)
+
+	return r.Where(fmt.Sprintf("%s NOT BETWEEN ? AND ?", query), append(args, x, y)...)
 }
 
 func (r *Query) OrWhereBetween(column string, x, y any) contractsorm.Query {
-	return r.OrWhere(fmt.Sprintf("%s BETWEEN ? AND ?", column), x, y)
+	query, args := columnCondition(column)
+
+	return r.OrWhere(fmt.Sprintf("%s BETWEEN ? AND ?", query), append(args, x, y)...)
 }
 
 func (r *Query) OrWhereNotBetween(column string, x, y any) contractsorm.Query {
-	return r.OrWhere(fmt.Sprintf("%s NOT BETWEEN ? AND ?", column), x, y)
+	query, args := columnCondition(column)
+
+	return r.OrWhere(fmt.Sprintf("%s NOT BETWEEN ? AND ?", query), append(args, x, y)...)
 }
 
 func (r *Query) OrWhereNull(column string) contractsorm.Query {
-	return r.OrWhere(fmt.Sprintf("%s IS NULL", column))
+	query, args := columnCondition(column)
+
+	return r.OrWhere(fmt.Sprintf("%s IS NULL", query), args...)
+}
+
+func (r *Query) OrWhereColumn(column1 string, column2 ...string) contractsorm.Query {
+	query, args, err := buildWhereColumn(column1, column2...)
+	if err != nil {
+		return r.withError(err)
+	}
+
+	return r.OrWhere(query, args...)
+}
+
+func (r *Query) OrWhereLike(column string, value string) contractsorm.Query {
+	query, args := columnCondition(column)
+
+	return r.OrWhere(fmt.Sprintf("%s LIKE ?", query), append(args, value)...)
+}
+
+func (r *Query) OrWhereNot(query any, args ...any) contractsorm.Query {
+	return r.addWhere(contractsdriver.Where{
+		Query: query,
+		Args:  args,
+		Or:    true,
+		IsNot: true,
+	})
+}
+
+func (r *Query) OrWhereNotLike(column string, value string) contractsorm.Query {
+	query, args := columnCondition(column)
+
+	return r.OrWhere(fmt.Sprintf("%s NOT LIKE ?", query), append(args, value)...)
+}
+
+func (r *Query) OrWhereNotNull(column string) contractsorm.Query {
+	query, args := columnCondition(column)
+
+	return r.OrWhere(fmt.Sprintf("%s IS NOT NULL", query), args...)
+}
+
+func (r *Query) OrWhereRaw(raw string, args []any) contractsorm.Query {
+	// Use an expression so the raw SQL is passed through untouched (e.g. JSON "->" selectors are not compiled).
+	return r.OrWhere(gormio.Expr(raw, args...))
 }
 
 func (r *Query) WhereNone(columns []string, args ...any) contractsorm.Query {
 	op, value, err := utils.PrepareWhereOperatorAndValue(args...)
 	if err != nil {
-		query := r.new(r.instance.Session(&gormio.Session{}))
-		_ = query.instance.AddError(err)
-		return query
+		return r.withError(err)
 	}
 
 	var conditions []string
 	var conditionArgs []any
 	for _, column := range columns {
+		columnQuery, columnArgs := columnCondition(column)
 		if op == "=" {
-			conditions = append(conditions, fmt.Sprintf("%s <> ?", column))
+			conditions = append(conditions, fmt.Sprintf("%s <> ?", columnQuery))
 		} else {
-			conditions = append(conditions, fmt.Sprintf("NOT (%s %v ?)", column, op))
+			conditions = append(conditions, fmt.Sprintf("NOT (%s %v ?)", columnQuery, op))
 		}
-		conditionArgs = append(conditionArgs, value)
+		conditionArgs = append(append(conditionArgs, columnArgs...), value)
 	}
 
 	query := strings.Join(conditions, " AND ")
@@ -1161,11 +1306,63 @@ func (r *Query) WhereNone(columns []string, args ...any) contractsorm.Query {
 }
 
 func (r *Query) WhereNotNull(column string) contractsorm.Query {
-	return r.Where(fmt.Sprintf("%s IS NOT NULL", column))
+	query, args := columnCondition(column)
+
+	return r.Where(fmt.Sprintf("%s IS NOT NULL", query), args...)
 }
 
 func (r *Query) WhereNull(column string) contractsorm.Query {
-	return r.Where(fmt.Sprintf("%s IS NULL", column))
+	query, args := columnCondition(column)
+
+	return r.Where(fmt.Sprintf("%s IS NULL", query), args...)
+}
+
+func (r *Query) WhereColumn(column1 string, column2 ...string) contractsorm.Query {
+	query, args, err := buildWhereColumn(column1, column2...)
+	if err != nil {
+		return r.withError(err)
+	}
+
+	return r.Where(query, args...)
+}
+
+func (r *Query) WhereExists(query func() contractsorm.Query) contractsorm.Query {
+	subQuery, ok := query().(*Query)
+	if !ok || subQuery == nil {
+		return r.withError(errors.OrmQueryInvalidSubQuery)
+	}
+
+	sub := subQuery.addGlobalScopes().buildConditions()
+	if sub.instance.Error != nil {
+		return r.withError(sub.instance.Error)
+	}
+
+	return r.Where("EXISTS (?)", sub.instance)
+}
+
+func (r *Query) WhereLike(column string, value string) contractsorm.Query {
+	query, args := columnCondition(column)
+
+	return r.Where(fmt.Sprintf("%s LIKE ?", query), append(args, value)...)
+}
+
+func (r *Query) WhereNot(query any, args ...any) contractsorm.Query {
+	return r.addWhere(contractsdriver.Where{
+		Query: query,
+		Args:  args,
+		IsNot: true,
+	})
+}
+
+func (r *Query) WhereNotLike(column string, value string) contractsorm.Query {
+	query, args := columnCondition(column)
+
+	return r.Where(fmt.Sprintf("%s NOT LIKE ?", query), append(args, value)...)
+}
+
+func (r *Query) WhereRaw(raw string, args []any) contractsorm.Query {
+	// Use an expression so the raw SQL is passed through untouched (e.g. JSON "->" selectors are not compiled).
+	return r.Where(gormio.Expr(raw, args...))
 }
 
 func (r *Query) With(query string, args ...any) contractsorm.Query {
@@ -1247,6 +1444,24 @@ func (r *Query) addGlobalScopes() *Query {
 	return r.Scopes(globalScopes...).(*Query)
 }
 
+// addJoin appends to the shared join slice so joins render in the order they were called.
+func (r *Query) addJoin(query string, args ...any) contractsorm.Query {
+	conditions := r.conditions
+	conditions.join = deep.Append(conditions.join, contractsdriver.Join{
+		Query: query,
+		Args:  args,
+	})
+
+	return r.setConditions(conditions)
+}
+
+func (r *Query) addOrder(order any) contractsorm.Query {
+	conditions := r.conditions
+	conditions.order = deep.Append(r.conditions.order, order)
+
+	return r.setConditions(conditions)
+}
+
 func (r *Query) addWhere(where contractsdriver.Where) contractsorm.Query {
 	conditions := r.conditions
 	conditions.where = deep.Append(conditions.where, where)
@@ -1281,6 +1496,8 @@ func (r *Query) buildConditions() *Query {
 	db = query.buildWith(db)
 	db = query.buildWithTrashed(db)
 	db = query.buildWhere(db)
+	// Last, so errors collected while building the where clauses (e.g. inside groups) are applied too.
+	db = query.buildError(db)
 
 	return query.new(db)
 }
@@ -1292,6 +1509,18 @@ func (r *Query) buildDistinct(db *gormio.DB) *gormio.DB {
 
 	db = db.Distinct()
 	r.conditions.distinct = false
+
+	return db
+}
+
+func (r *Query) buildError(db *gormio.DB) *gormio.DB {
+	if r.conditions.err == nil {
+		return db
+	}
+
+	db = db.Session(&gormio.Session{})
+	_ = db.AddError(r.conditions.err)
+	r.conditions.err = nil
 
 	return db
 }
@@ -1463,16 +1692,20 @@ func (r *Query) buildSharedLock(db *gormio.DB) *gormio.DB {
 	return db
 }
 
-func (r *Query) buildSubquery(sub func(contractsorm.Query) contractsorm.Query) *gormio.DB {
+// buildSubquery builds the where clauses of a group and returns the errors raised inside it, so the caller can
+// report them instead of silently dropping the group.
+func (r *Query) buildSubquery(sub func(contractsorm.Query) contractsorm.Query) (*gormio.DB, error) {
 	db := r.instance.Session(&gormio.Session{NewDB: true, Initialized: true})
 	queryImpl := NewQuery(r.ctx, r.config, r.dbConfig, db, r.grammar, r.log, r.modelToObserver, nil, r.telemetryResolver)
 	query := sub(queryImpl)
 	var ok bool
 	if queryImpl, ok = query.(*Query); ok {
-		return queryImpl.buildWhere(db)
+		db = queryImpl.buildWhere(db)
+
+		return db, queryImpl.conditions.err
 	}
 
-	return db
+	return db, nil
 }
 
 func (r *Query) buildTable(db *gormio.DB) *gormio.DB {
@@ -1496,7 +1729,7 @@ func (r *Query) buildWhere(db *gormio.DB) *gormio.DB {
 		case contractsdriver.WhereTypeJsonContains:
 			query, value, err := r.grammar.CompileJsonContains(item.Query.(string), item.Args[0], item.IsNot)
 			if err != nil {
-				_ = r.instance.AddError(errors.OrmJsonContainsInvalidBinding.Args(err))
+				r.conditions.err = errors.Join(r.conditions.err, errors.OrmJsonContainsInvalidBinding.Args(err))
 				continue
 			}
 
@@ -1512,7 +1745,13 @@ func (r *Query) buildWhere(db *gormio.DB) *gormio.DB {
 		default:
 			switch query := item.Query.(type) {
 			case func(contractsorm.Query) contractsorm.Query:
-				item.Query = r.buildSubquery(query)
+				sub, err := r.buildSubquery(query)
+				if err != nil {
+					r.conditions.err = errors.Join(r.conditions.err, err)
+					continue
+				}
+
+				item.Query = sub
 				item.Args = nil
 			case string:
 				if strings.Contains(query, "->") {
@@ -1525,6 +1764,16 @@ func (r *Query) buildWhere(db *gormio.DB) *gormio.DB {
 					item.Query = r.buildWherePlaceholder(strings.Join(segments, " "), item.Args...)
 					item.Args = r.grammar.CompileJsonValues(item.Args...)
 				}
+			}
+
+			if item.IsNot {
+				conditions := db.Statement.BuildCondition(item.Query, item.Args...)
+				if len(conditions) == 0 {
+					continue
+				}
+
+				item.Query = notExpression{exprs: conditions}
+				item.Args = nil
 			}
 		}
 
@@ -1766,6 +2015,162 @@ func (r *Query) getObserver(dest any) contractsorm.Observer {
 	return nil
 }
 
+// incrementOrDecrement runs "UPDATE ... SET column = column <operator> amount" through Update, so it shares
+// its behavior: global scopes and soft deletes are applied, updated_at is touched, and the
+// Saving/Updating/Updated/Saved events are fired when the query has a model with a primary key.
+// In that case the column of the model is also synced in memory, as Laravel does.
+func (r *Query) incrementOrDecrement(column, operator string, value ...uint64) error {
+	// Update compiles "->" keys into a JSON update of a marshaled value, which can't express column + amount.
+	if strings.Contains(column, "->") {
+		return errors.OrmQueryIncrementJsonColumn.Args(column)
+	}
+
+	amount := uint64(1)
+	if len(value) > 0 {
+		amount = value[0]
+	}
+
+	// Read the current value before updating: GORM assigns the update expression to the model,
+	// which resets sql.Scanner fields.
+	field, current := r.incrementField(column)
+	restore := r.snapshotField(column)
+
+	columnSQL, vars := columnCondition(column)
+	values := map[string]any{
+		column: gormio.Expr(fmt.Sprintf("%s %s ?", columnSQL, operator), append(vars, amount)...),
+	}
+	result, err := r.Update(values)
+	if err != nil {
+		restore()
+		return err
+	}
+
+	// Skip the in-memory sync if no row was updated, or if an event has replaced the expression with a concrete value.
+	if _, ok := values[column].(clause.Expr); !ok || result.RowsAffected == 0 || field == nil {
+		restore()
+		return nil
+	}
+
+	var next any
+	switch current.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		if operator == "+" {
+			next = current.Int() + int64(amount)
+		} else {
+			next = current.Int() - int64(amount)
+		}
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		if operator == "+" {
+			next = current.Uint() + amount
+		} else if current.Uint() >= amount {
+			next = current.Uint() - amount
+		} else {
+			// The database rejects or clamps the underflow, don't wrap around in memory.
+			restore()
+			return nil
+		}
+	case reflect.Float32, reflect.Float64:
+		if operator == "+" {
+			next = current.Float() + float64(amount)
+		} else {
+			next = current.Float() - float64(amount)
+		}
+	default:
+		restore()
+		return nil
+	}
+
+	_ = field.Set(r.ctx, reflect.ValueOf(r.conditions.model).Elem(), next)
+
+	return nil
+}
+
+// snapshotField copies the model field of the column and returns a function that puts the copy back.
+// GORM assigns the update expression to the model, and how a field (e.g. sql.Null*) handles that
+// depends on its type and the Go version, so a field that isn't synced is restored as it was.
+func (r *Query) snapshotField(column string) func() {
+	model := r.conditions.model
+	modelValue := reflect.ValueOf(model)
+	if model == nil || modelValue.Kind() != reflect.Pointer || modelValue.IsNil() || modelValue.Elem().Kind() != reflect.Struct {
+		return func() {}
+	}
+
+	statement := &gormio.Statement{DB: r.instance}
+	if err := statement.Parse(model); err != nil {
+		return func() {}
+	}
+
+	field := statement.Schema.LookUpField(column)
+	if field == nil {
+		return func() {}
+	}
+
+	fieldValue := field.ReflectValueOf(r.ctx, modelValue.Elem())
+	if !fieldValue.CanSet() {
+		return func() {}
+	}
+	original := reflect.New(fieldValue.Type()).Elem()
+	original.Set(fieldValue)
+
+	return func() {
+		fieldValue.Set(original)
+	}
+}
+
+// incrementField returns the schema field of the query model for the column and its current numeric value,
+// or a nil field when the model has no primary key, or the value is NULL or not numeric. The field is set
+// through GORM later, so pointers and sql.Null* types are supported.
+func (r *Query) incrementField(column string) (*schema.Field, reflect.Value) {
+	model := r.conditions.model
+	if model == nil || database.GetID(model) == nil {
+		return nil, reflect.Value{}
+	}
+
+	modelValue := reflect.ValueOf(model)
+	if modelValue.Kind() != reflect.Pointer || modelValue.Elem().Kind() != reflect.Struct {
+		return nil, reflect.Value{}
+	}
+
+	statement := &gormio.Statement{DB: r.instance}
+	if err := statement.Parse(model); err != nil {
+		return nil, reflect.Value{}
+	}
+
+	field := statement.Schema.LookUpField(column)
+	if field == nil || field.Serializer != nil {
+		return nil, reflect.Value{}
+	}
+
+	current, _ := field.ValueOf(r.ctx, modelValue.Elem())
+	currentValue := reflect.ValueOf(current)
+	if currentValue.Kind() == reflect.Pointer && currentValue.IsNil() {
+		return nil, reflect.Value{}
+	}
+	if valuer, ok := current.(driver.Valuer); ok {
+		var err error
+		if current, err = valuer.Value(); err != nil {
+			return nil, reflect.Value{}
+		}
+		currentValue = reflect.ValueOf(current)
+	}
+	for currentValue.Kind() == reflect.Pointer {
+		if currentValue.IsNil() {
+			return nil, reflect.Value{}
+		}
+		currentValue = currentValue.Elem()
+	}
+
+	switch currentValue.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+		reflect.Float32, reflect.Float64:
+		// Copy the value, the update may change the field it points to.
+		return field, reflect.ValueOf(currentValue.Interface())
+	default:
+		return nil, reflect.Value{}
+	}
+}
+
 func (r *Query) new(db *gormio.DB) *Query {
 	return NewQuery(r.ctx, r.config, r.dbConfig, db, r.grammar, r.log, r.modelToObserver, &r.conditions, r.telemetryResolver)
 }
@@ -1992,6 +2397,15 @@ func (r *Query) update(values any) (*contractsdb.Result, error) {
 	}, result.Error
 }
 
+// withError returns a copy of the query with err attached; executing the query returns err.
+// The error is kept on the conditions so it survives switching to the model's connection.
+func (r *Query) withError(err error) contractsorm.Query {
+	conditions := r.conditions
+	conditions.err = errors.Join(conditions.err, err)
+
+	return r.setConditions(conditions)
+}
+
 func buildSelectForCount(query *Query) *Query {
 	conditions := query.conditions
 
@@ -2024,6 +2438,38 @@ func filterFindConditions(conds ...any) error {
 	}
 
 	return nil
+}
+
+// stringPrimaryKeyConditions binds a single string condition to the primary key when the model has a string primary
+// key (e.g. UUID, ULID), like Find(&user, 1) does for numeric keys. Otherwise, gorm runs a non-numeric string as a raw
+// SQL condition: Find(&user, "01AN4Z07BY79KA1307SR9X4MV4") produces invalid SQL, and a value coming from user input
+// can inject SQL.
+func stringPrimaryKeyConditions(instance *gormio.DB, dest any, conds []any) []any {
+	if len(conds) != 1 {
+		return conds
+	}
+
+	value, ok := conds[0].(string)
+	if !ok {
+		return conds
+	}
+
+	model := instance.Statement.Model
+	if model == nil {
+		model = dest
+	}
+
+	statement := &gormio.Statement{DB: instance}
+	if err := statement.Parse(model); err != nil || statement.Schema.PrioritizedPrimaryField == nil {
+		return conds
+	}
+
+	field := statement.Schema.PrioritizedPrimaryField
+	if field.IndirectFieldType.Kind() != reflect.String {
+		return conds
+	}
+
+	return []any{clause.Eq{Column: clause.Column{Table: clause.CurrentTable, Name: field.DBName}, Value: value}}
 }
 
 func getDeletedAtColumn(model any) string {

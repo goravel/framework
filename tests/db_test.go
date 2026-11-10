@@ -393,6 +393,46 @@ func (s *DBTestSuite) TestDistinct() {
 	}
 }
 
+func (s *DBTestSuite) TestEach() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			_, err := query.DB().Table("products").Insert([]Product{
+				{Name: "each_product1"},
+				{Name: "each_product2"},
+				{Name: "each_product3"},
+			})
+			s.NoError(err)
+
+			s.Run("iterates all rows with a single query", func() {
+				ctx := databasedb.EnableQueryLog(context.Background())
+
+				var names []string
+				err := query.DB().WithContext(ctx).Table("products").OrderBy("id").Each(func(row db.Row) error {
+					var product Product
+					s.NoError(row.Scan(&product))
+					names = append(names, product.Name)
+
+					return nil
+				})
+				s.NoError(err)
+				s.Equal([]string{"each_product1", "each_product2", "each_product3"}, names)
+				s.Len(databasedb.GetQueryLog(ctx), 1)
+			})
+
+			s.Run("stops when the callback returns an error", func() {
+				var count int
+				err := query.DB().Table("products").OrderBy("id").Each(func(row db.Row) error {
+					count++
+
+					return assert.AnError
+				})
+				s.Equal(assert.AnError, err)
+				s.Equal(1, count)
+			})
+		})
+	}
+}
+
 func (s *DBTestSuite) TestExists() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
@@ -832,6 +872,29 @@ func (s *DBTestSuite) TestOrderBy() {
 			err = query.DB().Table("products").OrderByDesc("id").Value("name", &name2)
 			s.NoError(err)
 			s.Equal("value_product1", name2)
+		})
+	}
+}
+
+func (s *DBTestSuite) TestOrderByRejectsUnsafeInput() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{{Name: "order_unsafe_product"}})
+
+			var name string
+			s.ErrorIs(query.DB().Table("products").OrderBy("id; DROP TABLE products").Value("name", &name),
+				errors.DatabaseInvalidOrderByColumn)
+			s.ErrorIs(query.DB().Table("products").OrderBy("LOWER(name)").Value("name", &name),
+				errors.DatabaseInvalidOrderByColumn)
+			s.ErrorIs(query.DB().Table("products").OrderBy("id", "DESC NULLS LAST").Value("name", &name),
+				errors.DatabaseInvalidOrderByDirection)
+
+			s.NoError(query.DB().Table("products").OrderByRaw("LOWER(name)").Value("name", &name))
+			s.Equal("order_unsafe_product", name)
+
+			count, err := query.DB().Table("products").Count()
+			s.NoError(err)
+			s.Equal(int64(1), count)
 		})
 	}
 }
@@ -2293,6 +2356,26 @@ func (s *DBTestSuite) TestJsonWhereClauses() {
 					tt.assert(items)
 				})
 			}
+		})
+	}
+}
+
+func (s *DBTestSuite) TestOrderByJsonSelector() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			data := []JsonData{
+				{Data: `{"string":"first","int":1}`},
+				{Data: `{"string":"second","int":2}`},
+			}
+			result, err := query.DB().Table("json_data").Insert(&data)
+			s.Equal(int64(2), result.RowsAffected)
+			s.NoError(err)
+
+			var items []JsonData
+			s.NoError(query.DB().Table("json_data").OrderBy("data->string", "desc").Find(&items))
+			s.Len(items, 2)
+			s.JSONEq(data[1].Data, items[0].Data)
+			s.JSONEq(data[0].Data, items[1].Data)
 		})
 	}
 }

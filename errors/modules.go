@@ -29,4 +29,6 @@ var (
 	ModuleSession      = "session"
 	ModuleTelemetry    = "telemetry"
 	ModuleTesting      = "testing"
+	ModuleView         = "view"
+	ModuleVite         = "vite"
 )

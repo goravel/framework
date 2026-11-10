@@ -1,6 +1,8 @@
 package foundation
 
 import (
+	"html/template"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/stats"
@@ -20,6 +22,12 @@ type ApplicationBuilder interface {
 	Create() Application
 	// WithCallback sets a callback function to be called during application creation.
 	WithCallback(func()) ApplicationBuilder
+	// WithCommandHooks registers a callback that returns the hooks to run
+	// around Artisan commands, keyed by command signature or '*' pattern,
+	// matched like WithCommandsFilter. The broadest matching key wraps the
+	// others: "*", then other '*' patterns, then the exact signature. See
+	// console.CommandHook.
+	WithCommandHooks(func() map[string][]console.CommandHook) ApplicationBuilder
 	// WithCommands sets the application's commands.
 	WithCommands(func() []console.Command) ApplicationBuilder
 	// WithCommandsFilter registers a callback that returns the positive list of
@@ -78,4 +86,9 @@ type ApplicationBuilder interface {
 	WithSchedule(func() []schedule.Event) ApplicationBuilder
 	// WithSeeders registers the database seeders.
 	WithSeeders(func() []seeder.Seeder) ApplicationBuilder
+	// WithViewFuncs registers template functions for the application's views. The
+	// callback runs once at Build() time, after every service provider has booted,
+	// so it may use facades. Its functions are added to the view registry last and
+	// therefore override functions of the same name registered by packages.
+	WithViewFuncs(func() template.FuncMap) ApplicationBuilder
 }

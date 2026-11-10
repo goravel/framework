@@ -115,7 +115,19 @@ func (r *Query) CrossJoin(query string, args ...any) db.Query {
 }
 
 func (r *Query) Cursor() chan db.Row {
-	ch := make(chan db.Row)
+	ch := make(chan db.Row, 1)
+	// send blocks until the consumer receives the row or the query context is done. It allows the goroutine
+	// to exit (and release the rows and the connection) when the consumer stops ranging over the channel
+	// early (e.g. break) and cancels the context passed to WithContext.
+	send := func(row db.Row) bool {
+		select {
+		case ch <- row:
+			return true
+		case <-r.ctx.Done():
+			return false
+		}
+	}
+
 	go func() {
 		var (
 			args  []any
@@ -127,7 +139,13 @@ func (r *Query) Cursor() chan db.Row {
 		)
 
 		defer func() {
-			if err != nil {
+			// The buffer keeps the error for a consumer that is still reading after the context is done,
+			// replacing a row that it has not received yet.
+			if err != nil && !send(NewRow(nil, err)) {
+				select {
+				case <-ch:
+				default:
+				}
 				ch <- NewRow(nil, err)
 			}
 
@@ -153,7 +171,10 @@ func (r *Query) Cursor() chan db.Row {
 				return
 			}
 
-			ch <- NewRow(row, nil)
+			if !send(NewRow(row, nil)) {
+				err = r.ctx.Err()
+				return
+			}
 			count++
 		}
 
@@ -228,8 +249,11 @@ func (r *Query) DoesntExist() (bool, error) {
 	return count == 0, nil
 }
 
+// eachChunkSize is the number of rows fetched per query by Each, the same default as Laravel's each.
+const eachChunkSize = 1000
+
 func (r *Query) Each(callback func(row db.Row) error) error {
-	return r.Chunk(1, func(rows []db.Row) error {
+	return r.Chunk(eachChunkSize, func(rows []db.Row) error {
 		for _, row := range rows {
 			if err := callback(row); err != nil {
 				return err
@@ -489,7 +513,7 @@ func (r *Query) InsertGetID(data any) (int64, error) {
 
 func (r *Query) Latest(column ...string) db.Query {
 	col := "created_at"
-	if len(column) > 0 {
+	if len(column) > 0 && column[0] != "" {
 		col = column[0]
 	}
 
@@ -528,22 +552,38 @@ func (r *Query) Offset(offset uint64) db.Query {
 }
 
 func (r *Query) OrderBy(column string, directions ...string) db.Query {
-	direction := "ASC"
+	direction := ""
 	if len(directions) > 0 {
 		direction = directions[0]
 	}
 
 	q := r.clone()
-	q.conditions.OrderBy = deep.Append(q.conditions.OrderBy, column+" "+direction)
+
+	// The builder puts the column and the direction into the SQL as is, so it only accepts values it can verify:
+	// a plain column, or a JSON selector compiled by the grammar. Anything else has to go through OrderByRaw.
+	jsonSelector := utils.IsJsonSelector(column)
+	if !jsonSelector && !utils.IsPlainIdentifier(column) {
+		q.err = errors.Join(q.err, errors.DatabaseInvalidOrderByColumn.Args(column))
+		return q
+	}
+
+	normalizedDirection, err := utils.NormalizeOrderDirection(direction)
+	if err != nil {
+		q.err = errors.Join(q.err, err)
+		return q
+	}
+
+	if jsonSelector {
+		column = r.grammar.CompileJsonSelector(column)
+	}
+
+	q.conditions.OrderBy = deep.Append(q.conditions.OrderBy, column+" "+normalizedDirection)
 
 	return q
 }
 
 func (r *Query) OrderByDesc(column string) db.Query {
-	q := r.clone()
-	q.conditions.OrderBy = deep.Append(q.conditions.OrderBy, column+" DESC")
-
-	return q
+	return r.OrderBy(column, "DESC")
 }
 
 func (r *Query) OrderByRaw(raw string) db.Query {

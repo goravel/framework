@@ -3,6 +3,8 @@ package foundation
 import (
 	"context"
 	"crypto/tls"
+	"html/template"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -313,4 +315,27 @@ func (s *ApplicationBuilderTestSuite) TestWithCommandsFilterNil() {
 	s.Nil(s.builder.commandsFilter)
 }
 
+func (s *ApplicationBuilderTestSuite) TestWithCommandHooks() {
+	hooks := map[string][]contractsconsole.CommandHook{"migrate": {mocksconsole.NewCommandHook(s.T())}}
+	builder := s.builder.WithCommandHooks(func() map[string][]contractsconsole.CommandHook {
+		return hooks
+	})
+
+	s.NotNil(builder)
+	s.NotNil(s.builder.commandHooks)
+	s.Equal(hooks, s.builder.commandHooks())
+}
+
 type mockStatsHandler struct{ stats.Handler }
+
+func (s *ApplicationBuilderTestSuite) TestWithViewFuncs() {
+	builder := s.builder.WithViewFuncs(func() template.FuncMap {
+		return template.FuncMap{"upper": strings.ToUpper}
+	})
+
+	s.NotNil(builder)
+	s.NotNil(s.builder.viewFuncs)
+	funcs := s.builder.viewFuncs()
+	s.Len(funcs, 1)
+	s.Contains(funcs, "upper")
+}

@@ -26,7 +26,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		usage := "Goravel Framework"
 		usageText := "artisan command [options] [arguments...]"
 
-		return NewApplication(name, usage, usageText, app.Version(), true), nil
+		return NewApplication(name, usage, usageText, app.Version(), true, app.CommandHooks()), nil
 	})
 }
 
@@ -47,6 +47,7 @@ func (r *ServiceProvider) registerCommands(app foundation.Application) {
 		console.NewListCommand(),
 		console.NewKeyGenerateCommand(configFacade),
 		console.NewMakeCommand(),
+		console.NewMakeCommandHook(),
 		console.NewBuildCommand(configFacade, processFacade),
 		// The deploy command is not completely ready yet, comment it out for now.
 		// https://github.com/goravel/goravel/issues/778

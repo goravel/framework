@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"testing"
+	"testing/synctest"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/stretchr/testify/assert"
@@ -191,6 +192,71 @@ func (s *QueryTestSuite) TestCrossJoin() {
 
 	err := s.query.CrossJoin("posts as p").Where("age", 25).Get(&users)
 	s.Nil(err)
+}
+
+func (s *QueryTestSuite) TestCursor() {
+	sql := "SELECT * FROM users"
+
+	s.Run("query error", func() {
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().QueryxContext(s.ctx, sql).Return(nil, assert.AnError).Once()
+		s.mockReadBuilder.EXPECT().Explain(sql).Return(sql).Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, sql, int64(-1), assert.AnError).Return().Once()
+
+		var errs []error
+		for row := range s.query.Cursor() {
+			errs = append(errs, row.Err())
+		}
+
+		s.Equal([]error{assert.AnError}, errs)
+	})
+
+	// The consumer receives one row and cancels the context. When it is canceled, the producer is blocked
+	// sending the third row, and the second one is in the buffer: the producer replaces it with the error.
+	cancelAfterFirstRow := func(t *testing.T) (chan db.Row, *eachDriver, func()) {
+		rows, fake, closeDB := newEachRows(t, 3)
+		ctx, cancel := context.WithCancel(context.Background())
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().QueryxContext(ctx, sql).Return(rows, nil).Once()
+		s.mockReadBuilder.EXPECT().Explain(sql).Return(sql).Once()
+		s.mockLogger.EXPECT().Trace(ctx, s.now, sql, int64(1), context.Canceled).Return().Once()
+
+		ch := NewQuery(ctx, s.mockReadBuilder, s.mockWriteBuilder, s.mockGrammar, s.mockLogger, "users", nil).Cursor()
+		first := <-ch
+		s.NoError(first.Err())
+
+		synctest.Wait()
+		cancel()
+		synctest.Wait()
+
+		return ch, fake, closeDB
+	}
+
+	s.Run("stop reading after canceling the context", func() {
+		// synctest fails if the producer goroutine is still blocked when the test ends.
+		synctest.Test(s.T(), func(t *testing.T) {
+			_, fake, closeDB := cancelAfterFirstRow(t)
+			defer closeDB()
+
+			s.True(fake.closed.Load())
+		})
+	})
+
+	s.Run("keep reading after canceling the context", func() {
+		synctest.Test(s.T(), func(t *testing.T) {
+			ch, fake, closeDB := cancelAfterFirstRow(t)
+			defer closeDB()
+
+			var errs []error
+			for row := range ch {
+				errs = append(errs, row.Err())
+			}
+
+			s.Equal([]error{context.Canceled}, errs)
+			s.True(fake.closed.Load())
+		})
+	})
 }
 
 func (s *QueryTestSuite) TestDecrement() {
@@ -887,6 +953,18 @@ func (s *QueryTestSuite) TestLatest() {
 		err := s.query.Where("age", 25).Latest("name").First(&user)
 		s.Nil(err)
 	})
+
+	s.Run("empty column falls back to created_at", func() {
+		var user TestUser
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().GetContext(s.ctx, &user, "SELECT * FROM users WHERE age = ? ORDER BY created_at DESC", 25).Return(nil).Once()
+		s.mockReadBuilder.EXPECT().Explain("SELECT * FROM users WHERE age = ? ORDER BY created_at DESC", 25).Return("SELECT * FROM users WHERE age = 25 ORDER BY created_at DESC").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 ORDER BY created_at DESC", int64(1), nil).Return().Once()
+
+		err := s.query.Where("age", 25).Latest("").First(&user)
+		s.Nil(err)
+	})
 }
 
 func (s *QueryTestSuite) TestLeftJoin() {
@@ -993,6 +1071,36 @@ func (s *QueryTestSuite) TestOrderByRaw() {
 
 	err := s.query.Where("age", 25).OrderBy("name").OrderByRaw("age DESC, id ASC").Get(&users)
 	s.Nil(err)
+}
+
+func (s *QueryTestSuite) TestOrderByValidation() {
+	s.Equal([]string{"users.age ASC"}, s.query.OrderBy("users.age").(*Query).conditions.OrderBy)
+	s.Equal([]string{"age ASC", "id DESC"}, s.query.OrderBy("age").OrderBy("id", "desc").(*Query).conditions.OrderBy)
+
+	s.mockGrammar.EXPECT().CompileJsonSelector("data->name").Return("json_extract(`data`, '$.name')").Once()
+	s.Equal([]string{"json_extract(`data`, '$.name') ASC"}, s.query.OrderBy("data->name").(*Query).conditions.OrderBy)
+
+	s.mockGrammar.EXPECT().CompileJsonSelector("data->name").Return("json_extract(`data`, '$.name')").Once()
+	s.Equal([]string{"json_extract(`data`, '$.name') DESC"}, s.query.OrderBy("data->name", "desc").(*Query).conditions.OrderBy)
+
+	s.ErrorIs(s.query.OrderBy("LOWER(name)").(*Query).err, errors.DatabaseInvalidOrderByColumn)
+	s.ErrorIs(s.query.OrderBy("id; DROP TABLE users").(*Query).err, errors.DatabaseInvalidOrderByColumn)
+	s.ErrorIs(s.query.OrderByDesc("LOWER(name)").(*Query).err, errors.DatabaseInvalidOrderByColumn)
+	s.ErrorIs(s.query.OrderBy("order", "DESC NULLS LAST").(*Query).err, errors.DatabaseInvalidOrderByDirection)
+	s.ErrorIs(s.query.OrderBy("id", "ASC; DROP TABLE users").(*Query).err, errors.DatabaseInvalidOrderByDirection)
+
+	// a rejection is joined with an error the chain already carries
+	q := s.query.Where("age", 25).OrWhereColumn("a").OrderBy("LOWER(name)").(*Query)
+	s.ErrorIs(q.err, errors.DatabaseInvalidArgumentNumber)
+	s.ErrorIs(q.err, errors.DatabaseInvalidOrderByColumn)
+}
+
+func (s *QueryTestSuite) TestOrderByRejectsUnsafeInput() {
+	// No builder expectation: the error must be returned before the driver is called.
+	var users []TestUser
+	s.ErrorIs(s.query.Where("age", 25).OrderBy("id; DROP TABLE users").Get(&users), errors.DatabaseInvalidOrderByColumn)
+	s.ErrorIs(s.query.Where("age", 25).OrderBy("LOWER(name)").Get(&users), errors.DatabaseInvalidOrderByColumn)
+	s.ErrorIs(s.query.Where("age", 25).OrderBy("id", "DESC NULLS LAST").Get(&users), errors.DatabaseInvalidOrderByDirection)
 }
 
 func (s *QueryTestSuite) TestOrWhere() {

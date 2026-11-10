@@ -39,6 +39,7 @@ import (
 	contractstranslation "github.com/goravel/framework/contracts/translation"
 	contractsvalidation "github.com/goravel/framework/contracts/validation"
 	contractsview "github.com/goravel/framework/contracts/view"
+	contractsvite "github.com/goravel/framework/contracts/vite"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/color"
 )
@@ -440,6 +441,16 @@ func (r *Container) MakeView() contractsview.View {
 	}
 
 	return instance.(contractsview.View)
+}
+
+func (r *Container) MakeVite() contractsvite.Vite {
+	instance, err := r.Make(facades.FacadeToBinding[facades.Vite])
+	if err != nil {
+		logMakeErrorIfNeeded(err)
+		return nil
+	}
+
+	return instance.(contractsvite.Vite)
 }
 
 func (r *Container) MakeWith(key any, parameters map[string]any) (any, error) {

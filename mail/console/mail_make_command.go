@@ -43,15 +43,19 @@ func (r *MailMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *MailMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "mail", ctx.Argument(0), support.Config.Paths.Mails)
+	supportconsole.HandleEach(ctx, r.makeOne)
+
+	return nil
+}
+
+func (r *MailMakeCommand) makeOne(ctx console.Context, name string) error {
+	m, err := supportconsole.NewMake(ctx, "mail", name, support.Config.Paths.Mails)
 	if err != nil {
-		ctx.Error(err.Error())
-		return nil
+		return err
 	}
 
 	if err := file.PutContent(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
-		ctx.Error(err.Error())
-		return nil
+		return err
 	}
 
 	ctx.Success("Mail created successfully")
