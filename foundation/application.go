@@ -1035,6 +1035,7 @@ func (r *Application) defaultCommands() []contractsconsole.Command {
 		console.NewPackageUninstallCommand(binding.Bindings, r.MakeProcess(), r.Json()),
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
 		modularconsole.NewInitCommand(r.MakeConfig()),
+		modularconsole.NewListCommand(r.MakeModular()),
 		modularconsole.NewModuleMakeCommand(r.MakeConfig()),
 		modularconsole.NewPublishCommand(r.MakeModular()),
 	}
