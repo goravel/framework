@@ -96,8 +96,14 @@ func AddMigration(pkg, migration string) error {
 }
 
 // AddModule adds module to bootstrap/modules.go, wiring WithModules(Modules) when missing.
+// An existing modules.go is the list, even before WithModules is wired by hand.
 func AddModule(pkg, module string) error {
-	return newWithSliceHandler(moduleConfig()).AddItem(pkg, module)
+	handler := newWithSliceHandler(moduleConfig())
+	if handler.fileExists {
+		return handler.addItemToFile(pkg, module)
+	}
+
+	return handler.AddItem(pkg, module)
 }
 
 // AddProvider adds service provider to the foundation.Setup() chain in the Boot function.
