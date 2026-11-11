@@ -222,6 +222,9 @@ var (
 	ModularModulePathUnknown   = New("module %s: cannot derive its directory from package %q, implement Path() to set it").SetModule(ModuleModular)
 	ModularStaticDirInvalid    = New("module %s: static directory %q must be a relative path inside the module").SetModule(ModuleModular)
 	ModularStaticDirUnreadable = New("module %s: static directory %q is not a readable directory: %v").SetModule(ModuleModular)
+	ModularStaticDuplicate     = New("static path %s of module %s is already served by module %s").SetModule(ModuleModular)
+	ModularStaticPrefixInvalid = New("module %s: static prefix %q is invalid, use a path below /").SetModule(ModuleModular)
+	ModularViewsFSRequired     = New("module %s returned a nil views filesystem").SetModule(ModuleModular)
 
 	NotificationChannelNotFound               = New("notification channel not found: %s").SetModule(ModuleNotification)
 	NotificationChannelNotQueueable           = New("notification channel %q does not support queued dispatch (does not implement ResolvableChannel)").SetModule(ModuleNotification)
