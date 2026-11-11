@@ -217,9 +217,11 @@ var (
 	MigrationResetFailed           = New("migration reset failed: %v")
 	MigrationRollbackFailed        = New("migration rollback failed: %v")
 
-	ModularModuleDuplicate   = New("module %q is registered more than once").SetModule(ModuleModular)
-	ModularModulePathInvalid = New("module %s: directory %q must be a relative path inside the project").SetModule(ModuleModular)
-	ModularModulePathUnknown = New("module %s: cannot derive its directory from package %q, implement Path() to set it").SetModule(ModuleModular)
+	ModularModuleDuplicate     = New("module %q is registered more than once").SetModule(ModuleModular)
+	ModularModulePathInvalid   = New("module %s: directory %q must be a relative path inside the project").SetModule(ModuleModular)
+	ModularModulePathUnknown   = New("module %s: cannot derive its directory from package %q, implement Path() to set it").SetModule(ModuleModular)
+	ModularStaticDirInvalid    = New("module %s: static directory %q must be a relative path inside the module").SetModule(ModuleModular)
+	ModularStaticDirUnreadable = New("module %s: static directory %q is not a readable directory: %v").SetModule(ModuleModular)
 
 	NotificationChannelNotFound               = New("notification channel not found: %s").SetModule(ModuleNotification)
 	NotificationChannelNotQueueable           = New("notification channel %q does not support queued dispatch (does not implement ResolvableChannel)").SetModule(ModuleNotification)
