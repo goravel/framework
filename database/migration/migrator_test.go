@@ -68,6 +68,19 @@ func (s *MigratorSuite) TestCreate() {
 		s.True(file.Exists(filepath.Join(path, "20240817214501_"+name+".go")))
 	})
 
+	s.Run("in a directory", func() {
+		defer func() {
+			s.NoError(file.Remove("modules"))
+		}()
+
+		name := "create_posts_table"
+		fileName, err := s.migrator.CreateIn("modules/blog/database/migrations", name, "")
+		s.NoError(err)
+		s.Equal("20240817214501_"+name, fileName)
+		s.True(file.Contain(filepath.Join(pwd, "modules", "blog", "database", "migrations", fileName+".go"), "package migrations"))
+		s.False(file.Exists(filepath.Join(path, fileName+".go")))
+	})
+
 	s.Run("model not found", func() {
 		s.mockSchema.EXPECT().GetModel("NonExistentModel").Return(nil).Once()
 

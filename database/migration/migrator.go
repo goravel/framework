@@ -2,6 +2,7 @@ package migration
 
 import (
 	"fmt"
+	"path/filepath"
 	"slices"
 
 	"github.com/goravel/framework/contracts/console"
@@ -14,6 +15,7 @@ import (
 	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/env"
 	supportfile "github.com/goravel/framework/support/file"
+	"github.com/goravel/framework/support/path"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -34,6 +36,11 @@ func NewMigrator(artisan console.Artisan, schema contractsschema.Schema, table s
 }
 
 func (r *Migrator) Create(name string, modelName string) (string, error) {
+	return r.CreateIn("", name, modelName)
+}
+
+// CreateIn writes the migration to dir instead of the migrations path, "" for the default.
+func (r *Migrator) CreateIn(dir string, name string, modelName string) (string, error) {
 	table, create := TableGuesser{}.Guess(name)
 
 	var schemaFields []string
@@ -59,10 +66,15 @@ func (r *Migrator) Create(name string, modelName string) (string, error) {
 		facadesImport = "github.com/goravel/framework/facades"
 	}
 
+	filePath, pkg := r.creator.GetPath(fileName), packages.Paths().Migrations().Package()
+	if dir != "" {
+		filePath, pkg = path.Base(filepath.FromSlash(dir), fileName+".go"), filepath.Base(filepath.FromSlash(dir))
+	}
+
 	templateData := StubData{
 		FacadesPackage: packages.Paths().Facades().Package(),
 		FacadesImport:  facadesImport,
-		Package:        packages.Paths().Migrations().Package(),
+		Package:        pkg,
 		SchemaFields:   schemaFields,
 		Signature:      fileName,
 		StructName:     str.Of(fileName).Prepend("m_").Studly().String(),
@@ -74,7 +86,7 @@ func (r *Migrator) Create(name string, modelName string) (string, error) {
 		return "", err
 	}
 
-	if err := supportfile.PutContent(r.creator.GetPath(fileName), content); err != nil {
+	if err := supportfile.PutContent(filePath, content); err != nil {
 		return "", err
 	}
 

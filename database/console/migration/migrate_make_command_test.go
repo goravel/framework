@@ -11,6 +11,8 @@ import (
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksmigration "github.com/goravel/framework/mocks/database/migration"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
+	"github.com/goravel/framework/modular"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -245,6 +247,53 @@ func Boot() {
 
 		assert.NoError(t, err)
 	})
+}
+
+// blogModule sets its own directory, so it is a module of the application.
+type blogModule struct{}
+
+func (r *blogModule) Name() string { return "blog" }
+func (r *blogModule) Path() string { return "modules/blog" }
+
+func TestMigrateMakeCommand_Module(t *testing.T) {
+	registry := modular.NewRegistry("")
+	assert.NoError(t, registry.Register(&blogModule{}))
+	modular.SetDefault(registry)
+	defer modular.SetDefault(nil)
+	defer func() {
+		assert.NoError(t, file.Remove("modules"))
+	}()
+
+	assert.NoError(t, file.PutContent("modules/blog/module.go", `package blog
+
+type Module struct{}
+
+func (m *Module) Name() string {
+	return "blog"
+}
+`))
+
+	mockContext := mocksconsole.NewContext(t)
+	mockMigrator := mocksmigration.NewMigrator(t)
+
+	mockContext.EXPECT().Arguments().Return([]string{"create_posts_table"}).Once()
+	mockContext.EXPECT().Option("model").Return("").Once()
+	mockContext.EXPECT().Option("module").Return("blog").Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Once()
+	mockMigrator.EXPECT().CreateIn("modules/blog/database/migrations", "create_posts_table", "").Return("20240915060148_create_posts_table", nil).Once()
+	mockContext.EXPECT().Success("Created Migration: create_posts_table").Once()
+	mockContext.EXPECT().Success("Migration registered successfully").Once()
+
+	assert.NoError(t, NewMigrateMakeCommand(mocksfoundation.NewApplication(t), mockMigrator).Handle(mockContext))
+
+	content, err := file.GetContent("modules/blog/module.go")
+	assert.NoError(t, err)
+	assert.Contains(t, content, env.MainPath()+"/modules/blog/database/migrations")
+	assert.Contains(t, content, `func (m *Module) Migrations() []schema.Migration {
+	return []schema.Migration{
+		&migrations.M20240915060148CreatePostsTable{},
+	}
+}`)
 }
 
 func TestMigrateMakeCommand_MultipleNames(t *testing.T) {

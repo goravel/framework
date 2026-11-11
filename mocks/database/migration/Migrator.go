@@ -77,6 +77,64 @@ func (_c *Migrator_Create_Call) RunAndReturn(run func(string, string) (string, e
 	return _c
 }
 
+// CreateIn provides a mock function with given fields: dir, name, modelName
+func (_m *Migrator) CreateIn(dir string, name string, modelName string) (string, error) {
+	ret := _m.Called(dir, name, modelName)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateIn")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, string, string) (string, error)); ok {
+		return rf(dir, name, modelName)
+	}
+	if rf, ok := ret.Get(0).(func(string, string, string) string); ok {
+		r0 = rf(dir, name, modelName)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(string, string, string) error); ok {
+		r1 = rf(dir, name, modelName)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Migrator_CreateIn_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateIn'
+type Migrator_CreateIn_Call struct {
+	*mock.Call
+}
+
+// CreateIn is a helper method to define mock.On call
+//   - dir string
+//   - name string
+//   - modelName string
+func (_e *Migrator_Expecter) CreateIn(dir interface{}, name interface{}, modelName interface{}) *Migrator_CreateIn_Call {
+	return &Migrator_CreateIn_Call{Call: _e.mock.On("CreateIn", dir, name, modelName)}
+}
+
+func (_c *Migrator_CreateIn_Call) Run(run func(dir string, name string, modelName string)) *Migrator_CreateIn_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(string), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *Migrator_CreateIn_Call) Return(_a0 string, _a1 error) *Migrator_CreateIn_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Migrator_CreateIn_Call) RunAndReturn(run func(string, string, string) (string, error)) *Migrator_CreateIn_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Fresh provides a mock function with no fields
 func (_m *Migrator) Fresh() error {
 	ret := _m.Called()
