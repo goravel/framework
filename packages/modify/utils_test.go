@@ -4319,3 +4319,73 @@ var _ = map[string]any{
 `, buf.String())
 
 }
+
+func TestModules(t *testing.T) {
+	bootstrapDir := support.Config.Paths.Bootstrap
+	appFile := filepath.Join(bootstrapDir, "app.go")
+	modulesFile := filepath.Join(bootstrapDir, "modules.go")
+	defer func() {
+		assert.NoError(t, supportfile.Remove(bootstrapDir))
+	}()
+
+	assert.NoError(t, supportfile.PutContent(appFile, `package bootstrap
+
+import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
+}
+`))
+
+	assert.NoError(t, InitModules())
+	content, err := supportfile.GetContent(modulesFile)
+	assert.NoError(t, err)
+	assert.Equal(t, ModulesStub(), content)
+	assert.True(t, supportfile.Contain(appFile, "WithModules(Modules)"))
+
+	assert.NoError(t, AddModule("goravel/modules/blog", "&blog.Module{}"))
+	assert.NoError(t, AddModule("blogposts goravel/modules/blog-posts", "&blogposts.Module{}"))
+	// Adding a listed module again is a no-op.
+	assert.NoError(t, AddModule("goravel/modules/blog", "&blog.Module{}"))
+
+	content, err = supportfile.GetContent(modulesFile)
+	assert.NoError(t, err)
+	assert.Equal(t, `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/modular"
+
+	"goravel/modules/blog"
+	blogposts "goravel/modules/blog-posts"
+)
+
+func Modules() []modular.Module {
+	return []modular.Module{
+		&blog.Module{},
+		&blogposts.Module{},
+	}
+}
+`, content)
+
+	assert.NoError(t, RemoveModule("goravel/modules/blog", "&blog.Module{}"))
+	content, err = supportfile.GetContent(modulesFile)
+	assert.NoError(t, err)
+	assert.Equal(t, `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/modular"
+
+	blogposts "goravel/modules/blog-posts"
+)
+
+func Modules() []modular.Module {
+	return []modular.Module{
+		&blogposts.Module{},
+	}
+}
+`, content)
+}

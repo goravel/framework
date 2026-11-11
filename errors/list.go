@@ -275,8 +275,10 @@ var (
 	PackageGoModDownloadFailed   = New("failed to download go.mod dependencies: %s")
 	PackageJobsFileExists        = New("jobs.go already exists but WithJobs is not registered in foundation.Setup(). The jobs.go file should only be created when adding WithJobs to Setup()")
 	PackageMigrationsFileExists  = New("migrations.go already exists but WithMigrations is not registered in foundation.Setup(). The migrations.go file should only be created when adding WithMigrations to Setup()")
+	PackageModulesFileExists     = New("modules.go already exists but WithModules is not registered in foundation.Setup(). Add .WithModules(Modules) to Setup()")
 	PackageProvidersFileExists   = New("providers.go already exists but WithProviders is not registered in foundation.Setup(). The providers.go file should only be created when adding WithProviders to Setup()")
 	PackageRulesFileExists       = New("rules.go already exists but WithRules is not registered in foundation.Setup(). The rules.go file should only be created when adding WithRules to Setup()")
+	PackageSetupNotFound         = New("foundation.Setup() chain not found as a statement of the Boot function in bootstrap/app.go")
 	PackageSeedersFileExists     = New("seeders.go already exists but WithSeeders is not registered in foundation.Setup(). The seeders.go file should only be created when adding WithSeeders to Setup()")
 
 	PluralizerLanguageNotFound     = New("language %s not found").SetModule(ModulePluralizer)

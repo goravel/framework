@@ -96,6 +96,12 @@ func (kernel Kernel) Seeders() []seeder.Seeder {
 	return []seeder.Seeder{
 		&seeders.DatabaseSeeder{},
 	}
+}
+
+func Modules() []modular.Module {
+	return []modular.Module{
+		&blog.Module{},
+	}
 }`)
 	s.Require().NoError(err)
 	s.validation, err = decorator.Parse(`package providers
@@ -307,6 +313,20 @@ func (s *MatchHelperTestSuite) TestHelper() {
 					},
 				})).MatchNode(node))
 				s.Len(node.(*dst.CompositeLit).Elts, 2)
+			},
+		},
+		{
+			name:     "match modules",
+			file:     s.database,
+			matchers: Modules(),
+			assert: func(node dst.Node) {
+				s.True(CompositeLit(EqualNode(&dst.ArrayType{
+					Elt: &dst.SelectorExpr{
+						X:   &dst.Ident{Name: "modular"},
+						Sel: &dst.Ident{Name: "Module"},
+					},
+				})).MatchNode(node))
+				s.Len(node.(*dst.CompositeLit).Elts, 1)
 			},
 		},
 		{

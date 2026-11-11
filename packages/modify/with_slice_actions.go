@@ -11,6 +11,7 @@ import (
 
 	contractsmatch "github.com/goravel/framework/contracts/packages/match"
 	"github.com/goravel/framework/contracts/packages/modify"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages/match"
 	supportfile "github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/path"
@@ -177,6 +178,43 @@ func (r *withSliceHandler) AddItem(pkg, item string) error {
 	}
 
 	return GoFile(r.appFilePath).Find(match.FoundationSetup()).Modify(r.setupInline(item)).Apply()
+}
+
+// EnsureWithMethod wires WithMethod(HelperFunc) into foundation.Setup() with an empty helper file.
+// It edits app.go first, so a failed match leaves no helper file behind.
+func (r *withSliceHandler) EnsureWithMethod() error {
+	hasFoundationSetup, err := r.containsFoundationSetupInAppFile()
+	if err != nil {
+		return err
+	}
+	if !hasFoundationSetup {
+		return errors.PackageSetupNotFound
+	}
+
+	withMethodExists, err := r.checkWithMethodExists()
+	if err != nil {
+		return err
+	}
+	if withMethodExists {
+		return nil
+	}
+	if r.fileExists {
+		return r.config.fileExistsError
+	}
+
+	if err := GoFile(r.appFilePath).Find(match.FoundationSetup()).Modify(r.setupWithFunction()).Apply(); err != nil {
+		return err
+	}
+
+	// A chain that is not a statement of its own (builder := foundation.Setup()...) is left untouched.
+	if withMethodExists, err = r.checkWithMethodExists(); err != nil {
+		return err
+	}
+	if !withMethodExists {
+		return errors.PackageSetupNotFound
+	}
+
+	return r.createFile()
 }
 
 // RemoveItem removes an item from the slice in foundation.Setup() chain.

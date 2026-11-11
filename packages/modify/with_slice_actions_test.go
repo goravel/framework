@@ -344,6 +344,71 @@ func Boot() contractsfoundation.Application {
 	s.Contains(appResult, "&commands.NewCommand{}")
 }
 
+func (s *WithSliceHandlerTestSuite) TestEnsureWithMethod() {
+	modulesFile := filepath.Join(s.bootstrapDir, "modules.go")
+	app := func(body string) string {
+		return `package bootstrap
+
+import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() contractsfoundation.Application {
+` + body + `
+}
+`
+	}
+
+	s.Run("creates the helper file and wires WithMethod", func() {
+		s.Require().NoError(supportfile.PutContent(s.appFile, app("\treturn foundation.Setup().WithConfig(config.Boot).Start()")))
+
+		s.NoError(newWithSliceHandler(moduleConfig()).EnsureWithMethod())
+
+		appResult, err := supportfile.GetContent(s.appFile)
+		s.NoError(err)
+		s.Contains(appResult, "WithModules(Modules)")
+
+		modulesResult, err := supportfile.GetContent(modulesFile)
+		s.NoError(err)
+		s.Equal(modules(), modulesResult)
+
+		// A second run changes nothing.
+		s.NoError(newWithSliceHandler(moduleConfig()).EnsureWithMethod())
+		again, err := supportfile.GetContent(s.appFile)
+		s.NoError(err)
+		s.Equal(appResult, again)
+		s.NoError(supportfile.Remove(s.bootstrapDir))
+	})
+
+	s.Run("helper file exists without WithMethod", func() {
+		s.Require().NoError(supportfile.PutContent(s.appFile, app("\treturn foundation.Setup().WithConfig(config.Boot).Start()")))
+		s.Require().NoError(supportfile.PutContent(modulesFile, modules()))
+
+		s.Equal(errors.PackageModulesFileExists, newWithSliceHandler(moduleConfig()).EnsureWithMethod())
+		s.NoError(supportfile.Remove(s.bootstrapDir))
+	})
+
+	s.Run("no foundation.Setup()", func() {
+		s.Require().NoError(supportfile.PutContent(s.appFile, app("\treturn nil")))
+
+		s.Equal(errors.PackageSetupNotFound, newWithSliceHandler(moduleConfig()).EnsureWithMethod())
+		s.False(supportfile.Exists(modulesFile))
+		s.NoError(supportfile.Remove(s.bootstrapDir))
+	})
+
+	s.Run("assigned chain is left untouched and leaves no helper file", func() {
+		s.Require().NoError(supportfile.PutContent(s.appFile, app("\tbuilder := foundation.Setup().WithConfig(config.Boot)\n\n\treturn builder.Start()")))
+
+		err := newWithSliceHandler(moduleConfig()).EnsureWithMethod()
+
+		s.Equal(errors.PackageSetupNotFound, err)
+		s.False(supportfile.Exists(modulesFile))
+		s.False(supportfile.Contain(s.appFile, "WithModules"))
+	})
+}
+
 func (s *WithSliceHandlerTestSuite) TestCheckWithMethodExists() {
 	config := withSliceConfig{
 		fileName:       "commands.go",

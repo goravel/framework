@@ -231,6 +231,23 @@ func Migrations() []match.GoNode {
 	}
 }
 
+// Modules matches the Modules() function returning a []modular.Module literal.
+func Modules() []match.GoNode {
+	return []match.GoNode{
+		Func(Ident("Modules")),
+		TypeOf(&dst.ReturnStmt{}),
+		CompositeLit(
+			ArrayType(
+				SelectorExpr(
+					Ident("modular"),
+					Ident("Module"),
+				),
+				AnyNode(),
+			),
+		),
+	}
+}
+
 // Providers matches the Providers() function that returns a slice of service providers.
 // It looks for a function returning []foundation.ServiceProvider composite literals.
 // This is the recommended way to register service providers.

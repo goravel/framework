@@ -95,6 +95,11 @@ func AddMigration(pkg, migration string) error {
 	return handler.AddItem(pkg, migration)
 }
 
+// AddModule adds module to bootstrap/modules.go, wiring WithModules(Modules) when missing.
+func AddModule(pkg, module string) error {
+	return newWithSliceHandler(moduleConfig()).AddItem(pkg, module)
+}
+
 // AddProvider adds service provider to the foundation.Setup() chain in the Boot function.
 func AddProvider(pkg, provider string) error {
 	config := withSliceConfig{
@@ -209,6 +214,30 @@ func ExprIndex(x []dst.Expr, y dst.Expr) int {
 	return slices.IndexFunc(x, func(expr dst.Expr) bool {
 		return match.EqualNode(y).MatchNode(expr)
 	})
+}
+
+// InitModules creates bootstrap/modules.go and wires WithModules(Modules), with no module listed.
+func InitModules() error {
+	return newWithSliceHandler(moduleConfig()).EnsureWithMethod()
+}
+
+// ModulesStub is the content of an empty bootstrap/modules.go.
+func ModulesStub() string {
+	return modules()
+}
+
+func moduleConfig() withSliceConfig {
+	return withSliceConfig{
+		fileName:        "modules.go",
+		withMethodName:  "WithModules",
+		helperFuncName:  "Modules",
+		typePackage:     "modular",
+		typeName:        "Module",
+		typeImportPath:  "github.com/goravel/framework/contracts/modular",
+		fileExistsError: errors.PackageModulesFileExists,
+		stubTemplate:    modules,
+		matcherFunc:     match.Modules,
+	}
 }
 
 // IsUsingImport checks if an imported package is actually used in the file.
@@ -366,6 +395,11 @@ func RemoveMigration(pkg, migration string) error {
 
 	handler := newWithSliceHandler(config)
 	return handler.RemoveItem(pkg, migration)
+}
+
+// RemoveModule removes module from the Modules() list.
+func RemoveModule(pkg, module string) error {
+	return newWithSliceHandler(moduleConfig()).RemoveItem(pkg, module)
 }
 
 // RemoveProvider removes a service provider from the foundation.Setup() chain in the Boot function.
