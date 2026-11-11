@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
@@ -120,4 +121,20 @@ func (s *TestMakeCommandTestSuite) TestHandleMultipleNames() {
 
 	s.FileExists("tests/user_test.go")
 	s.FileExists("tests/post_test.go")
+}
+
+func TestTestMakeCommand_Module(t *testing.T) {
+	useBlogModule(t)
+
+	mockContext := mocksconsole.NewContext(t)
+	mockContext.EXPECT().Arguments().Return([]string{"PostTest"}).Once()
+	mockContext.EXPECT().Option("module").Return("blog").Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Once()
+	mockContext.EXPECT().Success("Test created successfully").Once()
+
+	assert.NoError(t, (&TestMakeCommand{}).Handle(mockContext))
+	assert.True(t, file.Contain("modules/blog/tests/post_test.go", "package tests"))
+	// The module has no TestCase, the application's is embedded.
+	assert.True(t, file.Contain("modules/blog/tests/post_test.go", "tests.TestCase"))
+	assert.True(t, file.Contain("modules/blog/tests/post_test.go", "/tests\""))
 }

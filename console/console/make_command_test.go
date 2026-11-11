@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	mocksconsole "github.com/goravel/framework/mocks/console"
+	"github.com/goravel/framework/modular"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -222,4 +223,53 @@ func Commands() []console.Command {
 }
 `
 	assert.Equal(t, expectedCommandsContent, commandsContent)
+}
+
+// blogModule sets its own directory, so it is a module of the application.
+type blogModule struct{}
+
+func (r *blogModule) Name() string { return "blog" }
+func (r *blogModule) Path() string { return "modules/blog" }
+
+// useBlogModule registers blogModule with a module.go on disk for the test.
+func useBlogModule(t *testing.T) {
+	registry := modular.NewRegistry("")
+	assert.NoError(t, registry.Register(&blogModule{}))
+	modular.SetDefault(registry)
+	assert.NoError(t, file.PutContent("modules/blog/module.go", `package blog
+
+type Module struct{}
+
+func (m *Module) Name() string {
+	return "blog"
+}
+`))
+
+	t.Cleanup(func() {
+		modular.SetDefault(nil)
+		assert.NoError(t, file.Remove("modules"))
+	})
+}
+
+func TestMakeCommand_Module(t *testing.T) {
+	useBlogModule(t)
+
+	mockContext := mocksconsole.NewContext(t)
+	mockContext.EXPECT().Arguments().Return([]string{"SyncPosts"}).Once()
+	mockContext.EXPECT().Option("module").Return("blog").Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Once()
+	mockContext.EXPECT().Success("Console command created successfully").Once()
+	mockContext.EXPECT().Success("Console command registered successfully").Once()
+
+	assert.NoError(t, NewMakeCommand().Handle(mockContext))
+	assert.True(t, file.Exists("modules/blog/console/commands/sync_posts.go"))
+
+	content, err := file.GetContent("modules/blog/module.go")
+	assert.NoError(t, err)
+	assert.Contains(t, content, `/modules/blog/console/commands"`)
+	assert.Contains(t, content, `func (m *Module) Commands() []console.Command {
+	return []console.Command{
+		&commands.SyncPosts{},
+	}
+}`)
 }

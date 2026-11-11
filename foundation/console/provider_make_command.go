@@ -41,6 +41,7 @@ func (r *ProviderMakeCommand) Extend() command.Extend {
 				Aliases: []string{"f"},
 				Usage:   "Create the provider even if it already exists",
 			},
+			supportconsole.ModuleFlag(),
 		},
 	}
 }
@@ -66,13 +67,19 @@ func (r *ProviderMakeCommand) makeOne(ctx console.Context, name string) error {
 
 	ctx.Success("Provider created successfully")
 
-	if env.IsBootstrapSetup() {
-		if err := modify.AddProvider(make.GetPackageImportPath(), fmt.Sprintf("&%s.%s{}", make.GetPackageName(), make.GetStructName())); err != nil {
-			return errors.ProviderRegisterFailed.Args(make.GetStructName(), err)
-		}
-
-		ctx.Success("Provider registered successfully")
+	provider := fmt.Sprintf("&%s.%s{}", make.GetPackageName(), make.GetStructName())
+	if dir := make.GetModuleDir(); dir != "" {
+		err = modify.AddToModule(dir, "ServiceProviders", make.GetPackageImportPath(), provider)
+	} else if env.IsBootstrapSetup() {
+		err = modify.AddProvider(make.GetPackageImportPath(), provider)
+	} else {
+		return nil
 	}
+	if err != nil {
+		return errors.ProviderRegisterFailed.Args(make.GetStructName(), err)
+	}
+
+	ctx.Success("Provider registered successfully")
 
 	return nil
 }

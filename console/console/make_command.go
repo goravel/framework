@@ -46,6 +46,7 @@ func (r *MakeCommand) Extend() command.Extend {
 				Usage:              "Create the command even if it already exists",
 				DisableDefaultText: true,
 			},
+			supportconsole.ModuleFlag(),
 		},
 	}
 }
@@ -69,7 +70,9 @@ func (r *MakeCommand) makeOne(ctx console.Context, name string) error {
 
 	ctx.Success("Console command created successfully")
 
-	if env.IsBootstrapSetup() {
+	if dir := make.GetModuleDir(); dir != "" {
+		err = modify.AddToModule(dir, "Commands", make.GetPackageImportPath(), fmt.Sprintf("&%s.%s{}", make.GetPackageName(), make.GetStructName()))
+	} else if env.IsBootstrapSetup() {
 		err = modify.AddCommand(make.GetPackageImportPath(), fmt.Sprintf("&%s.%s{}", make.GetPackageName(), make.GetStructName()))
 	} else {
 		err = r.registerInKernel(make)

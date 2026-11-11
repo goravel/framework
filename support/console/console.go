@@ -39,14 +39,21 @@ func ModuleFlag() command.Flag {
 // ModuleDir returns the directory of the module given with --module, relative to
 // the project root, or "" without the option. Third-party modules are refused.
 func ModuleDir(ctx console.Context) (string, error) {
-	name := ctx.Option("module")
+	_, dir, err := Module(ctx)
+
+	return dir, err
+}
+
+// Module is ModuleDir with the registered name of the module.
+func Module(ctx console.Context) (name, dir string, err error) {
+	name = ctx.Option("module")
 	if name == "" {
-		return "", nil
+		return "", "", nil
 	}
 
 	registry := modular.Default()
 	if registry == nil {
-		return "", errors.ModularRegistryNotSet
+		return "", "", errors.ModularRegistryNotSet
 	}
 
 	module, ok := registry.Find(name)
@@ -54,15 +61,15 @@ func ModuleDir(ctx console.Context) (string, error) {
 		module, ok = registry.Find(str.Of(name).Kebab().String())
 	}
 	if !ok {
-		return "", errors.ModularModuleNotFound.Args(name)
+		return "", "", errors.ModularModuleNotFound.Args(name)
 	}
 	if !modular.Local(module) {
-		return "", errors.ModularModuleNotLocal.Args(module.Name())
+		return "", "", errors.ModularModuleNotLocal.Args(module.Name())
 	}
 
-	dir, _ := registry.Path(module.Name())
+	dir, _ = registry.Path(module.Name())
 
-	return dir, nil
+	return module.Name(), dir, nil
 }
 
 // ModuleRoot moves root into the module directory, dropping the application
