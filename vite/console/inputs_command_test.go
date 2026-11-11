@@ -46,10 +46,10 @@ func defaultVite(t *testing.T) *mocksvite.Vite {
 	return vite
 }
 
-const defaultPaths = `"paths":{"public_directory":"public","build_directory":"build","hot_file":"public/hot","manifest":".vite/manifest.json"}`
+const defaultPaths = `"paths":{"public_directory":"public","build_directory":"build","hot_file":"public/hot","manifest":".vite/manifest.json"},"modules":[]`
 
 func TestInputsCommand_Metadata(t *testing.T) {
-	cmd := NewInputsCommand(nil, nil, nil)
+	cmd := NewInputsCommand(nil, nil, nil, nil)
 	assert.Equal(t, "vite:inputs", cmd.Signature())
 	assert.Equal(t, "Print the Vite entry points and assets the views and config declare, and the build paths, as JSON", cmd.Description())
 	assert.Equal(t, "vite", cmd.Extend().Category)
@@ -77,7 +77,7 @@ func TestInputsCommand_Handle(t *testing.T) {
 	ctx := mocksconsole.NewContext(t)
 	ctx.EXPECT().Line(`{"inputs":["resources/css/app.css","resources/inertia/app.ts","resources/js/admin.js","resources/js/app.js","resources/js/mixed.js"],"assets":["resources/images/logo.svg"],"dynamic":[{"template":"dyn.tmpl","function":"vite"},{"template":"dyn.tmpl","function":"vite"}],` + defaultPaths + `}`).Once()
 
-	assert.NoError(t, NewInputsCommand(view, defaultVite(t), config).Handle(ctx))
+	assert.NoError(t, NewInputsCommand(view, defaultVite(t), config, nil).Handle(ctx))
 }
 
 func TestInputsCommand_Paths(t *testing.T) {
@@ -99,8 +99,8 @@ func TestInputsCommand_Paths(t *testing.T) {
 	vite.EXPECT().ManifestFilename().Return("manifest.json").Once()
 
 	ctx := mocksconsole.NewContext(t)
-	ctx.EXPECT().Line(`{"inputs":[],"assets":[],"dynamic":[],"paths":{"public_directory":"public","build_directory":"assets","hot_file":"storage/vite.hot","manifest":"manifest.json"}}`).Once()
-	assert.NoError(t, NewInputsCommand(view, vite, config).Handle(ctx))
+	ctx.EXPECT().Line(`{"inputs":[],"assets":[],"dynamic":[],"paths":{"public_directory":"public","build_directory":"assets","hot_file":"storage/vite.hot","manifest":"manifest.json"},"modules":[]}`).Once()
+	assert.NoError(t, NewInputsCommand(view, vite, config, nil).Handle(ctx))
 
 	// A hot file outside the project root stays absolute.
 	outside := filepath.Join(t.TempDir(), "hot")
@@ -110,8 +110,8 @@ func TestInputsCommand_Paths(t *testing.T) {
 	vite.EXPECT().ManifestFilename().Return(".vite/manifest.json").Once()
 
 	ctx = mocksconsole.NewContext(t)
-	ctx.EXPECT().Line(`{"inputs":[],"assets":[],"dynamic":[],"paths":{"public_directory":"public","build_directory":"build","hot_file":"` + filepath.ToSlash(outside) + `","manifest":".vite/manifest.json"}}`).Once()
-	assert.NoError(t, NewInputsCommand(view, vite, config).Handle(ctx))
+	ctx.EXPECT().Line(`{"inputs":[],"assets":[],"dynamic":[],"paths":{"public_directory":"public","build_directory":"build","hot_file":"` + filepath.ToSlash(outside) + `","manifest":".vite/manifest.json"},"modules":[]}`).Once()
+	assert.NoError(t, NewInputsCommand(view, vite, config, nil).Handle(ctx))
 }
 
 func TestInputsCommand_NoViews(t *testing.T) {
@@ -129,7 +129,7 @@ func TestInputsCommand_NoViews(t *testing.T) {
 	ctx := mocksconsole.NewContext(t)
 	ctx.EXPECT().Line(`{"inputs":[],"assets":[],"dynamic":[],` + defaultPaths + `}`).Once()
 
-	assert.NoError(t, NewInputsCommand(view, defaultVite(t), config).Handle(ctx))
+	assert.NoError(t, NewInputsCommand(view, defaultVite(t), config, nil).Handle(ctx))
 }
 
 func TestInputsCommand_ConfiguredEntries(t *testing.T) {
@@ -148,7 +148,7 @@ func TestInputsCommand_ConfiguredEntries(t *testing.T) {
 	ctx := mocksconsole.NewContext(t)
 	ctx.EXPECT().Line(`{"inputs":["resources/inertia/app.ts","resources/js/app.ts"],"assets":["resources/images/logo.svg"],"dynamic":[],` + defaultPaths + `}`).Once()
 
-	assert.NoError(t, NewInputsCommand(view, defaultVite(t), config).Handle(ctx))
+	assert.NoError(t, NewInputsCommand(view, defaultVite(t), config, nil).Handle(ctx))
 
 	// The command sorts its own copy, never the value the config stores.
 	assert.Equal(t, []string{"resources/inertia/app.ts", "resources/inertia/app.ts", "resources/js/app.ts"}, inputs)
@@ -165,13 +165,13 @@ func TestInputsCommand_NilConfig(t *testing.T) {
 	ctx := mocksconsole.NewContext(t)
 	ctx.EXPECT().Line(`{"inputs":[],"assets":[],"dynamic":[],` + defaultPaths + `}`).Once()
 
-	assert.NoError(t, NewInputsCommand(view, defaultVite(t), nil).Handle(ctx))
+	assert.NoError(t, NewInputsCommand(view, defaultVite(t), nil, nil).Handle(ctx))
 }
 
 func TestInputsCommand_Errors(t *testing.T) {
 	ctx := mocksconsole.NewContext(t)
-	assert.EqualError(t, NewInputsCommand(nil, nil, nil).Handle(ctx), errors.ViewFacadeNotSet.SetModule(errors.ModuleVite).Error())
-	assert.EqualError(t, NewInputsCommand(mocksview.NewView(t), nil, nil).Handle(ctx), errors.ViteFacadeNotSet.Error())
+	assert.EqualError(t, NewInputsCommand(nil, nil, nil, nil).Handle(ctx), errors.ViewFacadeNotSet.SetModule(errors.ModuleVite).Error())
+	assert.EqualError(t, NewInputsCommand(mocksview.NewView(t), nil, nil, nil).Handle(ctx), errors.ViteFacadeNotSet.Error())
 
 	// A view that does not parse, here because vite is not registered, fails the command.
 	setupAppViews(t, map[string]string{"broken.tmpl": `{{ vite "a" }}`})
@@ -180,7 +180,7 @@ func TestInputsCommand_Errors(t *testing.T) {
 	view.EXPECT().RegisteredViews().Return(nil).Once()
 	view.EXPECT().RegisteredViewFS().Return(nil).Once()
 
-	err := NewInputsCommand(view, mocksvite.NewVite(t), nil).Handle(ctx)
+	err := NewInputsCommand(view, mocksvite.NewVite(t), nil, nil).Handle(ctx)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "[vite] failed to compile views")
 	assert.Contains(t, err.Error(), `function "vite" not defined`)

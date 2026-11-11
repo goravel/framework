@@ -2,18 +2,25 @@ package console
 
 import (
 	"encoding/json"
+	"maps"
+	stdpath "path"
 	"path/filepath"
+	"regexp"
+	"runtime/debug"
 	"slices"
 	"strings"
 
 	contractsconfig "github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	contractsmodular "github.com/goravel/framework/contracts/modular"
 	contractsview "github.com/goravel/framework/contracts/view"
 	contractsvite "github.com/goravel/framework/contracts/vite"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/modular"
 	"github.com/goravel/framework/packages/paths"
 	"github.com/goravel/framework/support"
+	"github.com/goravel/framework/support/path"
 	"github.com/goravel/framework/view"
 )
 
@@ -25,13 +32,23 @@ const (
 
 // Inputs is what goravel-vite-plugin reads: the entries passed to vite and the
 // files passed to viteAsset, each once and sorted, the calls with computed
-// arguments, and the configured paths. The entries and assets include vite.inputs
-// and vite.assets from config, so a build tool need not reach into config itself.
+// arguments, the configured paths and the modules. The entries and assets include
+// vite.inputs and vite.assets from config, so a build tool need not reach into config itself.
 type Inputs struct {
-	Inputs  []string      `json:"inputs"`
-	Assets  []string      `json:"assets"`
-	Dynamic []DynamicCall `json:"dynamic"`
-	Paths   Paths         `json:"paths"`
+	Inputs  []string       `json:"inputs"`
+	Assets  []string       `json:"assets"`
+	Dynamic []DynamicCall  `json:"dynamic"`
+	Paths   Paths          `json:"paths"`
+	Modules []ModuleInputs `json:"modules"`
+}
+
+// ModuleInputs is a module as the plugin needs it: its directory, entries and
+// alias targets, all relative to the project root.
+type ModuleInputs struct {
+	Name    string            `json:"name"`
+	Path    string            `json:"path"`
+	Entries []string          `json:"entries"`
+	Aliases map[string]string `json:"aliases"`
 }
 
 // Paths is the vite configuration as the plugin needs it: the public directory
@@ -54,13 +71,16 @@ type DynamicCall struct {
 // InputsCommand prints the entries, assets and build paths the views and config
 // declare, so a build tool need not repeat them.
 type InputsCommand struct {
-	view   contractsview.View
-	vite   contractsvite.Vite
-	config contractsconfig.Config
+	view      contractsview.View
+	vite      contractsvite.Vite
+	config    contractsconfig.Config
+	modules   contractsmodular.Registry
+	buildInfo func() (*debug.BuildInfo, bool)
 }
 
-func NewInputsCommand(views contractsview.View, vite contractsvite.Vite, config contractsconfig.Config) *InputsCommand {
-	return &InputsCommand{view: views, vite: vite, config: config}
+// NewInputsCommand takes the module registry, nil when the application has none.
+func NewInputsCommand(views contractsview.View, vite contractsvite.Vite, config contractsconfig.Config, modules contractsmodular.Registry) *InputsCommand {
+	return &InputsCommand{view: views, vite: vite, config: config, modules: modules, buildInfo: debug.ReadBuildInfo}
 }
 
 // Signature The name and signature of the console command.
@@ -89,6 +109,11 @@ func (r *InputsCommand) Handle(ctx console.Context) error {
 		return errors.ViteFacadeNotSet
 	}
 
+	modules, err := r.moduleInputs()
+	if err != nil {
+		return err
+	}
+
 	tmpl, err := view.Compile(view.CompileOptions{
 		FuncMap: r.view.Funcs(),
 		Paths:   r.view.RegisteredViews(),
@@ -103,6 +128,7 @@ func (r *InputsCommand) Handle(ctx console.Context) error {
 		Assets:  r.configuredEntries("vite.assets"),
 		Dynamic: []DynamicCall{},
 		Paths:   r.paths(),
+		Modules: modules,
 	}
 	collect(view.Calls(tmpl, tagsFunction), tagsFunction, &inputs.Inputs, &inputs.Dynamic)
 	collect(view.Calls(tmpl, assetFunction), assetFunction, &inputs.Assets, &inputs.Dynamic)
@@ -131,6 +157,87 @@ func (r *InputsCommand) paths() Paths {
 		HotFile:         filepath.ToSlash(hotFile),
 		Manifest:        r.vite.ManifestFilename(),
 	}
+}
+
+// aliasKey is a Vite alias a module may declare: "@" and a name without slashes.
+var aliasKey = regexp.MustCompile(`^@[A-Za-z0-9][A-Za-z0-9_-]*$`)
+
+// moduleInputs lists every module with its entries and aliases made relative to the
+// project root. It fails on an invalid or duplicate alias and on a third-party
+// module whose published copy is missing or differs from the linked version.
+func (r *InputsCommand) moduleInputs() ([]ModuleInputs, error) {
+	inputs := []ModuleInputs{}
+	if r.modules == nil {
+		return inputs, nil
+	}
+
+	all := r.modules.All()
+	info, _ := r.buildInfo()
+
+	// "@<name>" belongs to its module, and every other key to the first module declaring it.
+	owners := make(map[string]string, len(all))
+	for _, module := range all {
+		owners["@"+module.Name()] = module.Name()
+	}
+
+	for _, module := range all {
+		name := module.Name()
+		dir, _ := r.modules.Path(name)
+		if err := checkPublished(module, info, dir); err != nil {
+			return nil, err
+		}
+
+		input := ModuleInputs{Name: name, Path: dir, Entries: []string{}, Aliases: map[string]string{}}
+		if p, ok := module.(contractsmodular.ProvidesViteEntries); ok {
+			for _, entry := range p.ViteEntries() {
+				input.Entries = append(input.Entries, stdpath.Join(dir, filepath.ToSlash(entry)))
+			}
+		}
+		if p, ok := module.(contractsmodular.ProvidesViteAlias); ok {
+			aliases := p.ViteAliases()
+			for _, key := range slices.Sorted(maps.Keys(aliases)) {
+				target, inside := path.CleanRelative(aliases[key])
+				if !aliasKey.MatchString(key) || !inside {
+					return nil, errors.ModularViteAliasInvalid.Args(name, key, aliases[key])
+				}
+				if owner, taken := owners[key]; taken && owner != name {
+					return nil, errors.ModularViteAliasDuplicate.Args(key, name, owner)
+				}
+
+				owners[key] = name
+				input.Aliases[key] = stdpath.Join(dir, target)
+			}
+		}
+
+		inputs = append(inputs, input)
+	}
+
+	return inputs, nil
+}
+
+// checkPublished fails for a third-party module whose files are not in dir as
+// modular:publish writes them: Vite would build without them, or with old ones.
+func checkPublished(module contractsmodular.Module, info *debug.BuildInfo, dir string) error {
+	dependency, ok := modular.DependencyOf(module, info)
+	if !ok {
+		return nil
+	}
+
+	source := dependency.Path
+	if dependency.Version != "" {
+		source += " " + dependency.Version
+	}
+
+	switch modular.PublishState(module, dependency, path.Base(filepath.FromSlash(dir))) {
+	case modular.PublishMissing:
+		return errors.ModularModuleNotPublished.Args(module.Name(), source, dir)
+	case modular.PublishStale:
+		return errors.ModularModulePublishStale.Args(module.Name(), dir, source)
+	case modular.PublishConflict:
+		return errors.ModularPublishTargetNotOwned.Args(module.Name(), dir, dependency.Path)
+	}
+
+	return nil
 }
 
 // configuredEntries returns vite.inputs or vite.assets as []string; empty when the
