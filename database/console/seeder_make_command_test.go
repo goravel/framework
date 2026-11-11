@@ -42,6 +42,7 @@ func TestSeederMakeCommand(t *testing.T) {
 	assert.Nil(t, seederMakeCommand.Handle(mockContext))
 
 	mockContext.EXPECT().Arguments().Return([]string{"UserSeeder"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockApp.EXPECT().DatabasePath("kernel.go").Return("database/kernel.go").Once()
 	mockContext.EXPECT().Success("Seeder created successfully").Once()
@@ -55,12 +56,14 @@ func TestSeederMakeCommand(t *testing.T) {
 	assert.True(t, file.Contain("database/kernel.go", "&seeders.UserSeeder{}"))
 
 	mockContext.EXPECT().Arguments().Return([]string{"UserSeeder"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Error("the seeder already exists. Use the --force or -f flag to overwrite").Once()
 	assert.NoError(t, seederMakeCommand.Handle(mockContext))
 	assert.NoError(t, file.Remove("database"))
 
 	mockContext.EXPECT().Arguments().Return([]string{"subdir/DemoSeeder"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Seeder created successfully").Once()
 	mockApp.EXPECT().DatabasePath("kernel.go").Return("database/kernel.go").Once()
@@ -108,6 +111,7 @@ func Boot() contractsfoundation.Application {
 		mockApp = mocksfoundation.NewApplication(t)
 
 		mockContext.EXPECT().Arguments().Return([]string{"UserSeeder"}).Once()
+		mockContext.EXPECT().Option("module").Return("").Once()
 		mockContext.EXPECT().OptionBool("force").Return(false).Once()
 		mockContext.EXPECT().Success("Seeder created successfully").Once()
 		mockContext.EXPECT().Success("Seeder registered successfully").Once()
@@ -145,6 +149,7 @@ func Boot() {
 		mockApp = mocksfoundation.NewApplication(t)
 
 		mockContext.EXPECT().Arguments().Return([]string{"PostSeeder"}).Once()
+		mockContext.EXPECT().Option("module").Return("").Once()
 		mockContext.EXPECT().OptionBool("force").Return(false).Once()
 		mockContext.EXPECT().Success("Seeder created successfully").Once()
 		mockContext.EXPECT().Warning(mock.MatchedBy(func(msg string) bool {
@@ -173,6 +178,7 @@ func TestSeederMakeCommand_MultipleNames(t *testing.T) {
 	assert.NoError(t, file.PutContent("database/kernel.go", databaseKernel))
 
 	mockContext.EXPECT().Arguments().Return([]string{"UserSeeder", "PostSeeder"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Times(2)
 	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
 	mockApp.EXPECT().DatabasePath("kernel.go").Return("database/kernel.go").Times(2)
 	mockContext.EXPECT().Success("Seeder created successfully").Times(2)

@@ -22,6 +22,7 @@ func TestNotificationMakeCommand(t *testing.T) {
 	assert.False(t, file.Exists("app/notifications/invoice_paid.go"))
 
 	mockContext.EXPECT().Arguments().Return([]string{"InvoicePaid"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().OptionBool("database").Return(false).Once()
 	mockContext.EXPECT().Success("Notification created successfully").Once()
@@ -30,11 +31,13 @@ func TestNotificationMakeCommand(t *testing.T) {
 	assert.True(t, file.Contain("app/notifications/invoice_paid.go", "func (r *InvoicePaid) ToMail"))
 
 	mockContext.EXPECT().Arguments().Return([]string{"InvoicePaid"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Error("the notification already exists. Use the --force or -f flag to overwrite").Once()
 	assert.NoError(t, notificationMakeCommand.Handle(mockContext))
 
 	mockContext.EXPECT().Arguments().Return([]string{"Billing/InvoicePaid"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().OptionBool("database").Return(false).Once()
 	mockContext.EXPECT().Success("Notification created successfully").Once()
@@ -50,6 +53,7 @@ func TestNotificationMakeCommand_DatabaseFlag_GeneratesDatabaseTemplate(t *testi
 	notificationMakeCommand := &NotificationMakeCommand{}
 	mockContext := mocksconsole.NewContext(t)
 	mockContext.EXPECT().Arguments().Return([]string{"InvoicePaid"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().OptionBool("database").Return(true).Once()
 	mockContext.EXPECT().Success("Notification created successfully").Once()
@@ -69,7 +73,7 @@ func TestNotificationMakeCommand_Metadata(t *testing.T) {
 
 	extend := cmd.Extend()
 	assert.Equal(t, "make", extend.Category)
-	assert.Len(t, extend.Flags, 2)
+	assert.Len(t, extend.Flags, 3)
 	assert.Equal(t, "force", extend.Flags[0].(*command.BoolFlag).Name)
 	assert.Equal(t, "database", extend.Flags[1].(*command.BoolFlag).Name)
 }
@@ -79,6 +83,7 @@ func TestNotificationMakeCommand_MultipleNames(t *testing.T) {
 	mockContext := mocksconsole.NewContext(t)
 
 	mockContext.EXPECT().Arguments().Return([]string{"InvoicePaid", "InvoiceRefunded"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Times(2)
 	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
 	mockContext.EXPECT().OptionBool("database").Return(false).Times(2)
 	mockContext.EXPECT().Success("Notification created successfully").Times(2)

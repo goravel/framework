@@ -1,4 +1,4 @@
-package modular
+package modular_test
 
 import (
 	"bytes"
@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/goravel/framework/modular"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/view"
 )
@@ -21,11 +22,11 @@ func blogViews() fstest.MapFS {
 }
 
 func TestPrefixFS_TestFS(t *testing.T) {
-	assert.NoError(t, fstest.TestFS(NewPrefixFS("blog", blogViews()), "blog/index.tmpl", "blog/layouts/base.tmpl"))
+	assert.NoError(t, fstest.TestFS(modular.NewPrefixFS("blog", blogViews()), "blog/index.tmpl", "blog/layouts/base.tmpl"))
 }
 
 func TestPrefixFS_Paths(t *testing.T) {
-	fsys := NewPrefixFS("blog", blogViews())
+	fsys := modular.NewPrefixFS("blog", blogViews())
 
 	entries, err := fs.ReadDir(fsys, ".")
 	require.NoError(t, err)
@@ -57,7 +58,7 @@ func TestPrefixFS_Views(t *testing.T) {
 	t.Cleanup(func() { support.RelativePath = relativePath })
 	support.RelativePath = t.TempDir()
 
-	fsys := NewPrefixFS("blog", blogViews())
+	fsys := modular.NewPrefixFS("blog", blogViews())
 
 	registry := view.NewView()
 	assert.NotPanics(t, func() { registry.LoadViewsFromFS(fsys, ".") })

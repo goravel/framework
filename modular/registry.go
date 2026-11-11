@@ -3,7 +3,9 @@
 package modular
 
 import (
+	"runtime/debug"
 	"slices"
+	"sync"
 
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/modular"
@@ -12,6 +14,36 @@ import (
 )
 
 var _ modular.Registry = (*Registry)(nil)
+
+var (
+	defaultMu       sync.RWMutex
+	defaultRegistry modular.Registry
+)
+
+// SetDefault records the application's registry for code that cannot reach the
+// container (support/console). Build() calls it.
+func SetDefault(registry modular.Registry) {
+	defaultMu.Lock()
+	defer defaultMu.Unlock()
+
+	defaultRegistry = registry
+}
+
+// Default returns the application's registry, nil before Build().
+func Default() modular.Registry {
+	defaultMu.RLock()
+	defer defaultMu.RUnlock()
+
+	return defaultRegistry
+}
+
+// Local reports whether module's sources are in the application, not in a dependency.
+func Local(module modular.Module) bool {
+	info, _ := debug.ReadBuildInfo()
+	_, thirdParty := DependencyOf(module, info)
+
+	return !thirdParty
+}
 
 // Registry keeps modules in registration order.
 type Registry struct {

@@ -20,6 +20,7 @@ func TestFactoryMakeCommand(t *testing.T) {
 	assert.NoError(t, factoryMakeCommand.Handle(mockContext))
 
 	mockContext.EXPECT().Arguments().Return([]string{"UserFactory"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Factory created successfully").Once()
 	assert.NoError(t, factoryMakeCommand.Handle(mockContext))
@@ -28,12 +29,14 @@ func TestFactoryMakeCommand(t *testing.T) {
 	assert.True(t, file.Contain("database/factories/user_factory.go", "type UserFactory struct"))
 
 	mockContext.EXPECT().Arguments().Return([]string{"UserFactory"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Error("the factory already exists. Use the --force or -f flag to overwrite").Once()
 	assert.NoError(t, factoryMakeCommand.Handle(mockContext))
 	assert.NoError(t, file.Remove("database"))
 
 	mockContext.EXPECT().Arguments().Return([]string{"subdir/DemoFactory"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Factory created successfully").Once()
 	assert.NoError(t, factoryMakeCommand.Handle(mockContext))
@@ -48,6 +51,7 @@ func TestFactoryMakeCommand_MultipleNames(t *testing.T) {
 	mockContext := mocksconsole.NewContext(t)
 
 	mockContext.EXPECT().Arguments().Return([]string{"UserFactory", "PostFactory"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Times(2)
 	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
 	mockContext.EXPECT().Success("Factory created successfully").Times(2)
 	assert.NoError(t, factoryMakeCommand.Handle(mockContext))

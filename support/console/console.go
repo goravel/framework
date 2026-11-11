@@ -2,6 +2,7 @@ package console
 
 import (
 	"fmt"
+	"path"
 	"path/filepath"
 	"runtime/debug"
 	"strings"
@@ -10,8 +11,11 @@ import (
 	"github.com/pterm/pterm"
 
 	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/modular"
 	"github.com/goravel/framework/packages/paths"
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
@@ -20,6 +24,59 @@ import (
 type Make struct {
 	name string
 	root string
+	// moduleDir is the directory of the --module target, "" for the application.
+	moduleDir string
+}
+
+// ModuleFlag is the --module option of the make:* commands.
+func ModuleFlag() command.Flag {
+	return &command.StringFlag{
+		Name:  "module",
+		Usage: "The module to create the file in",
+	}
+}
+
+// ModuleDir returns the directory of the module given with --module, relative to
+// the project root, or "" without the option. Third-party modules are refused.
+func ModuleDir(ctx console.Context) (string, error) {
+	name := ctx.Option("module")
+	if name == "" {
+		return "", nil
+	}
+
+	registry := modular.Default()
+	if registry == nil {
+		return "", errors.ModularRegistryNotSet
+	}
+
+	module, ok := registry.Find(name)
+	if !ok {
+		module, ok = registry.Find(str.Of(name).Kebab().String())
+	}
+	if !ok {
+		return "", errors.ModularModuleNotFound.Args(name)
+	}
+	if !modular.Local(module) {
+		return "", errors.ModularModuleNotLocal.Args(module.Name())
+	}
+
+	dir, _ := registry.Path(module.Name())
+
+	return dir, nil
+}
+
+// ModuleRoot moves root into the module directory, dropping the application
+// directory: "app/http/controllers" becomes "<dir>/http/controllers".
+func ModuleRoot(dir, root string) string {
+	root = strings.Trim(filepath.ToSlash(root), "/")
+	app := strings.Trim(filepath.ToSlash(support.Config.Paths.App), "/")
+	if root == app {
+		root = ""
+	} else if app != "" {
+		root = strings.TrimPrefix(root, app+"/")
+	}
+
+	return path.Join(dir, root)
 }
 
 // MakeNames returns every name passed to a make:* command. When no positional
@@ -61,9 +118,18 @@ func NewMake(ctx console.Context, ttype, name, root string) (*Make, error) {
 		}
 	}
 
+	moduleDir, err := ModuleDir(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if moduleDir != "" {
+		root = ModuleRoot(moduleDir, root)
+	}
+
 	m := &Make{
-		name: name,
-		root: root,
+		name:      name,
+		root:      root,
+		moduleDir: moduleDir,
 	}
 
 	if !ctx.OptionBool("force") && file.Exists(m.GetFilePath()) {
@@ -75,6 +141,11 @@ func NewMake(ctx console.Context, ttype, name, root string) (*Make, error) {
 
 func (m *Make) GetName() string {
 	return m.name
+}
+
+// GetModuleDir returns the directory of the --module target, "" for the application.
+func (m *Make) GetModuleDir() string {
+	return m.moduleDir
 }
 
 func (m *Make) GetFilePath() string {

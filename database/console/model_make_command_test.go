@@ -33,6 +33,7 @@ func TestModelMakeCommand(t *testing.T) {
 
 	// Test: Create model successfully
 	mockContext.EXPECT().Arguments().Return([]string{"User"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Option("table").Return("").Once()
 	mockContext.EXPECT().Success("Model created successfully").Once()
@@ -57,12 +58,14 @@ type User struct {
 	// Test: Model already exists
 	mockContext.EXPECT().Option("table").Return("").Once()
 	mockContext.EXPECT().Arguments().Return([]string{"User"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Error("the model already exists. Use the --force or -f flag to overwrite").Once()
 	assert.Nil(t, modelMakeCommand.Handle(mockContext))
 
 	// Test: Create model in subdirectory
 	mockContext.EXPECT().Arguments().Return([]string{"User/Phone"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Option("table").Return("").Once()
 	mockContext.EXPECT().Success("Model created successfully").Once()
@@ -89,6 +92,7 @@ type Phone struct {
 	// Test: Create model from table schema
 	mockContext.EXPECT().Option("table").Return("products").Once()
 	mockContext.EXPECT().Arguments().Return([]string{"Product"}).Times(2)
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 
 	// Table exists
@@ -556,6 +560,7 @@ func TestModelMakeCommand_MultipleNames(t *testing.T) {
 
 	mockContext.EXPECT().Option("table").Return("").Once()
 	mockContext.EXPECT().Arguments().Return([]string{"User", "Post"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Times(2)
 	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
 	mockContext.EXPECT().Success("Model created successfully").Times(2)
 	assert.Nil(t, modelMakeCommand.Handle(mockContext))
@@ -598,12 +603,14 @@ func TestModelMakeCommand_MultipleNamesPartialFailure(t *testing.T) {
 
 	mockContext.EXPECT().Option("table").Return("").Once()
 	mockContext.EXPECT().Arguments().Return([]string{"User"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Model created successfully").Once()
 	assert.Nil(t, modelMakeCommand.Handle(mockContext))
 
 	mockContext.EXPECT().Option("table").Return("").Once()
 	mockContext.EXPECT().Arguments().Return([]string{"User", "Post"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Times(2)
 	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
 	mockContext.EXPECT().Error("the model already exists. Use the --force or -f flag to overwrite").Once()
 	mockContext.EXPECT().Success("Model created successfully").Once()

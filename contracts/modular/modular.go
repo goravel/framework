@@ -29,7 +29,7 @@ type Located interface {
 }
 
 // Ordered sets the module order: lower first, negative last, ties by registration.
-// The default is 1.
+// The default is 0.
 type Ordered interface {
 	Order() int
 }

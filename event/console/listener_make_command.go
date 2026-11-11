@@ -34,6 +34,7 @@ func (r *ListenerMakeCommand) Extend() command.Extend {
 				Aliases: []string{"f"},
 				Usage:   "Create the listener even if it already exists",
 			},
+			supportconsole.ModuleFlag(),
 		},
 	}
 }

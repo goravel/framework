@@ -20,17 +20,20 @@ func TestListenerMakeCommand(t *testing.T) {
 	assert.Nil(t, listenerMakeCommand.Handle(mockContext))
 
 	mockContext.EXPECT().Arguments().Return([]string{"GoravelListen"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Listener created successfully").Once()
 	assert.Nil(t, listenerMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/listeners/goravel_listen.go"))
 
 	mockContext.EXPECT().Arguments().Return([]string{"GoravelListen"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Error("the listener already exists. Use the --force or -f flag to overwrite").Once()
 	assert.Nil(t, listenerMakeCommand.Handle(mockContext))
 
 	mockContext.EXPECT().Arguments().Return([]string{"Goravel/Listen"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Listener created successfully").Once()
 	assert.Nil(t, listenerMakeCommand.Handle(mockContext))
@@ -45,6 +48,7 @@ func TestListenerMakeCommand_MultipleNames(t *testing.T) {
 	mockContext := mocksconsole.NewContext(t)
 
 	mockContext.EXPECT().Arguments().Return([]string{"SendOrderEmail", "SendReceiptEmail"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Times(2)
 	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
 	mockContext.EXPECT().Success("Listener created successfully").Times(2)
 	assert.Nil(t, listenerMakeCommand.Handle(mockContext))

@@ -731,6 +731,7 @@ func (r *Application) configureModules() {
 	// Make caches instances; drop the previous registry on a rebuild.
 	r.Fresh(binding.Modular)
 	r.Instance(binding.Modular, registry)
+	modular.SetDefault(registry)
 	r.modules = registry.All()
 }
 

@@ -36,6 +36,7 @@ func TestMigrateMakeCommand(t *testing.T) {
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{""}).Once()
 				mockContext.EXPECT().Ask("Enter the migration name", mock.Anything).Return("create_users_table", nil).Once()
+				mockContext.EXPECT().Option("module").Return("").Once()
 				mockContext.EXPECT().OptionBool("force").Return(false).Once()
 				mockContext.EXPECT().Option("model").Return("").Once()
 				mockMigrator.EXPECT().Create("create_users_table", "").Return("20240915060148_create_users_table", nil).Once()
@@ -50,6 +51,7 @@ func TestMigrateMakeCommand(t *testing.T) {
 			name: "Happy path - name is not empty",
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{"create_users_table"}).Once()
+				mockContext.EXPECT().Option("module").Return("").Once()
 				mockContext.EXPECT().OptionBool("force").Return(false).Once()
 				mockContext.EXPECT().Option("model").Return("").Once()
 				mockMigrator.EXPECT().Create("create_users_table", "").Return("20240915060148_create_users_table", nil).Once()
@@ -65,6 +67,7 @@ func TestMigrateMakeCommand(t *testing.T) {
 			setup: func() {
 				mockContext.EXPECT().Option("model").Return("Product").Once()
 				mockContext.EXPECT().Arguments().Return([]string{"create_products_table"}).Times(2)
+				mockContext.EXPECT().Option("module").Return("").Once()
 				mockContext.EXPECT().OptionBool("force").Return(false).Once()
 				mockMigrator.EXPECT().Create("create_products_table", "Product").Return("20240915060148_create_products_table", nil).Once()
 				mockContext.EXPECT().Success("Created Migration: create_products_table").Once()
@@ -87,6 +90,7 @@ func TestMigrateMakeCommand(t *testing.T) {
 			name: "Sad path - failed to create",
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{"create_users_table"}).Once()
+				mockContext.EXPECT().Option("module").Return("").Once()
 				mockContext.EXPECT().OptionBool("force").Return(false).Once()
 				mockContext.EXPECT().Option("model").Return("").Once()
 				mockMigrator.EXPECT().Create("create_users_table", "").Return("", assert.AnError).Once()
@@ -98,6 +102,7 @@ func TestMigrateMakeCommand(t *testing.T) {
 			setup: func() {
 				mockContext.EXPECT().Option("model").Return("NonExistentModel").Once()
 				mockContext.EXPECT().Arguments().Return([]string{"create_products_table"}).Times(2)
+				mockContext.EXPECT().Option("module").Return("").Once()
 				mockContext.EXPECT().OptionBool("force").Return(false).Once()
 				mockMigrator.EXPECT().Create("create_products_table", "NonExistentModel").Return("", errors.SchemaModelNotFound.Args("NonExistentModel")).Once()
 				mockContext.EXPECT().Error(errors.MigrationCreateFailed.Args(errors.SchemaModelNotFound.Args("NonExistentModel")).Error()).Once()
@@ -107,6 +112,7 @@ func TestMigrateMakeCommand(t *testing.T) {
 			name: "Register success",
 			setup: func() {
 				mockContext.EXPECT().Arguments().Return([]string{"create_users_table"}).Once()
+				mockContext.EXPECT().Option("module").Return("").Once()
 				mockContext.EXPECT().OptionBool("force").Return(false).Once()
 				mockContext.EXPECT().Option("model").Return("").Once()
 				mockMigrator.EXPECT().Create("create_users_table", "").Return("20240915060148_create_users_table", nil).Once()
@@ -188,6 +194,7 @@ func Boot() contractsfoundation.Application {
 		mockApp := mocksfoundation.NewApplication(t)
 
 		mockContext.EXPECT().Arguments().Return([]string{"create_posts_table"}).Once()
+		mockContext.EXPECT().Option("module").Return("").Once()
 		mockContext.EXPECT().OptionBool("force").Return(false).Once()
 		mockContext.EXPECT().Option("model").Return("").Once()
 		mockMigrator.EXPECT().Create("create_posts_table", "").Return("20240915060148_create_posts_table", nil).Once()
@@ -224,6 +231,7 @@ func Boot() {
 		mockApp := mocksfoundation.NewApplication(t)
 
 		mockContext.EXPECT().Arguments().Return([]string{"create_comments_table"}).Once()
+		mockContext.EXPECT().Option("module").Return("").Once()
 		mockContext.EXPECT().OptionBool("force").Return(false).Once()
 		mockContext.EXPECT().Option("model").Return("").Once()
 		mockMigrator.EXPECT().Create("create_comments_table", "").Return("20240915060149_create_comments_table", nil).Once()
@@ -265,6 +273,7 @@ func (kernel Kernel) Migrations() []schema.Migration {
 
 	mockContext.EXPECT().Option("model").Return("").Once()
 	mockContext.EXPECT().Arguments().Return([]string{"create_users_table", "create_posts_table"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Times(2)
 	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
 	mockMigrator.EXPECT().Create("create_users_table", "").Return("20240915060148_create_users_table", nil).Once()
 	mockMigrator.EXPECT().Create("create_posts_table", "").Return("20240915060149_create_posts_table", nil).Once()

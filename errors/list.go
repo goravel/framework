@@ -227,6 +227,7 @@ var (
 	ModularModuleNameForbidden    = New("module name %q is reserved, Go cannot import a package named %q").SetModule(ModuleModular)
 	ModularModuleNameInvalid      = New("module name %q is invalid, use letters, digits and dashes, starting with a letter").SetModule(ModuleModular)
 	ModularModuleNotFound         = New("module %s is not registered").SetModule(ModuleModular)
+	ModularModuleNotLocal         = New("module %s belongs to another Go module, files can only be generated in the application's own modules").SetModule(ModuleModular)
 	ModularModuleNotPublished     = New("module %s (%s) is not published to %s, run `go generate` or `artisan modular:publish`").SetModule(ModuleModular)
 	ModularModulePathInvalid      = New("module %s: directory %q must be a relative path inside the project").SetModule(ModuleModular)
 	ModularModulePathUnknown      = New("module %s: cannot derive its directory from package %q, implement Path() to set it").SetModule(ModuleModular)

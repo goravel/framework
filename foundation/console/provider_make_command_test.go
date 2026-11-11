@@ -86,6 +86,7 @@ func (s *ProviderMakeCommandTestSuite) TestHandle() {
 
 	// Test successful creation
 	mockContext.EXPECT().Arguments().Return([]string{"UserServiceProvider"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Provider created successfully").Once()
 	s.NoError(cmd.Handle(mockContext))
@@ -93,12 +94,14 @@ func (s *ProviderMakeCommandTestSuite) TestHandle() {
 
 	// Test file already exists without force
 	mockContext.EXPECT().Arguments().Return([]string{"UserServiceProvider"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Error("the provider already exists. Use the --force or -f flag to overwrite").Once()
 	s.Nil(cmd.Handle(mockContext))
 
 	// Test file already exists with force
 	mockContext.EXPECT().Arguments().Return([]string{"UserServiceProvider"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(true).Once()
 	mockContext.EXPECT().Success("Provider created successfully").Once()
 	s.NoError(cmd.Handle(mockContext))
@@ -106,6 +109,7 @@ func (s *ProviderMakeCommandTestSuite) TestHandle() {
 
 	// Test nested provider creation
 	mockContext.EXPECT().Arguments().Return([]string{"auth/AuthServiceProvider"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Provider created successfully").Once()
 	s.NoError(cmd.Handle(mockContext))
@@ -127,6 +131,7 @@ func (s *ProviderMakeCommandTestSuite) TestHandleMultipleNames() {
 	mockContext := mocksconsole.NewContext(s.T())
 
 	mockContext.EXPECT().Arguments().Return([]string{"AuthServiceProvider", "EventServiceProvider"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Times(2)
 	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
 	mockContext.EXPECT().Success("Provider created successfully").Times(2)
 	s.NoError(cmd.Handle(mockContext))

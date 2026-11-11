@@ -78,17 +78,20 @@ func (s *TestMakeCommandTestSuite) TestTestHandle() {
 	s.Nil(cmd.Handle(mockContext))
 
 	mockContext.EXPECT().Arguments().Return([]string{"UserTest"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Test created successfully").Once()
 	s.NoError(cmd.Handle(mockContext))
 	s.True(file.Exists("tests/user_test.go"))
 
 	mockContext.EXPECT().Arguments().Return([]string{"UserTest"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Error("the test already exists. Use the --force or -f flag to overwrite").Once()
 	s.Nil(cmd.Handle(mockContext))
 
 	mockContext.EXPECT().Arguments().Return([]string{"user/UserTest"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Test created successfully").Once()
 	s.NoError(cmd.Handle(mockContext))
@@ -110,6 +113,7 @@ func (s *TestMakeCommandTestSuite) TestHandleMultipleNames() {
 	mockContext := mocksconsole.NewContext(s.T())
 
 	mockContext.EXPECT().Arguments().Return([]string{"UserTest", "PostTest"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Times(2)
 	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
 	mockContext.EXPECT().Success("Test created successfully").Times(2)
 	s.NoError(cmd.Handle(mockContext))

@@ -67,6 +67,7 @@ func (r *ModelMakeCommand) Extend() command.Extend {
 				Aliases: []string{"t"},
 				Usage:   "Create the model from existing table schema",
 			},
+			supportconsole.ModuleFlag(),
 		},
 	}
 }

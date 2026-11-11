@@ -37,6 +37,7 @@ func (r *FactoryMakeCommand) Extend() command.Extend {
 				Aliases: []string{"f"},
 				Usage:   "Create the factory even if it already exists",
 			},
+			supportconsole.ModuleFlag(),
 		},
 	}
 }
