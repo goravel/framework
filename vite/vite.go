@@ -21,6 +21,7 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages/paths"
 	"github.com/goravel/framework/support"
+	supportpath "github.com/goravel/framework/support/path"
 )
 
 const (
@@ -28,6 +29,9 @@ const (
 	defaultHotFilename       = "hot"
 	// DefaultManifestFilename is where Vite writes the manifest, relative to the build directory.
 	DefaultManifestFilename = ".vite/manifest.json"
+	// aliasesKey is the manifest key under which goravel-vite-plugin writes the alias
+	// table, e.g. {"@": "resources/js", "@blog": "modules/blog/resources/js"}.
+	aliasesKey = "goravel:aliases"
 )
 
 // DefaultBuildDirectory returns the default build directory, inside the public
@@ -56,7 +60,8 @@ type chunk struct {
 // manifest is a parsed manifest.json with the size and mtime of its file, so a
 // rebuild is picked up without a restart.
 type manifest struct {
-	chunks map[string]chunk
+	chunks  map[string]chunk
+	aliases map[string]string
 	// importsOf is each chunk's transitive imports in preload order, computed once
 	// when the manifest is parsed so a render does not re-walk the graph.
 	importsOf    map[string][]string
@@ -66,8 +71,8 @@ type manifest struct {
 }
 
 // newManifest indexes the parsed chunks.
-func newManifest(chunks map[string]chunk, size, modTime int64, manifestHash string) *manifest {
-	m := &manifest{chunks: chunks, importsOf: make(map[string][]string, len(chunks)), manifestHash: manifestHash, size: size, modTime: modTime}
+func newManifest(chunks map[string]chunk, aliases map[string]string, size, modTime int64, manifestHash string) *manifest {
+	m := &manifest{chunks: chunks, aliases: aliases, importsOf: make(map[string][]string, len(chunks)), manifestHash: manifestHash, size: size, modTime: modTime}
 	for name := range chunks {
 		m.importsOf[name] = m.imports(name, nil)
 	}
@@ -139,12 +144,21 @@ func Funcs(v contractsvite.Vite) template.FuncMap {
 }
 
 func (r *Vite) Asset(asset string) (string, error) {
-	asset = normalizeEntry(asset)
-	if url, ok := r.hotURL(); ok {
+	if url, aliases, ok := r.hot(); ok {
+		asset, err := resolveEntry(asset, aliases)
+		if err != nil {
+			return "", err
+		}
+
 		return url + "/" + asset, nil
 	}
 
 	m, err := r.manifest()
+	if err != nil {
+		return "", err
+	}
+
+	asset, err = resolveEntry(asset, m.aliases)
 	if err != nil {
 		return "", err
 	}
@@ -158,8 +172,12 @@ func (r *Vite) Asset(asset string) (string, error) {
 }
 
 func (r *Vite) Content(asset string) (string, error) {
-	asset = normalizeEntry(asset)
 	m, err := r.manifest()
+	if err != nil {
+		return "", err
+	}
+
+	asset, err = resolveEntry(asset, m.aliases)
 	if err != nil {
 		return "", err
 	}
@@ -212,7 +230,7 @@ func (r *Vite) IsRunningHot() bool {
 }
 
 func (r *Vite) ReactRefresh() template.HTML {
-	url, ok := r.hotURL()
+	url, _, ok := r.hot()
 	if !ok {
 		return ""
 	}
@@ -226,14 +244,13 @@ func (r *Vite) ReactRefresh() template.HTML {
 }
 
 func (r *Vite) Tags(entries ...string) (template.HTML, error) {
-	normalized := make([]string, len(entries))
-	for i, entry := range entries {
-		normalized[i] = normalizeEntry(entry)
-	}
-	entries = normalized
+	if url, aliases, ok := r.hot(); ok {
+		resolved, err := resolveEntries(entries, aliases)
+		if err != nil {
+			return "", err
+		}
 
-	if url, ok := r.hotURL(); ok {
-		return r.hotTags(url, entries), nil
+		return r.hotTags(url, resolved), nil
 	}
 
 	m, err := r.manifest()
@@ -241,7 +258,12 @@ func (r *Vite) Tags(entries ...string) (template.HTML, error) {
 		return "", err
 	}
 
-	return r.buildTags(m, r.assetBase(), entries)
+	resolved, err := resolveEntries(entries, m.aliases)
+	if err != nil {
+		return "", err
+	}
+
+	return r.buildTags(m, r.assetBase(), resolved)
 }
 
 // UseBuildDirectory sets the build directory, given relative to the public
@@ -284,6 +306,45 @@ func (r *Vite) UseManifestFilename(filename string) *Vite {
 // "resources/js/app.js" name the same manifest key and dev-server path.
 func normalizeEntry(entry string) string {
 	return strings.TrimPrefix(entry, "/")
+}
+
+// resolveEntry turns an entry as written into the project-relative path the manifest
+// and the dev server know: a leading "@alias" is replaced by its directory (longest
+// alias first), then the path is cleaned and must stay inside the project.
+func resolveEntry(entry string, aliases map[string]string) (string, error) {
+	resolved := normalizeEntry(entry)
+	if strings.HasPrefix(resolved, "@") {
+		found := ""
+		for alias := range aliases {
+			if len(alias) > len(found) && (resolved == alias || strings.HasPrefix(resolved, alias+"/")) {
+				found = alias
+			}
+		}
+		if found == "" {
+			return "", errors.ViteAliasNotFound.Args(entry)
+		}
+
+		resolved = aliases[found] + resolved[len(found):]
+	}
+
+	cleaned, ok := supportpath.CleanRelative(resolved)
+	if !ok {
+		return "", errors.ViteEntryOutsideProject.Args(entry, path.Clean(resolved))
+	}
+
+	return cleaned, nil
+}
+
+func resolveEntries(entries []string, aliases map[string]string) ([]string, error) {
+	resolved := make([]string, len(entries))
+	for i, entry := range entries {
+		var err error
+		if resolved[i], err = resolveEntry(entry, aliases); err != nil {
+			return nil, err
+		}
+	}
+
+	return resolved, nil
 }
 
 // hotTags loads the Vite client, then every entry from the dev server.
@@ -377,14 +438,28 @@ func (m *manifest) imports(name string, visited map[string]struct{}) []string {
 	return out
 }
 
-// hotURL returns the dev server URL while the hot file exists.
-func (r *Vite) hotURL() (string, bool) {
+// hot returns the dev server URL and alias table while the hot file exists. The
+// file is {"url": "...", "aliases": {...}}, or the bare URL of an older plugin.
+func (r *Vite) hot() (string, map[string]string, bool) {
 	content, err := os.ReadFile(r.HotFile())
 	if err != nil {
-		return "", false
+		return "", nil, false
 	}
 
-	return strings.TrimRight(strings.TrimSpace(string(content)), "/"), true
+	text := strings.TrimSpace(string(content))
+	if !strings.HasPrefix(text, "{") {
+		return strings.TrimRight(text, "/"), nil, true
+	}
+
+	var hot struct {
+		URL     string            `json:"url"`
+		Aliases map[string]string `json:"aliases"`
+	}
+	if err := json.Unmarshal([]byte(text), &hot); err != nil || hot.URL == "" {
+		return "", nil, false
+	}
+
+	return strings.TrimRight(hot.URL, "/"), hot.Aliases, true
 }
 
 // assetBase is the public URL of the build directory, prefixed with app.asset_url.
@@ -445,13 +520,21 @@ func (r *Vite) manifest() (*manifest, error) {
 		return nil, errors.ViteManifestReadFailed.Args(manifestPath, err)
 	}
 
+	// The alias table sits among the chunks under a key no source path can have.
+	var table struct {
+		Aliases map[string]string `json:"goravel:aliases"`
+	}
 	chunks := make(map[string]chunk)
+	if err := json.Unmarshal(content, &table); err != nil {
+		return nil, errors.ViteManifestInvalid.Args(manifestPath, err)
+	}
 	if err := json.Unmarshal(content, &chunks); err != nil {
 		return nil, errors.ViteManifestInvalid.Args(manifestPath, err)
 	}
+	delete(chunks, aliasesKey)
 
 	sum := md5.Sum(content)
-	m := newManifest(chunks, info.Size(), info.ModTime().UnixNano(), hex.EncodeToString(sum[:]))
+	m := newManifest(chunks, table.Aliases, info.Size(), info.ModTime().UnixNano(), hex.EncodeToString(sum[:]))
 	r.manifests[manifestPath] = m
 
 	return m, nil
