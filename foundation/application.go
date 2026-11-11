@@ -43,6 +43,7 @@ import (
 	"github.com/goravel/framework/foundation/console"
 	"github.com/goravel/framework/foundation/json"
 	"github.com/goravel/framework/modular"
+	modularconsole "github.com/goravel/framework/modular/console"
 	"github.com/goravel/framework/process"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/carbon"
@@ -1033,6 +1034,7 @@ func (r *Application) defaultCommands() []contractsconsole.Command {
 		console.NewPackageInstallCommand(binding.Bindings, r.MakeProcess(), r.Json()),
 		console.NewPackageUninstallCommand(binding.Bindings, r.MakeProcess(), r.Json()),
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
+		modularconsole.NewInitCommand(r.MakeConfig()),
 	}
 
 	if r.MakeRoute() != nil {
