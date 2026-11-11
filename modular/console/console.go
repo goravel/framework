@@ -14,6 +14,12 @@ const (
 	statusCreated = "<fg=green;op=bold>CREATED</>"
 	statusExists  = "<fg=yellow;op=bold>EXISTS</>"
 	statusManual  = "<fg=blue;op=bold>MANUAL</>"
+
+	statusPublished    = "<fg=green;op=bold>PUBLISHED</>"
+	statusUnchanged    = "<fg=yellow;op=bold>UNCHANGED</>"
+	statusFailed       = "<fg=red;op=bold>FAILED</>"
+	statusSkippedLocal = "<fg=gray>SKIPPED (local)</>"
+	statusSkippedNone  = "<fg=gray>SKIPPED (nothing to publish)</>"
 )
 
 // modulesDirectory is modular.path, also before config/modular.go exists.

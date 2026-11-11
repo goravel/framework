@@ -1,8 +1,10 @@
 package console
 
 import (
+	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/errors"
@@ -38,6 +40,18 @@ func Boot() contractsfoundation.Application {
 }
 `
 
+// mainFile has a build tag so the go tool ignores it in this package.
+const mainFile = `//go:build ignore
+
+package main
+
+import "goravel/bootstrap"
+
+func main() {
+	bootstrap.Boot().Start()
+}
+`
+
 type InitCommandTestSuite struct {
 	suite.Suite
 }
@@ -67,12 +81,14 @@ func (s *InitCommandTestSuite) TestRequiresBootstrapSetup() {
 
 func (s *InitCommandTestSuite) TestCreatesThenReportsExisting() {
 	s.Require().NoError(file.PutContent("bootstrap/app.go", chainedApp))
+	s.Require().NoError(file.PutContent("main.go", mainFile))
 
 	ctx := mocksconsole.NewContext(s.T())
 	ctx.EXPECT().TwoColumnDetail("modules/.gitkeep", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("config/modular.go", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/modules.go", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/app.go WithModules(Modules)", statusCreated).Once()
+	ctx.EXPECT().TwoColumnDetail("main.go go:generate modular:publish", statusCreated).Once()
 
 	s.NoError(NewInitCommand(nil).Handle(ctx))
 
@@ -98,16 +114,48 @@ func (s *InitCommandTestSuite) TestCreatesThenReportsExisting() {
 	ctx.EXPECT().TwoColumnDetail("config/modular.go", statusExists).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/modules.go", statusExists).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/app.go WithModules(Modules)", statusExists).Once()
+	ctx.EXPECT().TwoColumnDetail("main.go go:generate modular:publish", statusExists).Once()
 
 	s.NoError(NewInitCommand(nil).Handle(ctx))
 
 	again, err := file.GetContent("bootstrap/app.go")
 	s.NoError(err)
 	s.Equal(app, again)
+
+	main, err := file.GetContent("main.go")
+	s.NoError(err)
+	s.Equal(strings.Replace(mainFile, "\nfunc main(", "\n"+generateDirective+"\n\nfunc main(", 1), main)
+}
+
+func (s *InitCommandTestSuite) TestGenerateDirective() {
+	s.Require().NoError(file.PutContent("bootstrap/app.go", chainedApp))
+	rows := func(status string) *mocksconsole.Context {
+		ctx := mocksconsole.NewContext(s.T())
+		ctx.EXPECT().TwoColumnDetail(mock.Anything, mock.Anything).Times(4)
+		ctx.EXPECT().TwoColumnDetail("main.go go:generate modular:publish", status).Once()
+
+		return ctx
+	}
+
+	// No main.go: left to the user.
+	ctx := rows(statusManual)
+	ctx.EXPECT().Warning("Add " + generateDirective + " to the main package").Once()
+	s.NoError(NewInitCommand(nil).Handle(ctx))
+	s.False(file.Exists("main.go"))
+
+	// No func main in main.go: appended.
+	s.Require().NoError(file.PutContent("main.go", "//go:build ignore\n\npackage main\n"))
+	s.NoError(NewInitCommand(nil).Handle(rows(statusCreated)))
+	main, err := file.GetContent("main.go")
+	s.NoError(err)
+	s.Equal("//go:build ignore\n\npackage main\n\n"+generateDirective+"\n", main)
+
+	s.NoError(NewInitCommand(nil).Handle(rows(statusExists)))
 }
 
 func (s *InitCommandTestSuite) TestAppFacadesAndConfiguredPath() {
 	s.Require().NoError(file.PutContent("bootstrap/app.go", chainedApp))
+	s.Require().NoError(file.PutContent("main.go", mainFile))
 	s.Require().NoError(file.PutContent("app/facades/config.go", "package facades\n"))
 
 	config := mocksconfig.NewConfig(s.T())
@@ -118,6 +166,7 @@ func (s *InitCommandTestSuite) TestAppFacadesAndConfiguredPath() {
 	ctx.EXPECT().TwoColumnDetail("config/modular.go", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/modules.go", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/app.go WithModules(Modules)", statusCreated).Once()
+	ctx.EXPECT().TwoColumnDetail("main.go go:generate modular:publish", statusCreated).Once()
 
 	s.NoError(NewInitCommand(config).Handle(ctx))
 
@@ -127,6 +176,7 @@ func (s *InitCommandTestSuite) TestAppFacadesAndConfiguredPath() {
 
 func (s *InitCommandTestSuite) TestAssignedChainIsManual() {
 	s.Require().NoError(file.PutContent("bootstrap/app.go", assignedApp))
+	s.Require().NoError(file.PutContent("main.go", mainFile))
 
 	warning := "Add .WithModules(Modules) to foundation.Setup() in bootstrap/app.go"
 	ctx := mocksconsole.NewContext(s.T())
@@ -134,6 +184,7 @@ func (s *InitCommandTestSuite) TestAssignedChainIsManual() {
 	ctx.EXPECT().TwoColumnDetail("config/modular.go", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/modules.go", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/app.go WithModules(Modules)", statusManual).Once()
+	ctx.EXPECT().TwoColumnDetail("main.go go:generate modular:publish", statusCreated).Once()
 	ctx.EXPECT().Warning(warning).Once()
 
 	s.NoError(NewInitCommand(nil).Handle(ctx))
@@ -149,6 +200,7 @@ func (s *InitCommandTestSuite) TestAssignedChainIsManual() {
 	ctx.EXPECT().TwoColumnDetail("config/modular.go", statusExists).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/modules.go", statusExists).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/app.go WithModules(Modules)", statusManual).Once()
+	ctx.EXPECT().TwoColumnDetail("main.go go:generate modular:publish", statusExists).Once()
 	ctx.EXPECT().Warning(warning).Once()
 
 	s.NoError(NewInitCommand(nil).Handle(ctx))
@@ -158,7 +210,7 @@ func (s *InitCommandTestSuite) TestAssignedChainIsManual() {
 func removeScaffold(t *testing.T) {
 	t.Helper()
 
-	for _, dir := range []string{"app", "bootstrap", "config", "modules", "src", "tests"} {
+	for _, dir := range []string{"app", "bootstrap", "config", "modules", "src", "tests", "main.go"} {
 		if err := file.Remove(dir); err != nil {
 			t.Fatal(err)
 		}

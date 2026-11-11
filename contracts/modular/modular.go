@@ -107,6 +107,13 @@ type ProvidesViteAlias interface {
 	ViteAliases() map[string]string
 }
 
+// ProvidesSources ships files of a third-party module that modular:publish copies
+// into its directory for Vite and Tailwind, e.g. "resources/js/app.js". Go files
+// (*.go, go.mod, go.sum) are skipped.
+type ProvidesSources interface {
+	Sources() fs.FS
+}
+
 // ProvidesStatic serves files as-is: URL prefix -> Path.
 type ProvidesStatic interface {
 	Static() map[string]Path

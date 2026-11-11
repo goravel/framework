@@ -1036,6 +1036,7 @@ func (r *Application) defaultCommands() []contractsconsole.Command {
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
 		modularconsole.NewInitCommand(r.MakeConfig()),
 		modularconsole.NewModuleMakeCommand(r.MakeConfig()),
+		modularconsole.NewPublishCommand(r.MakeModular()),
 	}
 
 	if r.MakeRoute() != nil {

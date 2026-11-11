@@ -109,7 +109,7 @@ func TestRegistry_Capabilities(t *testing.T) {
 	registry := NewRegistry("")
 
 	capabilities := registry.Capabilities(&routedModule{plainModule{"blog"}})
-	assert.Len(t, capabilities, 16)
+	assert.Len(t, capabilities, 17)
 	for label, ok := range capabilities {
 		assert.Equal(t, label == "routes" || label == "services", ok, label)
 	}

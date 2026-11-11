@@ -2,6 +2,7 @@ package console
 
 import (
 	"path/filepath"
+	"strings"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
@@ -57,7 +58,45 @@ func (r *InitCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	return r.wireModules(ctx)
+	if err := r.wireModules(ctx); err != nil {
+		return err
+	}
+
+	return r.addGenerate(ctx)
+}
+
+// generateDirective makes go generate publish third-party modules.
+const generateDirective = "//go:generate go run . artisan modular:publish"
+
+// addGenerate adds generateDirective to main.go, above func main.
+func (r *InitCommand) addGenerate(ctx console.Context) error {
+	label := "main.go go:generate modular:publish"
+	mainFile := path.Base("main.go")
+
+	content, err := file.GetContent(mainFile)
+	if err != nil {
+		ctx.TwoColumnDetail(label, statusManual)
+		ctx.Warning("Add " + generateDirective + " to the main package")
+
+		return nil
+	}
+	if strings.Contains(content, generateDirective) {
+		ctx.TwoColumnDetail(label, statusExists)
+
+		return nil
+	}
+
+	if before, after, found := strings.Cut(content, "\nfunc main("); found {
+		content = before + "\n" + generateDirective + "\n\nfunc main(" + after
+	} else {
+		content = strings.TrimRight(content, "\n") + "\n\n" + generateDirective + "\n"
+	}
+	if err := file.PutContent(mainFile, content); err != nil {
+		return err
+	}
+	ctx.TwoColumnDetail(label, statusCreated)
+
+	return nil
 }
 
 // wireModules creates bootstrap/modules.go and adds WithModules(Modules) to foundation.Setup().

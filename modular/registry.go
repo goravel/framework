@@ -110,6 +110,7 @@ func (r *Registry) Capabilities(module modular.Module) map[string]bool {
 		"vite-entries": implements[modular.ProvidesViteEntries](module),
 		"vite-aliases": implements[modular.ProvidesViteAlias](module),
 		"static":       implements[modular.ProvidesStatic](module),
+		"sources":      implements[modular.ProvidesSources](module),
 	}
 }
 
