@@ -5030,3 +5030,116 @@ func Modules() []modular.Module {
 }
 `, content)
 }
+
+func TestAddToModule(t *testing.T) {
+	dir := "modules/blog"
+	moduleFile := filepath.Join(dir, "module.go")
+	defer func() {
+		assert.NoError(t, supportfile.Remove("modules"))
+	}()
+
+	assert.ErrorIs(t, AddToModule(dir, "Migrations", "goravel/modules/blog/database/migrations", "&migrations.Posts{}"), errors.PackageModuleStructNotFound)
+
+	assert.NoError(t, supportfile.PutContent(moduleFile, `package blog
+
+import (
+	"embed"
+	"io/fs"
+
+	"goravel/modules/blog/routes"
+)
+
+type Module struct{}
+
+func (m *Module) Name() string {
+	return "blog"
+}
+`))
+
+	assert.ErrorIs(t, AddToModule(dir, "Rules", "goravel/modules/blog/rules", "&rules.Slug{}"), errors.PackageModuleMethodUnsupported)
+
+	// The method is appended, then extended; a duplicate item is a no-op.
+	assert.NoError(t, AddToModule(dir, "Migrations", "goravel/modules/blog/database/migrations", "&migrations.Posts{}"))
+	assert.NoError(t, AddToModule(dir, "Migrations", "goravel/modules/blog/database/migrations", "&migrations.Comments{}"))
+	assert.NoError(t, AddToModule(dir, "Migrations", "goravel/modules/blog/database/migrations", "&migrations.Posts{}"))
+	assert.NoError(t, AddToModule(dir, "ServiceProviders", "goravel/modules/blog/providers", "&providers.BlogServiceProvider{}"))
+
+	content, err := supportfile.GetContent(moduleFile)
+	assert.NoError(t, err)
+	assert.Equal(t, `package blog
+
+import (
+	"embed"
+	"io/fs"
+
+	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/contracts/foundation"
+
+	"goravel/modules/blog/database/migrations"
+	"goravel/modules/blog/providers"
+	"goravel/modules/blog/routes"
+)
+
+type Module struct{}
+
+func (m *Module) Name() string {
+	return "blog"
+}
+
+func (m *Module) Migrations() []schema.Migration {
+	return []schema.Migration{
+		&migrations.Posts{},
+		&migrations.Comments{},
+	}
+}
+
+func (m *Module) ServiceProviders() []foundation.ServiceProvider {
+	return []foundation.ServiceProvider{
+		&providers.BlogServiceProvider{},
+	}
+}
+`, content)
+
+	// A method declared in another file of the package is edited there.
+	commandsFile := filepath.Join(dir, "commands.go")
+	assert.NoError(t, supportfile.PutContent(commandsFile, `package blog
+
+import (
+	"github.com/goravel/framework/contracts/console"
+)
+
+func (m *Module) Commands() []console.Command {
+	return []console.Command{}
+}
+`))
+	assert.NoError(t, AddToModule(dir, "Commands", "goravel/modules/blog/console/commands", "&commands.Publish{}"))
+
+	content, err = supportfile.GetContent(commandsFile)
+	assert.NoError(t, err)
+	assert.Equal(t, `package blog
+
+import (
+	"github.com/goravel/framework/contracts/console"
+
+	"goravel/modules/blog/console/commands"
+)
+
+func (m *Module) Commands() []console.Command {
+	return []console.Command{
+		&commands.Publish{},
+	}
+}
+`, content)
+	assert.False(t, supportfile.Contain(moduleFile, "Commands()"))
+
+	// A method that does not return a slice literal cannot be edited.
+	assert.NoError(t, supportfile.PutContent(filepath.Join(dir, "jobs.go"), `package blog
+
+import "github.com/goravel/framework/contracts/queue"
+
+func (m *Module) Jobs() []queue.Job {
+	return nil
+}
+`))
+	assert.Error(t, AddToModule(dir, "Jobs", "goravel/modules/blog/jobs", "&jobs.Notify{}"))
+}

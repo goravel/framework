@@ -1,15 +1,23 @@
 package modify
 
 import (
+	"cmp"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
+	"github.com/dave/dst/dstutil"
 
+	"github.com/goravel/framework/contracts/packages/modify"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/packages/match"
+	"github.com/goravel/framework/support/env"
 	supportfile "github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/path"
 )
@@ -156,6 +164,57 @@ func AddModule(pkg, module string) error {
 	}
 
 	return handler.AddItem(pkg, module)
+}
+
+// moduleMethods are the module capabilities AddToModule can edit: method -> slice type.
+var moduleMethods = map[string]struct{ typeName, typeImportPath string }{
+	"Commands":         {"console.Command", "github.com/goravel/framework/contracts/console"},
+	"Jobs":             {"queue.Job", "github.com/goravel/framework/contracts/queue"},
+	"Migrations":       {"schema.Migration", "github.com/goravel/framework/contracts/database/schema"},
+	"Seeders":          {"seeder.Seeder", "github.com/goravel/framework/contracts/database/seeder"},
+	"ServiceProviders": {"foundation.ServiceProvider", "github.com/goravel/framework/contracts/foundation"},
+}
+
+// AddToModule adds item to the slice returned by method of the module struct in dir
+// (relative to the project root), appending the method when the struct lacks it.
+func AddToModule(dir, method, pkg, item string) error {
+	spec, ok := moduleMethods[method]
+	if !ok {
+		return errors.PackageModuleMethodUnsupported.Args(method)
+	}
+
+	target, receiver, exists, err := findModuleMethod(dir, method)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		stub := "\nfunc " + receiver + " " + method + "() []" + spec.typeName + " {\n\treturn []" + spec.typeName + "{}\n}\n"
+		if err := supportfile.PutContent(target, stub, supportfile.WithAppend()); err != nil {
+			return err
+		}
+		if err := addImportsToFile(target, spec.typeImportPath); err != nil {
+			return err
+		}
+	}
+
+	if err := addImportsToFile(target, pkg); err != nil {
+		return err
+	}
+
+	// The application's Go module is what pkg has before the module directory.
+	main := env.MainPath()
+	if _, importPath, found := strings.Cut(pkg, " "); found {
+		pkg = importPath
+	}
+	if before, _, found := strings.Cut(pkg, "/"+strings.Trim(filepath.ToSlash(dir), "/")+"/"); found {
+		main = before
+	}
+
+	return GoFile(target).
+		Find(match.ModuleMethod(method)).Modify(Register(item)).
+		Find(match.Imports()).Modify(groupImports(main)).
+		Apply()
 }
 
 // AddProvider adds service provider to the foundation.Setup() chain in the Boot function.
@@ -525,6 +584,125 @@ func WrapNewline[T dst.Node](node T) T {
 	})
 
 	return node
+}
+
+// groupImports sorts the matched import block into standard library, third-party
+// and application (inside the Go module main) groups, separated by an empty line.
+func groupImports(main string) modify.Action {
+	return func(cursor *dstutil.Cursor) {
+		groupImportSpecs(cursor.Node().(*dst.GenDecl), main)
+	}
+}
+
+func groupImportSpecs(node *dst.GenDecl, main string) {
+	importPath := func(spec dst.Spec) string {
+		value, _ := strconv.Unquote(spec.(*dst.ImportSpec).Path.Value)
+
+		return value
+	}
+	group := func(spec dst.Spec) int {
+		value := importPath(spec)
+		switch {
+		case value == main || strings.HasPrefix(value, main+"/"):
+			return 2
+		case isThirdParty(value):
+			return 1
+		default:
+			return 0
+		}
+	}
+
+	slices.SortStableFunc(node.Specs, func(a, b dst.Spec) int {
+		return cmp.Or(cmp.Compare(group(a), group(b)), cmp.Compare(importPath(a), importPath(b)))
+	})
+	for i, spec := range node.Specs {
+		decs := spec.Decorations()
+		decs.Before, decs.After = dst.NewLine, dst.NewLine
+		if i > 0 && group(spec) != group(node.Specs[i-1]) {
+			decs.Before = dst.EmptyLine
+		}
+	}
+}
+
+// findModuleMethod returns the file declaring method on the module struct of dir. When
+// no file does, it returns the file declaring Name() and the receiver to declare it with.
+func findModuleMethod(dir, method string) (target, receiver string, exists bool, err error) {
+	root := path.Base(filepath.FromSlash(dir))
+	files, err := filepath.Glob(filepath.Join(root, "*.go"))
+	if err != nil {
+		return "", "", false, err
+	}
+
+	// module.go first: it wins when several types have a Name() method.
+	slices.SortStableFunc(files, func(a, b string) int {
+		return cmp.Compare(moduleFileRank(a), moduleFileRank(b))
+	})
+
+	type moduleFunc struct{ file, name, typeName, receiver string }
+	var methods []moduleFunc
+	for _, file := range files {
+		if strings.HasSuffix(file, "_test.go") {
+			continue
+		}
+
+		parsed, err := parser.ParseFile(token.NewFileSet(), file, nil, parser.SkipObjectResolution)
+		if err != nil {
+			return "", "", false, err
+		}
+		for _, decl := range parsed.Decls {
+			fn, ok := decl.(*ast.FuncDecl)
+			if !ok || fn.Recv == nil || len(fn.Recv.List) != 1 {
+				continue
+			}
+
+			typeName, text := receiverOf(fn.Recv.List[0])
+			if typeName != "" {
+				methods = append(methods, moduleFunc{file: file, name: fn.Name.Name, typeName: typeName, receiver: text})
+			}
+		}
+	}
+
+	nameIndex := slices.IndexFunc(methods, func(m moduleFunc) bool { return m.name == "Name" })
+	if nameIndex < 0 {
+		return "", "", false, errors.PackageModuleStructNotFound.Args(dir)
+	}
+
+	module := methods[nameIndex]
+	for _, m := range methods {
+		if m.name == method && m.typeName == module.typeName {
+			return m.file, m.receiver, true, nil
+		}
+	}
+
+	return module.file, module.receiver, false, nil
+}
+
+func moduleFileRank(file string) int {
+	if filepath.Base(file) == "module.go" {
+		return 0
+	}
+
+	return 1
+}
+
+// receiverOf returns the type name of a method receiver and its source, e.g. "(m *Module)".
+func receiverOf(field *ast.Field) (typeName, text string) {
+	expr, pointer := field.Type, ""
+	if star, ok := expr.(*ast.StarExpr); ok {
+		expr, pointer = star.X, "*"
+	}
+
+	ident, ok := expr.(*ast.Ident)
+	if !ok {
+		return "", ""
+	}
+
+	name := ""
+	if len(field.Names) == 1 {
+		name = field.Names[0].Name + " "
+	}
+
+	return ident.Name, "(" + name + pointer + ident.Name + ")"
 }
 
 // addImportsToFile adds the specified import to the file, creating the import block if needed.

@@ -294,6 +294,8 @@ var (
 	PackageGoModDownloadFailed      = New("failed to download go.mod dependencies: %s")
 	PackageJobsFileExists           = New("jobs.go already exists but WithJobs is not registered in foundation.Setup(). The jobs.go file should only be created when adding WithJobs to Setup()")
 	PackageMigrationsFileExists     = New("migrations.go already exists but WithMigrations is not registered in foundation.Setup(). The migrations.go file should only be created when adding WithMigrations to Setup()")
+	PackageModuleMethodUnsupported  = New("module method %s cannot be edited, use Commands, Jobs, Migrations, Seeders or ServiceProviders")
+	PackageModuleStructNotFound     = New("no module struct found in %s, a type with a Name() method is required")
 	PackageModulesFileExists        = New("modules.go already exists but WithModules is not registered in foundation.Setup(). Add .WithModules(Modules) to Setup()")
 	PackageProvidersFileExists      = New("providers.go already exists but WithProviders is not registered in foundation.Setup(). The providers.go file should only be created when adding WithProviders to Setup()")
 	PackageRulesFileExists          = New("rules.go already exists but WithRules is not registered in foundation.Setup(). The rules.go file should only be created when adding WithRules to Setup()")

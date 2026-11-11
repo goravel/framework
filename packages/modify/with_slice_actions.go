@@ -928,21 +928,10 @@ func containsFoundationSetup(node dst.Node) bool {
 	return foundSetup
 }
 
+// createImport adds an empty import block as the first declaration of the file.
 func createImport(node dst.Node) error {
-	importDecl := &dst.GenDecl{
-		Tok: token.IMPORT,
-	}
-
 	f := node.(*dst.File)
-
-	newDecls := make([]dst.Decl, 0, len(f.Decls)+1)
-	newDecls = append(newDecls, f.Decls[0], importDecl) // package and import
-
-	if len(f.Decls) > 1 {
-		newDecls = append(newDecls, f.Decls[1:]...) // others
-	}
-
-	f.Decls = newDecls
+	f.Decls = append([]dst.Decl{&dst.GenDecl{Tok: token.IMPORT}}, f.Decls...)
 
 	return nil
 }
