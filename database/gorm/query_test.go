@@ -367,6 +367,148 @@ func TestFilterFindConditions(t *testing.T) {
 	}
 }
 
+func TestFindWithStringPrimaryKey(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	var (
+		sql  string
+		vars []any
+	)
+	assert.NoError(t, db.Callback().Query().After("gorm:query").Register("test:capture", func(tx *gormio.DB) {
+		sql = tx.Statement.SQL.String()
+		vars = tx.Statement.Vars
+	}))
+
+	newQuery := func() contractsorm.Query {
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, nil, nil, nil, nil, nil)
+	}
+
+	tests := []struct {
+		name        string
+		run         func(query contractsorm.Query) error
+		expectSql   string
+		expectVars  []any
+		expectError error
+	}{
+		{
+			name: "Find binds a string primary key",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&StringPrimaryKeyModel{}, "01AN4Z07BY79KA1307SR9X4MV4")
+			},
+			expectSql:  "SELECT * FROM `string_primary_key_models` WHERE `string_primary_key_models`.`id` = ?",
+			expectVars: []any{"01AN4Z07BY79KA1307SR9X4MV4"},
+		},
+		{
+			name: "Find binds a string primary key that looks like SQL",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&[]StringPrimaryKeyModel{}, "1 = 1 OR 1 = 1")
+			},
+			expectSql:  "SELECT * FROM `string_primary_key_models` WHERE `string_primary_key_models`.`id` = ?",
+			expectVars: []any{"1 = 1 OR 1 = 1"},
+		},
+		{
+			name: "Find binds a string primary key of the model",
+			run: func(query contractsorm.Query) error {
+				return query.Model(&StringPrimaryKeyModel{}).Find(&[]map[string]any{}, "01AN4Z07BY79KA1307SR9X4MV4")
+			},
+			expectSql:  "SELECT * FROM `string_primary_key_models` WHERE `string_primary_key_models`.`id` = ?",
+			expectVars: []any{"01AN4Z07BY79KA1307SR9X4MV4"},
+		},
+		{
+			name: "FindOrFail binds a string primary key",
+			run: func(query contractsorm.Query) error {
+				return query.FindOrFail(&StringPrimaryKeyModel{}, "01AN4Z07BY79KA1307SR9X4MV4")
+			},
+			expectSql:   "SELECT * FROM `string_primary_key_models` WHERE `string_primary_key_models`.`id` = ?",
+			expectVars:  []any{"01AN4Z07BY79KA1307SR9X4MV4"},
+			expectError: errors.OrmRecordNotFound,
+		},
+		{
+			name: "Find with a slice of string primary keys",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&[]StringPrimaryKeyModel{}, []string{"01AN4Z07BY79KA1307SR9X4MV4", "01AN4Z07BY79KA1307SR9X4MV5"})
+			},
+			expectSql:  "SELECT * FROM `string_primary_key_models` WHERE `string_primary_key_models`.`id` IN (?,?)",
+			expectVars: []any{"01AN4Z07BY79KA1307SR9X4MV4", "01AN4Z07BY79KA1307SR9X4MV5"},
+		},
+		{
+			name: "Find with a condition and arguments on a string primary key model",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&StringPrimaryKeyModel{}, "id = ?", "01AN4Z07BY79KA1307SR9X4MV4")
+			},
+			expectSql:  "SELECT * FROM `string_primary_key_models` WHERE id = ?",
+			expectVars: []any{"01AN4Z07BY79KA1307SR9X4MV4"},
+		},
+		{
+			name: "Find with a numeric primary key",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&TestModel{}, 1)
+			},
+			expectSql:  "SELECT * FROM `test_models` WHERE `test_models`.`id` = ?",
+			expectVars: []any{1},
+		},
+		{
+			name: "Find with a numeric string on a numeric primary key",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&TestModel{}, "1")
+			},
+			expectSql:  "SELECT * FROM `test_models` WHERE `test_models`.`id` = ?",
+			expectVars: []any{"1"},
+		},
+		{
+			name: "Find keeps a raw condition on a numeric primary key model",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&TestModel{}, "name = 'goravel'")
+			},
+			expectSql: "SELECT * FROM `test_models` WHERE name = 'goravel'",
+		},
+		{
+			name: "Find keeps a raw condition when the model has no primary key",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&NoPrimaryKeyModel{}, "name = 'goravel'")
+			},
+			expectSql: "SELECT * FROM `no_primary_key_models` WHERE name = 'goravel'",
+		},
+		{
+			name: "Find keeps a raw condition when the model can't be parsed",
+			run: func(query contractsorm.Query) error {
+				return query.Table("users").Find(&[]map[string]any{}, "name = 'goravel'")
+			},
+			expectSql: "SELECT * FROM `users` WHERE name = 'goravel'",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			sql, vars = "", nil
+
+			err := test.run(newQuery())
+			if test.expectError != nil {
+				assert.ErrorIs(t, err, test.expectError)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, test.expectSql, sql)
+			if len(test.expectVars) == 0 {
+				assert.Empty(t, vars)
+			} else {
+				assert.Equal(t, test.expectVars, vars)
+			}
+		})
+	}
+}
+
+func TestToSqlFindWithStringPrimaryKey(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
+	assert.NoError(t, err)
+
+	query := NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, nil, nil, nil, nil, nil)
+
+	assert.Equal(t, "SELECT * FROM `string_primary_key_models` WHERE `string_primary_key_models`.`id` = ?",
+		NewToSql(query, nil, false).Find(&StringPrimaryKeyModel{}, "1 = 1 OR 1 = 1"))
+}
+
 func TestGetDeletedAtColumnName(t *testing.T) {
 	type Test1 struct {
 		Deleted gormio.DeletedAt
@@ -1425,18 +1567,18 @@ func TestQuoteColumns(t *testing.T) {
 			expectedOrder: []any{clause.OrderByColumn{Column: order, Desc: true}},
 		},
 		{
-			name: "OrderBy with custom direction is not quoted",
-			query: func(query contractsorm.Query) contractsorm.Query {
-				return query.OrderBy("order", "DESC NULLS LAST")
-			},
-			expectedOrder: []any{"order DESC NULLS LAST"},
-		},
-		{
 			name: "OrderByDesc",
 			query: func(query contractsorm.Query) contractsorm.Query {
 				return query.OrderByDesc("order")
 			},
 			expectedOrder: []any{clause.OrderByColumn{Column: order, Desc: true}},
+		},
+		{
+			name: "OrderBy qualified column",
+			query: func(query contractsorm.Query) contractsorm.Query {
+				return query.OrderBy("users.order")
+			},
+			expectedOrder: []any{clause.OrderByColumn{Column: clause.Column{Name: "users.order"}}},
 		},
 		{
 			name: "table qualified column",
@@ -1466,13 +1608,6 @@ func TestQuoteColumns(t *testing.T) {
 			},
 			expectedWhere: []contractsdriver.Where{{Query: "`group` IS NULL"}},
 		},
-		{
-			name: "expression in OrderBy is not quoted",
-			query: func(query contractsorm.Query) contractsorm.Query {
-				return query.OrderByDesc("LOWER(name)")
-			},
-			expectedOrder: []any{"LOWER(name) DESC"},
-		},
 	}
 
 	for _, test := range tests {
@@ -1482,6 +1617,53 @@ func TestQuoteColumns(t *testing.T) {
 			query := test.query(NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, nil, nil, nil, nil, nil)).(*Query)
 
 			assert.Equal(t, test.expectedWhere, query.conditions.where)
+			assert.Equal(t, test.expectedOrder, query.conditions.order)
+		})
+	}
+}
+
+func TestOrderByValidation(t *testing.T) {
+	newQuery := func(grammar contractsdriver.Grammar) *Query {
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{}, nil, grammar, nil, nil, nil, nil)
+	}
+
+	tests := []struct {
+		name          string
+		column        string
+		direction     []string
+		jsonSelector  string
+		expectedOrder []any
+		expectedError error
+	}{
+		{name: "plain column", column: "group", expectedOrder: []any{clause.OrderByColumn{Column: clause.Column{Name: "group"}}}},
+		{name: "plain column desc", column: "group", direction: []string{"desc"}, expectedOrder: []any{clause.OrderByColumn{Column: clause.Column{Name: "group"}, Desc: true}}},
+		{name: "json selector", column: "data->name", jsonSelector: "data->name", expectedOrder: []any{"json_extract(`data`, '$.name') ASC"}},
+		{name: "json selector desc", column: "data->name", direction: []string{"desc"}, jsonSelector: "data->name", expectedOrder: []any{"json_extract(`data`, '$.name') DESC"}},
+		{name: "expression", column: "LOWER(name)", expectedError: errors.DatabaseInvalidOrderByColumn.Args("LOWER(name)")},
+		{name: "quoted column", column: "`group`", expectedError: errors.DatabaseInvalidOrderByColumn.Args("`group`")},
+		{name: "injected column", column: "id; DROP TABLE users", expectedError: errors.DatabaseInvalidOrderByColumn.Args("id; DROP TABLE users")},
+		{name: "nulls direction", column: "order", direction: []string{"DESC NULLS LAST"}, expectedError: errors.DatabaseInvalidOrderByDirection.Args("DESC NULLS LAST")},
+		{name: "injected direction", column: "order", direction: []string{"ASC; DROP TABLE users"}, expectedError: errors.DatabaseInvalidOrderByDirection.Args("ASC; DROP TABLE users")},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var grammar contractsdriver.Grammar
+			if test.jsonSelector != "" {
+				mockGrammar := mocksdriver.NewGrammar(t)
+				mockGrammar.EXPECT().CompileJsonSelector(test.jsonSelector).Return("json_extract(`data`, '$.name')").Once()
+				grammar = mockGrammar
+			}
+
+			query := newQuery(grammar).OrderBy(test.column, test.direction...).(*Query)
+
+			if test.expectedError != nil {
+				assert.EqualError(t, query.conditions.err, test.expectedError.Error())
+				assert.Empty(t, query.conditions.order)
+				return
+			}
+
+			assert.NoError(t, query.conditions.err)
 			assert.Equal(t, test.expectedOrder, query.conditions.order)
 		})
 	}
@@ -1712,6 +1894,11 @@ func TestWhereClauses(t *testing.T) {
 			name:      "WhereNot without conditions is ignored",
 			query:     func() contractsorm.Query { return newQuery().WhereNot(map[string]any{}) },
 			expectSql: "SELECT * FROM `users`",
+		},
+		{
+			name:        "OrderBy with an unsafe column",
+			query:       func() contractsorm.Query { return newQuery().OrderBy("id; DROP TABLE users") },
+			expectError: errors.DatabaseInvalidOrderByColumn.Args("id; DROP TABLE users"),
 		},
 	}
 
@@ -2003,6 +2190,15 @@ func (r *Review) Connection() string {
 type TestModel struct {
 	ID   uint   `json:"id"`
 	Name string `json:"name"`
+}
+
+type StringPrimaryKeyModel struct {
+	ID   string `gorm:"primaryKey"`
+	Name string
+}
+
+type NoPrimaryKeyModel struct {
+	Name string
 }
 
 // TestInterfaceModel is an interface type for testing

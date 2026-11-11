@@ -1849,7 +1849,7 @@ func Test_containsFoundationSetup(t *testing.T) {
 	}
 }
 
-func Test_findFoundationSetupCallsForMiddleware(t *testing.T) {
+func TestFindSetupCallsWithMiddleware(t *testing.T) {
 	tests := []struct {
 		name                    string
 		initialContent          string
@@ -1947,7 +1947,7 @@ func Boot() contractsfoundation.Application {
 
 			assert.NotNil(t, mainCallExpr, "Expected to find main call expression")
 
-			setupCall, withMiddlewareCall, parentOfSetup := findFoundationSetupCallsForMiddleware(mainCallExpr)
+			setupCall, withMiddlewareCall, parentOfSetup := findSetupCalls(mainCallExpr, "WithMiddleware")
 
 			if tt.expectSetup {
 				assert.NotNil(t, setupCall, "Expected to find Setup call")

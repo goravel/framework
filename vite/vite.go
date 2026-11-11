@@ -6,6 +6,8 @@
 package vite
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"html/template"
 	"os"
@@ -22,13 +24,22 @@ import (
 )
 
 const (
-	// DefaultBuildDirectory is where goravel-vite-plugin writes the build, inside the public directory.
-	DefaultBuildDirectory = "build"
-	// DefaultHotFile is where goravel-vite-plugin announces the dev server, relative to the project root.
-	DefaultHotFile = "public/hot"
+	defaultBuildSubdirectory = "build"
+	defaultHotFilename       = "hot"
 	// DefaultManifestFilename is where Vite writes the manifest, relative to the build directory.
 	DefaultManifestFilename = ".vite/manifest.json"
 )
+
+// DefaultBuildDirectory returns the default build directory, inside the public
+// directory.
+func DefaultBuildDirectory() string {
+	return defaultBuildSubdirectory
+}
+
+// DefaultHotFile returns the default hot file, inside the public directory.
+func DefaultHotFile() string {
+	return defaultHotFilename
+}
 
 var _ contractsvite.Vite = (*Vite)(nil)
 
@@ -48,14 +59,15 @@ type manifest struct {
 	chunks map[string]chunk
 	// importsOf is each chunk's transitive imports in preload order, computed once
 	// when the manifest is parsed so a render does not re-walk the graph.
-	importsOf map[string][]string
-	size      int64
-	modTime   int64
+	importsOf    map[string][]string
+	manifestHash string // md5 of the manifest file, so ManifestHash and the tags come from the same bytes
+	size         int64
+	modTime      int64
 }
 
 // newManifest indexes the parsed chunks.
-func newManifest(chunks map[string]chunk, size, modTime int64) *manifest {
-	m := &manifest{chunks: chunks, importsOf: make(map[string][]string, len(chunks)), size: size, modTime: modTime}
+func newManifest(chunks map[string]chunk, size, modTime int64, manifestHash string) *manifest {
+	m := &manifest{chunks: chunks, importsOf: make(map[string][]string, len(chunks)), manifestHash: manifestHash, size: size, modTime: modTime}
 	for name := range chunks {
 		m.importsOf[name] = m.imports(name, nil)
 	}
@@ -78,37 +90,42 @@ type Vite struct {
 }
 
 // NewVite reads vite.hot_file, vite.build_directory and vite.manifest from the
-// configuration, falling back to the defaults. goravel-vite-plugin reads the same
-// values through `artisan vite:inputs`, so config/vite.go is the single source of truth.
+// configuration, falling back to the defaults. goravel-vite-plugin reads the
+// same values through `artisan vite:inputs`, so config/vite.go is the single source of truth.
 func NewVite(config config.Config) *Vite {
+	defaultHot, defaultBuild := DefaultHotFile(), DefaultBuildDirectory()
 	v := &Vite{
 		config:           config,
-		hotFile:          DefaultHotFile,
-		buildDirectory:   DefaultBuildDirectory,
+		hotFile:          defaultHot,
+		buildDirectory:   defaultBuild,
 		manifestFilename: DefaultManifestFilename,
 		manifests:        make(map[string]*manifest),
 	}
 
 	if config != nil {
-		v.hotFile = config.GetString("vite.hot_file", DefaultHotFile)
-		v.buildDirectory = config.GetString("vite.build_directory", DefaultBuildDirectory)
+		v.hotFile = config.GetString("vite.hot_file", defaultHot)
+		v.buildDirectory = config.GetString("vite.build_directory", defaultBuild)
 		v.manifestFilename = config.GetString("vite.manifest", DefaultManifestFilename)
 	}
 
+	v.hotFile = normalizeEntry(v.hotFile)
 	v.hotPath = resolveHotPath(v.hotFile)
+	v.buildDirectory = normalizeEntry(v.buildDirectory)
 	v.buildRoot = resolveBuildRoot(v.buildDirectory)
 
 	return v
 }
 
-// resolveHotPath is the absolute path of a hot file given relative to the project root.
+// resolveHotPath is the absolute path of the hot file, resolved against the
+// public directory.
 func resolveHotPath(hotFile string) string {
-	return paths.Abs(hotFile)
+	return paths.Abs(support.Config.Paths.Public, normalizeEntry(hotFile))
 }
 
-// resolveBuildRoot is the absolute path of a build directory given relative to the public directory.
+// resolveBuildRoot is the absolute path of the build directory, resolved against
+// the public directory.
 func resolveBuildRoot(directory string) string {
-	return paths.Abs(support.Config.Paths.Public, directory)
+	return paths.Abs(support.Config.Paths.Public, normalizeEntry(directory))
 }
 
 // Funcs returns the template functions the service provider registers, for
@@ -227,12 +244,14 @@ func (r *Vite) Tags(entries ...string) (template.HTML, error) {
 	return r.buildTags(m, r.assetBase(), entries)
 }
 
-// UseBuildDirectory sets the build directory inside the public directory. Default
-// "build". The setters live on *Vite, not the contract: the shared instance is
-// configured from config/vite.go, which goravel-vite-plugin reads too, so a
-// change at render time would desync the build. They exist for tests and for
-// applications that construct their own Vite.
+// UseBuildDirectory sets the build directory, given relative to the public
+// directory as in config/vite.go. Default "build".
+// The setters live on *Vite, not the contract: the shared instance is configured
+// from config/vite.go, which goravel-vite-plugin reads too, so a change at render
+// time would desync the build. They exist for tests and for applications that
+// construct their own Vite.
 func (r *Vite) UseBuildDirectory(directory string) *Vite {
+	directory = normalizeEntry(directory)
 	r.mu.Lock()
 	r.buildDirectory = directory
 	r.buildRoot = resolveBuildRoot(directory)
@@ -241,11 +260,12 @@ func (r *Vite) UseBuildDirectory(directory string) *Vite {
 	return r
 }
 
-// UseHotFile sets the hot file; a relative path resolves against the project root. Default "public/hot".
-func (r *Vite) UseHotFile(path string) *Vite {
+// UseHotFile sets the hot file, given relative to the public directory. Default "hot".
+func (r *Vite) UseHotFile(hotFile string) *Vite {
+	hotFile = normalizeEntry(hotFile)
 	r.mu.Lock()
-	r.hotFile = path
-	r.hotPath = resolveHotPath(path)
+	r.hotFile = hotFile
+	r.hotPath = resolveHotPath(hotFile)
 	r.mu.Unlock()
 
 	return r
@@ -430,10 +450,28 @@ func (r *Vite) manifest() (*manifest, error) {
 		return nil, errors.ViteManifestInvalid.Args(manifestPath, err)
 	}
 
-	m := newManifest(chunks, info.Size(), info.ModTime().UnixNano())
+	sum := md5.Sum(content)
+	m := newManifest(chunks, info.Size(), info.ModTime().UnixNano(), hex.EncodeToString(sum[:]))
 	r.manifests[manifestPath] = m
 
 	return m, nil
+}
+
+// ManifestHash returns an asset version derived from the build manifest — the md5
+// of the manifest file — or "" while the dev server runs or there is no readable
+// manifest. It is read through the same cache as Tags, so a rebuild is picked up
+// by Tags and ManifestHash together.
+func (r *Vite) ManifestHash() string {
+	if r.IsRunningHot() {
+		return ""
+	}
+
+	m, err := r.manifest()
+	if err != nil {
+		return ""
+	}
+
+	return m.manifestHash
 }
 
 func scriptTag(src string) string {

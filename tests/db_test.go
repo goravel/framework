@@ -876,6 +876,29 @@ func (s *DBTestSuite) TestOrderBy() {
 	}
 }
 
+func (s *DBTestSuite) TestOrderByRejectsUnsafeInput() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{{Name: "order_unsafe_product"}})
+
+			var name string
+			s.ErrorIs(query.DB().Table("products").OrderBy("id; DROP TABLE products").Value("name", &name),
+				errors.DatabaseInvalidOrderByColumn)
+			s.ErrorIs(query.DB().Table("products").OrderBy("LOWER(name)").Value("name", &name),
+				errors.DatabaseInvalidOrderByColumn)
+			s.ErrorIs(query.DB().Table("products").OrderBy("id", "DESC NULLS LAST").Value("name", &name),
+				errors.DatabaseInvalidOrderByDirection)
+
+			s.NoError(query.DB().Table("products").OrderByRaw("LOWER(name)").Value("name", &name))
+			s.Equal("order_unsafe_product", name)
+
+			count, err := query.DB().Table("products").Count()
+			s.NoError(err)
+			s.Equal(int64(1), count)
+		})
+	}
+}
+
 func (s *DBTestSuite) TestOffset() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
@@ -2333,6 +2356,26 @@ func (s *DBTestSuite) TestJsonWhereClauses() {
 					tt.assert(items)
 				})
 			}
+		})
+	}
+}
+
+func (s *DBTestSuite) TestOrderByJsonSelector() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			data := []JsonData{
+				{Data: `{"string":"first","int":1}`},
+				{Data: `{"string":"second","int":2}`},
+			}
+			result, err := query.DB().Table("json_data").Insert(&data)
+			s.Equal(int64(2), result.RowsAffected)
+			s.NoError(err)
+
+			var items []JsonData
+			s.NoError(query.DB().Table("json_data").OrderBy("data->string", "desc").Find(&items))
+			s.Len(items, 2)
+			s.JSONEq(data[1].Data, items[0].Data)
+			s.JSONEq(data[0].Data, items[1].Data)
 		})
 	}
 }

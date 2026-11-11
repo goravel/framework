@@ -3,16 +3,12 @@ package gorm
 import (
 	"fmt"
 	"reflect"
-	"regexp"
 
 	"gorm.io/gorm/clause"
 
+	"github.com/goravel/framework/database/utils"
 	"github.com/goravel/framework/errors"
 )
-
-// plainIdentifierRegex matches ASCII identifiers only, optionally qualified by a table. A name with other characters
-// (non ASCII letters, "$", etc.) is treated as an expression and is not quoted.
-var plainIdentifierRegex = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$`)
 
 func buildWhereColumn(column1 string, column2 ...string) (string, []any, error) {
 	var operator, second string
@@ -35,7 +31,7 @@ func buildWhereColumn(column1 string, column2 ...string) (string, []any, error) 
 // A plain identifier becomes a placeholder bound to a clause.Column, so gorm quotes it when the query is built,
 // with the dialect of the connection that runs it. Anything else is an expression and is used as is.
 func columnCondition(column string) (string, []any) {
-	if !isPlainIdentifier(column) {
+	if !utils.IsPlainIdentifier(column) {
 		return column, nil
 	}
 
@@ -70,10 +66,4 @@ func copyStruct(dest any) reflect.Value {
 	copyDestStruct := reflect.StructOf(destFields)
 
 	return v.Convert(copyDestStruct)
-}
-
-// isPlainIdentifier reports whether the column is a bare identifier, optionally qualified by a table, e.g. "group" or "users.group".
-// Anything else (functions, JSON selectors, already quoted names, etc.) is treated as an expression and must not be quoted.
-func isPlainIdentifier(column string) bool {
-	return plainIdentifierRegex.MatchString(column)
 }
