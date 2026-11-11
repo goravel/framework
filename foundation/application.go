@@ -25,12 +25,14 @@ import (
 	"github.com/goravel/framework/contracts/binding"
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
+	contractsmodular "github.com/goravel/framework/contracts/modular"
 	"github.com/goravel/framework/contracts/validation"
 	contractsview "github.com/goravel/framework/contracts/view"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation/configuration"
 	"github.com/goravel/framework/foundation/console"
 	"github.com/goravel/framework/foundation/json"
+	"github.com/goravel/framework/modular"
 	"github.com/goravel/framework/process"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/carbon"
@@ -79,6 +81,7 @@ type Application struct {
 	bootedRunners      []string
 	commandsFilter     []string
 	commandHooks       map[string][]contractsconsole.CommandHook
+	modules            []contractsmodular.Module
 	runnerWg           sync.WaitGroup
 	runnersToRun       []*RunnerWithInfo
 }
@@ -116,6 +119,7 @@ func (r *Application) Build() foundation.Application {
 	r.setTimezone()
 	r.configurePaths()
 	r.configureCustomConfig()
+	r.configureModules()
 	if r.builder.commandsFilter != nil {
 		r.commandsFilter = r.builder.commandsFilter()
 	}
@@ -620,6 +624,31 @@ func (r *Application) configureMigrations() {
 			}
 		}
 	}
+}
+
+// configureModules binds a fresh registry and keeps the sorted modules. It runs
+// after WithConfig (modular.path) and before providers. Errors are reported.
+func (r *Application) configureModules() {
+	directory := modular.DefaultDirectory
+	var modules []contractsmodular.Module
+	if r.builder.modules != nil {
+		modules = r.builder.modules()
+	}
+	if len(modules) > 0 {
+		if config := r.MakeConfig(); config != nil {
+			directory = config.GetString("modular.path", modular.DefaultDirectory)
+		}
+	}
+
+	registry := modular.NewRegistry(directory)
+	if err := registry.Register(modules...); err != nil {
+		color.Errorln(err)
+	}
+
+	// Make caches instances; drop the previous registry on a rebuild.
+	r.Fresh(binding.Modular)
+	r.Instance(binding.Modular, registry)
+	r.modules = registry.All()
 }
 
 func (r *Application) configurePaths() {

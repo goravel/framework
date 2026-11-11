@@ -42,6 +42,8 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
+	modular "github.com/goravel/framework/contracts/modular"
+
 	notification "github.com/goravel/framework/contracts/notification"
 
 	orm "github.com/goravel/framework/contracts/database/orm"
@@ -1985,6 +1987,53 @@ func (_c *Application_MakeMail_Call) Return(_a0 mail.Mail) *Application_MakeMail
 }
 
 func (_c *Application_MakeMail_Call) RunAndReturn(run func() mail.Mail) *Application_MakeMail_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// MakeModular provides a mock function with no fields
+func (_m *Application) MakeModular() modular.Registry {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for MakeModular")
+	}
+
+	var r0 modular.Registry
+	if rf, ok := ret.Get(0).(func() modular.Registry); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(modular.Registry)
+		}
+	}
+
+	return r0
+}
+
+// Application_MakeModular_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MakeModular'
+type Application_MakeModular_Call struct {
+	*mock.Call
+}
+
+// MakeModular is a helper method to define mock.On call
+func (_e *Application_Expecter) MakeModular() *Application_MakeModular_Call {
+	return &Application_MakeModular_Call{Call: _e.mock.On("MakeModular")}
+}
+
+func (_c *Application_MakeModular_Call) Run(run func()) *Application_MakeModular_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Application_MakeModular_Call) Return(_a0 modular.Registry) *Application_MakeModular_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Application_MakeModular_Call) RunAndReturn(run func() modular.Registry) *Application_MakeModular_Call {
 	_c.Call.Return(run)
 	return _c
 }

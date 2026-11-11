@@ -18,6 +18,7 @@ import (
 	contractsevent "github.com/goravel/framework/contracts/event"
 	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	contractsconfiguration "github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/contracts/modular"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/schedule"
 	"github.com/goravel/framework/contracts/validation"
@@ -25,6 +26,7 @@ import (
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	mocksseeder "github.com/goravel/framework/mocks/database/seeder"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
+	mocksmodular "github.com/goravel/framework/mocks/modular"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
 	mocksschedule "github.com/goravel/framework/mocks/schedule"
 	mocksvalidation "github.com/goravel/framework/mocks/validation"
@@ -125,6 +127,18 @@ func (s *ApplicationBuilderTestSuite) TestWithPaths() {
 
 	s.NotNil(builder)
 	s.NotNil(s.builder.paths)
+}
+
+func (s *ApplicationBuilderTestSuite) TestWithModules() {
+	mockModule := mocksmodular.NewModule(s.T())
+
+	builder := s.builder.WithModules(func() []modular.Module {
+		return []modular.Module{mockModule}
+	})
+
+	s.NotNil(builder)
+	s.Require().NotNil(s.builder.modules)
+	s.Equal([]modular.Module{mockModule}, s.builder.modules())
 }
 
 func (s *ApplicationBuilderTestSuite) TestWithMigrations() {
