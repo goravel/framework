@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/modular"
 	"github.com/goravel/framework/support/file"
@@ -156,4 +157,18 @@ func (s *ViewMakeCommandTestSuite) TestModule() {
 	s.Nil((&ViewMakeCommand{}).Handle(mockContext))
 	s.True(file.Contain(filepath.Join("modules", "blog", "resources", "views", "posts", "index.tmpl"), `{{ define "blog/posts/index.tmpl" }}`))
 	s.NoDirExists("resources")
+}
+
+func (s *ViewMakeCommandTestSuite) TestModuleNotFound() {
+	modular.SetDefault(modular.NewRegistry(""))
+	s.T().Cleanup(func() { modular.SetDefault(nil) })
+
+	mockContext := mocksconsole.NewContext(s.T())
+	mockContext.EXPECT().Arguments().Return([]string{"posts/index"}).Once()
+	mockContext.EXPECT().Option("module").Return("shop").Once()
+	mockContext.EXPECT().Error(errors.ModularModuleNotFound.Args("shop").Error()).Once()
+
+	s.Nil((&ViewMakeCommand{}).Handle(mockContext))
+	s.NoDirExists("resources")
+	s.NoDirExists("modules")
 }

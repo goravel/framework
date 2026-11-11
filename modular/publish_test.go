@@ -1,6 +1,7 @@
 package modular
 
 import (
+	"encoding/json"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -247,5 +248,96 @@ func TestPublish(t *testing.T) {
 		// Only Go files: nothing to publish.
 		onlyGo := &sourcesModule{plainModule: plainModule{"billing"}, sources: fstest.MapFS{"module.go": {Data: []byte("package billing")}}}
 		assert.Equal(t, PublishNone, PublishState(onlyGo, dependency, t.TempDir()))
+	})
+}
+
+// unreadableFS lists inner but fails to open the file named fail.
+type unreadableFS struct {
+	inner fs.FS
+	fail  string
+}
+
+func (r unreadableFS) Open(name string) (fs.File, error) {
+	if name == r.fail {
+		return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrPermission}
+	}
+
+	return r.inner.Open(name)
+}
+
+func TestPublish_Failures(t *testing.T) {
+	dependency := Dependency{Path: "github.com/acme/billing", Version: "v1.2.0"}
+	app := fstest.MapFS{"resources/js/app.js": {Data: []byte("app")}}
+	// An owned directory: published before, so Publish may write into it.
+	owned := func(t *testing.T, files ...string) string {
+		dir := t.TempDir()
+		content, err := json.Marshal(publishMarker{Dependency: dependency, Files: files})
+		require.NoError(t, err)
+		require.NoError(t, os.WriteFile(filepath.Join(dir, PublishMarker), content, 0o644))
+
+		return dir
+	}
+
+	t.Run("unreadable sources", func(t *testing.T) {
+		module := &sourcesModule{
+			plainModule: plainModule{"billing"},
+			sources:     unreadableFS{inner: app, fail: "resources/js/app.js"},
+		}
+
+		_, err := Publish(module, dependency, t.TempDir())
+		assert.ErrorIs(t, err, fs.ErrPermission)
+		assert.Equal(t, PublishNone, PublishState(module, dependency, t.TempDir()))
+	})
+
+	t.Run("unreadable views", func(t *testing.T) {
+		module := &sourcesModule{
+			plainModule: plainModule{"billing"},
+			views:       unreadableFS{inner: fstest.MapFS{"index.tmpl": {Data: []byte("index")}}, fail: "index.tmpl"},
+		}
+
+		_, err := Publish(module, dependency, t.TempDir())
+		assert.ErrorIs(t, err, fs.ErrPermission)
+	})
+
+	t.Run("a file is in the way of a directory", func(t *testing.T) {
+		dir := owned(t)
+		require.NoError(t, os.WriteFile(filepath.Join(dir, "resources"), []byte("file"), 0o644))
+
+		_, err := Publish(&sourcesModule{plainModule: plainModule{"billing"}, sources: app}, dependency, dir)
+		assert.Error(t, err)
+	})
+
+	t.Run("a directory is in the way of a file", func(t *testing.T) {
+		dir := owned(t)
+		require.NoError(t, os.MkdirAll(filepath.Join(dir, "resources", "js", "app.js"), 0o755))
+
+		_, err := Publish(&sourcesModule{plainModule: plainModule{"billing"}, sources: app}, dependency, dir)
+		assert.Error(t, err)
+	})
+
+	t.Run("a dropped file became a directory with content", func(t *testing.T) {
+		dir := owned(t, "legacy")
+		require.NoError(t, os.MkdirAll(filepath.Join(dir, "legacy"), 0o755))
+		require.NoError(t, os.WriteFile(filepath.Join(dir, "legacy", "mine.txt"), []byte("mine"), 0o644))
+
+		_, err := Publish(&sourcesModule{plainModule: plainModule{"billing"}, sources: app}, dependency, dir)
+		assert.Error(t, err)
+		assert.FileExists(t, filepath.Join(dir, "legacy", "mine.txt"))
+	})
+
+	t.Run("marker paths outside the directory are ignored", func(t *testing.T) {
+		parent := t.TempDir()
+		dir := filepath.Join(parent, "billing")
+		require.NoError(t, os.MkdirAll(dir, 0o755))
+		require.NoError(t, os.WriteFile(filepath.Join(parent, "outside.txt"), []byte("keep"), 0o644))
+		content, err := json.Marshal(publishMarker{Dependency: dependency, Files: []string{"../outside.txt", "."}})
+		require.NoError(t, err)
+		require.NoError(t, os.WriteFile(filepath.Join(dir, PublishMarker), content, 0o644))
+
+		changed, err := Publish(&sourcesModule{plainModule: plainModule{"billing"}, sources: app}, dependency, dir)
+		require.NoError(t, err)
+		assert.True(t, changed)
+		assert.FileExists(t, filepath.Join(parent, "outside.txt"))
+		assert.DirExists(t, dir)
 	})
 }

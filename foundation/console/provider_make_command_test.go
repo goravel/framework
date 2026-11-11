@@ -2,7 +2,9 @@ package console
 
 import (
 	"errors"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,6 +14,7 @@ import (
 	"github.com/goravel/framework/contracts/console/command"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/modular"
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -189,4 +192,58 @@ func TestProviderMakeCommand_Module(t *testing.T) {
 		&providers.BlogServiceProvider{},
 	}
 }`)
+}
+
+func TestProviderMakeCommand_ModuleRegistrationError(t *testing.T) {
+	useBlogModule(t)
+	// ServiceProviders() does not return a slice literal, so it cannot be edited.
+	assert.NoError(t, file.PutContent("modules/blog/providers.go", `package blog
+
+import "github.com/goravel/framework/contracts/foundation"
+
+func (m *Module) ServiceProviders() []foundation.ServiceProvider {
+	return nil
+}
+`))
+
+	mockContext := mocksconsole.NewContext(t)
+	mockContext.EXPECT().Arguments().Return([]string{"BlogServiceProvider"}).Once()
+	mockContext.EXPECT().Option("module").Return("blog").Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Once()
+	mockContext.EXPECT().Success("Provider created successfully").Once()
+	mockContext.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
+		return strings.Contains(msg, "BlogServiceProvider")
+	})).Once()
+
+	assert.NoError(t, NewProviderMakeCommand().Handle(mockContext))
+	assert.True(t, file.Exists("modules/blog/providers/blog_service_provider.go"))
+}
+
+func TestProviderMakeCommand_BootstrapSetup(t *testing.T) {
+	bootstrapDir := support.Config.Paths.Bootstrap
+	assert.NoError(t, file.PutContent(filepath.Join(bootstrapDir, "app.go"), `package bootstrap
+
+import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation"
+)
+
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().Start()
+}
+`))
+	t.Cleanup(func() {
+		assert.NoError(t, file.Remove(bootstrapDir))
+		assert.NoError(t, file.Remove("app"))
+	})
+
+	mockContext := mocksconsole.NewContext(t)
+	mockContext.EXPECT().Arguments().Return([]string{"UserServiceProvider"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Once()
+	mockContext.EXPECT().Success("Provider created successfully").Once()
+	mockContext.EXPECT().Success("Provider registered successfully").Once()
+
+	assert.NoError(t, NewProviderMakeCommand().Handle(mockContext))
+	assert.True(t, file.Contain(filepath.Join(bootstrapDir, "providers.go"), "&providers.UserServiceProvider{}"))
 }

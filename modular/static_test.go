@@ -98,3 +98,19 @@ func TestCleanPrefix(t *testing.T) {
 		assert.Equal(t, tt.expected, cleaned, tt.prefix)
 	}
 }
+
+// statFailFS opens files that cannot be described.
+type statFailFS struct{}
+
+func (statFailFS) Open(string) (fs.File, error) { return statFailFile{}, nil }
+
+type statFailFile struct{}
+
+func (statFailFile) Stat() (fs.FileInfo, error) { return nil, fs.ErrPermission }
+func (statFailFile) Read([]byte) (int, error)   { return 0, fs.ErrPermission }
+func (statFailFile) Close() error               { return nil }
+
+func TestNoListingFS_StatFails(t *testing.T) {
+	_, err := noListingFS{statFailFS{}}.Open("robots.txt")
+	assert.ErrorIs(t, err, fs.ErrPermission)
+}

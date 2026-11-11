@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/console/command"
 	contractsmodular "github.com/goravel/framework/contracts/modular"
 	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
@@ -378,4 +379,12 @@ func TestTwoColumnDetail(t *testing.T) {
 			assert.Equal(t, tt.output, TwoColumnDetail(tt.first, tt.second))
 		})
 	}
+}
+
+func TestModuleFlag(t *testing.T) {
+	moduleFlag, ok := ModuleFlag().(*command.StringFlag)
+
+	assert.True(t, ok)
+	assert.Equal(t, "module", moduleFlag.Name)
+	assert.NotEmpty(t, moduleFlag.Usage)
 }

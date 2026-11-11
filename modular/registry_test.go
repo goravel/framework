@@ -1,6 +1,7 @@
 package modular
 
 import (
+	"runtime/debug"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -125,4 +126,33 @@ func TestProviding(t *testing.T) {
 
 	assert.Equal(t, []modular.ProvidesRoutes{routed}, Providing[modular.ProvidesRoutes](modules))
 	assert.Empty(t, Providing[modular.ProvidesViews](modules))
+}
+
+func TestDefault(t *testing.T) {
+	t.Cleanup(func() { SetDefault(nil) })
+	assert.Nil(t, Default())
+
+	registry := NewRegistry("")
+	SetDefault(registry)
+	assert.Same(t, registry, Default())
+}
+
+func TestLocal(t *testing.T) {
+	// A module that sets its own path is in the application.
+	assert.True(t, Local(&locatedModule{plainModule{"blog"}, "modules/blog"}))
+
+	info, ok := debug.ReadBuildInfo()
+	require.True(t, ok)
+	_, thirdParty := DependencyOf(&plainModule{"blog"}, info)
+	assert.Equal(t, !thirdParty, Local(&plainModule{"blog"}))
+}
+
+func TestCompareOrder(t *testing.T) {
+	assert.Equal(t, -1, compareOrder(1, 2))
+	assert.Equal(t, 1, compareOrder(2, 1))
+	assert.Equal(t, 0, compareOrder(2, 2))
+	assert.Equal(t, -1, compareOrder(-2, -1))
+	assert.Equal(t, 1, compareOrder(-1, -2))
+	assert.Equal(t, -1, compareOrder(5, -1), "negative orders go last")
+	assert.Equal(t, 1, compareOrder(-1, 0))
 }

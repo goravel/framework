@@ -61,6 +61,14 @@ func (s *ProviderRepositoryTestSuite) TestAdd_SameTypeNameInDifferentPackages() 
 	s.Equal("*github.com/goravel/framework/mocks/foundation.ServiceProvider", s.repository.providerKey(mockProvider))
 }
 
+// A type without a name of its own is keyed by its %T form.
+func (s *ProviderRepositoryTestSuite) TestProviderKey_UnnamedType() {
+	provider := struct{ foundation.ServiceProvider }{}
+
+	s.Equal("struct { foundation.ServiceProvider }", s.repository.providerKey(provider))
+	s.Equal("*struct { foundation.ServiceProvider }", s.repository.providerKey(&provider))
+}
+
 func (s *ProviderRepositoryTestSuite) TestAdd_Duplicates() {
 	providerA := &AServiceProvider{}
 

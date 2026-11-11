@@ -6,6 +6,7 @@ import (
 	"testing"
 	"testing/fstest"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	contractsmodular "github.com/goravel/framework/contracts/modular"
@@ -146,4 +147,22 @@ func (s *PublishCommandTestSuite) TestFailureDoesNotStopOtherModules() {
 	s.Equal(errors.ModularPublishFailed.Args(1, 2), s.command(registry).Handle(ctx))
 	s.False(file.Exists("modules/billing/app.js"))
 	s.True(file.Exists("modules/shop/app.js"))
+}
+
+func (s *PublishCommandTestSuite) TestWriteFailure() {
+	billing := &sourcesModule{testModule{"billing"}, fstest.MapFS{"resources/js/app.js": {Data: []byte("app")}}}
+	// An earlier publish owns the directory, but a file is where resources/ goes.
+	s.Require().NoError(file.PutContent("modules/billing/"+modular.PublishMarker, `{"module": "github.com/goravel/framework"}`))
+	s.Require().NoError(file.PutContent("modules/billing/resources", "file"))
+
+	registry := mocksmodular.NewRegistry(s.T())
+	registry.EXPECT().All().Return([]contractsmodular.Module{billing})
+	registry.EXPECT().Path("billing").Return("modules/billing", true)
+
+	ctx := mocksconsole.NewContext(s.T())
+	ctx.EXPECT().Option("module").Return("").Once()
+	ctx.EXPECT().Error(mock.Anything).Once()
+	ctx.EXPECT().TwoColumnDetail("billing", statusFailed).Once()
+
+	s.Equal(errors.ModularPublishFailed.Args(1, 1), s.command(registry).Handle(ctx))
 }

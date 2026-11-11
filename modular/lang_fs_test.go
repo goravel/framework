@@ -95,3 +95,21 @@ func TestLangFS_UnwrapsPrevious(t *testing.T) {
 	_, err = fs.ReadFile(second, "en/shop/messages.json")
 	assert.ErrorIs(t, err, fs.ErrNotExist)
 }
+
+func TestLangFS_Open(t *testing.T) {
+	fsys := NewLangFS(map[string]fs.FS{
+		"blog": fstest.MapFS{"en/messages.json": {Data: []byte(`{"title": "Blog"}`)}},
+	}, nil)
+
+	opened, err := fsys.Open("en/blog/messages.json")
+	require.NoError(t, err)
+	info, err := opened.Stat()
+	require.NoError(t, err)
+	assert.Equal(t, "messages.json", info.Name())
+	assert.NoError(t, opened.Close())
+
+	_, err = fsys.Open("en/shop/messages.json")
+	assert.ErrorIs(t, err, fs.ErrNotExist)
+	_, err = fsys.Open("../en/blog/messages.json")
+	assert.ErrorIs(t, err, fs.ErrInvalid)
+}

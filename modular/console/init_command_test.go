@@ -1,6 +1,7 @@
 package console
 
 import (
+	"os"
 	"strings"
 	"testing"
 
@@ -215,4 +216,47 @@ func removeScaffold(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+}
+
+func (s *InitCommandTestSuite) TestWriteFailures() {
+	s.Run("the modules directory is a file", func() {
+		s.Require().NoError(file.PutContent("bootstrap/app.go", chainedApp))
+		s.Require().NoError(file.PutContent("modules", "file"))
+
+		s.Error(NewInitCommand(nil).Handle(mocksconsole.NewContext(s.T())))
+		s.False(file.Exists("config/modular.go"))
+		removeScaffold(s.T())
+	})
+
+	s.Run("the config directory is a file", func() {
+		s.Require().NoError(file.PutContent("bootstrap/app.go", chainedApp))
+		s.Require().NoError(file.PutContent("config", "file"))
+
+		ctx := mocksconsole.NewContext(s.T())
+		ctx.EXPECT().TwoColumnDetail("modules/.gitkeep", statusCreated).Once()
+
+		s.Error(NewInitCommand(nil).Handle(ctx))
+		s.False(file.Exists("bootstrap/modules.go"))
+		removeScaffold(s.T())
+	})
+
+	s.Run("main.go is read-only", func() {
+		if os.Geteuid() == 0 {
+			s.T().Skip("root writes read-only files")
+		}
+		s.Require().NoError(file.PutContent("bootstrap/app.go", chainedApp))
+		s.Require().NoError(file.PutContent("main.go", mainFile))
+		s.Require().NoError(os.Chmod("main.go", 0o444))
+		s.T().Cleanup(func() { _ = os.Chmod("main.go", 0o644) })
+
+		ctx := mocksconsole.NewContext(s.T())
+		ctx.EXPECT().TwoColumnDetail("modules/.gitkeep", statusCreated).Once()
+		ctx.EXPECT().TwoColumnDetail("config/modular.go", statusCreated).Once()
+		ctx.EXPECT().TwoColumnDetail("bootstrap/modules.go", statusCreated).Once()
+		ctx.EXPECT().TwoColumnDetail("bootstrap/app.go WithModules(Modules)", statusCreated).Once()
+
+		s.Error(NewInitCommand(nil).Handle(ctx))
+		s.False(file.Contain("main.go", generateDirective))
+		s.Require().NoError(os.Chmod("main.go", 0o644))
+	})
 }

@@ -2,6 +2,7 @@ package modular_test
 
 import (
 	"bytes"
+	"io"
 	"io/fs"
 	"testing"
 	"testing/fstest"
@@ -72,4 +73,99 @@ func TestPrefixFS_Views(t *testing.T) {
 	var out bytes.Buffer
 	require.NoError(t, tmpl.ExecuteTemplate(&out, "blog/index.tmpl", map[string]any{"title": "Blog"}))
 	assert.Equal(t, "<h1>Blog</h1>", out.String())
+}
+
+// stubFS opens file for every name, or fails with err.
+type stubFS struct {
+	file fs.File
+	err  error
+}
+
+func (r stubFS) Open(string) (fs.File, error) { return r.file, r.err }
+
+// stubFile is a file that cannot be listed; Stat fails with err.
+type stubFile struct{ err error }
+
+func (r stubFile) Stat() (fs.FileInfo, error) { return nil, r.err }
+func (r stubFile) Read([]byte) (int, error)   { return 0, io.EOF }
+func (r stubFile) Close() error               { return nil }
+
+func TestPrefixFS_Root(t *testing.T) {
+	fsys := modular.NewPrefixFS("blog", blogViews())
+
+	root, err := fsys.Open(".")
+	require.NoError(t, err)
+	t.Cleanup(func() { assert.NoError(t, root.Close()) })
+
+	info, err := root.Stat()
+	require.NoError(t, err)
+	assert.Equal(t, ".", info.Name())
+	assert.Zero(t, info.Size())
+	assert.Equal(t, fs.ModeDir|0o555, info.Mode())
+	assert.True(t, info.IsDir())
+	assert.Nil(t, info.Sys())
+
+	mount, err := fs.Stat(fsys, "blog")
+	require.NoError(t, err)
+	assert.Equal(t, mount.ModTime(), info.ModTime())
+
+	_, err = root.Read(make([]byte, 1))
+	assert.ErrorIs(t, err, fs.ErrInvalid)
+
+	// More entries are asked for than the single mount point.
+	dir, ok := root.(fs.ReadDirFile)
+	require.True(t, ok)
+	entries, err := dir.ReadDir(5)
+	require.NoError(t, err)
+	require.Len(t, entries, 1)
+	assert.Equal(t, "blog", entries[0].Name())
+	_, err = dir.ReadDir(5)
+	assert.ErrorIs(t, err, io.EOF)
+}
+
+func TestPrefixFS_InvalidPaths(t *testing.T) {
+	fsys := modular.NewPrefixFS("blog", blogViews())
+
+	_, err := fs.ReadDir(fsys, "../blog")
+	assert.ErrorIs(t, err, fs.ErrInvalid)
+
+	_, err = fs.ReadFile(fsys, "../blog/index.tmpl")
+	assert.ErrorIs(t, err, fs.ErrInvalid)
+
+	// Directories are not files.
+	for _, name := range []string{".", "blog"} {
+		_, err = fs.ReadFile(fsys, name)
+		assert.ErrorIs(t, err, fs.ErrInvalid, name)
+	}
+}
+
+func TestPrefixFS_UnreadableInner(t *testing.T) {
+	fsys := modular.NewPrefixFS("blog", stubFS{err: fs.ErrPermission})
+
+	_, err := fsys.Open(".")
+	assert.ErrorIs(t, err, fs.ErrPermission)
+	_, err = fsys.Open("blog")
+	assert.ErrorIs(t, err, fs.ErrPermission)
+	_, err = fs.ReadDir(fsys, ".")
+	assert.ErrorIs(t, err, fs.ErrPermission)
+	_, err = fs.Stat(fsys, ".")
+	assert.ErrorIs(t, err, fs.ErrPermission)
+	_, err = fs.Stat(fsys, "blog")
+	assert.ErrorIs(t, err, fs.ErrPermission)
+}
+
+func TestPrefixFS_MountFile(t *testing.T) {
+	// The inner root cannot be described or listed.
+	fsys := modular.NewPrefixFS("blog", stubFS{file: stubFile{err: fs.ErrPermission}})
+
+	mount, err := fsys.Open("blog")
+	require.NoError(t, err)
+
+	_, err = mount.Stat()
+	assert.ErrorIs(t, err, fs.ErrPermission)
+
+	dir, ok := mount.(fs.ReadDirFile)
+	require.True(t, ok)
+	_, err = dir.ReadDir(-1)
+	assert.ErrorIs(t, err, fs.ErrInvalid)
 }

@@ -1,6 +1,7 @@
 package foundation
 
 import (
+	"io"
 	"io/fs"
 	"net/http"
 	"slices"
@@ -20,6 +21,7 @@ import (
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/route"
 	"github.com/goravel/framework/contracts/schedule"
+	"github.com/goravel/framework/errors"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
@@ -29,6 +31,7 @@ import (
 	mocksroute "github.com/goravel/framework/mocks/route"
 	mocksschedule "github.com/goravel/framework/mocks/schedule"
 	mocksview "github.com/goravel/framework/mocks/view"
+	"github.com/goravel/framework/support/color"
 )
 
 // testModule has only a name; tests embed it to add capabilities.
@@ -468,4 +471,41 @@ func (s *ApplicationTestSuite) TestConfigureRoutes_ModuleStatic() {
 		}},
 	)
 	s.app.configureRoutes()
+}
+
+// Capabilities whose facade is not installed are reported, not fatal.
+func (s *ApplicationTestSuite) TestModules_FacadesNotInstalled() {
+	s.SetupTest()
+	routed := []string{}
+	s.withModules(NewApplicationBuilder(s.app),
+		&richModule{
+			testModule:  testModule{"blog"},
+			config:      map[string]any{"enabled": true},
+			translation: fstest.MapFS{"en/messages.json": {Data: []byte(`{}`)}},
+			views:       fstest.MapFS{"index.tmpl": {Data: []byte("x")}},
+			migrations:  []schema.Migration{mocksschema.NewMigration(s.T())},
+			seeders:     []seeder.Seeder{mocksseeder.NewSeeder(s.T())},
+			jobs:        []queue.Job{mocksqueue.NewJob(s.T())},
+			schedule:    []schedule.Event{mocksschedule.NewEvent(s.T())},
+			events:      map[event.Event][]event.Listener{mocksevent.NewEvent(s.T()): {mocksevent.NewListener(s.T())}},
+			routed:      &routed,
+		},
+	)
+
+	output := color.CaptureOutput(func(io.Writer) {
+		s.app.configureModuleConfig()
+		s.app.configureEventListeners()
+		s.app.configureJobs()
+		s.app.configureMigrations()
+		s.app.configureRoutes()
+		s.app.configureSchedule()
+		s.app.configureSeeders()
+		s.app.registerModuleResources()
+	})
+
+	s.Contains(output, errors.ConfigFacadeNotSet.SetModule(errors.ModuleModular).Error())
+	for _, facade := range []string{"Event", "Queue", "Schema", "Route", "Schedule", "Seeder", "View"} {
+		s.Contains(output, facade+" facade not found")
+	}
+	s.Empty(routed)
 }

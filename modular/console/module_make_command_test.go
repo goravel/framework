@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/errors"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
@@ -396,4 +397,82 @@ func mustContent(t *testing.T, path string) string {
 	}
 
 	return content
+}
+
+func (s *ModuleMakeCommandTestSuite) TestAsksForName() {
+	ctx := s.context("", false, true, false, 0)
+	ctx.EXPECT().Ask("Enter the module name", mock.Anything).RunAndReturn(func(_ string, options ...console.AskOption) (string, error) {
+		s.Require().Len(options, 1)
+		s.Equal(errors.ModularModuleNameEmpty, options[0].Validate(""))
+		s.NoError(options[0].Validate("Blog"))
+
+		return "Blog", nil
+	}).Once()
+	ctx.EXPECT().Success("Module created successfully: modules/blog").Once()
+
+	s.NoError(NewModuleMakeCommand(nil).Handle(ctx))
+	s.Equal([]string{"module.go"}, s.files("modules/blog"))
+}
+
+func (s *ModuleMakeCommandTestSuite) TestFailures() {
+	// failed runs make:module and expects one error, of any text.
+	failed := func(name string, plain, force bool) {
+		ctx := s.context(name, false, plain, force, 0)
+		ctx.EXPECT().Error(mock.Anything).Once()
+
+		s.NoError(NewModuleMakeCommand(nil).Handle(ctx))
+	}
+	reset := func() {
+		removeScaffold(s.T())
+		s.Require().NoError(file.PutContent("bootstrap/app.go", chainedApp))
+	}
+
+	s.Run("blank name", func() {
+		ctx := s.context("  ", false, false, false, 0)
+		ctx.EXPECT().Error(errors.ModularModuleNameEmpty.Error()).Once()
+
+		s.NoError(NewModuleMakeCommand(nil).Handle(ctx))
+	})
+
+	s.Run("bootstrap/modules.go is a directory", func() {
+		s.Require().NoError(file.PutContent("bootstrap/modules.go/keep", ""))
+
+		failed("Blog", false, false)
+		s.False(file.Exists("modules/blog"))
+		reset()
+	})
+
+	s.Run("bootstrap/modules.go is not Go", func() {
+		s.Require().NoError(file.PutContent("bootstrap/modules.go", "not go\n"))
+
+		failed("Blog", false, false)
+		s.False(file.Exists("modules/blog"))
+		reset()
+	})
+
+	s.Run("bootstrap/modules.go cannot be edited", func() {
+		// The imports parse, the rest does not.
+		s.Require().NoError(file.PutContent("bootstrap/modules.go", "package bootstrap\n\nfunc Modules( {\n"))
+
+		failed("Blog", true, false)
+		s.True(file.Exists("modules/blog/module.go"))
+		reset()
+	})
+
+	s.Run("a stale stub cannot be removed", func() {
+		// --force --plain removes routes/api.go, here a directory with content.
+		s.Require().NoError(file.PutContent("modules/blog/routes/api.go/keep", ""))
+
+		failed("Blog", true, true)
+		s.False(file.Exists("modules/blog/module.go"))
+		reset()
+	})
+
+	s.Run("a stub cannot be written", func() {
+		s.Require().NoError(file.PutContent("modules/blog/module.go/keep", ""))
+
+		failed("Blog", true, true)
+		s.False(file.Exists("bootstrap/modules.go"))
+		reset()
+	})
 }
