@@ -3,6 +3,7 @@ package console
 import (
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 
 	contractsbinding "github.com/goravel/framework/contracts/binding"
@@ -71,7 +72,7 @@ func (r *PackageInstallCommand) Extend() command.Extend {
 			},
 			&command.BoolFlag{
 				Name:  "dev",
-				Usage: "Install drivers with the master branch",
+				Usage: "Install the package or driver from the master branch instead of the framework version",
 				Value: false,
 			},
 		},
@@ -176,18 +177,21 @@ func (r *PackageInstallCommand) inputThirdPackage(ctx console.Context) (string, 
 	})
 }
 
-func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string) error {
+// installPackage installs pkg. When pkg names no ref, refs are tried in order
+// and the first one "go get" resolves is kept, so drivers can be pinned to the
+// framework's release line. An empty refs list fetches pkg exactly as given.
+func (r *PackageInstallCommand) installPackage(ctx console.Context, pkg string, refs ...string) error {
 	if !strings.Contains(pkg, "@") && ctx.OptionBool("dev") {
 		pkg += "@master"
 	}
 
+	pkg, err := r.getPackage(pkg, refs)
+	if err != nil {
+		return err
+	}
+
 	pkgPath, _, _ := strings.Cut(pkg, "@")
 	setup := pkgPath + "/setup"
-
-	// get package
-	if res := r.process.Run("go", "get", pkg); res.Failed() {
-		return fmt.Errorf("failed to get package: %s", res.Error().Error())
-	}
 
 	// install package
 	if res := r.process.WithSpinner("Installing "+pkg).Run("go", "run", setup, "install", "--main-path="+env.MainPath(), "--paths="+r.paths); res.Failed() {
@@ -251,6 +255,32 @@ func (r *PackageInstallCommand) installFacade(ctx console.Context, name string) 
 	}
 
 	return nil
+}
+
+// getPackage runs "go get" for pkg. A pkg that already names a ref, or a call
+// with no refs, is fetched exactly as given; otherwise each ref is tried in
+// order and the first one that resolves wins. The first failure is returned so
+// the error names the ref that matters.
+func (r *PackageInstallCommand) getPackage(pkg string, refs []string) (string, error) {
+	if strings.Contains(pkg, "@") || len(refs) == 0 {
+		if res := r.process.Run("go", "get", pkg); res.Failed() {
+			return "", errors.PackageGetFailed.Args(res.Error().Error())
+		}
+
+		return pkg, nil
+	}
+
+	var firstErr error
+	for _, ref := range refs {
+		candidate := pkg + "@" + ref
+		if res := r.process.Run("go", "get", candidate); !res.Failed() {
+			return candidate, nil
+		} else if firstErr == nil {
+			firstErr = errors.PackageGetFailed.Args(res.Error().Error())
+		}
+	}
+
+	return "", firstErr
 }
 
 func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string, bindingInfo contractsbinding.Info) error {
@@ -325,6 +355,10 @@ func (r *PackageInstallCommand) installDriver(ctx console.Context, facade string
 		ctx.Success(fmt.Sprintf("Driver %s installed successfully", driver))
 
 		return nil
+	}
+
+	if isDeclaredDriver(driver, bindingInfo.Drivers) {
+		return r.installPackage(ctx, driver, driverRefs(support.Version)...)
 	}
 
 	return r.installPackage(ctx, driver)
@@ -413,4 +447,37 @@ func isPackage(pkg string) bool {
 
 func isInternalDriver(name string) bool {
 	return name != "" && !str.Of(name).Contains(".", "/")
+}
+
+// isDeclaredDriver reports whether pkg is one of the driver packages the
+// framework registers for a binding, so only packages released in lockstep with
+// the framework get pinned to its release line.
+func isDeclaredDriver(pkg string, drivers []contractsbinding.Driver) bool {
+	return slices.ContainsFunc(drivers, func(driver contractsbinding.Driver) bool {
+		return driver.Package == pkg
+	})
+}
+
+// driverRefs returns the module queries that pin a driver to the framework's
+// release line, most specific first: the released tags of the line ("v1.17"),
+// then that line's release branch ("v1.17.x") for a line with no release yet.
+// It returns nil when version has no numeric major.minor pair, so the package is
+// installed without a ref.
+func driverRefs(version string) []string {
+	major, minor, ok := strings.Cut(strings.TrimPrefix(version, "v"), ".")
+	if !ok {
+		return nil
+	}
+
+	minor, _, _ = strings.Cut(minor, ".")
+	if _, err := strconv.Atoi(major); err != nil {
+		return nil
+	}
+	if _, err := strconv.Atoi(minor); err != nil {
+		return nil
+	}
+
+	line := "v" + major + "." + minor
+
+	return []string{line, line + ".x"}
 }
