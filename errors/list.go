@@ -267,6 +267,7 @@ var (
 	PackageCommandHookNotRegistered = New("the WithCommandHooks call in bootstrap/app.go could not be edited to add '%s', add it manually")
 	PackageCommandsFileExists       = New("commands.go already exists but WithCommands is not registered in foundation.Setup(). The commands.go file should only be created when adding WithCommands to Setup()")
 	PackageFiltersFileExists        = New("filters.go already exists but WithFilters is not registered in foundation.Setup(). The filters.go file should only be created when adding WithFilters to Setup()")
+	PackageGetFailed                = New("failed to get package: %s")
 	PackageGoModDownloadFailed      = New("failed to download go.mod dependencies: %s")
 	PackageJobsFileExists           = New("jobs.go already exists but WithJobs is not registered in foundation.Setup(). The jobs.go file should only be created when adding WithJobs to Setup()")
 	PackageMigrationsFileExists     = New("migrations.go already exists but WithMigrations is not registered in foundation.Setup(). The migrations.go file should only be created when adding WithMigrations to Setup()")
