@@ -12,6 +12,7 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/modular"
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support"
@@ -23,9 +24,8 @@ import (
 )
 
 var (
-	// moduleInputPattern is what make:module accepts, moduleNamePattern the kebab name it derives.
+	// moduleInputPattern is what make:module accepts; the kebab name it derives must pass modular.ValidName.
 	moduleInputPattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9 _-]*$`)
-	moduleNamePattern  = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`)
 
 	// reservedModulePackages are packages Go refuses to import.
 	reservedModulePackages = map[string]bool{"main": true, "init": true, "internal": true, "vendor": true}
@@ -192,7 +192,7 @@ func newModuleStubs(name, directory string) (*moduleStubs, error) {
 
 	kebab := str.Of(name).Kebab().String()
 	pkg := strings.ReplaceAll(kebab, "-", "")
-	if !moduleInputPattern.MatchString(name) || !moduleNamePattern.MatchString(kebab) {
+	if !moduleInputPattern.MatchString(name) || !modular.ValidName(kebab) {
 		return nil, errors.ModularModuleNameInvalid.Args(name)
 	}
 	if token.IsKeyword(pkg) || reservedModulePackages[pkg] {

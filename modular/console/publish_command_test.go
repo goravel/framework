@@ -111,13 +111,22 @@ func (s *PublishCommandTestSuite) TestModuleOption() {
 
 	registry := mocksmodular.NewRegistry(s.T())
 	registry.EXPECT().All().Return([]contractsmodular.Module{billing, &testModule{"plain"}})
-	registry.EXPECT().Find("billing").Return(billing, true).Once()
-	registry.EXPECT().Find("shop").Return(nil, false).Once()
+	registry.EXPECT().Find("billing").Return(billing, true).Twice()
+	registry.EXPECT().Find("Billing").Return(nil, false).Once()
+	// Not found as given nor in kebab case, which is the same name here.
+	registry.EXPECT().Find("shop").Return(nil, false).Twice()
 	registry.EXPECT().Path("billing").Return("modules/billing", true)
 
 	ctx := mocksconsole.NewContext(s.T())
 	ctx.EXPECT().Option("module").Return("billing").Once()
 	ctx.EXPECT().TwoColumnDetail("billing", statusPublished).Once()
+
+	s.NoError(s.command(registry).Handle(ctx))
+
+	// The kebab-case name is tried next, like make:* --module does.
+	ctx = mocksconsole.NewContext(s.T())
+	ctx.EXPECT().Option("module").Return("Billing").Once()
+	ctx.EXPECT().TwoColumnDetail("billing", statusUnchanged).Once()
 
 	s.NoError(s.command(registry).Handle(ctx))
 

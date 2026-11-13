@@ -69,6 +69,16 @@ func TestRegistry_Register(t *testing.T) {
 	assert.Equal(t, []string{"blog", "shop"}, names(registry.All()))
 }
 
+func TestRegistry_RegisterInvalidName(t *testing.T) {
+	for _, name := range []string{"", "Blog", "blog.admin", "blog_posts", "-blog", "blog--posts", "1blog"} {
+		err := NewRegistry("").Register(&plainModule{name})
+		assert.ErrorIs(t, err, errors.ModularModuleNameNotKebab, name)
+	}
+	assert.EqualError(t, NewRegistry("").Register(&plainModule{"Blog"}),
+		`[modular] module *modular.plainModule is named "Blog", a module name is kebab case like blog or blog-posts`)
+	assert.NoError(t, NewRegistry("").Register(&plainModule{"blog-posts2"}))
+}
+
 func TestRegistry_Path(t *testing.T) {
 	registry := NewRegistry("")
 	require.NoError(t, registry.Register(&plainModule{"blog"}, &locatedModule{plainModule{"shop"}, "app/shop"}))

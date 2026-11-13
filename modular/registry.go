@@ -3,6 +3,7 @@
 package modular
 
 import (
+	"regexp"
 	"runtime/debug"
 	"slices"
 	"sync"
@@ -14,6 +15,14 @@ import (
 )
 
 var _ modular.Registry = (*Registry)(nil)
+
+// namePattern is a kebab-case module name, e.g. "blog" or "blog-posts".
+var namePattern = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`)
+
+// ValidName reports whether name is a kebab-case module name.
+func ValidName(name string) bool {
+	return namePattern.MatchString(name)
+}
 
 var (
 	defaultMu       sync.RWMutex
@@ -79,6 +88,9 @@ func (r *Registry) Register(modules ...modular.Module) error {
 		}
 
 		name := module.Name()
+		if !ValidName(name) {
+			return errors.ModularModuleNameNotKebab.Args(module, name)
+		}
 		if _, ok := r.byName[name]; ok {
 			return errors.ModularModuleDuplicate.Args(name)
 		}

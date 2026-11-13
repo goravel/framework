@@ -10,6 +10,7 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/modular"
 	"github.com/goravel/framework/support/path"
+	"github.com/goravel/framework/support/str"
 )
 
 type PublishCommand struct {
@@ -53,7 +54,11 @@ func (r *PublishCommand) Handle(ctx console.Context) error {
 
 	modules := r.registry.All()
 	if name := ctx.Option("module"); name != "" {
+		// As given, then in kebab case, like the --module option of make:*.
 		module, ok := r.registry.Find(name)
+		if !ok {
+			module, ok = r.registry.Find(str.Of(name).Kebab().String())
+		}
 		if !ok {
 			return errors.ModularModuleNotFound.Args(name)
 		}
