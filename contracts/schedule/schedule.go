@@ -2,6 +2,7 @@ package schedule
 
 import (
 	"context"
+	"time"
 )
 
 type Schedule interface {
@@ -15,6 +16,12 @@ type Schedule interface {
 	Register(events []Event)
 	// Run schedules.
 	Run()
+	// RunDue runs the events due in the minute of the given time once, one
+	// after the other, and returns when they have finished. It is meant for
+	// external triggers that start a short-lived process every minute (system
+	// cron, Kubernetes CronJob, serverless schedulers) instead of keeping Run
+	// alive. The returned error joins the errors of the events that failed.
+	RunDue(ctx context.Context, at time.Time) error
 	// Shutdown schedules.
 	Shutdown(ctx ...context.Context) error
 }
