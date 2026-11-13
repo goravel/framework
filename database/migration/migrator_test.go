@@ -18,6 +18,7 @@ import (
 	mocksmigration "github.com/goravel/framework/mocks/database/migration"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
@@ -79,6 +80,38 @@ func (s *MigratorSuite) TestCreate() {
 		s.Equal("20240817214501_"+name, fileName)
 		s.True(file.Contain(filepath.Join(pwd, "modules", "blog", "database", "migrations", fileName+".go"), "package migrations"))
 		s.False(file.Exists(filepath.Join(path, fileName+".go")))
+	})
+
+	s.Run("facades import", func() {
+		defer func() {
+			s.NoError(file.Remove("bootstrap"))
+			s.NoError(file.Remove("app"))
+			s.NoError(file.Remove("modules"))
+		}()
+		s.NoError(file.PutContent(filepath.Join("bootstrap", "app.go"), "package bootstrap\n\nfunc Boot() { foundation.Setup().Create() }\n"))
+
+		// Without the app's Schema facade the generated file falls back to the framework's facades.
+		fileName, err := s.migrator.CreateIn("modules/blog/database/migrations", "create_posts_table", "")
+		s.NoError(err)
+		migration := filepath.Join(pwd, "modules", "blog", "database", "migrations", fileName+".go")
+		s.True(file.Contain(migration, `"github.com/goravel/framework/facades"`))
+		s.NoError(file.Remove(migration))
+
+		// The package name falls back with the import, also when the app's is named differently.
+		facadesPath := support.Config.Paths.Facades
+		support.Config.Paths.Facades = "app/support/f"
+		fileName, err = s.migrator.CreateIn("modules/blog/database/migrations", "create_posts_table", "")
+		support.Config.Paths.Facades = facadesPath
+		s.NoError(err)
+		migration = filepath.Join(pwd, "modules", "blog", "database", "migrations", fileName+".go")
+		s.True(file.Contain(migration, "facades.Schema()"))
+		s.False(file.Contain(migration, "f.Schema()"))
+		s.NoError(file.Remove(migration))
+
+		s.NoError(file.PutContent(filepath.Join("app", "facades", "schema.go"), "package facades\n"))
+		fileName, err = s.migrator.CreateIn("modules/blog/database/migrations", "create_posts_table", "")
+		s.NoError(err)
+		s.True(file.Contain(filepath.Join(pwd, "modules", "blog", "database", "migrations", fileName+".go"), `/app/facades"`))
 	})
 
 	s.Run("model not found", func() {

@@ -61,9 +61,10 @@ func (r *Migrator) CreateIn(dir string, name string, modelName string) (string, 
 
 	// Prepend timestamp to the file name.
 	fileName := r.creator.GetFileName(name)
-	facadesImport := packages.Paths().Facades().Import()
-	if !env.IsBootstrapSetup() {
-		facadesImport = "github.com/goravel/framework/facades"
+	// The app's facades only when its Schema facade exists, else the generated file would not compile.
+	facadesImport, facadesPackage := packages.Paths().Facades().Import(), packages.Paths().Facades().Package()
+	if !env.IsBootstrapSetup() || !supportfile.Exists(path.Facade("schema.go")) {
+		facadesImport, facadesPackage = "github.com/goravel/framework/facades", "facades"
 	}
 
 	filePath, pkg := r.creator.GetPath(fileName), packages.Paths().Migrations().Package()
@@ -72,7 +73,7 @@ func (r *Migrator) CreateIn(dir string, name string, modelName string) (string, 
 	}
 
 	templateData := StubData{
-		FacadesPackage: packages.Paths().Facades().Package(),
+		FacadesPackage: facadesPackage,
 		FacadesImport:  facadesImport,
 		Package:        pkg,
 		SchemaFields:   schemaFields,
