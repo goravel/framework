@@ -80,6 +80,20 @@ func (s *InitCommandTestSuite) TestRequiresBootstrapSetup() {
 	s.False(file.Exists("modules"))
 }
 
+func (s *InitCommandTestSuite) TestReturnsUnparsableApp() {
+	s.Require().NoError(file.PutContent("bootstrap/app.go", "package bootstrap\n\nvar app = foundation.Setup().Create(\n"))
+
+	ctx := mocksconsole.NewContext(s.T())
+	ctx.EXPECT().TwoColumnDetail("modules/.gitkeep", statusCreated).Once()
+	ctx.EXPECT().TwoColumnDetail("config/modular.go", statusCreated).Once()
+
+	err := NewInitCommand(nil).Handle(ctx)
+
+	s.Error(err)
+	s.False(isManualWiring(err))
+	s.False(file.Exists("bootstrap/modules.go"))
+}
+
 func (s *InitCommandTestSuite) TestCreatesThenReportsExisting() {
 	s.Require().NoError(file.PutContent("bootstrap/app.go", chainedApp))
 	s.Require().NoError(file.PutContent("main.go", mainFile))
