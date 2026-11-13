@@ -308,6 +308,23 @@ func (s *ModuleMakeCommandTestSuite) TestForceRemovesStaleStubs() {
 	s.Equal(1, strings.Count(modules, "&blog.Module{},"))
 }
 
+// --force keeps a stale stub that was edited and warns about it.
+func (s *ModuleMakeCommandTestSuite) TestForceKeepsEditedStubs() {
+	ctx := s.context("Blog", false, false, false, 0)
+	ctx.EXPECT().Success("Module created successfully: modules/blog").Once()
+	s.NoError(NewModuleMakeCommand(nil).Handle(ctx))
+	s.Require().NoError(file.PutContent("modules/blog/routes/web.go", "package routes\n\n// edited\n"))
+	s.Require().NoError(file.PutContent("modules/blog/http/controllers/blog_controller.go", "package controllers\n"))
+
+	ctx = s.context("Blog", false, true, true, 0)
+	ctx.EXPECT().Success("Module created successfully: modules/blog").Once()
+	ctx.EXPECT().Warning("Kept modules/blog/http/controllers/blog_controller.go: it was edited, remove it if the module no longer needs it").Once()
+	ctx.EXPECT().Warning("Kept modules/blog/routes/web.go: it was edited, remove it if the module no longer needs it").Once()
+	s.NoError(NewModuleMakeCommand(nil).Handle(ctx))
+
+	s.ElementsMatch([]string{"module.go", "routes/web.go", "http/controllers/blog_controller.go"}, s.files("modules/blog"))
+}
+
 func (s *ModuleMakeCommandTestSuite) TestErrors() {
 	s.Run("exists without force", func() {
 		s.Require().NoError(file.PutContent("modules/blog/module.go", "package blog\n"))

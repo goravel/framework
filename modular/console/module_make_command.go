@@ -3,9 +3,11 @@ package console
 import (
 	"go/parser"
 	"go/token"
+	"maps"
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/goravel/framework/contracts/config"
@@ -124,7 +126,16 @@ func (r *ModuleMakeCommand) makeOne(ctx console.Context, name string) error {
 	}
 
 	files := stubs.files(ctx.OptionBool("api"), ctx.OptionBool("plain"))
-	if err := removeStaleStubs(root, stubs.files(false, false), files); err != nil {
+	kept, err := removeStaleStubs(
+		root,
+		[]map[string]string{
+			stubs.files(false, false),
+			stubs.files(true, false),
+			stubs.files(false, true),
+		},
+		files,
+	)
+	if err != nil {
 		return err
 	}
 	for name, content := range files {
@@ -140,6 +151,9 @@ func (r *ModuleMakeCommand) makeOne(ctx console.Context, name string) error {
 	}
 
 	ctx.Success("Module created successfully: " + stubs.dir)
+	for _, file := range kept {
+		ctx.Warning("Kept " + stubs.dir + "/" + file + ": it was edited, remove it if the module no longer needs it")
+	}
 
 	// An assigned chain (builder := foundation.Setup()...) cannot be edited: the user wires it.
 	if !file.Contain(path.Bootstrap("app.go"), "WithModules") {
@@ -149,27 +163,42 @@ func (r *ModuleMakeCommand) makeOne(ctx console.Context, name string) error {
 	return nil
 }
 
-// removeStaleStubs deletes the stubs of an earlier --force run that this one no longer writes.
-func removeStaleStubs(root string, all, current map[string]string) error {
-	for name := range all {
-		if _, ok := current[name]; ok {
+// removeStaleStubs deletes the stubs of an earlier --force run that this one no longer writes,
+// unless they were edited; it returns the names of the edited ones it kept.
+func removeStaleStubs(root string, variants []map[string]string, current map[string]string) ([]string, error) {
+	stubs := make(map[string][]string)
+	for _, variant := range variants {
+		for name, content := range variant {
+			if _, ok := current[name]; !ok {
+				stubs[name] = append(stubs[name], content)
+			}
+		}
+	}
+
+	var kept []string
+	for _, name := range slices.Sorted(maps.Keys(stubs)) {
+		stale := filepath.Join(root, filepath.FromSlash(name))
+		content, err := os.ReadFile(stale)
+		if os.IsNotExist(err) {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		if !slices.Contains(stubs[name], string(content)) {
+			kept = append(kept, name)
 			continue
 		}
 
-		stale := filepath.Join(root, filepath.FromSlash(name))
 		if err := os.Remove(stale); err != nil {
-			if os.IsNotExist(err) {
-				continue
-			}
-
-			return err
+			return nil, err
 		}
 		// Remove the directories the stub leaves empty; os.Remove refuses the others.
 		for dir := filepath.Dir(stale); dir != root && os.Remove(dir) == nil; dir = filepath.Dir(dir) {
 		}
 	}
 
-	return nil
+	return kept, nil
 }
 
 // moduleStubs holds the names derived from a module name, e.g. "BlogPosts".
