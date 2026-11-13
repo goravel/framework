@@ -245,6 +245,7 @@ var (
 	ModularViewsFSRequired        = New("module %s returned a nil views filesystem").SetModule(ModuleModular)
 	ModularViteAliasDuplicate     = New("vite alias %s of module %s is already used by module %s").SetModule(ModuleModular)
 	ModularViteAliasInvalid       = New("module %s: vite alias %q -> %q is invalid, use a key like @name and a relative directory inside the module").SetModule(ModuleModular)
+	ModularViteEntryInvalid       = New("module %s: vite entry %q is invalid, use a relative file path inside the module").SetModule(ModuleModular)
 
 	NotificationChannelNotFound               = New("notification channel not found: %s").SetModule(ModuleNotification)
 	NotificationChannelNotQueueable           = New("notification channel %q does not support queued dispatch (does not implement ResolvableChannel)").SetModule(ModuleNotification)

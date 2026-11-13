@@ -152,6 +152,19 @@ func TestInputsCommand_ModuleAliasErrors(t *testing.T) {
 	}
 }
 
+func TestInputsCommand_ModuleEntryErrors(t *testing.T) {
+	setupAppViews(t, nil)
+
+	for _, entry := range []string{"../shop/app.js", "resources/../../shop/app.js", "/etc/app.js", "", "."} {
+		t.Run(entry, func(t *testing.T) {
+			blog := &viteModule{testModule: testModule{"blog"}, entries: []string{"resources/js/app.js", entry}}
+			cmd := moduleCommand(t, moduleRegistry(t, blog), nil, false)
+
+			assert.EqualError(t, cmd.Handle(mocksconsole.NewContext(t)), errors.ModularViteEntryInvalid.Args("blog", entry).Error())
+		})
+	}
+}
+
 func TestInputsCommand_ModulePublished(t *testing.T) {
 	setupAppViews(t, nil)
 

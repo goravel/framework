@@ -190,7 +190,12 @@ func (r *InputsCommand) moduleInputs() ([]ModuleInputs, error) {
 		input := ModuleInputs{Name: name, Path: dir, Entries: []string{}, Aliases: map[string]string{}}
 		if p, ok := module.(contractsmodular.ProvidesViteEntries); ok {
 			for _, entry := range p.ViteEntries() {
-				input.Entries = append(input.Entries, stdpath.Join(dir, filepath.ToSlash(entry)))
+				// Checked like aliases: Vite would build a file outside the module otherwise.
+				cleaned, inside := path.CleanRelative(entry)
+				if !inside || cleaned == "." {
+					return nil, errors.ModularViteEntryInvalid.Args(name, entry)
+				}
+				input.Entries = append(input.Entries, stdpath.Join(dir, cleaned))
 			}
 		}
 		if p, ok := module.(contractsmodular.ProvidesViteAlias); ok {
