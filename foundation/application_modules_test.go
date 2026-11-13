@@ -373,18 +373,27 @@ func (s *ApplicationTestSuite) TestConfigureEventListeners_Modules() {
 	mockEvent.EXPECT().Register(map[event.Event][]event.Listener{
 		shared:     {appListener, moduleListener},
 		moduleOnly: {otherListener},
-	}).Return().Once()
+	}).Return().Twice()
 	s.app.Instance(binding.Event, mockEvent)
+
+	// One map for every build, its slice with spare capacity: neither may be written to.
+	appListeners := make([]event.Listener, 1, 4)
+	appListeners[0] = appListener
+	appEvents := map[event.Event][]event.Listener{shared: appListeners}
 
 	builder := NewApplicationBuilder(s.app)
 	builder.eventToListeners = func() map[event.Event][]event.Listener {
-		return map[event.Event][]event.Listener{shared: {appListener}}
+		return appEvents
 	}
 	s.withModules(builder, &richModule{testModule: testModule{"blog"}, events: map[event.Event][]event.Listener{
 		shared:     {moduleListener},
 		moduleOnly: {otherListener},
 	}})
 	s.app.configureEventListeners()
+	s.app.configureEventListeners()
+
+	s.Equal(map[event.Event][]event.Listener{shared: {appListener}}, appEvents)
+	s.Equal([]event.Listener{appListener, nil}, appListeners[:2])
 }
 
 func (s *ApplicationTestSuite) TestConfigureRoutes_Modules() {

@@ -556,17 +556,15 @@ func (r *Application) configureModuleConfig() {
 }
 
 func (r *Application) configureEventListeners() {
-	var eventToListeners map[event.Event][]event.Listener
+	// A copy: WithEvents may return the same map on every build.
+	eventToListeners := make(map[event.Event][]event.Listener)
 	if r.builder.eventToListeners != nil {
-		eventToListeners = r.builder.eventToListeners()
+		maps.Copy(eventToListeners, r.builder.eventToListeners())
 	}
 	for _, module := range modular.Providing[contractsmodular.ProvidesEvents](r.modules) {
-		if eventToListeners == nil {
-			eventToListeners = make(map[event.Event][]event.Listener)
-		}
-		// Append, so shared events keep every listener.
+		// Concat keeps every listener of a shared event and never writes into the app's slice.
 		for e, listeners := range module.Events() {
-			eventToListeners[e] = append(eventToListeners[e], listeners...)
+			eventToListeners[e] = slices.Concat(eventToListeners[e], listeners)
 		}
 	}
 
