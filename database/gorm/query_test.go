@@ -400,6 +400,22 @@ func TestFindWithStringPrimaryKey(t *testing.T) {
 			expectVars: []any{"01AN4Z07BY79KA1307SR9X4MV4"},
 		},
 		{
+			name: "Find binds a defined string type through gorm",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&StringPrimaryKeyModel{}, ULID("01AN4Z07BY79KA1307SR9X4MV4"))
+			},
+			expectSql:  "SELECT * FROM `string_primary_key_models` WHERE `string_primary_key_models`.`id` = ?",
+			expectVars: []any{ULID("01AN4Z07BY79KA1307SR9X4MV4")},
+		},
+		{
+			name: "Find binds a defined string primary key with another column name through gorm",
+			run: func(query contractsorm.Query) error {
+				return query.Find(&DefinedStringPrimaryKeyModel{}, ULID("01AN4Z07BY79KA1307SR9X4MV4"))
+			},
+			expectSql:  "SELECT * FROM `defined_string_primary_key_models` WHERE `defined_string_primary_key_models`.`uuid` = ?",
+			expectVars: []any{ULID("01AN4Z07BY79KA1307SR9X4MV4")},
+		},
+		{
 			name: "Find binds a string primary key that looks like SQL",
 			run: func(query contractsorm.Query) error {
 				return query.Find(&[]StringPrimaryKeyModel{}, "1 = 1 OR 1 = 1")
@@ -2198,6 +2214,13 @@ type StringPrimaryKeyModel struct {
 }
 
 type NoPrimaryKeyModel struct {
+	Name string
+}
+
+type ULID string
+
+type DefinedStringPrimaryKeyModel struct {
+	UUID ULID `gorm:"column:uuid;primaryKey"`
 	Name string
 }
 
