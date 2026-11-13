@@ -54,7 +54,7 @@ func (r *InitCommand) Handle(ctx console.Context) error {
 
 	facadesImport, facadesPackage := facadesImport()
 	configStub := Stubs{}.Config(packages.Paths().Config().Package(), facadesImport, facadesPackage)
-	if err := putIfMissing(ctx, packages.Paths().Config().String("modular.go"), path.Config("modular.go"), configStub); err != nil {
+	if err := putIfMissing(ctx, filepath.ToSlash(packages.Paths().Config().String("modular.go")), path.Config("modular.go"), configStub); err != nil {
 		return err
 	}
 
