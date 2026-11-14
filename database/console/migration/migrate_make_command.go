@@ -45,6 +45,7 @@ func (r *MigrateMakeCommand) Extend() command.Extend {
 				Aliases: []string{"m"},
 				Usage:   "The model name to use for generating the migration schema",
 			},
+			supportconsole.ModuleFlag(),
 		},
 	}
 }
@@ -69,7 +70,14 @@ func (r *MigrateMakeCommand) makeOne(ctx console.Context, name, modelName string
 		return err
 	}
 
-	fileName, err := r.migrator.Create(makeMigration.GetName(), modelName)
+	moduleDir := makeMigration.GetModuleDir()
+
+	var dir []string
+	if moduleDir != "" {
+		dir = append(dir, supportconsole.ModuleRoot(moduleDir, support.Config.Paths.Migrations))
+	}
+
+	fileName, err := r.migrator.Create(makeMigration.GetName(), modelName, dir...)
 	if err != nil {
 		return errors.MigrationCreateFailed.Args(err)
 	}
@@ -77,7 +85,9 @@ func (r *MigrateMakeCommand) makeOne(ctx console.Context, name, modelName string
 	ctx.Success(fmt.Sprintf("Created Migration: %s", makeMigration.GetName()))
 
 	structName := str.Of(fileName).Prepend("m_").Studly().String()
-	if env.IsBootstrapSetup() {
+	if moduleDir != "" {
+		err = modify.AddToModule(moduleDir, "Migrations", makeMigration.GetPackageImportPath(), fmt.Sprintf("&%s.%s{}", makeMigration.GetPackageName(), structName))
+	} else if env.IsBootstrapSetup() {
 		err = modify.AddMigration(makeMigration.GetPackageImportPath(), fmt.Sprintf("&%s.%s{}", makeMigration.GetPackageName(), structName))
 	} else {
 		err = r.registerInKernel(makeMigration.GetPackageImportPath(), structName)

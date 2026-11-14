@@ -1,6 +1,7 @@
 package console
 
 import (
+	"flag"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,9 +13,13 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/console/command"
+	contractsmodular "github.com/goravel/framework/contracts/modular"
 	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
+	"github.com/goravel/framework/modular"
 	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -140,6 +145,7 @@ func TestNewMake(t *testing.T) {
 			setup: func() {
 				name = "Uppercase"
 				assert.Nil(t, file.PutContent(filepath.Join(root, "uppercase.go"), ""))
+				mockCtx.EXPECT().Option("module").Return("").Once()
 				mockCtx.EXPECT().OptionBool("force").Return(false).Once()
 			},
 			expectMake:  nil,
@@ -150,6 +156,7 @@ func TestNewMake(t *testing.T) {
 			setup: func() {
 				name = "Uppercase"
 				assert.Nil(t, file.PutContent(filepath.Join(root, "uppercase.go"), ""))
+				mockCtx.EXPECT().Option("module").Return("").Once()
 				mockCtx.EXPECT().OptionBool("force").Return(true).Once()
 			},
 			expectMake:  &Make{name: "Lowercase", root: root},
@@ -159,6 +166,7 @@ func TestNewMake(t *testing.T) {
 			name: "Happy path - name is not empty",
 			setup: func() {
 				name = "Lowercase"
+				mockCtx.EXPECT().Option("module").Return("").Once()
 				mockCtx.On("OptionBool", "force").Return(false).Once()
 			},
 			expectMake:  &Make{name: "Lowercase", root: root},
@@ -179,6 +187,75 @@ func TestNewMake(t *testing.T) {
 			}
 		})
 	}
+}
+
+// testModule sets its own directory, so it is a module of the application.
+type testModule struct {
+	name string
+	path string
+}
+
+func (r *testModule) Name() string { return r.name }
+func (r *testModule) Path() string { return r.path }
+
+func TestNewMakeInModule(t *testing.T) {
+	registry := modular.NewRegistry("")
+	// *flag.FlagSet has Name() and lives outside the application: a third-party module.
+	assert.NoError(t, registry.Register(
+		&testModule{name: "blog-posts", path: "modules/blog-posts"},
+		flag.NewFlagSet("shop", flag.ContinueOnError),
+	))
+
+	tests := []struct {
+		name        string
+		module      string
+		registry    contractsmodular.Registry
+		root        string
+		expectRoot  string
+		expectError error
+	}{
+		{name: "app directory is dropped", module: "blog-posts", registry: registry, root: "app/http/controllers", expectRoot: "modules/blog-posts/http/controllers"},
+		{name: "name is converted to kebab case", module: "BlogPosts", registry: registry, root: "app/models", expectRoot: "modules/blog-posts/models"},
+		{name: "other directories keep their shape", module: "blog-posts", registry: registry, root: "database/migrations", expectRoot: "modules/blog-posts/database/migrations"},
+		{name: "unknown module", module: "news", registry: registry, root: "app/models", expectError: errors.ModularModuleNotFound.Args("news")},
+		{name: "third-party module", module: "shop", registry: registry, root: "app/models", expectError: errors.ModularModuleNotLocal.Args("shop")},
+		{name: "no registry", module: "blog-posts", root: "app/models", expectError: errors.ModularRegistryNotSet},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			modular.SetDefault(test.registry)
+			defer modular.SetDefault(nil)
+
+			mockCtx := mocksconsole.NewContext(t)
+			mockCtx.EXPECT().Option("module").Return(test.module).Once()
+			if test.expectError == nil {
+				mockCtx.EXPECT().OptionBool("force").Return(false).Once()
+			}
+
+			m, err := NewMake(mockCtx, "model", "admin/User", test.root)
+			if test.expectError != nil {
+				assert.Equal(t, test.expectError, err)
+				assert.Nil(t, m)
+
+				return
+			}
+
+			pwd, _ := os.Getwd()
+			assert.NoError(t, err)
+			assert.Equal(t, "modules/blog-posts", m.GetModuleDir())
+			assert.Equal(t, filepath.Join(pwd, filepath.FromSlash(test.expectRoot), "admin", "user.go"), m.GetFilePath())
+			assert.Equal(t, env.MainPath()+"/"+test.expectRoot+"/admin", m.GetPackageImportPath())
+			assert.Equal(t, "admin", m.GetPackageName())
+		})
+	}
+}
+
+func TestModuleRoot(t *testing.T) {
+	assert.Equal(t, "modules/blog/http/controllers", ModuleRoot("modules/blog", "app/http/controllers"))
+	assert.Equal(t, "modules/blog", ModuleRoot("modules/blog", "app"))
+	assert.Equal(t, "modules/blog/application/models", ModuleRoot("modules/blog", "application/models"))
+	assert.Equal(t, "modules/blog/tests", ModuleRoot("modules/blog", filepath.Join("tests")))
 }
 
 func TestHandleEach(t *testing.T) {
@@ -302,4 +379,12 @@ func TestTwoColumnDetail(t *testing.T) {
 			assert.Equal(t, tt.output, TwoColumnDetail(tt.first, tt.second))
 		})
 	}
+}
+
+func TestModuleFlag(t *testing.T) {
+	moduleFlag, ok := ModuleFlag().(*command.StringFlag)
+
+	assert.True(t, ok)
+	assert.Equal(t, "module", moduleFlag.Name)
+	assert.NotEmpty(t, moduleFlag.Usage)
 }

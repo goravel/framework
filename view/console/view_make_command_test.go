@@ -7,7 +7,9 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
+	"github.com/goravel/framework/modular"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -34,7 +36,7 @@ func (s *ViewMakeCommandTestSuite) TestExtend() {
 	extend := cmd.Extend()
 
 	s.Equal("make", extend.Category)
-	s.Len(extend.Flags, 1)
+	s.Len(extend.Flags, 2)
 
 	// Test BoolFlag
 	boolFlag, ok := extend.Flags[0].(*command.BoolFlag)
@@ -58,6 +60,7 @@ func (s *ViewMakeCommandTestSuite) TestCreateSuccess() {
 	mockContext := mocksconsole.NewContext(s.T())
 
 	mockContext.EXPECT().Arguments().Return([]string{"welcome"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 
 	expectedPath := filepath.Join("resources", "views", "welcome.tmpl")
 	mockContext.EXPECT().Success("View created successfully").Once()
@@ -123,9 +126,49 @@ func (s *ViewMakeCommandTestSuite) TestHandleMultipleNames() {
 	mockContext := mocksconsole.NewContext(s.T())
 
 	mockContext.EXPECT().Arguments().Return([]string{"welcome", "dashboard"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Times(2)
 	mockContext.EXPECT().Success("View created successfully").Times(2)
 
 	s.Nil(viewMakeCommand.Handle(mockContext))
 	s.FileExists(filepath.Join("resources", "views", "welcome.tmpl"))
 	s.FileExists(filepath.Join("resources", "views", "dashboard.tmpl"))
+}
+
+// blogModule sets its own directory, so it is a module of the application.
+type blogModule struct{}
+
+func (r *blogModule) Name() string { return "blog" }
+func (r *blogModule) Path() string { return "modules/blog" }
+
+func (s *ViewMakeCommandTestSuite) TestModule() {
+	registry := modular.NewRegistry("")
+	s.NoError(registry.Register(&blogModule{}))
+	modular.SetDefault(registry)
+	s.T().Cleanup(func() {
+		modular.SetDefault(nil)
+		_ = file.Remove("modules")
+	})
+
+	mockContext := mocksconsole.NewContext(s.T())
+	mockContext.EXPECT().Arguments().Return([]string{"posts/index"}).Once()
+	mockContext.EXPECT().Option("module").Return("Blog").Once()
+	mockContext.EXPECT().Success("View created successfully").Once()
+
+	s.Nil((&ViewMakeCommand{}).Handle(mockContext))
+	s.True(file.Contain(filepath.Join("modules", "blog", "resources", "views", "posts", "index.tmpl"), `{{ define "blog/posts/index.tmpl" }}`))
+	s.NoDirExists("resources")
+}
+
+func (s *ViewMakeCommandTestSuite) TestModuleNotFound() {
+	modular.SetDefault(modular.NewRegistry(""))
+	s.T().Cleanup(func() { modular.SetDefault(nil) })
+
+	mockContext := mocksconsole.NewContext(s.T())
+	mockContext.EXPECT().Arguments().Return([]string{"posts/index"}).Once()
+	mockContext.EXPECT().Option("module").Return("shop").Once()
+	mockContext.EXPECT().Error(errors.ModularModuleNotFound.Args("shop").Error()).Once()
+
+	s.Nil((&ViewMakeCommand{}).Handle(mockContext))
+	s.NoDirExists("resources")
+	s.NoDirExists("modules")
 }

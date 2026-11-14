@@ -231,6 +231,39 @@ func Migrations() []match.GoNode {
 	}
 }
 
+// Modules matches the Modules() function returning a []modular.Module literal.
+func Modules() []match.GoNode {
+	return []match.GoNode{
+		Func(Ident("Modules")),
+		TypeOf(&dst.ReturnStmt{}),
+		CompositeLit(
+			ArrayType(
+				SelectorExpr(
+					Ident("modular"),
+					Ident("Module"),
+				),
+				AnyNode(),
+			),
+		),
+	}
+}
+
+// ModuleMethod matches the slice literal returned by the method named method, e.g.
+// func (m *Module) Migrations() []schema.Migration { return []schema.Migration{} }.
+func ModuleMethod(method string) []match.GoNode {
+	return []match.GoNode{
+		GoNode{
+			match: func(n dst.Node) bool {
+				fn, ok := n.(*dst.FuncDecl)
+
+				return ok && fn.Recv != nil && fn.Name.Name == method
+			},
+		},
+		TypeOf(&dst.ReturnStmt{}),
+		CompositeLit(ArrayType(AnyNode(), AnyNode())),
+	}
+}
+
 // Providers matches the Providers() function that returns a slice of service providers.
 // It looks for a function returning []foundation.ServiceProvider composite literals.
 // This is the recommended way to register service providers.

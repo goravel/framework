@@ -37,6 +37,7 @@ func (r *ObserverMakeCommand) Extend() command.Extend {
 				Aliases: []string{"f"},
 				Usage:   "Create the observer even if it already exists",
 			},
+			supportconsole.ModuleFlag(),
 		},
 	}
 }

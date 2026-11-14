@@ -713,3 +713,16 @@ func TestIsCSS(t *testing.T) {
 		assert.False(t, isCSS(name), name)
 	}
 }
+
+func TestHotFile_InvalidJSON(t *testing.T) {
+	public := setupProject(t)
+	vite := newTestVite(t, "")
+
+	// The file exists, but names no dev server.
+	for _, content := range []string{`{"url": `, `{"aliases": {"@blog": "modules/blog/resources/js"}}`} {
+		writeFile(t, filepath.Join(public, "hot"), content)
+
+		assert.True(t, vite.IsRunningHot())
+		assert.Empty(t, vite.ReactRefresh(), content)
+	}
+}

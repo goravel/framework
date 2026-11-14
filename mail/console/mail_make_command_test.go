@@ -21,17 +21,20 @@ func TestMailMakeCommand(t *testing.T) {
 	assert.False(t, file.Exists("app/mails/new_user.go"))
 
 	mockContext.EXPECT().Arguments().Return([]string{"NewUser"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Mail created successfully").Once()
 	assert.NoError(t, modelMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/mails/new_user.go"))
 
 	mockContext.EXPECT().Arguments().Return([]string{"NewUser"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Error("the mail already exists. Use the --force or -f flag to overwrite").Once()
 	assert.NoError(t, modelMakeCommand.Handle(mockContext))
 
 	mockContext.EXPECT().Arguments().Return([]string{"User/VerifyEmail"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Mail created successfully").Once()
 	assert.NoError(t, modelMakeCommand.Handle(mockContext))
@@ -47,6 +50,7 @@ func TestMailMakeCommand_MultipleNames(t *testing.T) {
 	mockContext := mocksconsole.NewContext(t)
 
 	mockContext.EXPECT().Arguments().Return([]string{"VerifyEmail", "ResetPassword"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Times(2)
 	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
 	mockContext.EXPECT().Success("Mail created successfully").Times(2)
 	assert.NoError(t, mailMakeCommand.Handle(mockContext))

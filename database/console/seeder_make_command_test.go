@@ -10,6 +10,7 @@ import (
 
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
+	"github.com/goravel/framework/modular"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -42,6 +43,7 @@ func TestSeederMakeCommand(t *testing.T) {
 	assert.Nil(t, seederMakeCommand.Handle(mockContext))
 
 	mockContext.EXPECT().Arguments().Return([]string{"UserSeeder"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockApp.EXPECT().DatabasePath("kernel.go").Return("database/kernel.go").Once()
 	mockContext.EXPECT().Success("Seeder created successfully").Once()
@@ -55,12 +57,14 @@ func TestSeederMakeCommand(t *testing.T) {
 	assert.True(t, file.Contain("database/kernel.go", "&seeders.UserSeeder{}"))
 
 	mockContext.EXPECT().Arguments().Return([]string{"UserSeeder"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Error("the seeder already exists. Use the --force or -f flag to overwrite").Once()
 	assert.NoError(t, seederMakeCommand.Handle(mockContext))
 	assert.NoError(t, file.Remove("database"))
 
 	mockContext.EXPECT().Arguments().Return([]string{"subdir/DemoSeeder"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Seeder created successfully").Once()
 	mockApp.EXPECT().DatabasePath("kernel.go").Return("database/kernel.go").Once()
@@ -108,6 +112,7 @@ func Boot() contractsfoundation.Application {
 		mockApp = mocksfoundation.NewApplication(t)
 
 		mockContext.EXPECT().Arguments().Return([]string{"UserSeeder"}).Once()
+		mockContext.EXPECT().Option("module").Return("").Once()
 		mockContext.EXPECT().OptionBool("force").Return(false).Once()
 		mockContext.EXPECT().Success("Seeder created successfully").Once()
 		mockContext.EXPECT().Success("Seeder registered successfully").Once()
@@ -145,6 +150,7 @@ func Boot() {
 		mockApp = mocksfoundation.NewApplication(t)
 
 		mockContext.EXPECT().Arguments().Return([]string{"PostSeeder"}).Once()
+		mockContext.EXPECT().Option("module").Return("").Once()
 		mockContext.EXPECT().OptionBool("force").Return(false).Once()
 		mockContext.EXPECT().Success("Seeder created successfully").Once()
 		mockContext.EXPECT().Warning(mock.MatchedBy(func(msg string) bool {
@@ -173,6 +179,7 @@ func TestSeederMakeCommand_MultipleNames(t *testing.T) {
 	assert.NoError(t, file.PutContent("database/kernel.go", databaseKernel))
 
 	mockContext.EXPECT().Arguments().Return([]string{"UserSeeder", "PostSeeder"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Times(2)
 	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
 	mockApp.EXPECT().DatabasePath("kernel.go").Return("database/kernel.go").Times(2)
 	mockContext.EXPECT().Success("Seeder created successfully").Times(2)
@@ -183,4 +190,53 @@ func TestSeederMakeCommand_MultipleNames(t *testing.T) {
 	assert.FileExists(t, "database/seeders/post_seeder.go")
 	assert.True(t, file.Contain("database/kernel.go", "&seeders.UserSeeder{}"))
 	assert.True(t, file.Contain("database/kernel.go", "&seeders.PostSeeder{}"))
+}
+
+// blogModule sets its own directory, so it is a module of the application.
+type blogModule struct{}
+
+func (r *blogModule) Name() string { return "blog" }
+func (r *blogModule) Path() string { return "modules/blog" }
+
+// useBlogModule registers blogModule with a module.go on disk for the test.
+func useBlogModule(t *testing.T) {
+	registry := modular.NewRegistry("")
+	assert.NoError(t, registry.Register(&blogModule{}))
+	modular.SetDefault(registry)
+	assert.NoError(t, file.PutContent("modules/blog/module.go", `package blog
+
+type Module struct{}
+
+func (m *Module) Name() string {
+	return "blog"
+}
+`))
+
+	t.Cleanup(func() {
+		modular.SetDefault(nil)
+		assert.NoError(t, file.Remove("modules"))
+	})
+}
+
+func TestSeederMakeCommand_Module(t *testing.T) {
+	useBlogModule(t)
+
+	mockContext := mocksconsole.NewContext(t)
+	mockContext.EXPECT().Arguments().Return([]string{"PostSeeder"}).Once()
+	mockContext.EXPECT().Option("module").Return("blog").Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Once()
+	mockContext.EXPECT().Success("Seeder created successfully").Once()
+	mockContext.EXPECT().Success("Seeder registered successfully").Once()
+
+	assert.NoError(t, NewSeederMakeCommand(mocksfoundation.NewApplication(t)).Handle(mockContext))
+	assert.True(t, file.Exists("modules/blog/database/seeders/post_seeder.go"))
+
+	content, err := file.GetContent("modules/blog/module.go")
+	assert.NoError(t, err)
+	assert.Contains(t, content, `/modules/blog/database/seeders"`)
+	assert.Contains(t, content, `func (m *Module) Seeders() []seeder.Seeder {
+	return []seeder.Seeder{
+		&seeders.PostSeeder{},
+	}
+}`)
 }

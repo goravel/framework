@@ -3,6 +3,7 @@ package modify
 import (
 	"bytes"
 	"go/token"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -4959,4 +4960,322 @@ var _ = map[string]any{
 }
 `, buf.String())
 
+}
+
+func TestModules(t *testing.T) {
+	bootstrapDir := support.Config.Paths.Bootstrap
+	appFile := filepath.Join(bootstrapDir, "app.go")
+	modulesFile := filepath.Join(bootstrapDir, "modules.go")
+	defer func() {
+		assert.NoError(t, supportfile.Remove(bootstrapDir))
+	}()
+
+	assert.NoError(t, supportfile.PutContent(appFile, `package bootstrap
+
+import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation"
+	"goravel/config"
+)
+
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().WithConfig(config.Boot).Start()
+}
+`))
+
+	assert.NoError(t, InitModules())
+	content, err := supportfile.GetContent(modulesFile)
+	assert.NoError(t, err)
+	assert.Equal(t, ModulesStub(), content)
+	assert.True(t, supportfile.Contain(appFile, "WithModules(Modules)"))
+
+	assert.NoError(t, AddModule("goravel/modules/blog", "&blog.Module{}"))
+	assert.NoError(t, AddModule("blogposts goravel/modules/blog-posts", "&blogposts.Module{}"))
+	// Adding a listed module again is a no-op.
+	assert.NoError(t, AddModule("goravel/modules/blog", "&blog.Module{}"))
+
+	content, err = supportfile.GetContent(modulesFile)
+	assert.NoError(t, err)
+	assert.Equal(t, `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/modular"
+
+	"goravel/modules/blog"
+	blogposts "goravel/modules/blog-posts"
+)
+
+func Modules() []modular.Module {
+	return []modular.Module{
+		&blog.Module{},
+		&blogposts.Module{},
+	}
+}
+`, content)
+
+	assert.NoError(t, RemoveModule("goravel/modules/blog", "&blog.Module{}"))
+	content, err = supportfile.GetContent(modulesFile)
+	assert.NoError(t, err)
+	assert.Equal(t, `package bootstrap
+
+import (
+	"github.com/goravel/framework/contracts/modular"
+
+	blogposts "goravel/modules/blog-posts"
+)
+
+func Modules() []modular.Module {
+	return []modular.Module{
+		&blogposts.Module{},
+	}
+}
+`, content)
+}
+
+func TestAddToModule(t *testing.T) {
+	dir := "modules/blog"
+	moduleFile := filepath.Join(dir, "module.go")
+	defer func() {
+		assert.NoError(t, supportfile.Remove("modules"))
+	}()
+
+	assert.ErrorIs(t, AddToModule(dir, "Migrations", "goravel/modules/blog/database/migrations", "&migrations.Posts{}"), errors.PackageModuleStructNotFound)
+
+	assert.NoError(t, supportfile.PutContent(moduleFile, `package blog
+
+import (
+	"embed"
+	"io/fs"
+
+	"goravel/modules/blog/routes"
+)
+
+type Module struct{}
+
+func (m *Module) Name() string {
+	return "blog"
+}
+`))
+
+	assert.ErrorIs(t, AddToModule(dir, "Rules", "goravel/modules/blog/rules", "&rules.Slug{}"), errors.PackageModuleMethodUnsupported)
+
+	// The method is appended, then extended; a duplicate item is a no-op.
+	assert.NoError(t, AddToModule(dir, "Migrations", "goravel/modules/blog/database/migrations", "&migrations.Posts{}"))
+	assert.NoError(t, AddToModule(dir, "Migrations", "goravel/modules/blog/database/migrations", "&migrations.Comments{}"))
+	assert.NoError(t, AddToModule(dir, "Migrations", "goravel/modules/blog/database/migrations", "&migrations.Posts{}"))
+	assert.NoError(t, AddToModule(dir, "ServiceProviders", "goravel/modules/blog/providers", "&providers.BlogServiceProvider{}"))
+
+	content, err := supportfile.GetContent(moduleFile)
+	assert.NoError(t, err)
+	assert.Equal(t, `package blog
+
+import (
+	"embed"
+	"io/fs"
+
+	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/contracts/foundation"
+
+	"goravel/modules/blog/database/migrations"
+	"goravel/modules/blog/providers"
+	"goravel/modules/blog/routes"
+)
+
+type Module struct{}
+
+func (m *Module) Name() string {
+	return "blog"
+}
+
+func (m *Module) Migrations() []schema.Migration {
+	return []schema.Migration{
+		&migrations.Posts{},
+		&migrations.Comments{},
+	}
+}
+
+func (m *Module) ServiceProviders() []foundation.ServiceProvider {
+	return []foundation.ServiceProvider{
+		&providers.BlogServiceProvider{},
+	}
+}
+`, content)
+
+	// A method declared in another file of the package is edited there.
+	commandsFile := filepath.Join(dir, "commands.go")
+	assert.NoError(t, supportfile.PutContent(commandsFile, `package blog
+
+import (
+	"github.com/goravel/framework/contracts/console"
+)
+
+func (m *Module) Commands() []console.Command {
+	return []console.Command{}
+}
+`))
+	assert.NoError(t, AddToModule(dir, "Commands", "goravel/modules/blog/console/commands", "&commands.Publish{}"))
+
+	content, err = supportfile.GetContent(commandsFile)
+	assert.NoError(t, err)
+	assert.Equal(t, `package blog
+
+import (
+	"github.com/goravel/framework/contracts/console"
+
+	"goravel/modules/blog/console/commands"
+)
+
+func (m *Module) Commands() []console.Command {
+	return []console.Command{
+		&commands.Publish{},
+	}
+}
+`, content)
+	assert.False(t, supportfile.Contain(moduleFile, "Commands()"))
+
+	// A method that does not return a slice literal cannot be edited.
+	assert.NoError(t, supportfile.PutContent(filepath.Join(dir, "jobs.go"), `package blog
+
+import "github.com/goravel/framework/contracts/queue"
+
+func (m *Module) Jobs() []queue.Job {
+	return nil
+}
+`))
+	assert.Error(t, AddToModule(dir, "Jobs", "goravel/modules/blog/jobs", "&jobs.Notify{}"))
+}
+
+func TestModules_Failures(t *testing.T) {
+	bootstrapDir := support.Config.Paths.Bootstrap
+	appFile := filepath.Join(bootstrapDir, "app.go")
+	modulesFile := filepath.Join(bootstrapDir, "modules.go")
+	defer func() {
+		assert.NoError(t, supportfile.Remove(bootstrapDir))
+	}()
+
+	// Without bootstrap/app.go there is nothing to wire.
+	assert.Error(t, InitModules())
+	assert.False(t, supportfile.Exists(modulesFile))
+
+	// A file that is not Go cannot be edited, and no modules.go is left behind.
+	assert.NoError(t, supportfile.PutContent(appFile, "package bootstrap\n\nfunc Boot() { return foundation.Setup().Start( }\n"))
+	assert.Error(t, InitModules())
+	assert.False(t, supportfile.Exists(modulesFile))
+
+	// AddModule creates modules.go and wires it when neither exists.
+	assert.NoError(t, supportfile.PutContent(appFile, `package bootstrap
+
+import (
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation"
+)
+
+func Boot() contractsfoundation.Application {
+	return foundation.Setup().Start()
+}
+`))
+	assert.NoError(t, AddModule("goravel/modules/blog", "&blog.Module{}"))
+	assert.True(t, supportfile.Contain(appFile, "WithModules(Modules)"))
+	assert.True(t, supportfile.Contain(modulesFile, "&blog.Module{},"))
+}
+
+func TestAddToModule_Failures(t *testing.T) {
+	defer func() {
+		assert.NoError(t, supportfile.Remove("modules"))
+	}()
+	add := func(dir string) error {
+		return AddToModule(dir, "Jobs", "goravel/"+dir+"/jobs", "&jobs.Notify{}")
+	}
+
+	// The directory name is not a valid glob pattern.
+	assert.ErrorIs(t, add("modules/[blog"), filepath.ErrBadPattern)
+
+	// Test files are skipped, so their Name() does not make a module.
+	assert.NoError(t, supportfile.PutContent("modules/tested/module_test.go", `package tested
+
+type Module struct{}
+
+func (m *Module) Name() string {
+	return "tested"
+}
+`))
+	assert.ErrorIs(t, add("modules/tested"), errors.PackageModuleStructNotFound)
+
+	// Only methods of a plain named type are considered.
+	assert.NoError(t, supportfile.PutContent("modules/generic/module.go", `package generic
+
+type Module[T any] struct{}
+
+func (m *Module[T]) Name() string {
+	return "generic"
+}
+`))
+	assert.ErrorIs(t, add("modules/generic"), errors.PackageModuleStructNotFound)
+
+	// A file that does not parse stops the search.
+	assert.NoError(t, supportfile.PutContent("modules/broken/module.go", "package broken\n\nfunc (m *Module) Name( {\n"))
+	assert.Error(t, add("modules/broken"))
+}
+
+func TestAddToModule_AliasedImport(t *testing.T) {
+	dir := "modules/blog"
+	moduleFile := filepath.Join(dir, "module.go")
+	defer func() {
+		assert.NoError(t, supportfile.Remove("modules"))
+	}()
+
+	assert.NoError(t, supportfile.PutContent(moduleFile, `package blog
+
+type Module struct{}
+
+func (m *Module) Name() string {
+	return "blog"
+}
+`))
+	assert.NoError(t, AddToModule(dir, "Jobs", "blogjobs goravel/modules/blog/jobs", "&blogjobs.Notify{}"))
+
+	content, err := supportfile.GetContent(moduleFile)
+	assert.NoError(t, err)
+	assert.Equal(t, `package blog
+
+import (
+	"github.com/goravel/framework/contracts/queue"
+
+	blogjobs "goravel/modules/blog/jobs"
+)
+
+type Module struct{}
+
+func (m *Module) Name() string {
+	return "blog"
+}
+
+func (m *Module) Jobs() []queue.Job {
+	return []queue.Job{
+		&blogjobs.Notify{},
+	}
+}
+`, content)
+}
+
+func TestAddToModule_ReadOnlyFile(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root writes read-only files")
+	}
+
+	dir := "modules/blog"
+	moduleFile := filepath.Join(dir, "module.go")
+	source := "package blog\n\ntype Module struct{}\n\nfunc (m *Module) Name() string {\n\treturn \"blog\"\n}\n"
+	defer func() {
+		assert.NoError(t, os.Chmod(moduleFile, 0o644))
+		assert.NoError(t, supportfile.Remove("modules"))
+	}()
+
+	assert.NoError(t, supportfile.PutContent(moduleFile, source))
+	assert.NoError(t, os.Chmod(moduleFile, 0o444))
+
+	assert.Error(t, AddToModule(dir, "Jobs", "goravel/modules/blog/jobs", "&jobs.Notify{}"))
+	content, err := supportfile.GetContent(moduleFile)
+	assert.NoError(t, err)
+	assert.Equal(t, source, content)
 }

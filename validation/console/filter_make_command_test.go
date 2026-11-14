@@ -99,6 +99,7 @@ func TestFilterMakeCommand(t *testing.T) {
 	assert.NoError(t, filterMakeCommand.Handle(mockContext))
 
 	mockContext.EXPECT().Arguments().Return([]string{"Uppercase"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Filter created successfully").Once()
 	mockContext.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
@@ -108,11 +109,13 @@ func TestFilterMakeCommand(t *testing.T) {
 	assert.True(t, file.Exists("app/filters/uppercase.go"))
 
 	mockContext.On("Arguments").Return([]string{"Uppercase"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.On("OptionBool", "force").Return(false).Once()
 	mockContext.EXPECT().Error("the filter already exists. Use the --force or -f flag to overwrite").Once()
 	assert.NoError(t, filterMakeCommand.Handle(mockContext))
 
 	mockContext.EXPECT().Arguments().Return([]string{"User/Phone"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Filter created successfully").Once()
 	mockContext.EXPECT().Success("Filter registered successfully").Once()
@@ -183,6 +186,7 @@ func TestFilterMakeCommand_WithBootstrapSetup(t *testing.T) {
 			filterMakeCommand := &FilterMakeCommand{}
 			mockContext := mocksconsole.NewContext(t)
 			mockContext.EXPECT().Arguments().Return([]string{tt.filterName}).Once()
+			mockContext.EXPECT().Option("module").Return("").Once()
 			mockContext.EXPECT().OptionBool("force").Return(false).Once()
 			mockContext.EXPECT().Success("Filter created successfully").Once()
 
@@ -261,6 +265,7 @@ func TestFilterMakeCommand_WithNonBootstrapSetup(t *testing.T) {
 			filterMakeCommand := &FilterMakeCommand{}
 			mockContext := mocksconsole.NewContext(t)
 			mockContext.EXPECT().Arguments().Return([]string{tt.filterName}).Once()
+			mockContext.EXPECT().Option("module").Return("").Once()
 			mockContext.EXPECT().OptionBool("force").Return(false).Once()
 			mockContext.EXPECT().Success("Filter created successfully").Once()
 
@@ -320,6 +325,7 @@ func TestFilterMakeCommand_RegistrationError(t *testing.T) {
 		filterMakeCommand := &FilterMakeCommand{}
 		mockContext := mocksconsole.NewContext(t)
 		mockContext.EXPECT().Arguments().Return([]string{"FailFilter"}).Once()
+		mockContext.EXPECT().Option("module").Return("").Once()
 		mockContext.EXPECT().OptionBool("force").Return(false).Once()
 		mockContext.EXPECT().Success("Filter created successfully").Once()
 		mockContext.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
@@ -345,6 +351,7 @@ func TestFilterMakeCommand_RegistrationError(t *testing.T) {
 		filterMakeCommand := &FilterMakeCommand{}
 		mockContext := mocksconsole.NewContext(t)
 		mockContext.EXPECT().Arguments().Return([]string{"ErrorFilter"}).Once()
+		mockContext.EXPECT().Option("module").Return("").Once()
 		mockContext.EXPECT().OptionBool("force").Return(false).Once()
 		mockContext.EXPECT().Success("Filter created successfully").Once()
 		mockContext.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
@@ -366,6 +373,7 @@ func TestFilterMakeCommand_MultipleNames(t *testing.T) {
 	assert.NoError(t, file.PutContent("app/providers/validation_service_provider.go", filterValidationServiceProvider))
 
 	mockContext.EXPECT().Arguments().Return([]string{"Uppercase", "Lowercase"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Times(2)
 	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
 	mockContext.EXPECT().Success("Filter created successfully").Times(2)
 	mockContext.EXPECT().Success("Filter registered successfully").Times(2)
@@ -389,6 +397,7 @@ func TestFilterMakeCommand_MultipleNamesPartialFailure(t *testing.T) {
 	mockContext := mocksconsole.NewContext(t)
 
 	mockContext.EXPECT().Arguments().Return([]string{"Uppercase", "Lowercase"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Times(2)
 	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
 	mockContext.EXPECT().Success("Filter created successfully").Times(2)
 	mockContext.EXPECT().Error(mock.MatchedBy(func(msg string) bool {

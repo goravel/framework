@@ -92,6 +92,7 @@ func TestRuleMakeCommand(t *testing.T) {
 	assert.NoError(t, ruleMakeCommand.Handle(mockContext))
 
 	mockContext.EXPECT().Arguments().Return([]string{"Uppercase"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Rule created successfully").Once()
 	mockContext.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
@@ -101,11 +102,13 @@ func TestRuleMakeCommand(t *testing.T) {
 	assert.True(t, file.Exists("app/rules/uppercase.go"))
 
 	mockContext.On("Arguments").Return([]string{"Uppercase"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.On("OptionBool", "force").Return(false).Once()
 	mockContext.EXPECT().Error("the rule already exists. Use the --force or -f flag to overwrite").Once()
 	assert.NoError(t, ruleMakeCommand.Handle(mockContext))
 
 	mockContext.EXPECT().Arguments().Return([]string{"User/Phone"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Rule created successfully").Once()
 	mockContext.EXPECT().Success("Rule registered successfully").Once()
@@ -176,6 +179,7 @@ func TestRuleMakeCommand_WithBootstrapSetup(t *testing.T) {
 			ruleMakeCommand := &RuleMakeCommand{}
 			mockContext := mocksconsole.NewContext(t)
 			mockContext.EXPECT().Arguments().Return([]string{tt.ruleName}).Once()
+			mockContext.EXPECT().Option("module").Return("").Once()
 			mockContext.EXPECT().OptionBool("force").Return(false).Once()
 			mockContext.EXPECT().Success("Rule created successfully").Once()
 
@@ -254,6 +258,7 @@ func TestRuleMakeCommand_WithNonBootstrapSetup(t *testing.T) {
 			ruleMakeCommand := &RuleMakeCommand{}
 			mockContext := mocksconsole.NewContext(t)
 			mockContext.EXPECT().Arguments().Return([]string{tt.ruleName}).Once()
+			mockContext.EXPECT().Option("module").Return("").Once()
 			mockContext.EXPECT().OptionBool("force").Return(false).Once()
 			mockContext.EXPECT().Success("Rule created successfully").Once()
 
@@ -313,6 +318,7 @@ func TestRuleMakeCommand_RegistrationError(t *testing.T) {
 		ruleMakeCommand := &RuleMakeCommand{}
 		mockContext := mocksconsole.NewContext(t)
 		mockContext.EXPECT().Arguments().Return([]string{"FailRule"}).Once()
+		mockContext.EXPECT().Option("module").Return("").Once()
 		mockContext.EXPECT().OptionBool("force").Return(false).Once()
 		mockContext.EXPECT().Success("Rule created successfully").Once()
 		mockContext.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
@@ -338,6 +344,7 @@ func TestRuleMakeCommand_RegistrationError(t *testing.T) {
 		ruleMakeCommand := &RuleMakeCommand{}
 		mockContext := mocksconsole.NewContext(t)
 		mockContext.EXPECT().Arguments().Return([]string{"ErrorRule"}).Once()
+		mockContext.EXPECT().Option("module").Return("").Once()
 		mockContext.EXPECT().OptionBool("force").Return(false).Once()
 		mockContext.EXPECT().Success("Rule created successfully").Once()
 		mockContext.EXPECT().Error(mock.MatchedBy(func(msg string) bool {
@@ -359,6 +366,7 @@ func TestRuleMakeCommand_MultipleNames(t *testing.T) {
 	assert.NoError(t, file.PutContent("app/providers/validation_service_provider.go", ruleValidationServiceProvider))
 
 	mockContext.EXPECT().Arguments().Return([]string{"Uppercase", "Lowercase"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Times(2)
 	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
 	mockContext.EXPECT().Success("Rule created successfully").Times(2)
 	mockContext.EXPECT().Success("Rule registered successfully").Times(2)

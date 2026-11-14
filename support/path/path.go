@@ -1,6 +1,10 @@
 package path
 
 import (
+	stdpath "path"
+	"path/filepath"
+	"strings"
+
 	"github.com/goravel/framework/packages"
 	packagespaths "github.com/goravel/framework/packages/paths"
 )
@@ -15,6 +19,24 @@ func Base(paths ...string) string {
 
 func Bootstrap(paths ...string) string {
 	return packages.Paths().Bootstrap().Abs(paths...)
+}
+
+// CleanRelative cleans p as a slash-separated path relative to some root and
+// reports whether it stays inside that root. "a/./b" and "a/../b" become "a/b"
+// and "b"; an absolute path, ".." and anything starting with "../" are refused.
+// "" and "." clean to ".", the root itself.
+func CleanRelative(p string) (string, bool) {
+	p = filepath.ToSlash(p)
+	if stdpath.IsAbs(p) || filepath.IsAbs(filepath.FromSlash(p)) {
+		return "", false
+	}
+
+	cleaned := stdpath.Clean(p)
+	if cleaned == ".." || strings.HasPrefix(cleaned, "../") {
+		return "", false
+	}
+
+	return cleaned, true
 }
 
 func Config(paths ...string) string {

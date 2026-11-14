@@ -13,6 +13,7 @@ import (
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/foundation"
 	contractsconfiguration "github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/contracts/modular"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/schedule"
 	"github.com/goravel/framework/contracts/validation"
@@ -41,6 +42,7 @@ type ApplicationBuilder struct {
 	jobs                       func() []queue.Job
 	middleware                 func(middleware contractsconfiguration.Middleware)
 	migrations                 func() []schema.Migration
+	modules                    func() []modular.Module
 	paths                      func(paths contractsconfiguration.Paths)
 	routes                     func()
 	rules                      func() []validation.Rule
@@ -175,6 +177,12 @@ func (r *ApplicationBuilder) WithMiddleware(fn func(handler contractsconfigurati
 
 func (r *ApplicationBuilder) WithMigrations(fn func() []schema.Migration) foundation.ApplicationBuilder {
 	r.migrations = fn
+
+	return r
+}
+
+func (r *ApplicationBuilder) WithModules(fn func() []modular.Module) foundation.ApplicationBuilder {
+	r.modules = fn
 
 	return r
 }

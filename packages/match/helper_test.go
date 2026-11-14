@@ -8,6 +8,8 @@ import (
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
 	"github.com/dave/dst/dstutil"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/packages/match"
@@ -15,15 +17,15 @@ import (
 
 type MatchHelperTestSuite struct {
 	suite.Suite
-	configChained       *dst.File
-	configVariable      *dst.File
-	providerVariable    *dst.File
-	providerInConfig    *dst.File
-	console             *dst.File
-	database            *dst.File
-	jobs                *dst.File
-	serviceProvider     *dst.File
-	validation          *dst.File
+	configChained    *dst.File
+	configVariable   *dst.File
+	providerVariable *dst.File
+	providerInConfig *dst.File
+	console          *dst.File
+	database         *dst.File
+	jobs             *dst.File
+	serviceProvider  *dst.File
+	validation       *dst.File
 }
 
 func (s *MatchHelperTestSuite) SetupTest() {
@@ -95,6 +97,12 @@ func (kernel Kernel) Migrations() []schema.Migration {
 func (kernel Kernel) Seeders() []seeder.Seeder {
 	return []seeder.Seeder{
 		&seeders.DatabaseSeeder{},
+	}
+}
+
+func Modules() []modular.Module {
+	return []modular.Module{
+		&blog.Module{},
 	}
 }`)
 	s.Require().NoError(err)
@@ -310,6 +318,20 @@ func (s *MatchHelperTestSuite) TestHelper() {
 			},
 		},
 		{
+			name:     "match modules",
+			file:     s.database,
+			matchers: Modules(),
+			assert: func(node dst.Node) {
+				s.True(CompositeLit(EqualNode(&dst.ArrayType{
+					Elt: &dst.SelectorExpr{
+						X:   &dst.Ident{Name: "modular"},
+						Sel: &dst.Ident{Name: "Module"},
+					},
+				})).MatchNode(node))
+				s.Len(node.(*dst.CompositeLit).Elts, 1)
+			},
+		},
+		{
 			name:     "match seeders",
 			file:     s.database,
 			matchers: Seeders(),
@@ -428,4 +450,47 @@ func (s *MatchHelperTestSuite) match(source *dst.File, matchers []match.GoNode) 
 	}, nil)
 
 	return
+}
+
+func TestModuleMethod(t *testing.T) {
+	source := `package blog
+
+func Migrations() []string {
+	return []string{"function"}
+}
+
+func (m *Module) Other() []string {
+	return []string{"other"}
+}
+
+func (m *Module) Migrations() []schema.Migration {
+	return []schema.Migration{&migrations.Posts{}}
+}
+`
+	file, err := decorator.Parse(source)
+	require.NoError(t, err)
+
+	find := func(matchers []match.GoNode) (matched dst.Node) {
+		var current int
+		dstutil.Apply(file, func(cursor *dstutil.Cursor) bool {
+			if current < len(matchers) && matchers[current].MatchCursor(cursor) {
+				current++
+				if current == len(matchers) {
+					matched = cursor.Node()
+				}
+			}
+
+			return matched == nil
+		}, nil)
+
+		return
+	}
+
+	lit, ok := find(ModuleMethod("Migrations")).(*dst.CompositeLit)
+	require.True(t, ok)
+	require.Len(t, lit.Elts, 1)
+	_, isUnary := lit.Elts[0].(*dst.UnaryExpr)
+	assert.True(t, isUnary)
+
+	assert.Nil(t, find(ModuleMethod("Seeders")))
 }

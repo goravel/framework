@@ -1,12 +1,14 @@
 package console
 
 import (
+	"path/filepath"
 	"strings"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/path"
@@ -46,6 +48,7 @@ func (r *ViewMakeCommand) Extend() command.Extend {
 				Aliases: []string{"f"},
 				Usage:   "Create the view even if it already exists",
 			},
+			supportconsole.ModuleFlag(),
 		},
 	}
 }
@@ -70,7 +73,16 @@ func (r *ViewMakeCommand) makeOne(ctx console.Context, viewName string) error {
 		viewName = viewName + viewExtension
 	}
 
-	filePath := path.View(viewName)
+	// A module view "index.tmpl" is rendered as "<module>/index.tmpl".
+	filePath, definition := path.View(viewName), viewName
+	moduleName, moduleDir, err := supportconsole.Module(ctx)
+	if err != nil {
+		return err
+	}
+	if moduleDir != "" {
+		filePath = path.Base(filepath.FromSlash(supportconsole.ModuleRoot(moduleDir, support.Config.Paths.Views)), viewName)
+		definition = moduleName + "/" + viewName
+	}
 
 	// Check if file already exists
 	if file.Exists(filePath) && !ctx.OptionBool("force") {
@@ -79,7 +91,7 @@ func (r *ViewMakeCommand) makeOne(ctx console.Context, viewName string) error {
 
 	// Create the view file
 	stub := r.getStub()
-	content := r.populateStub(stub, viewName)
+	content := r.populateStub(stub, definition)
 
 	if err := file.PutContent(filePath, content); err != nil {
 		return err

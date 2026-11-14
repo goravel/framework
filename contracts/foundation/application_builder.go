@@ -12,6 +12,7 @@ import (
 	"github.com/goravel/framework/contracts/database/seeder"
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/foundation/configuration"
+	"github.com/goravel/framework/contracts/modular"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/schedule"
 	"github.com/goravel/framework/contracts/validation"
@@ -72,6 +73,9 @@ type ApplicationBuilder interface {
 	WithMiddleware(func(handler configuration.Middleware)) ApplicationBuilder
 	// WithMigrations registers the database migrations.
 	WithMigrations(func() []schema.Migration) ApplicationBuilder
+	// WithModules registers the modules (bootstrap/modules.go). Their contributions
+	// are merged into each Build() step after the application's own.
+	WithModules(func() []modular.Module) ApplicationBuilder
 	// WithPaths sets custom paths for the application.
 	WithPaths(func(paths configuration.Paths)) ApplicationBuilder
 	// WithProviders registers and boots custom service providers.

@@ -185,6 +185,43 @@ func (r *withSliceHandler) AddItem(pkg, item string) error {
 	return GoFile(r.appFilePath).Find(match.FoundationSetup()).Modify(r.setupInline(item)).Apply()
 }
 
+// EnsureWithMethod wires WithMethod(HelperFunc) into foundation.Setup() with an empty helper file.
+// It edits app.go first, so a failed match leaves no helper file behind.
+func (r *withSliceHandler) EnsureWithMethod() error {
+	hasFoundationSetup, err := r.containsFoundationSetupInAppFile()
+	if err != nil {
+		return err
+	}
+	if !hasFoundationSetup {
+		return errors.PackageSetupNotFound
+	}
+
+	withMethodExists, err := r.checkWithMethodExists()
+	if err != nil {
+		return err
+	}
+	if withMethodExists {
+		return nil
+	}
+	if r.fileExists {
+		return r.config.fileExistsError
+	}
+
+	if err := GoFile(r.appFilePath).Find(match.FoundationSetup()).Modify(r.setupWithFunction()).Apply(); err != nil {
+		return err
+	}
+
+	// A chain that is not a statement of its own (builder := foundation.Setup()...) is left untouched.
+	if withMethodExists, err = r.checkWithMethodExists(); err != nil {
+		return err
+	}
+	if !withMethodExists {
+		return errors.PackageSetupNotFound
+	}
+
+	return r.createFile()
+}
+
 // RemoveItem removes an item from the slice in foundation.Setup() chain.
 //
 // In always-inline mode: Removes the item from the inline array in app.go and cleans up imports.
@@ -891,21 +928,10 @@ func containsFoundationSetup(node dst.Node) bool {
 	return foundSetup
 }
 
+// createImport adds an empty import block as the first declaration of the file.
 func createImport(node dst.Node) error {
-	importDecl := &dst.GenDecl{
-		Tok: token.IMPORT,
-	}
-
 	f := node.(*dst.File)
-
-	newDecls := make([]dst.Decl, 0, len(f.Decls)+1)
-	newDecls = append(newDecls, f.Decls[0], importDecl) // package and import
-
-	if len(f.Decls) > 1 {
-		newDecls = append(newDecls, f.Decls[1:]...) // others
-	}
-
-	f.Decls = newDecls
+	f.Decls = append([]dst.Decl{&dst.GenDecl{Tok: token.IMPORT}}, f.Decls...)
 
 	return nil
 }
