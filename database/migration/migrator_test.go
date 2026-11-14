@@ -75,7 +75,7 @@ func (s *MigratorSuite) TestCreate() {
 		}()
 
 		name := "create_posts_table"
-		fileName, err := s.migrator.CreateIn("modules/blog/database/migrations", name, "")
+		fileName, err := s.migrator.Create(name, "", "modules/blog/database/migrations")
 		s.NoError(err)
 		s.Equal("20240817214501_"+name, fileName)
 		s.True(file.Contain(filepath.Join(pwd, "modules", "blog", "database", "migrations", fileName+".go"), "package migrations"))
@@ -91,7 +91,7 @@ func (s *MigratorSuite) TestCreate() {
 		s.NoError(file.PutContent(filepath.Join("bootstrap", "app.go"), "package bootstrap\n\nfunc Boot() { foundation.Setup().Create() }\n"))
 
 		// Without the app's Schema facade the generated file falls back to the framework's facades.
-		fileName, err := s.migrator.CreateIn("modules/blog/database/migrations", "create_posts_table", "")
+		fileName, err := s.migrator.Create("create_posts_table", "", "modules/blog/database/migrations")
 		s.NoError(err)
 		migration := filepath.Join(pwd, "modules", "blog", "database", "migrations", fileName+".go")
 		s.True(file.Contain(migration, `"github.com/goravel/framework/facades"`))
@@ -100,7 +100,7 @@ func (s *MigratorSuite) TestCreate() {
 		// The package name falls back with the import, also when the app's is named differently.
 		facadesPath := support.Config.Paths.Facades
 		support.Config.Paths.Facades = "app/support/f"
-		fileName, err = s.migrator.CreateIn("modules/blog/database/migrations", "create_posts_table", "")
+		fileName, err = s.migrator.Create("create_posts_table", "", "modules/blog/database/migrations")
 		support.Config.Paths.Facades = facadesPath
 		s.NoError(err)
 		migration = filepath.Join(pwd, "modules", "blog", "database", "migrations", fileName+".go")
@@ -109,7 +109,7 @@ func (s *MigratorSuite) TestCreate() {
 		s.NoError(file.Remove(migration))
 
 		s.NoError(file.PutContent(filepath.Join("app", "facades", "schema.go"), "package facades\n"))
-		fileName, err = s.migrator.CreateIn("modules/blog/database/migrations", "create_posts_table", "")
+		fileName, err = s.migrator.Create("create_posts_table", "", "modules/blog", "database/migrations")
 		s.NoError(err)
 		s.True(file.Contain(filepath.Join(pwd, "modules", "blog", "database", "migrations", fileName+".go"), `/app/facades"`))
 	})

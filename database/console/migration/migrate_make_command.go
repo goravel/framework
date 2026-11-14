@@ -72,12 +72,12 @@ func (r *MigrateMakeCommand) makeOne(ctx console.Context, name, modelName string
 
 	moduleDir := makeMigration.GetModuleDir()
 
-	var fileName string
+	var dir []string
 	if moduleDir != "" {
-		fileName, err = r.migrator.CreateIn(supportconsole.ModuleRoot(moduleDir, support.Config.Paths.Migrations), makeMigration.GetName(), modelName)
-	} else {
-		fileName, err = r.migrator.Create(makeMigration.GetName(), modelName)
+		dir = append(dir, supportconsole.ModuleRoot(moduleDir, support.Config.Paths.Migrations))
 	}
+
+	fileName, err := r.migrator.Create(makeMigration.GetName(), modelName, dir...)
 	if err != nil {
 		return errors.MigrationCreateFailed.Args(err)
 	}

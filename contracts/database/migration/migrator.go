@@ -12,10 +12,8 @@ type Status struct {
 }
 
 type Migrator interface {
-	// Create a new migration file.
-	Create(name string, modelName string) (string, error)
-	// CreateIn creates a new migration file in dir, relative to the project root.
-	CreateIn(dir string, name string, modelName string) (string, error)
+	// Create a new migration file, in the joined dir (relative to the project root) if given, else the migrations path.
+	Create(name string, modelName string, dir ...string) (string, error)
 	// Fresh drops all tables and re-runs all migrations from scratch.
 	Fresh() error
 	// Reset the migrations.

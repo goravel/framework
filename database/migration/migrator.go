@@ -35,12 +35,8 @@ func NewMigrator(artisan console.Artisan, schema contractsschema.Schema, table s
 	}
 }
 
-func (r *Migrator) Create(name string, modelName string) (string, error) {
-	return r.CreateIn("", name, modelName)
-}
-
-// CreateIn writes the migration to dir instead of the migrations path, "" for the default.
-func (r *Migrator) CreateIn(dir string, name string, modelName string) (string, error) {
+// Create writes the migration to the joined dir instead of the migrations path when given.
+func (r *Migrator) Create(name string, modelName string, dir ...string) (string, error) {
 	table, create := TableGuesser{}.Guess(name)
 
 	var schemaFields []string
@@ -68,8 +64,8 @@ func (r *Migrator) CreateIn(dir string, name string, modelName string) (string, 
 	}
 
 	filePath, pkg := r.creator.GetPath(fileName), packages.Paths().Migrations().Package()
-	if dir != "" {
-		filePath, pkg = path.Base(filepath.FromSlash(dir), fileName+".go"), filepath.Base(filepath.FromSlash(dir))
+	if d := filepath.Join(dir...); d != "" {
+		filePath, pkg = path.Base(d, fileName+".go"), filepath.Base(d)
 	}
 
 	templateData := StubData{

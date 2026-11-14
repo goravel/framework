@@ -280,7 +280,7 @@ func (m *Module) Name() string {
 	mockContext.EXPECT().Option("model").Return("").Once()
 	mockContext.EXPECT().Option("module").Return("blog").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
-	mockMigrator.EXPECT().CreateIn("modules/blog/database/migrations", "create_posts_table", "").Return("20240915060148_create_posts_table", nil).Once()
+	mockMigrator.EXPECT().Create("create_posts_table", "", "modules/blog/database/migrations").Return("20240915060148_create_posts_table", nil).Once()
 	mockContext.EXPECT().Success("Created Migration: create_posts_table").Once()
 	mockContext.EXPECT().Success("Migration registered successfully").Once()
 

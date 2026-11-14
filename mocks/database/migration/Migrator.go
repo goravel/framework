@@ -20,9 +20,16 @@ func (_m *Migrator) EXPECT() *Migrator_Expecter {
 	return &Migrator_Expecter{mock: &_m.Mock}
 }
 
-// Create provides a mock function with given fields: name, modelName
-func (_m *Migrator) Create(name string, modelName string) (string, error) {
-	ret := _m.Called(name, modelName)
+// Create provides a mock function with given fields: name, modelName, dir
+func (_m *Migrator) Create(name string, modelName string, dir ...string) (string, error) {
+	_va := make([]interface{}, len(dir))
+	for _i := range dir {
+		_va[_i] = dir[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, name, modelName)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Create")
@@ -30,17 +37,17 @@ func (_m *Migrator) Create(name string, modelName string) (string, error) {
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, string) (string, error)); ok {
-		return rf(name, modelName)
+	if rf, ok := ret.Get(0).(func(string, string, ...string) (string, error)); ok {
+		return rf(name, modelName, dir...)
 	}
-	if rf, ok := ret.Get(0).(func(string, string) string); ok {
-		r0 = rf(name, modelName)
+	if rf, ok := ret.Get(0).(func(string, string, ...string) string); ok {
+		r0 = rf(name, modelName, dir...)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = rf(name, modelName)
+	if rf, ok := ret.Get(1).(func(string, string, ...string) error); ok {
+		r1 = rf(name, modelName, dir...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -56,13 +63,21 @@ type Migrator_Create_Call struct {
 // Create is a helper method to define mock.On call
 //   - name string
 //   - modelName string
-func (_e *Migrator_Expecter) Create(name interface{}, modelName interface{}) *Migrator_Create_Call {
-	return &Migrator_Create_Call{Call: _e.mock.On("Create", name, modelName)}
+//   - dir ...string
+func (_e *Migrator_Expecter) Create(name interface{}, modelName interface{}, dir ...interface{}) *Migrator_Create_Call {
+	return &Migrator_Create_Call{Call: _e.mock.On("Create",
+		append([]interface{}{name, modelName}, dir...)...)}
 }
 
-func (_c *Migrator_Create_Call) Run(run func(name string, modelName string)) *Migrator_Create_Call {
+func (_c *Migrator_Create_Call) Run(run func(name string, modelName string, dir ...string)) *Migrator_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string))
+		variadicArgs := make([]string, len(args)-2)
+		for i, a := range args[2:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(args[0].(string), args[1].(string), variadicArgs...)
 	})
 	return _c
 }
@@ -72,65 +87,7 @@ func (_c *Migrator_Create_Call) Return(_a0 string, _a1 error) *Migrator_Create_C
 	return _c
 }
 
-func (_c *Migrator_Create_Call) RunAndReturn(run func(string, string) (string, error)) *Migrator_Create_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// CreateIn provides a mock function with given fields: dir, name, modelName
-func (_m *Migrator) CreateIn(dir string, name string, modelName string) (string, error) {
-	ret := _m.Called(dir, name, modelName)
-
-	if len(ret) == 0 {
-		panic("no return value specified for CreateIn")
-	}
-
-	var r0 string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(string, string, string) (string, error)); ok {
-		return rf(dir, name, modelName)
-	}
-	if rf, ok := ret.Get(0).(func(string, string, string) string); ok {
-		r0 = rf(dir, name, modelName)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	if rf, ok := ret.Get(1).(func(string, string, string) error); ok {
-		r1 = rf(dir, name, modelName)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// Migrator_CreateIn_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateIn'
-type Migrator_CreateIn_Call struct {
-	*mock.Call
-}
-
-// CreateIn is a helper method to define mock.On call
-//   - dir string
-//   - name string
-//   - modelName string
-func (_e *Migrator_Expecter) CreateIn(dir interface{}, name interface{}, modelName interface{}) *Migrator_CreateIn_Call {
-	return &Migrator_CreateIn_Call{Call: _e.mock.On("CreateIn", dir, name, modelName)}
-}
-
-func (_c *Migrator_CreateIn_Call) Run(run func(dir string, name string, modelName string)) *Migrator_CreateIn_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string), args[2].(string))
-	})
-	return _c
-}
-
-func (_c *Migrator_CreateIn_Call) Return(_a0 string, _a1 error) *Migrator_CreateIn_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *Migrator_CreateIn_Call) RunAndReturn(run func(string, string, string) (string, error)) *Migrator_CreateIn_Call {
+func (_c *Migrator_Create_Call) RunAndReturn(run func(string, string, ...string) (string, error)) *Migrator_Create_Call {
 	_c.Call.Return(run)
 	return _c
 }
