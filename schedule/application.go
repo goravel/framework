@@ -21,7 +21,7 @@ var parser = cron.NewParser(
 	cron.SecondOptional | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor,
 )
 
-// maxDelayIfStillRunning bounds how long RunDue waits for a previous run of
+// maxDelayIfStillRunning bounds how long Run waits for a previous run of
 // a DelayIfStillRunning event when the context has no deadline.
 const maxDelayIfStillRunning = time.Minute
 
@@ -64,16 +64,20 @@ func (app *Application) Register(events []schedule.Event) {
 	app.addEvents(events)
 }
 
-func (app *Application) Run() {
+func (app *Application) Work() {
 	app.cron.Run()
 }
 
-// RunDue runs the events due in the minute of `at`, in the schedule's
+// Run runs the events due in the current minute, in the schedule's
 // location. Events that fire more than once a minute run once. OnOneServer
-// uses the same cache lock as Run; SkipIfStillRunning and
+// uses the same cache lock as Work; SkipIfStillRunning and
 // DelayIfStillRunning use a cache lock held while the event runs, since the
 // previous run may be in another process.
-func (app *Application) RunDue(ctx context.Context, at time.Time) error {
+func (app *Application) Run(ctx context.Context) error {
+	return app.runDue(ctx, carbon.Now().StdTime())
+}
+
+func (app *Application) runDue(ctx context.Context, at time.Time) error {
 	tick := at.In(app.location).Truncate(time.Minute)
 
 	var errs []error

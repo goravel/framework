@@ -136,16 +136,16 @@ func TestServiceProviderBoot(t *testing.T) {
 	app := mocksfoundation.NewApplication(t)
 	schedule := mocksschedule.NewSchedule(t)
 
-	app.EXPECT().MakeSchedule().Return(schedule).Twice()
+	app.EXPECT().MakeSchedule().Return(schedule).Times(3)
 	app.EXPECT().Commands(mock.MatchedBy(func(commands []contractsconsole.Command) bool {
-		if len(commands) != 2 || commands[0] == nil || commands[1] == nil {
+		if len(commands) != 3 || commands[0] == nil || commands[1] == nil || commands[2] == nil {
 			return false
 		}
 
 		_, okList := commands[0].(interface{ Signature() string })
 		_, okRun := commands[1].(interface{ Signature() string })
 
-		return okList && okRun && commands[0].Signature() == "schedule:list" && commands[1].Signature() == "schedule:run"
+		return okList && okRun && commands[0].Signature() == "schedule:list" && commands[1].Signature() == "schedule:run" && commands[2].Signature() == "schedule:work"
 	})).Once()
 
 	provider.Boot(app)

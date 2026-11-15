@@ -26,7 +26,7 @@ func (r *ScheduleRunner) ShouldRun() bool {
 }
 
 func (r *ScheduleRunner) Run() error {
-	r.schedule.Run()
+	r.schedule.Work()
 
 	return nil
 }

@@ -6,7 +6,6 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/schedule"
-	"github.com/goravel/framework/support/carbon"
 )
 
 type Run struct {
@@ -26,32 +25,17 @@ func (r *Run) Signature() string {
 
 // Description The console command description.
 func (r *Run) Description() string {
-	return "Run the scheduled commands"
+	return "Run the scheduled commands due in the current minute once and exit"
 }
 
 // Extend The console command extend.
 func (r *Run) Extend() command.Extend {
 	return command.Extend{
 		Category: "schedule",
-		Flags: []command.Flag{
-			&command.BoolFlag{
-				Name:  "once",
-				Usage: "run the events due in the current minute and exit, for an external trigger such as cron",
-			},
-		},
 	}
 }
 
 // Handle Execute the console command.
 func (r *Run) Handle(ctx console.Context) error {
-	if ctx.OptionBool("once") {
-		return r.schedule.RunDue(context.Background(), carbon.Now().StdTime())
-	}
-
-	r.schedule.Run()
-	return nil
-}
-
-func (r *Run) Shutdown(ctx console.Context) error {
-	return r.schedule.Shutdown(ctx)
+	return r.schedule.Run(context.Background())
 }

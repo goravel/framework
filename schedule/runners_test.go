@@ -45,7 +45,7 @@ func TestScheduleRunner(t *testing.T) {
 	t.Run("run and shutdown", func(t *testing.T) {
 		config := mocksconfig.NewConfig(t)
 		schedule := mocksschedule.NewSchedule(t)
-		schedule.EXPECT().Run().Once()
+		schedule.EXPECT().Work().Once()
 		schedule.EXPECT().Shutdown().Return(nil).Once()
 
 		runner := NewScheduleRunner(config, schedule)

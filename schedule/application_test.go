@@ -71,7 +71,7 @@ func (s *ApplicationTestSuite) TestCallAndCommand() {
 		app.Command("test --name Goravel argument0 argument1").Cron("* * * * * *"),
 	})
 
-	go app.Run()
+	go app.Work()
 
 	select {
 	case err := <-shutdownErr:
@@ -122,8 +122,8 @@ func (s *ApplicationTestSuite) TestOnOneServer() {
 		}).Cron("* * * * * *").OnOneServer().Name("immediately"),
 	})
 
-	go app.Run()
-	go app1.Run()
+	go app.Work()
+	go app1.Work()
 
 	time.Sleep(2 * time.Second)
 
@@ -145,7 +145,7 @@ func (s *ApplicationTestSuite) TestShutdown() {
 		}).Cron("*/2 * * * * *"),
 	})
 
-	go app.Run()
+	go app.Work()
 
 	time.Sleep(3 * time.Second)
 
@@ -166,7 +166,7 @@ func (s *ApplicationTestSuite) TestShutdownWithContext() {
 		}).Cron("*/2 * * * * *"),
 	})
 
-	go app.Run()
+	go app.Work()
 
 	time.Sleep(3 * time.Second)
 
@@ -177,7 +177,7 @@ func (s *ApplicationTestSuite) TestShutdownWithContext() {
 	s.Equal(0, immediatelyCall)
 }
 
-func (s *ApplicationTestSuite) TestRunDue() {
+func (s *ApplicationTestSuite) TestrunDue() {
 	location := time.FixedZone("UTC-3", -3*60*60)
 	// 12:05:37 UTC is 09:05 in the schedule's location.
 	at := time.Date(2026, 10, 18, 12, 5, 37, 0, time.UTC)
@@ -198,11 +198,11 @@ func (s *ApplicationTestSuite) TestRunDue() {
 		app.Call(func() { callbackCall++ }).Cron("*/10 * * * * *"),
 	})
 
-	s.NoError(app.RunDue(context.Background(), at))
+	s.NoError(app.runDue(context.Background(), at))
 	s.Equal(1, callbackCall)
 }
 
-func (s *ApplicationTestSuite) TestRunDueOnOneServer() {
+func (s *ApplicationTestSuite) TestrunDueOnOneServer() {
 	at := time.Date(2026, 10, 18, 12, 30, 0, 0, time.UTC)
 
 	mockArtisan := mocksconsole.NewArtisan(s.T())
@@ -221,11 +221,11 @@ func (s *ApplicationTestSuite) TestRunDueOnOneServer() {
 		app.Command("reconcile").EveryThirtyMinutes().OnOneServer(),
 	})
 
-	s.NoError(app.RunDue(context.Background(), at))
-	s.NoError(app.RunDue(context.Background(), at.Add(20*time.Second)))
+	s.NoError(app.runDue(context.Background(), at))
+	s.NoError(app.runDue(context.Background(), at.Add(20*time.Second)))
 }
 
-func (s *ApplicationTestSuite) TestRunDueSkipIfStillRunning() {
+func (s *ApplicationTestSuite) TestrunDueSkipIfStillRunning() {
 	mockArtisan := mocksconsole.NewArtisan(s.T())
 	mockArtisan.EXPECT().Call("long").Return(nil).Once()
 
@@ -243,11 +243,11 @@ func (s *ApplicationTestSuite) TestRunDueSkipIfStillRunning() {
 		app.Command("long").EveryMinute().SkipIfStillRunning(),
 	})
 
-	s.NoError(app.RunDue(context.Background(), time.Now()))
-	s.NoError(app.RunDue(context.Background(), time.Now()))
+	s.NoError(app.runDue(context.Background(), time.Now()))
+	s.NoError(app.runDue(context.Background(), time.Now()))
 }
 
-func (s *ApplicationTestSuite) TestRunDueDelayIfStillRunning() {
+func (s *ApplicationTestSuite) TestrunDueDelayIfStillRunning() {
 	mockArtisan := mocksconsole.NewArtisan(s.T())
 	mockArtisan.EXPECT().Call("long").Return(nil).Once()
 
@@ -270,11 +270,11 @@ func (s *ApplicationTestSuite) TestRunDueDelayIfStillRunning() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	s.NoError(app.RunDue(ctx, time.Now()))
-	s.NoError(app.RunDue(context.Background(), time.Now()))
+	s.NoError(app.runDue(ctx, time.Now()))
+	s.NoError(app.runDue(context.Background(), time.Now()))
 }
 
-func (s *ApplicationTestSuite) TestRunDueErrors() {
+func (s *ApplicationTestSuite) TestrunDueErrors() {
 	mockArtisan := mocksconsole.NewArtisan(s.T())
 	mockArtisan.EXPECT().Call("broken").Return(assert.AnError).Once()
 	mockArtisan.EXPECT().Call("fine").Return(nil).Once()
@@ -290,16 +290,16 @@ func (s *ApplicationTestSuite) TestRunDueErrors() {
 	})
 
 	// A failing event doesn't stop the others, and every failure is returned.
-	err := app.RunDue(context.Background(), time.Now())
+	err := app.runDue(context.Background(), time.Now())
 	s.ErrorContains(err, "schedule event broken failed: "+assert.AnError.Error())
 	s.ErrorContains(err, "schedule event panicking panicked: boom")
 }
 
-func (s *ApplicationTestSuite) TestRunDueSkipsInvalidCron() {
-	// Register drops events with an invalid expression; RunDue ignores them
+func (s *ApplicationTestSuite) TestrunDueSkipsInvalidCron() {
+	// Register drops events with an invalid expression; runDue ignores them
 	// too if one gets into the list another way.
 	app := NewApplication(mocksconsole.NewArtisan(s.T()), nil, nil, false)
 	app.events = append(app.events, app.Command("invalid").Cron("not a cron"))
 
-	s.NoError(app.RunDue(context.Background(), time.Now()))
+	s.NoError(app.runDue(context.Background(), time.Now()))
 }
