@@ -741,7 +741,7 @@ func (r *Application) configurePaths() {
 }
 
 // configureRoutes runs WithRouting, then module static files on the root router
-// (no group middleware), then module routes in the modular.routes.* groups.
+// (no group middleware), then module routes in the modular.routes.web group.
 func (r *Application) configureRoutes() {
 	if r.builder.routes != nil {
 		r.builder.routes()
@@ -749,8 +749,7 @@ func (r *Application) configureRoutes() {
 
 	statics := modular.Providing[contractsmodular.ProvidesStatic](r.modules)
 	web := modular.Providing[contractsmodular.ProvidesRoutes](r.modules)
-	api := modular.Providing[contractsmodular.ProvidesApiRoutes](r.modules)
-	if len(statics) == 0 && len(web) == 0 && len(api) == 0 {
+	if len(statics) == 0 && len(web) == 0 {
 		return
 	}
 
@@ -764,12 +763,8 @@ func (r *Application) configureRoutes() {
 
 	configFacade := r.MakeConfig()
 	webPrefix, webMiddleware := moduleRouteGroup(configFacade, "modular.routes.web", "")
-	apiPrefix, apiMiddleware := moduleRouteGroup(configFacade, "modular.routes.api", "api")
 	for _, module := range web {
 		routeFacade.Prefix(webPrefix).Middleware(webMiddleware...).Group(module.Routes)
-	}
-	for _, module := range api {
-		routeFacade.Prefix(apiPrefix).Middleware(apiMiddleware...).Group(module.ApiRoutes)
 	}
 }
 

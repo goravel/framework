@@ -142,7 +142,6 @@ func (r *Registry) Capabilities(module modular.Module) map[string]bool {
 		"config":       implements[modular.ProvidesConfig](module),
 		"middleware":   implements[modular.ProvidesGlobalMiddleware](module),
 		"routes":       implements[modular.ProvidesRoutes](module),
-		"api":          implements[modular.ProvidesApiRoutes](module),
 		"migrations":   implements[modular.ProvidesMigrations](module),
 		"seeders":      implements[modular.ProvidesSeeders](module),
 		"commands":     implements[modular.ProvidesCommands](module),

@@ -44,14 +44,9 @@ type ProvidesGlobalMiddleware interface {
 	GlobalMiddleware() []http.Middleware
 }
 
-// ProvidesRoutes registers web routes in the modular.routes.web group.
+// ProvidesRoutes registers routes in the modular.routes.web group.
 type ProvidesRoutes interface {
 	Routes(router route.Router)
-}
-
-// ProvidesApiRoutes registers API routes in the modular.routes.api group.
-type ProvidesApiRoutes interface {
-	ApiRoutes(router route.Router)
 }
 
 // ProvidesMigrations contributes database migrations.

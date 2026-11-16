@@ -26,10 +26,9 @@ func init() {
 		// Directory of the application's own modules, relative to the project root.
 		"path": "modules",
 
-		// Route groups wrapping what modules register with Routes() and ApiRoutes().
+		// Route group wrapping what modules register with Routes().
 		"routes": map[string]any{
 			"web": map[string]any{"prefix": "", "middleware": []http.Middleware{}},
-			"api": map[string]any{"prefix": "api", "middleware": []http.Middleware{}},
 		},
 	})
 }
@@ -68,44 +67,27 @@ func (r *moduleStubs) replace(content string) string {
 	).Replace(content)
 }
 
-// Module is module.go: web adds views, web routes and Vite entries, lang the
-// translations, full the provider, API routes and config.
-func (r *moduleStubs) Module(web, lang, full bool) string {
+// Module is module.go: full adds the provider, routes, config, views,
+// translations and Vite entries.
+func (r *moduleStubs) Module(full bool) string {
 	var imports, vars, methods []string
 
-	if web || lang {
-		imports = append(imports, "\t\"embed\"\n\t\"io/fs\"\n")
-	}
-	if web {
-		vars = append(vars, "//go:embed resources/views\nvar views embed.FS\n\n")
-	}
-	if lang {
-		vars = append(vars, "//go:embed lang\nvar lang embed.FS\n\n")
-	}
 	if full {
-		imports = append(imports, `	"github.com/goravel/framework/contracts/foundation"
+		imports = append(imports, "\t\"embed\"\n\t\"io/fs\"\n", `	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/route"
 `, `	"DummyModule/providers"
 	"DummyModule/routes"
 `)
+		vars = append(vars, "//go:embed resources/views\nvar views embed.FS\n\n", "//go:embed lang\nvar lang embed.FS\n\n")
 		methods = append(methods, `
 func (m *Module) ServiceProviders() []foundation.ServiceProvider {
 	return []foundation.ServiceProvider{
 		&providers.ServiceProvider{},
 	}
 }
-`)
-	}
-	if web {
-		methods = append(methods, `
+
 func (m *Module) Routes(router route.Router) {
 	routes.Web(router)
-}
-`)
-	}
-	if full {
-		methods = append(methods, `
-func (m *Module) ApiRoutes(router route.Router) {
 	routes.Api(router)
 }
 
@@ -115,30 +97,21 @@ func (m *Module) Config() map[string]any {
 		"enabled": true,
 	}
 }
-`)
-	}
-	if web {
-		methods = append(methods, `
+
 // Views are named "DummyName/<file>", e.g. "DummyName/index.tmpl".
 func (m *Module) Views() fs.FS {
 	sub, _ := fs.Sub(views, "resources/views")
 
 	return sub
 }
-`)
-	}
-	if lang {
-		methods = append(methods, `
+
 // Translations are grouped as "DummyName/<file>", e.g. "DummyName/messages.title".
 func (m *Module) Translations() fs.FS {
 	sub, _ := fs.Sub(lang, "lang")
 
 	return sub
 }
-`)
-	}
-	if web {
-		methods = append(methods, `
+
 // ViteEntries are relative to the module directory, e.g. "resources/js/app.js".
 // ViteAliases() and Static() are optional too, see contracts/modular.
 func (m *Module) ViteEntries() []string {
@@ -212,29 +185,26 @@ import (
 )
 
 func Api(router route.Router) {
-	router.Get("/DummyName", controllers.NewDummyStudlyController().Show)
+	router.Prefix("api").Get("/DummyName", controllers.NewDummyStudlyController().Show)
 }
 `)
 }
 
-// Controller has Show for the API route and, with web, Index rendering the module view.
-func (r *moduleStubs) Controller(web bool) string {
+// Controller has Index rendering the module view and Show for the API route.
+func (r *moduleStubs) Controller() string {
 	imports := "import (\n\t\"github.com/goravel/framework/contracts/http\"\n)\n"
-	index := ""
-	if web {
-		title := `"DummyTitle"`
-		if facadesImport, facadesPackage, ok := langFacade(); ok {
-			imports = "import (\n\t\"github.com/goravel/framework/contracts/http\"\n\n\t\"" + facadesImport + "\"\n)\n"
-			title = facadesPackage + `.Lang(ctx).Get("DummyName/messages.title")`
-		}
-		index = `
+	title := `"DummyTitle"`
+	if facadesImport, facadesPackage, ok := langFacade(); ok {
+		imports = "import (\n\t\"github.com/goravel/framework/contracts/http\"\n\n\t\"" + facadesImport + "\"\n)\n"
+		title = facadesPackage + `.Lang(ctx).Get("DummyName/messages.title")`
+	}
+	index := `
 func (r *DummyStudlyController) Index(ctx http.Context) http.Response {
 	return ctx.Response().View().Make("DummyName/index.tmpl", map[string]any{
 		"title": ` + title + `,
 	})
 }
 `
-	}
 
 	return r.replace(`package controllers
 

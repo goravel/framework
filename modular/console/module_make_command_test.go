@@ -36,10 +36,9 @@ func (s *ModuleMakeCommandTestSuite) TearDownTest() {
 }
 
 // context mocks one make:module call.
-func (s *ModuleMakeCommandTestSuite) context(name string, api, plain, force bool, order int) *mocksconsole.Context {
+func (s *ModuleMakeCommandTestSuite) context(name string, plain, force bool, order int) *mocksconsole.Context {
 	ctx := mocksconsole.NewContext(s.T())
 	ctx.EXPECT().Arguments().Return([]string{name}).Once()
-	ctx.EXPECT().OptionBool("api").Return(api).Maybe()
 	ctx.EXPECT().OptionBool("plain").Return(plain).Maybe()
 	ctx.EXPECT().OptionBool("force").Return(force).Maybe()
 	ctx.EXPECT().OptionInt("order").Return(order).Maybe()
@@ -79,13 +78,13 @@ func (s *ModuleMakeCommandTestSuite) TestSignature() {
 	s.Equal("make:module", cmd.Signature())
 	s.Equal("Create a new module", cmd.Description())
 	s.Equal("make", cmd.Extend().Category)
-	s.Len(cmd.Extend().Flags, 4)
+	s.Len(cmd.Extend().Flags, 3)
 }
 
 func (s *ModuleMakeCommandTestSuite) TestDefault() {
 	s.Require().NoError(file.PutContent("tests/test_case.go", "package tests\n"))
 
-	ctx := s.context("Blog", false, false, false, 0)
+	ctx := s.context("Blog", false, false, 0)
 	ctx.EXPECT().Success("Module created successfully: modules/blog").Once()
 
 	s.NoError(NewModuleMakeCommand(nil).Handle(ctx))
@@ -111,9 +110,10 @@ func (s *ModuleMakeCommandTestSuite) TestDefault() {
 	s.Contains(module, "//go:embed lang\nvar lang embed.FS")
 	s.Contains(module, `"github.com/goravel/framework/modules/blog/providers"`)
 	s.Contains(module, "return \"blog\"\n")
-	for _, method := range []string{"ServiceProviders()", "Routes(router route.Router)", "ApiRoutes(router route.Router)", "Config()", "Views()", "Translations()", "ViteEntries()"} {
+	for _, method := range []string{"ServiceProviders()", "Routes(router route.Router)", "Config()", "Views()", "Translations()", "ViteEntries()"} {
 		s.Contains(module, "func (m *Module) "+method)
 	}
+	s.Contains(module, "\troutes.Web(router)\n\troutes.Api(router)\n")
 	s.NotContains(module, "Order()")
 
 	// No app/facades here, so the controller uses the framework facades.
@@ -124,7 +124,7 @@ func (s *ModuleMakeCommandTestSuite) TestDefault() {
 	s.Contains(controller, `facades.Lang(ctx).Get("blog/messages.title")`)
 
 	s.True(file.Contain("modules/blog/routes/web.go", `router.Get("/blog", controllers.NewBlogController().Index)`))
-	s.True(file.Contain("modules/blog/routes/api.go", `router.Get("/blog", controllers.NewBlogController().Show)`))
+	s.True(file.Contain("modules/blog/routes/api.go", `router.Prefix("api").Get("/blog", controllers.NewBlogController().Show)`))
 	s.True(file.Contain("modules/blog/lang/en/messages.json", `"title": "Blog"`))
 	s.False(file.Contain("modules/blog/resources/views/index.tmpl", "define"))
 	s.True(file.Contain("modules/blog/tests/feature/blog_test.go", `"github.com/goravel/framework/tests"`))
@@ -135,42 +135,8 @@ func (s *ModuleMakeCommandTestSuite) TestDefault() {
 	s.True(file.Contain("bootstrap/modules.go", "&blog.Module{},"))
 }
 
-func (s *ModuleMakeCommandTestSuite) TestApi() {
-	ctx := s.context("billing", true, false, false, 0)
-	ctx.EXPECT().Success("Module created successfully: modules/billing").Once()
-
-	s.NoError(NewModuleMakeCommand(nil).Handle(ctx))
-
-	s.ElementsMatch([]string{
-		"module.go",
-		"providers/service_provider.go",
-		"routes/api.go",
-		"http/controllers/billing_controller.go",
-		"lang/en/messages.json",
-		"database/migrations/.gitkeep",
-		"database/seeders/.gitkeep",
-		"models/.gitkeep",
-	}, s.files("modules/billing"))
-
-	module, err := file.GetContent("modules/billing/module.go")
-	s.NoError(err)
-	s.Contains(module, "func (m *Module) ApiRoutes(router route.Router)")
-	s.Contains(module, "//go:embed lang\nvar lang embed.FS")
-	s.Contains(module, "func (m *Module) Translations() fs.FS")
-	s.True(file.Contain("modules/billing/lang/en/messages.json", `"title": "Billing"`))
-	for _, absent := range []string{"resources/views", "Routes(router route.Router) {\n\troutes.Web", "Views()", "ViteEntries()"} {
-		s.NotContains(module, absent)
-	}
-
-	controller, err := file.GetContent("modules/billing/http/controllers/billing_controller.go")
-	s.NoError(err)
-	s.NotContains(controller, "Index")
-	s.NotContains(controller, "facades")
-	s.Contains(controller, `"module": "billing"`)
-}
-
 func (s *ModuleMakeCommandTestSuite) TestPlainWithOrder() {
-	ctx := s.context("Blog", false, true, false, 5)
+	ctx := s.context("Blog", true, false, 5)
 	ctx.EXPECT().Success("Module created successfully: modules/blog").Once()
 
 	s.NoError(NewModuleMakeCommand(nil).Handle(ctx))
@@ -197,7 +163,7 @@ func (s *ModuleMakeCommandTestSuite) TestKebabNameAndConfiguredPath() {
 	config := mocksconfig.NewConfig(s.T())
 	config.EXPECT().GetString("modular.path", "modules").Return("src/modules").Once()
 
-	ctx := s.context("BlogPosts", false, false, false, 0)
+	ctx := s.context("BlogPosts", false, false, 0)
 	ctx.EXPECT().Success("Module created successfully: src/modules/blog-posts").Once()
 
 	s.NoError(NewModuleMakeCommand(config).Handle(ctx))
@@ -216,7 +182,7 @@ func (s *ModuleMakeCommandTestSuite) TestKebabNameAndConfiguredPath() {
 func (s *ModuleMakeCommandTestSuite) TestAppFacadesWithoutLang() {
 	s.Require().NoError(file.PutContent("app/facades/config.go", "package facades\n"))
 
-	ctx := s.context("Blog", false, false, false, 0)
+	ctx := s.context("Blog", false, false, 0)
 	ctx.EXPECT().Success("Module created successfully: modules/blog").Once()
 
 	s.NoError(NewModuleMakeCommand(nil).Handle(ctx))
@@ -229,7 +195,7 @@ func (s *ModuleMakeCommandTestSuite) TestAppFacadesWithoutLang() {
 
 	// With the app's Lang facade, the controller uses it.
 	s.Require().NoError(file.PutContent("app/facades/lang.go", "package facades\n"))
-	ctx = s.context("Blog", false, false, true, 0)
+	ctx = s.context("Blog", false, true, 0)
 	ctx.EXPECT().Success("Module created successfully: modules/blog").Once()
 
 	s.NoError(NewModuleMakeCommand(nil).Handle(ctx))
@@ -243,7 +209,7 @@ func (s *ModuleMakeCommandTestSuite) TestExistingModulesFileWithoutWithModules()
 	s.Require().NoError(file.PutContent("bootstrap/modules.go", modify.ModulesStub()))
 
 	warning := "Add .WithModules(Modules) to foundation.Setup() in bootstrap/app.go"
-	ctx := s.context("Blog", false, true, false, 0)
+	ctx := s.context("Blog", true, false, 0)
 	ctx.EXPECT().Success("Module created successfully: modules/blog").Once()
 	ctx.EXPECT().Warning(warning).Once()
 
@@ -259,7 +225,7 @@ func (s *ModuleMakeCommandTestSuite) TestExistingModulesFileWithoutWithModules()
 func (s *ModuleMakeCommandTestSuite) TestAssignedChainWithoutModulesFile() {
 	s.Require().NoError(file.PutContent("bootstrap/app.go", assignedApp))
 
-	ctx := s.context("Blog", false, true, false, 0)
+	ctx := s.context("Blog", true, false, 0)
 	ctx.EXPECT().Success("Module created successfully: modules/blog").Once()
 	ctx.EXPECT().Warning("Add .WithModules(Modules) to foundation.Setup() in bootstrap/app.go").Once()
 
@@ -273,31 +239,13 @@ func (s *ModuleMakeCommandTestSuite) TestAssignedChainWithoutModulesFile() {
 
 // --force removes the stubs the new variant does not write, keeps other files and registers once.
 func (s *ModuleMakeCommandTestSuite) TestForceRemovesStaleStubs() {
-	ctx := s.context("Blog", false, false, false, 0)
+	ctx := s.context("Blog", false, false, 0)
 	ctx.EXPECT().Success("Module created successfully: modules/blog").Once()
 	s.NoError(NewModuleMakeCommand(nil).Handle(ctx))
 	s.Require().NoError(file.PutContent("modules/blog/resources/js/app.js", ""))
 	s.Require().NoError(file.PutContent("modules/blog/models/post.go", "package models\n"))
 
-	ctx = s.context("Blog", true, false, true, 0)
-	ctx.EXPECT().Success("Module created successfully: modules/blog").Once()
-	s.NoError(NewModuleMakeCommand(nil).Handle(ctx))
-
-	s.ElementsMatch([]string{
-		"module.go",
-		"providers/service_provider.go",
-		"routes/api.go",
-		"http/controllers/blog_controller.go",
-		"lang/en/messages.json",
-		"database/migrations/.gitkeep",
-		"database/seeders/.gitkeep",
-		"models/.gitkeep",
-		"models/post.go",
-		"resources/js/app.js",
-	}, s.files("modules/blog"))
-	s.False(file.Exists("modules/blog/resources/views"))
-
-	ctx = s.context("Blog", false, true, true, 0)
+	ctx = s.context("Blog", true, true, 0)
 	ctx.EXPECT().Success("Module created successfully: modules/blog").Once()
 	s.NoError(NewModuleMakeCommand(nil).Handle(ctx))
 
@@ -310,13 +258,13 @@ func (s *ModuleMakeCommandTestSuite) TestForceRemovesStaleStubs() {
 
 // --force keeps a stale stub that was edited and warns about it.
 func (s *ModuleMakeCommandTestSuite) TestForceKeepsEditedStubs() {
-	ctx := s.context("Blog", false, false, false, 0)
+	ctx := s.context("Blog", false, false, 0)
 	ctx.EXPECT().Success("Module created successfully: modules/blog").Once()
 	s.NoError(NewModuleMakeCommand(nil).Handle(ctx))
 	s.Require().NoError(file.PutContent("modules/blog/routes/web.go", "package routes\n\n// edited\n"))
 	s.Require().NoError(file.PutContent("modules/blog/http/controllers/blog_controller.go", "package controllers\n"))
 
-	ctx = s.context("Blog", false, true, true, 0)
+	ctx = s.context("Blog", true, true, 0)
 	ctx.EXPECT().Success("Module created successfully: modules/blog").Once()
 	ctx.EXPECT().Warning("Kept modules/blog/http/controllers/blog_controller.go: it was edited, remove it if the module no longer needs it").Once()
 	ctx.EXPECT().Warning("Kept modules/blog/routes/web.go: it was edited, remove it if the module no longer needs it").Once()
@@ -329,7 +277,7 @@ func (s *ModuleMakeCommandTestSuite) TestErrors() {
 	s.Run("exists without force", func() {
 		s.Require().NoError(file.PutContent("modules/blog/module.go", "package blog\n"))
 
-		ctx := s.context("Blog", false, false, false, 0)
+		ctx := s.context("Blog", false, false, 0)
 		ctx.EXPECT().Error(errors.ModularModuleExists.Args("blog", "modules/blog").Error()).Once()
 
 		s.NoError(NewModuleMakeCommand(nil).Handle(ctx))
@@ -337,17 +285,9 @@ func (s *ModuleMakeCommandTestSuite) TestErrors() {
 		s.False(file.Exists("bootstrap/modules.go"))
 	})
 
-	s.Run("api and plain", func() {
-		ctx := s.context("Shop", true, true, false, 0)
-		ctx.EXPECT().Error(errors.ModularOptionsConflict.Args("api", "plain").Error()).Once()
-
-		s.NoError(NewModuleMakeCommand(nil).Handle(ctx))
-		s.False(file.Exists("modules/shop"))
-	})
-
 	for name, pkg := range map[string]string{"type": "type", "Go": "go", "main": "main", "Init": "init", "internal": "internal", "vendor": "vendor"} {
 		s.Run("reserved name "+name, func() {
-			ctx := s.context(name, false, false, false, 0)
+			ctx := s.context(name, false, false, 0)
 			ctx.EXPECT().Error(errors.ModularModuleNameForbidden.Args(name, pkg).Error()).Once()
 
 			s.NoError(NewModuleMakeCommand(nil).Handle(ctx))
@@ -356,7 +296,7 @@ func (s *ModuleMakeCommandTestSuite) TestErrors() {
 	}
 
 	s.Run("package name of the contracts import", func() {
-		ctx := s.context("Modular", false, false, false, 0)
+		ctx := s.context("Modular", false, false, 0)
 		ctx.EXPECT().Error(errors.ModularModuleImportConflict.Args("modular", "modular", "github.com/goravel/framework/contracts/modular").Error()).Once()
 
 		s.NoError(NewModuleMakeCommand(nil).Handle(ctx))
@@ -365,11 +305,11 @@ func (s *ModuleMakeCommandTestSuite) TestErrors() {
 	})
 
 	s.Run("package name of another module", func() {
-		ctx := s.context("BlogPosts", false, true, false, 0)
+		ctx := s.context("BlogPosts", true, false, 0)
 		ctx.EXPECT().Success("Module created successfully: modules/blog-posts").Once()
 		s.NoError(NewModuleMakeCommand(nil).Handle(ctx))
 
-		ctx = s.context("Blogposts", false, true, false, 0)
+		ctx = s.context("Blogposts", true, false, 0)
 		ctx.EXPECT().Error(errors.ModularModuleImportConflict.Args("blogposts", "blogposts", "github.com/goravel/framework/modules/blog-posts").Error()).Once()
 
 		s.NoError(NewModuleMakeCommand(nil).Handle(ctx))
@@ -381,7 +321,7 @@ func (s *ModuleMakeCommandTestSuite) TestErrors() {
 
 	for _, name := range []string{"1blog", "blog/posts", "blog.posts", "-"} {
 		s.Run("invalid name "+name, func() {
-			ctx := s.context(name, false, false, false, 0)
+			ctx := s.context(name, false, false, 0)
 			ctx.EXPECT().Error(errors.ModularModuleNameInvalid.Args(name).Error()).Once()
 
 			s.NoError(NewModuleMakeCommand(nil).Handle(ctx))
@@ -389,7 +329,7 @@ func (s *ModuleMakeCommandTestSuite) TestErrors() {
 	}
 
 	s.Run("empty name", func() {
-		ctx := s.context("", false, false, false, 0)
+		ctx := s.context("", false, false, 0)
 		ctx.EXPECT().Ask("Enter the module name", mock.Anything).Return("", errors.ModularModuleNameEmpty).Once()
 		ctx.EXPECT().Error(errors.ModularModuleNameEmpty.Error()).Once()
 
@@ -399,7 +339,7 @@ func (s *ModuleMakeCommandTestSuite) TestErrors() {
 	s.Run("legacy bootstrap", func() {
 		s.Require().NoError(file.PutContent("bootstrap/app.go", "package bootstrap\n"))
 
-		ctx := s.context("Shop", false, false, false, 0)
+		ctx := s.context("Shop", false, false, 0)
 		ctx.EXPECT().Error(errors.ModularRequiresBootstrapSetup.Args("make:module").Error()).Once()
 
 		s.NoError(NewModuleMakeCommand(nil).Handle(ctx))
@@ -417,7 +357,7 @@ func mustContent(t *testing.T, path string) string {
 }
 
 func (s *ModuleMakeCommandTestSuite) TestAsksForName() {
-	ctx := s.context("", false, true, false, 0)
+	ctx := s.context("", true, false, 0)
 	ctx.EXPECT().Ask("Enter the module name", mock.Anything).RunAndReturn(func(_ string, options ...console.AskOption) (string, error) {
 		s.Require().Len(options, 1)
 		s.Equal(errors.ModularModuleNameEmpty, options[0].Validate(""))
@@ -434,7 +374,7 @@ func (s *ModuleMakeCommandTestSuite) TestAsksForName() {
 func (s *ModuleMakeCommandTestSuite) TestFailures() {
 	// failed runs make:module and expects one error, of any text.
 	failed := func(name string, plain, force bool) {
-		ctx := s.context(name, false, plain, force, 0)
+		ctx := s.context(name, plain, force, 0)
 		ctx.EXPECT().Error(mock.Anything).Once()
 
 		s.NoError(NewModuleMakeCommand(nil).Handle(ctx))
@@ -445,7 +385,7 @@ func (s *ModuleMakeCommandTestSuite) TestFailures() {
 	}
 
 	s.Run("blank name", func() {
-		ctx := s.context("  ", false, false, false, 0)
+		ctx := s.context("  ", false, false, 0)
 		ctx.EXPECT().Error(errors.ModularModuleNameEmpty.Error()).Once()
 
 		s.NoError(NewModuleMakeCommand(nil).Handle(ctx))

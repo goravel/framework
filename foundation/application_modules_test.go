@@ -173,7 +173,6 @@ func (m *richModule) Jobs() []queue.Job                              { return m.
 func (m *richModule) Schedule() []schedule.Event                     { return m.schedule }
 func (m *richModule) Events() map[event.Event][]event.Listener       { return m.events }
 func (m *richModule) Routes(route.Router)                            { *m.routed = append(*m.routed, m.name+":web") }
-func (m *richModule) ApiRoutes(route.Router)                         { *m.routed = append(*m.routed, m.name+":api") }
 
 // withModules points the builder at modules and runs configureModules.
 func (s *ApplicationTestSuite) withModules(builder *ApplicationBuilder, modules ...contractsmodular.Module) {
@@ -406,18 +405,13 @@ func (s *ApplicationTestSuite) TestConfigureRoutes_Modules() {
 		mockConfig.EXPECT().GetString("modular.path", "modules").Return("modules").Once()
 		mockConfig.EXPECT().GetString("modular.routes.web.prefix", "").Return("").Once()
 		mockConfig.EXPECT().Get("modular.routes.web.middleware").Return([]contractshttp.Middleware{webMiddleware}).Once()
-		mockConfig.EXPECT().GetString("modular.routes.api.prefix", "api").Return("api").Once()
-		mockConfig.EXPECT().Get("modular.routes.api.middleware").Return(nil).Once()
 		s.app.Instance(binding.Config, mockConfig)
 
-		webRouter, apiRouter := mocksroute.NewRouter(s.T()), mocksroute.NewRouter(s.T())
+		webRouter := mocksroute.NewRouter(s.T())
 		mockRoute := mocksroute.NewRoute(s.T())
 		mockRoute.EXPECT().Prefix("").Return(webRouter).Twice()
 		webRouter.EXPECT().Middleware(mock.Anything).Return(webRouter).Twice()
 		webRouter.EXPECT().Group(mock.Anything).Run(func(handler route.GroupFunc) { handler(webRouter) }).Return().Twice()
-		mockRoute.EXPECT().Prefix("api").Return(apiRouter).Once()
-		apiRouter.EXPECT().Middleware().Return(apiRouter).Once()
-		apiRouter.EXPECT().Group(mock.Anything).Run(func(handler route.GroupFunc) { handler(apiRouter) }).Return().Once()
 		s.app.Instance(binding.Route, mockRoute)
 
 		builder := NewApplicationBuilder(s.app)
@@ -428,7 +422,7 @@ func (s *ApplicationTestSuite) TestConfigureRoutes_Modules() {
 		)
 		s.app.configureRoutes()
 
-		s.Equal([]string{"app", "blog:web", "shop:web", "blog:api"}, routed)
+		s.Equal([]string{"app", "blog:web", "shop:web"}, routed)
 	})
 
 	s.Run("without module routes or static files the route facade is not needed", func() {

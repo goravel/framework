@@ -233,7 +233,6 @@ var (
 	ModularModulePathInvalid      = New("module %s: directory %q must be a relative path inside the project").SetModule(ModuleModular)
 	ModularModulePathUnknown      = New("module %s: cannot derive its directory from package %q, implement Path() to set it").SetModule(ModuleModular)
 	ModularModulePublishStale     = New("module %s: the files published to %s differ from %s, run `go generate` or `artisan modular:publish`").SetModule(ModuleModular)
-	ModularOptionsConflict        = New("the --%s and --%s options cannot be used together").SetModule(ModuleModular)
 	ModularPublishFailed          = New("modular:publish failed for %d of %d modules").SetModule(ModuleModular)
 	ModularPublishTargetNotOwned  = New("module %s: %s exists and was not published from %s, move it or set the module's Path()").SetModule(ModuleModular)
 	ModularRegistryNotSet         = New("the module registry is not set, build the application with foundation.Setup()").SetModule(ModuleModular)

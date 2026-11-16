@@ -58,10 +58,6 @@ func (r *ModuleMakeCommand) Extend() command.Extend {
 		Category:  "make",
 		Flags: []command.Flag{
 			&command.BoolFlag{
-				Name:  "api",
-				Usage: "Create an API module, without views and web routes",
-			},
-			&command.BoolFlag{
 				Name:  "plain",
 				Usage: "Create only module.go",
 			},
@@ -88,9 +84,6 @@ func (r *ModuleMakeCommand) Handle(ctx console.Context) error {
 func (r *ModuleMakeCommand) makeOne(ctx console.Context, name string) error {
 	if !env.IsBootstrapSetup() {
 		return errors.ModularRequiresBootstrapSetup.Args(r.Signature())
-	}
-	if ctx.OptionBool("api") && ctx.OptionBool("plain") {
-		return errors.ModularOptionsConflict.Args("api", "plain")
 	}
 
 	if name == "" {
@@ -125,13 +118,12 @@ func (r *ModuleMakeCommand) makeOne(ctx console.Context, name string) error {
 		return err
 	}
 
-	files := stubs.files(ctx.OptionBool("api"), ctx.OptionBool("plain"))
+	files := stubs.files(ctx.OptionBool("plain"))
 	kept, err := removeStaleStubs(
 		root,
 		[]map[string]string{
-			stubs.files(false, false),
-			stubs.files(true, false),
-			stubs.files(false, true),
+			stubs.files(false),
+			stubs.files(true),
 		},
 		files,
 	)
@@ -286,24 +278,22 @@ func (r *moduleStubs) registered() (bool, error) {
 }
 
 // files returns the module files by slash path relative to the module directory.
-func (r *moduleStubs) files(api, plain bool) map[string]string {
+func (r *moduleStubs) files(plain bool) map[string]string {
 	if plain {
-		return map[string]string{"module.go": r.Module(false, false, false)}
+		return map[string]string{"module.go": r.Module(false)}
 	}
 
 	files := map[string]string{
-		"module.go":                     r.Module(!api, true, true),
+		"module.go":                     r.Module(true),
 		"providers/service_provider.go": r.ServiceProvider(),
 		"routes/api.go":                 r.ApiRoutes(),
-		"http/controllers/" + r.snake + "_controller.go": r.Controller(!api),
+		"http/controllers/" + r.snake + "_controller.go": r.Controller(),
 		"database/migrations/.gitkeep":                   "",
 		"database/seeders/.gitkeep":                      "",
 		"models/.gitkeep":                                "",
 		"lang/en/messages.json":                          r.Lang(),
-	}
-	if !api {
-		files["routes/web.go"] = r.WebRoutes()
-		files["resources/views/index.tmpl"] = r.View()
+		"routes/web.go":                                  r.WebRoutes(),
+		"resources/views/index.tmpl":                     r.View(),
 	}
 	if file.Exists(path.Test("test_case.go")) {
 		files["tests/feature/"+r.snake+"_test.go"] = r.Test()
