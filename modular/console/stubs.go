@@ -2,6 +2,7 @@ package console
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/goravel/framework/packages"
@@ -15,8 +16,6 @@ func (r Stubs) Config(pkg, facadesImport, facadesPackage string) string {
 	content := `package DummyPackage
 
 import (
-	"github.com/goravel/framework/contracts/http"
-
 	"DummyFacadesImport"
 )
 
@@ -25,11 +24,6 @@ func init() {
 	config.Add("modular", map[string]any{
 		// Directory of the application's own modules, relative to the project root.
 		"path": "modules",
-
-		// Route group wrapping what modules register with Routes().
-		"routes": map[string]any{
-			"web": map[string]any{"prefix": "", "middleware": []http.Middleware{}},
-		},
 	})
 }
 `
@@ -39,6 +33,18 @@ func init() {
 		"DummyFacadesImport", facadesImport,
 		"DummyFacadesPackage", facadesPackage,
 	).Replace(content)
+}
+
+// routeFacade returns the facades package exposing Route(): the app's when it
+// has one, else the framework's.
+func routeFacade() (importPath, pkg string) {
+	if file.Exists(path.Facade("route.go")) {
+		facades := packages.Paths().Facades()
+
+		return facades.Import(), facades.Package()
+	}
+
+	return "github.com/goravel/framework/facades", "facades"
 }
 
 // langFacade returns the facades package exposing Lang(ctx): the app's, the
@@ -74,7 +80,6 @@ func (r *moduleStubs) Module(full bool) string {
 
 	if full {
 		imports = append(imports, "\t\"embed\"\n\t\"io/fs\"\n", `	"github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/contracts/route"
 `, `	"DummyModule/providers"
 	"DummyModule/routes"
 `)
@@ -86,9 +91,9 @@ func (m *Module) ServiceProviders() []foundation.ServiceProvider {
 	}
 }
 
-func (m *Module) Routes(router route.Router) {
-	routes.Web(router)
-	routes.Api(router)
+func (m *Module) Routes() {
+	routes.Web()
+	routes.Api()
 }
 
 // Config is available as "modules.DummyName".
@@ -161,33 +166,34 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 }
 
 func (r *moduleStubs) WebRoutes() string {
-	return r.replace(`package routes
-
-import (
-	"github.com/goravel/framework/contracts/route"
-
-	"DummyModule/http/controllers"
-)
-
-func Web(router route.Router) {
-	router.Get("/DummyName", controllers.NewDummyStudlyController().Index)
+	return r.routes(`func Web() {
+	DummyFacadesPackage.Route().Get("/DummyName", controllers.NewDummyStudlyController().Index)
 }
 `)
 }
 
 func (r *moduleStubs) ApiRoutes() string {
-	return r.replace(`package routes
-
-import (
-	"github.com/goravel/framework/contracts/route"
-
-	"DummyModule/http/controllers"
-)
-
-func Api(router route.Router) {
-	router.Prefix("api").Get("/DummyName", controllers.NewDummyStudlyController().Show)
+	return r.routes(`func Api() {
+	DummyFacadesPackage.Route().Prefix("api").Get("/DummyName", controllers.NewDummyStudlyController().Show)
 }
 `)
+}
+
+// routes is a routes file registering with the Route facade.
+func (r *moduleStubs) routes(body string) string {
+	facadesImport, facadesPackage := routeFacade()
+	controllers := r.module + "/http/controllers"
+	// The framework's facades form their own import group, the app's sort with the module.
+	imports := "\t\"" + facadesImport + "\"\n\n\t\"" + controllers + "\"\n"
+	if facadesImport != "github.com/goravel/framework/facades" {
+		sorted := []string{facadesImport, controllers}
+		sort.Strings(sorted)
+		imports = "\t\"" + sorted[0] + "\"\n\t\"" + sorted[1] + "\"\n"
+	}
+
+	content := "package routes\n\nimport (\n" + imports + ")\n\n" + body
+
+	return r.replace(strings.ReplaceAll(content, "DummyFacadesPackage", facadesPackage))
 }
 
 // Controller has Index rendering the module view and Show for the API route.

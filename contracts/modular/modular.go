@@ -9,7 +9,6 @@ import (
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/queue"
-	"github.com/goravel/framework/contracts/route"
 	"github.com/goravel/framework/contracts/schedule"
 )
 
@@ -44,9 +43,9 @@ type ProvidesGlobalMiddleware interface {
 	GlobalMiddleware() []http.Middleware
 }
 
-// ProvidesRoutes registers routes in the modular.routes.web group.
+// ProvidesRoutes registers routes with the Route facade, after WithRouting runs.
 type ProvidesRoutes interface {
-	Routes(router route.Router)
+	Routes()
 }
 
 // ProvidesMigrations contributes database migrations.

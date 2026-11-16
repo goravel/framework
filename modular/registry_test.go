@@ -9,7 +9,6 @@ import (
 
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/modular"
-	"github.com/goravel/framework/contracts/route"
 	"github.com/goravel/framework/errors"
 )
 
@@ -33,7 +32,7 @@ func (m *orderedModule) Order() int { return m.order }
 
 type routedModule struct{ plainModule }
 
-func (m *routedModule) Routes(route.Router)                            {}
+func (m *routedModule) Routes()                                        {}
 func (m *routedModule) ServiceProviders() []foundation.ServiceProvider { return nil }
 
 func names(modules []modular.Module) []string {

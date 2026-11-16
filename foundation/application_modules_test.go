@@ -19,7 +19,6 @@ import (
 	contractshttp "github.com/goravel/framework/contracts/http"
 	contractsmodular "github.com/goravel/framework/contracts/modular"
 	"github.com/goravel/framework/contracts/queue"
-	"github.com/goravel/framework/contracts/route"
 	"github.com/goravel/framework/contracts/schedule"
 	"github.com/goravel/framework/errors"
 	mocksconfig "github.com/goravel/framework/mocks/config"
@@ -172,7 +171,7 @@ func (m *richModule) Seeders() []seeder.Seeder                       { return m.
 func (m *richModule) Jobs() []queue.Job                              { return m.jobs }
 func (m *richModule) Schedule() []schedule.Event                     { return m.schedule }
 func (m *richModule) Events() map[event.Event][]event.Listener       { return m.events }
-func (m *richModule) Routes(route.Router)                            { *m.routed = append(*m.routed, m.name+":web") }
+func (m *richModule) Routes()                                        { *m.routed = append(*m.routed, m.name+":web") }
 
 // withModules points the builder at modules and runs configureModules.
 func (s *ApplicationTestSuite) withModules(builder *ApplicationBuilder, modules ...contractsmodular.Module) {
@@ -396,23 +395,11 @@ func (s *ApplicationTestSuite) TestConfigureEventListeners_Modules() {
 }
 
 func (s *ApplicationTestSuite) TestConfigureRoutes_Modules() {
-	s.Run("module routes go into the configured groups, after the app's", func() {
+	s.Run("module routes are registered in module order, after the app's", func() {
 		s.SetupTest()
 		var routed []string
-		webMiddleware := &fakeMiddleware{"web"}
 
-		mockConfig := mocksconfig.NewConfig(s.T())
-		mockConfig.EXPECT().GetString("modular.path", "modules").Return("modules").Once()
-		mockConfig.EXPECT().GetString("modular.routes.web.prefix", "").Return("").Once()
-		mockConfig.EXPECT().Get("modular.routes.web.middleware").Return([]contractshttp.Middleware{webMiddleware}).Once()
-		s.app.Instance(binding.Config, mockConfig)
-
-		webRouter := mocksroute.NewRouter(s.T())
-		mockRoute := mocksroute.NewRoute(s.T())
-		mockRoute.EXPECT().Prefix("").Return(webRouter).Twice()
-		webRouter.EXPECT().Middleware(mock.Anything).Return(webRouter).Twice()
-		webRouter.EXPECT().Group(mock.Anything).Run(func(handler route.GroupFunc) { handler(webRouter) }).Return().Twice()
-		s.app.Instance(binding.Route, mockRoute)
+		s.app.Instance(binding.Route, mocksroute.NewRoute(s.T()))
 
 		builder := NewApplicationBuilder(s.app)
 		builder.routes = func() { routed = append(routed, "app") }
@@ -437,7 +424,7 @@ type webOnlyModule struct {
 	routed *[]string
 }
 
-func (m *webOnlyModule) Routes(route.Router) { *m.routed = append(*m.routed, m.name+":web") }
+func (m *webOnlyModule) Routes() { *m.routed = append(*m.routed, m.name+":web") }
 
 type staticModule struct {
 	testModule

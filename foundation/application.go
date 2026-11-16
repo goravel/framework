@@ -25,13 +25,11 @@ import (
 	"github.com/goravel/framework/config"
 	frameworkconsole "github.com/goravel/framework/console"
 	"github.com/goravel/framework/contracts/binding"
-	contractsconfig "github.com/goravel/framework/contracts/config"
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/contracts/database/seeder"
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/foundation"
-	contractshttp "github.com/goravel/framework/contracts/http"
 	contractsmodular "github.com/goravel/framework/contracts/modular"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/route"
@@ -741,7 +739,7 @@ func (r *Application) configurePaths() {
 }
 
 // configureRoutes runs WithRouting, then module static files on the root router
-// (no group middleware), then module routes in the modular.routes.web group.
+// (no group middleware), then module routes.
 func (r *Application) configureRoutes() {
 	if r.builder.routes != nil {
 		r.builder.routes()
@@ -761,10 +759,8 @@ func (r *Application) configureRoutes() {
 
 	r.registerModuleStatic(routeFacade)
 
-	configFacade := r.MakeConfig()
-	webPrefix, webMiddleware := moduleRouteGroup(configFacade, "modular.routes.web", "")
 	for _, module := range web {
-		routeFacade.Prefix(webPrefix).Middleware(webMiddleware...).Group(module.Routes)
+		module.Routes()
 	}
 }
 
@@ -802,17 +798,6 @@ func (r *Application) registerModuleStatic(routeFacade route.Route) {
 			routeFacade.StaticFS(cleaned, http.FS(fsys))
 		}
 	}
-}
-
-// moduleRouteGroup reads a route group's prefix and middleware.
-func moduleRouteGroup(configFacade contractsconfig.Config, key, defaultPrefix string) (string, []contractshttp.Middleware) {
-	if configFacade == nil {
-		return defaultPrefix, nil
-	}
-
-	middleware, _ := configFacade.Get(key + ".middleware").([]contractshttp.Middleware)
-
-	return configFacade.GetString(key+".prefix", defaultPrefix), middleware
 }
 
 func (r *Application) configureRunners() {

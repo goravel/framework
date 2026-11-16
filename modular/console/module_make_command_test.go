@@ -110,10 +110,10 @@ func (s *ModuleMakeCommandTestSuite) TestDefault() {
 	s.Contains(module, "//go:embed lang\nvar lang embed.FS")
 	s.Contains(module, `"github.com/goravel/framework/modules/blog/providers"`)
 	s.Contains(module, "return \"blog\"\n")
-	for _, method := range []string{"ServiceProviders()", "Routes(router route.Router)", "Config()", "Views()", "Translations()", "ViteEntries()"} {
+	for _, method := range []string{"ServiceProviders()", "Routes()", "Config()", "Views()", "Translations()", "ViteEntries()"} {
 		s.Contains(module, "func (m *Module) "+method)
 	}
-	s.Contains(module, "\troutes.Web(router)\n\troutes.Api(router)\n")
+	s.Contains(module, "\troutes.Web()\n\troutes.Api()\n")
 	s.NotContains(module, "Order()")
 
 	// No app/facades here, so the controller uses the framework facades.
@@ -123,8 +123,8 @@ func (s *ModuleMakeCommandTestSuite) TestDefault() {
 	s.Contains(controller, `Make("blog/index.tmpl"`)
 	s.Contains(controller, `facades.Lang(ctx).Get("blog/messages.title")`)
 
-	s.True(file.Contain("modules/blog/routes/web.go", `router.Get("/blog", controllers.NewBlogController().Index)`))
-	s.True(file.Contain("modules/blog/routes/api.go", `router.Prefix("api").Get("/blog", controllers.NewBlogController().Show)`))
+	s.True(file.Contain("modules/blog/routes/web.go", `facades.Route().Get("/blog", controllers.NewBlogController().Index)`))
+	s.True(file.Contain("modules/blog/routes/api.go", `facades.Route().Prefix("api").Get("/blog", controllers.NewBlogController().Show)`))
 	s.True(file.Contain("modules/blog/lang/en/messages.json", `"title": "Blog"`))
 	s.False(file.Contain("modules/blog/resources/views/index.tmpl", "define"))
 	s.True(file.Contain("modules/blog/tests/feature/blog_test.go", `"github.com/goravel/framework/tests"`))
