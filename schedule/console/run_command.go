@@ -1,8 +1,6 @@
 package console
 
 import (
-	"context"
-
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/schedule"
@@ -37,5 +35,5 @@ func (r *Run) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *Run) Handle(ctx console.Context) error {
-	return r.schedule.Run(context.Background())
+	return r.schedule.Run(ctx)
 }

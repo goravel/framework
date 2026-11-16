@@ -3,6 +3,7 @@ package schedule
 import (
 	"context"
 	stderrors "errors"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -16,8 +17,8 @@ import (
 	"github.com/goravel/framework/support/carbon"
 )
 
-// parser parses the cron expressions of the events, with optional seconds.
-var parser = cron.NewParser(
+// cronParser parses the cron expressions of the events, with optional seconds.
+var cronParser = cron.NewParser(
 	cron.SecondOptional | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor,
 )
 
@@ -41,7 +42,7 @@ func NewApplication(artisan console.Artisan, cache cache.Cache, log log.Log, deb
 	return &Application{
 		artisan:  artisan,
 		cache:    cache,
-		cron:     cron.New(cron.WithParser(parser), cron.WithLogger(NewLogger(log, debug)), cron.WithLocation(location)),
+		cron:     cron.New(cron.WithParser(cronParser), cron.WithLogger(NewLogger(log, debug)), cron.WithLocation(location)),
 		location: location,
 		log:      log,
 		debug:    debug,
@@ -64,6 +65,7 @@ func (app *Application) Register(events []schedule.Event) {
 	app.addEvents(events)
 }
 
+// Work runs the schedules in a long-lived process, blocking until Shutdown.
 func (app *Application) Work() {
 	app.cron.Run()
 }
@@ -82,8 +84,16 @@ func (app *Application) runDue(ctx context.Context, at time.Time) error {
 
 	var errs []error
 	for _, event := range app.events {
+		if err := ctx.Err(); err != nil {
+			return stderrors.Join(append(errs, err)...)
+		}
+
 		if !app.isDue(event, tick) {
 			continue
+		}
+
+		if event.GetName() == "" && (event.IsOnOneServer() || event.GetSkipIfStillRunning() || event.GetDelayIfStillRunning()) {
+			app.log.Warningf("schedule event %s has no name, so OnOneServer, SkipIfStillRunning and DelayIfStillRunning are not applied", event.GetCron())
 		}
 
 		if event.IsOnOneServer() && event.GetName() != "" &&
@@ -96,13 +106,10 @@ func (app *Application) runDue(ctx context.Context, at time.Time) error {
 			continue
 		}
 
-		err := app.runEvent(event)
-		release()
-
-		if err != nil {
-			app.log.Error(err)
+		if err := app.runEvent(event); err != nil {
 			errs = append(errs, err)
 		}
+		release()
 	}
 
 	return stderrors.Join(errs...)
@@ -179,9 +186,16 @@ func (app *Application) runJob(event schedule.Event) {
 
 // isDue reports whether the event fires within the minute starting at tick.
 func (app *Application) isDue(event schedule.Event, tick time.Time) bool {
-	spec, err := parser.Parse(event.GetCron())
+	spec, err := cronParser.Parse(event.GetCron())
 	if err != nil {
 		// Register only keeps events with a valid expression.
+		return false
+	}
+
+	// An @every expression has no fixed point in time, so only the long-lived
+	// worker can follow it once its delay is longer than a minute.
+	if delay, ok := spec.(cron.ConstantDelaySchedule); ok && delay.Delay > time.Minute {
+		app.log.Warningf("schedule event %s uses %s, which only schedule:work supports", event.GetName(), event.GetCron())
 		return false
 	}
 
@@ -217,6 +231,7 @@ func (app *Application) acquireOverlapLock(ctx context.Context, event schedule.E
 	return func() { lock.Release() }, true
 }
 
+// runEvent runs the event and logs its failure, with the stack for a panic.
 func (app *Application) runEvent(event schedule.Event) (err error) {
 	name := event.GetName()
 	if name == "" {
@@ -226,12 +241,16 @@ func (app *Application) runEvent(event schedule.Event) (err error) {
 	defer func() {
 		if recovered := recover(); recovered != nil {
 			err = errors.ScheduleEventPanicked.Args(name, recovered)
+			app.log.Errorf("%v\n%s", err, debug.Stack())
 		}
 	}()
 
 	if event.GetCommand() != "" {
 		if callErr := app.artisan.Call(event.GetCommand()); callErr != nil {
-			return errors.ScheduleEventFailed.Args(name, callErr)
+			err = errors.ScheduleEventFailed.Args(name, callErr)
+			app.log.Error(err)
+
+			return err
 		}
 
 		return nil

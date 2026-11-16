@@ -177,7 +177,7 @@ func (s *ApplicationTestSuite) TestShutdownWithContext() {
 	s.Equal(0, immediatelyCall)
 }
 
-func (s *ApplicationTestSuite) TestrunDue() {
+func (s *ApplicationTestSuite) TestRunDue() {
 	location := time.FixedZone("UTC-3", -3*60*60)
 	// 12:05:37 UTC is 09:05 in the schedule's location.
 	at := time.Date(2026, 10, 18, 12, 5, 37, 0, time.UTC)
@@ -202,7 +202,8 @@ func (s *ApplicationTestSuite) TestrunDue() {
 	s.Equal(1, callbackCall)
 }
 
-func (s *ApplicationTestSuite) TestrunDueOnOneServer() {
+func (s *ApplicationTestSuite) TestRunDueOnOneServer() {
+	// 12:30 UTC is 09:30 in the schedule's location, which the key uses.
 	at := time.Date(2026, 10, 18, 12, 30, 0, 0, time.UTC)
 
 	mockArtisan := mocksconsole.NewArtisan(s.T())
@@ -210,13 +211,13 @@ func (s *ApplicationTestSuite) TestrunDueOnOneServer() {
 
 	mockCache := mockscache.NewCache(s.T())
 	mockLock := mockscache.NewLock(s.T())
-	mockCache.EXPECT().Lock("reconcile1230", 1*time.Hour).Return(mockLock).Twice()
+	mockCache.EXPECT().Lock("reconcile0930", 1*time.Hour).Return(mockLock).Twice()
 	mockLock.EXPECT().Get().Return(true).Once()
 	// A duplicate trigger in the same minute doesn't run it again.
 	mockLock.EXPECT().Get().Return(false).Once()
 
 	app := NewApplication(mockArtisan, mockCache, nil, false)
-	app.location = time.UTC
+	app.location = time.FixedZone("UTC-3", -3*60*60)
 	app.Register([]schedule.Event{
 		app.Command("reconcile").EveryThirtyMinutes().OnOneServer(),
 	})
@@ -225,7 +226,7 @@ func (s *ApplicationTestSuite) TestrunDueOnOneServer() {
 	s.NoError(app.runDue(context.Background(), at.Add(20*time.Second)))
 }
 
-func (s *ApplicationTestSuite) TestrunDueSkipIfStillRunning() {
+func (s *ApplicationTestSuite) TestRunDueSkipIfStillRunning() {
 	mockArtisan := mocksconsole.NewArtisan(s.T())
 	mockArtisan.EXPECT().Call("long").Return(nil).Once()
 
@@ -247,7 +248,7 @@ func (s *ApplicationTestSuite) TestrunDueSkipIfStillRunning() {
 	s.NoError(app.runDue(context.Background(), time.Now()))
 }
 
-func (s *ApplicationTestSuite) TestrunDueDelayIfStillRunning() {
+func (s *ApplicationTestSuite) TestRunDueDelayIfStillRunning() {
 	mockArtisan := mocksconsole.NewArtisan(s.T())
 	mockArtisan.EXPECT().Call("long").Return(nil).Once()
 
@@ -256,7 +257,7 @@ func (s *ApplicationTestSuite) TestrunDueDelayIfStillRunning() {
 	mockCache.EXPECT().Lock("long:running", 24*time.Hour).Return(mockLock).Twice()
 	// Waits for the previous run, bounded by the context deadline.
 	mockLock.EXPECT().Block(mock.MatchedBy(func(wait time.Duration) bool {
-		return wait > 0 && wait <= 10*time.Second
+		return wait > 9*time.Second && wait <= 10*time.Second
 	})).Return(true).Once()
 	mockLock.EXPECT().Release().Return(true).Once()
 	// Without a deadline it waits at most a minute, then skips.
@@ -274,13 +275,19 @@ func (s *ApplicationTestSuite) TestrunDueDelayIfStillRunning() {
 	s.NoError(app.runDue(context.Background(), time.Now()))
 }
 
-func (s *ApplicationTestSuite) TestrunDueErrors() {
+func (s *ApplicationTestSuite) TestRunDueErrors() {
 	mockArtisan := mocksconsole.NewArtisan(s.T())
 	mockArtisan.EXPECT().Call("broken").Return(assert.AnError).Once()
 	mockArtisan.EXPECT().Call("fine").Return(nil).Once()
 
 	mockLog := mockslog.NewLog(s.T())
-	mockLog.EXPECT().Error(mock.Anything).Return().Twice()
+	mockLog.EXPECT().Error(mock.Anything).Return().Once()
+	// A panic is logged with its stack.
+	mockLog.EXPECT().Errorf("%v\n%s", mock.MatchedBy(func(err error) bool {
+		return strings.Contains(err.Error(), "schedule event panicking panicked: boom")
+	}), mock.MatchedBy(func(stack []byte) bool {
+		return strings.Contains(string(stack), "runtime/debug.Stack")
+	})).Return().Once()
 
 	app := NewApplication(mockArtisan, nil, mockLog, false)
 	app.Register([]schedule.Event{
@@ -295,11 +302,70 @@ func (s *ApplicationTestSuite) TestrunDueErrors() {
 	s.ErrorContains(err, "schedule event panicking panicked: boom")
 }
 
-func (s *ApplicationTestSuite) TestrunDueSkipsInvalidCron() {
+func (s *ApplicationTestSuite) TestRunDueSkipsInvalidCron() {
 	// Register drops events with an invalid expression; runDue ignores them
 	// too if one gets into the list another way.
 	app := NewApplication(mocksconsole.NewArtisan(s.T()), nil, nil, false)
 	app.events = append(app.events, app.Command("invalid").Cron("not a cron"))
 
 	s.NoError(app.runDue(context.Background(), time.Now()))
+}
+
+func (s *ApplicationTestSuite) TestRun() {
+	callbackCall := 0
+	app := NewApplication(nil, nil, nil, false)
+	app.Register([]schedule.Event{
+		app.Call(func() { callbackCall++ }).EveryMinute(),
+	})
+
+	s.NoError(app.Run(context.Background()))
+	s.Equal(1, callbackCall)
+}
+
+func (s *ApplicationTestSuite) TestRunDueCancelledContext() {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	callbackCall := 0
+	app := NewApplication(nil, nil, nil, false)
+	app.Register([]schedule.Event{
+		app.Call(func() {
+			callbackCall++
+			cancel()
+		}).EveryMinute(),
+		// Not started once the context is cancelled.
+		app.Call(func() { callbackCall++ }).EveryMinute(),
+	})
+
+	s.ErrorIs(app.runDue(ctx, time.Now()), context.Canceled)
+	s.Equal(1, callbackCall)
+}
+
+func (s *ApplicationTestSuite) TestRunDueEvery() {
+	mockLog := mockslog.NewLog(s.T())
+	mockLog.EXPECT().Warningf("schedule event %s uses %s, which only schedule:work supports", "hourly", "@every 1h").Return().Once()
+
+	callbackCall := 0
+	app := NewApplication(nil, nil, mockLog, false)
+	app.Register([]schedule.Event{
+		app.Call(func() { callbackCall++ }).Cron("@every 30s"),
+		app.Call(func() { callbackCall++ }).Cron("@every 1m"),
+		app.Call(func() { callbackCall += 10 }).Cron("@every 1h").Name("hourly"),
+	})
+
+	s.NoError(app.runDue(context.Background(), time.Now()))
+	s.Equal(2, callbackCall)
+}
+
+func (s *ApplicationTestSuite) TestRunDueWarnsUnnamedEvent() {
+	mockLog := mockslog.NewLog(s.T())
+	mockLog.EXPECT().Warningf("schedule event %s has no name, so OnOneServer, SkipIfStillRunning and DelayIfStillRunning are not applied", "* * * * *").Return().Once()
+
+	callbackCall := 0
+	app := NewApplication(nil, nil, mockLog, false)
+	app.Register([]schedule.Event{
+		app.Call(func() { callbackCall++ }).EveryMinute().SkipIfStillRunning(),
+	})
+
+	s.NoError(app.runDue(context.Background(), time.Now()))
+	s.Equal(1, callbackCall)
 }
