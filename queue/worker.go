@@ -105,13 +105,22 @@ func (r *Worker) Shutdown() error {
 	return nil
 }
 
-func (r *Worker) call(task queue.Task, reservedJob queue.ReservedJob, queueName string, recordFailed func(models.FailedJob)) (released bool, err error) {
+// call runs the task, retrying it in memory or releasing it as needed. When
+// ctx is done before an attempt starts, it returns released=true and the
+// context error without running the attempt: the job did not finish and must
+// stay in the queue.
+func (r *Worker) call(ctx context.Context, task queue.Task, reservedJob queue.ReservedJob, queueName string, recordFailed func(models.FailedJob)) (released bool, err error) {
 	attempt := 1
 	r.printRunningLog(task)
 
 	for {
 		if !task.Delay.IsZero() {
-			time.Sleep(carbon.FromStdTime(task.Delay).DiffAbsInDuration())
+			if err := sleepContext(ctx, carbon.FromStdTime(task.Delay).DiffAbsInDuration()); err != nil {
+				return true, err
+			}
+		}
+		if err := ctx.Err(); err != nil {
+			return true, err
 		}
 
 		now := carbon.Now()
@@ -141,8 +150,8 @@ func (r *Worker) call(task queue.Task, reservedJob queue.ReservedJob, queueName 
 		if shouldRetry {
 			if reservedJob == nil {
 				// Chain jobs have no queue entry to release; retry in-memory.
-				if delay > 0 {
-					time.Sleep(delay)
+				if err := sleepContext(ctx, delay); err != nil {
+					return true, err
 				}
 				attempt++
 				continue
@@ -286,7 +295,7 @@ func (r *Worker) runWithPop(queueNames []string) error {
 				}
 
 				currentDelay = 1 * time.Second
-				_, _ = r.processReservedJob(reservedJob, queueName, r.sendFailedJob)
+				_, _ = r.processReservedJob(context.Background(), reservedJob, queueName, r.sendFailedJob)
 			}
 		})
 	}
@@ -348,45 +357,35 @@ func (r *Worker) runWithReceive(receiver queue.DriverWithReceive, queueName stri
 		var wg sync.WaitGroup
 		for _, reservedJob := range jobs {
 			wg.Go(func() {
-				_, _ = r.processReservedJob(reservedJob, queueName, r.sendFailedJob)
+				_, _ = r.processReservedJob(context.Background(), reservedJob, queueName, r.sendFailedJob)
 			})
 		}
 		wg.Wait()
 	}
 }
 
-// Process runs a reserved job that was received outside of the worker loop,
-// e.g. pushed to the application by Lambda SQS event source mappings or
-// Pub/Sub push subscriptions, with the same semantics as Run: retries
-// through Release, chains, failed jobs and Delete. The failed job is
-// recorded before Process returns.
-//
-// released reports that the job was released for a retry, so the message
-// must stay in the queue. Otherwise the job is done and was deleted: err is
-// nil when it succeeded, or the reason it failed for good.
-func (r *Worker) Process(ctx context.Context, reservedJob queue.ReservedJob, queueName string) (released bool, err error) {
-	if err := ctx.Err(); err != nil {
-		return false, err
-	}
-
-	return r.processReservedJob(reservedJob, queueName, r.logFailedJob)
+// Process implements queue.Worker.Process. Unlike the worker loop, it records
+// a failed job synchronously, before returning, under the first queue name of
+// the worker's queue list.
+func (r *Worker) Process(ctx context.Context, reservedJob queue.ReservedJob) (released bool, err error) {
+	return r.processReservedJob(ctx, reservedJob, splitQueueNames(r.queue)[0], r.logFailedJob)
 }
 
-// sendFailedJob hands a failed job to the goroutine that records them while
-// the worker loop runs.
+// sendFailedJob hands a failed job to the recorder goroutine, which only
+// drains the channel while Run is active.
 func (r *Worker) sendFailedJob(job models.FailedJob) {
 	r.failedJobChan <- job
 }
 
-func (r *Worker) processReservedJob(reservedJob queue.ReservedJob, queueName string, recordFailed func(models.FailedJob)) (released bool, err error) {
+func (r *Worker) processReservedJob(ctx context.Context, reservedJob queue.ReservedJob, queueName string, recordFailed func(models.FailedJob)) (released bool, err error) {
 	task := reservedJob.Task()
 
-	released, err = r.call(task, reservedJob, queueName, recordFailed)
+	released, err = r.call(ctx, task, reservedJob, queueName, recordFailed)
 	if released {
 		// The job is back in the queue for a later retry (or was left
-		// reserved for retry_after expiry recovery); its row must remain
-		// and no failed job is recorded.
-		return true, nil
+		// reserved for retry_after expiry recovery, or ctx was done before
+		// it ran); its row must remain and no failed job is recorded.
+		return true, err
 	}
 
 	if err != nil {
@@ -394,11 +393,7 @@ func (r *Worker) processReservedJob(reservedJob queue.ReservedJob, queueName str
 			r.log.Error(err)
 		}
 
-		if deleteErr := reservedJob.Delete(); deleteErr != nil {
-			r.log.Error(errors.QueueFailedToDeleteReservedJob.Args(reservedJob, deleteErr))
-		}
-
-		return false, err
+		return false, r.deleteReservedJob(reservedJob, err)
 	}
 
 	if len(task.Chain) > 0 {
@@ -414,7 +409,7 @@ func (r *Worker) processReservedJob(reservedJob queue.ReservedJob, queueName str
 			// invariant, stop the chain rather than silently continuing to
 			// the next job — hence the explicit released check (which also
 			// prevents the final Delete below from orphaning chain jobs).
-			released, err = r.call(chainTask, nil, queueName, recordFailed)
+			released, err = r.call(ctx, chainTask, nil, queueName, recordFailed)
 			if released {
 				break
 			}
@@ -428,17 +423,46 @@ func (r *Worker) processReservedJob(reservedJob queue.ReservedJob, queueName str
 	}
 
 	// If a chain job was released (defensive path only — chain jobs never
-	// release today), its row is still pending in the queue, so the main
-	// job row must remain too. Deleting it here would orphan the chain job.
+	// release through the queue), or ctx was done before the chain finished,
+	// the main job row must remain so the job is delivered again. Deleting it
+	// here would lose the rest of the chain.
 	if released {
-		return true, nil
+		return true, err
 	}
 
-	if deleteErr := reservedJob.Delete(); deleteErr != nil {
-		r.log.Error(errors.QueueFailedToDeleteReservedJob.Args(reservedJob, deleteErr))
+	return false, r.deleteReservedJob(reservedJob, err)
+}
+
+// deleteReservedJob deletes the finished reserved job and returns jobErr,
+// joined with the delete failure (which is also logged) so Process callers
+// can tell that the job is still in the queue.
+func (r *Worker) deleteReservedJob(reservedJob queue.ReservedJob, jobErr error) error {
+	if err := reservedJob.Delete(); err != nil {
+		deleteErr := errors.QueueFailedToDeleteReservedJob.Args(reservedJob, err)
+		r.log.Error(deleteErr)
+
+		return errors.Join(jobErr, deleteErr)
 	}
 
-	return false, err
+	return jobErr
+}
+
+// sleepContext waits for d, returning early with the context error when ctx
+// is done first.
+func sleepContext(ctx context.Context, d time.Duration) error {
+	if d <= 0 {
+		return ctx.Err()
+	}
+
+	timer := time.NewTimer(d)
+	defer timer.Stop()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
 }
 
 // popNextJob checks the given queues from left to right for one reservation.

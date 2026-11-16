@@ -22,9 +22,9 @@ func (_m *Worker) EXPECT() *Worker_Expecter {
 	return &Worker_Expecter{mock: &_m.Mock}
 }
 
-// Process provides a mock function with given fields: ctx, job, _a2
-func (_m *Worker) Process(ctx context.Context, job queue.ReservedJob, _a2 string) (bool, error) {
-	ret := _m.Called(ctx, job, _a2)
+// Process provides a mock function with given fields: ctx, reservedJob
+func (_m *Worker) Process(ctx context.Context, reservedJob queue.ReservedJob) (bool, error) {
+	ret := _m.Called(ctx, reservedJob)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Process")
@@ -32,17 +32,17 @@ func (_m *Worker) Process(ctx context.Context, job queue.ReservedJob, _a2 string
 
 	var r0 bool
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, queue.ReservedJob, string) (bool, error)); ok {
-		return rf(ctx, job, _a2)
+	if rf, ok := ret.Get(0).(func(context.Context, queue.ReservedJob) (bool, error)); ok {
+		return rf(ctx, reservedJob)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, queue.ReservedJob, string) bool); ok {
-		r0 = rf(ctx, job, _a2)
+	if rf, ok := ret.Get(0).(func(context.Context, queue.ReservedJob) bool); ok {
+		r0 = rf(ctx, reservedJob)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, queue.ReservedJob, string) error); ok {
-		r1 = rf(ctx, job, _a2)
+	if rf, ok := ret.Get(1).(func(context.Context, queue.ReservedJob) error); ok {
+		r1 = rf(ctx, reservedJob)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -57,15 +57,14 @@ type Worker_Process_Call struct {
 
 // Process is a helper method to define mock.On call
 //   - ctx context.Context
-//   - job queue.ReservedJob
-//   - _a2 string
-func (_e *Worker_Expecter) Process(ctx interface{}, job interface{}, _a2 interface{}) *Worker_Process_Call {
-	return &Worker_Process_Call{Call: _e.mock.On("Process", ctx, job, _a2)}
+//   - reservedJob queue.ReservedJob
+func (_e *Worker_Expecter) Process(ctx interface{}, reservedJob interface{}) *Worker_Process_Call {
+	return &Worker_Process_Call{Call: _e.mock.On("Process", ctx, reservedJob)}
 }
 
-func (_c *Worker_Process_Call) Run(run func(ctx context.Context, job queue.ReservedJob, _a2 string)) *Worker_Process_Call {
+func (_c *Worker_Process_Call) Run(run func(ctx context.Context, reservedJob queue.ReservedJob)) *Worker_Process_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(queue.ReservedJob), args[2].(string))
+		run(args[0].(context.Context), args[1].(queue.ReservedJob))
 	})
 	return _c
 }
@@ -75,7 +74,7 @@ func (_c *Worker_Process_Call) Return(released bool, err error) *Worker_Process_
 	return _c
 }
 
-func (_c *Worker_Process_Call) RunAndReturn(run func(context.Context, queue.ReservedJob, string) (bool, error)) *Worker_Process_Call {
+func (_c *Worker_Process_Call) RunAndReturn(run func(context.Context, queue.ReservedJob) (bool, error)) *Worker_Process_Call {
 	_c.Call.Return(run)
 	return _c
 }
