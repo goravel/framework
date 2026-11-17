@@ -96,7 +96,7 @@ func (m *Module) Routes() {
 	routes.Api()
 }
 
-// Config is available as "modules.DummyName".
+// Config is available as "modules.DummyName", or through Config().Module("DummyName").
 func (m *Module) Config() map[string]any {
 	return map[string]any{
 		"enabled": true,
