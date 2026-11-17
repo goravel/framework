@@ -13,10 +13,10 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	contractsmodular "github.com/goravel/framework/contracts/modular"
+	contractsmodule "github.com/goravel/framework/contracts/module"
 	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
-	mocksmodular "github.com/goravel/framework/mocks/modular"
+	mocksmodule "github.com/goravel/framework/mocks/module"
 	mocksview "github.com/goravel/framework/mocks/view"
 	"github.com/goravel/framework/modular"
 	"github.com/goravel/framework/support"
@@ -58,10 +58,10 @@ func thirdPartyBuild(version string) func() (*debug.BuildInfo, bool) {
 }
 
 // moduleRegistry answers for modules placed at modules/<name>.
-func moduleRegistry(t *testing.T, modules ...contractsmodular.Module) *mocksmodular.Registry {
+func moduleRegistry(t *testing.T, modules ...contractsmodule.Module) *mocksmodule.Registry {
 	t.Helper()
 
-	registry := mocksmodular.NewRegistry(t)
+	registry := mocksmodule.NewRegistry(t)
 	registry.EXPECT().All().Return(modules)
 	for _, module := range modules {
 		registry.EXPECT().Path(module.Name()).Return("modules/"+module.Name(), true).Maybe()
@@ -72,7 +72,7 @@ func moduleRegistry(t *testing.T, modules ...contractsmodular.Module) *mocksmodu
 
 // moduleCommand builds a command over the given views; compiled is false when the
 // command is expected to fail before it compiles them.
-func moduleCommand(t *testing.T, registry contractsmodular.Registry, views fs.FS, compiled bool) *InputsCommand {
+func moduleCommand(t *testing.T, registry contractsmodule.Registry, views fs.FS, compiled bool) *InputsCommand {
 	t.Helper()
 
 	view := mocksview.NewView(t)
@@ -123,22 +123,22 @@ func TestInputsCommand_ModuleAliasErrors(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		modules []contractsmodular.Module
+		modules []contractsmodule.Module
 		err     error
 	}{
-		{"escaping target", []contractsmodular.Module{module("blog", map[string]string{"@x": "../shop"})}, errors.ModularViteAliasInvalid.Args("blog", "@x", "../shop")},
-		{"absolute target", []contractsmodular.Module{module("blog", map[string]string{"@x": "/etc"})}, errors.ModularViteAliasInvalid.Args("blog", "@x", "/etc")},
-		{"bare @", []contractsmodular.Module{module("blog", map[string]string{"@": "."})}, errors.ModularViteAliasInvalid.Args("blog", "@", ".")},
-		{"no @", []contractsmodular.Module{module("blog", map[string]string{"bad": "."})}, errors.ModularViteAliasInvalid.Args("blog", "bad", ".")},
-		{"slash in key", []contractsmodular.Module{module("blog", map[string]string{"@a/b": "."})}, errors.ModularViteAliasInvalid.Args("blog", "@a/b", ".")},
+		{"escaping target", []contractsmodule.Module{module("blog", map[string]string{"@x": "../shop"})}, errors.ModularViteAliasInvalid.Args("blog", "@x", "../shop")},
+		{"absolute target", []contractsmodule.Module{module("blog", map[string]string{"@x": "/etc"})}, errors.ModularViteAliasInvalid.Args("blog", "@x", "/etc")},
+		{"bare @", []contractsmodule.Module{module("blog", map[string]string{"@": "."})}, errors.ModularViteAliasInvalid.Args("blog", "@", ".")},
+		{"no @", []contractsmodule.Module{module("blog", map[string]string{"bad": "."})}, errors.ModularViteAliasInvalid.Args("blog", "bad", ".")},
+		{"slash in key", []contractsmodule.Module{module("blog", map[string]string{"@a/b": "."})}, errors.ModularViteAliasInvalid.Args("blog", "@a/b", ".")},
 		{
 			"two modules, one key",
-			[]contractsmodular.Module{module("blog", map[string]string{"@ui": "ui"}), module("shop", map[string]string{"@ui": "ui"})},
+			[]contractsmodule.Module{module("blog", map[string]string{"@ui": "ui"}), module("shop", map[string]string{"@ui": "ui"})},
 			errors.ModularViteAliasDuplicate.Args("@ui", "shop", "blog"),
 		},
 		{
 			"another module's implicit alias",
-			[]contractsmodular.Module{module("blog", map[string]string{"@shop": "resources"}), module("shop", nil)},
+			[]contractsmodule.Module{module("blog", map[string]string{"@shop": "resources"}), module("shop", nil)},
 			errors.ModularViteAliasDuplicate.Args("@shop", "blog", "shop"),
 		},
 	}
@@ -196,7 +196,7 @@ func TestInputsCommand_ModulePublished(t *testing.T) {
 	// Another version is linked than the one published.
 	assert.EqualError(t, run("v1.3.0", false), errors.ModularModulePublishStale.Args("billing", "modules/billing", "github.com/goravel/framework v1.3.0").Error())
 
-	// The directory holds something modular:publish did not write.
+	// The directory holds something module:publish did not write.
 	require.NoError(t, os.Remove(filepath.Join(dir, modular.PublishMarker)))
 	assert.EqualError(t, run("v1.2.0", false), errors.ModularPublishTargetNotOwned.Args("billing", "modules/billing", "github.com/goravel/framework").Error())
 

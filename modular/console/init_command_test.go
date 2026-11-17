@@ -68,15 +68,15 @@ func (s *InitCommandTestSuite) TearDownTest() {
 func (s *InitCommandTestSuite) TestSignature() {
 	cmd := NewInitCommand(nil)
 
-	s.Equal("modular:init", cmd.Signature())
+	s.Equal("module:init", cmd.Signature())
 	s.Equal("Prepare the application for modules", cmd.Description())
-	s.Equal("modular", cmd.Extend().Category)
+	s.Equal("module", cmd.Extend().Category)
 }
 
 func (s *InitCommandTestSuite) TestRequiresBootstrapSetup() {
 	err := NewInitCommand(nil).Handle(mocksconsole.NewContext(s.T()))
 
-	s.Equal(errors.ModularRequiresBootstrapSetup.Args("modular:init"), err)
+	s.Equal(errors.ModularRequiresBootstrapSetup.Args("module:init"), err)
 	s.False(file.Exists("modules"))
 }
 
@@ -85,7 +85,7 @@ func (s *InitCommandTestSuite) TestReturnsUnparsableApp() {
 
 	ctx := mocksconsole.NewContext(s.T())
 	ctx.EXPECT().TwoColumnDetail("modules/.gitkeep", statusCreated).Once()
-	ctx.EXPECT().TwoColumnDetail("config/modular.go", statusCreated).Once()
+	ctx.EXPECT().TwoColumnDetail("config/module.go", statusCreated).Once()
 
 	err := NewInitCommand(nil).Handle(ctx)
 
@@ -100,10 +100,10 @@ func (s *InitCommandTestSuite) TestCreatesThenReportsExisting() {
 
 	ctx := mocksconsole.NewContext(s.T())
 	ctx.EXPECT().TwoColumnDetail("modules/.gitkeep", statusCreated).Once()
-	ctx.EXPECT().TwoColumnDetail("config/modular.go", statusCreated).Once()
+	ctx.EXPECT().TwoColumnDetail("config/module.go", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/modules.go", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/app.go WithModules(Modules)", statusCreated).Once()
-	ctx.EXPECT().TwoColumnDetail("main.go go:generate modular:publish", statusCreated).Once()
+	ctx.EXPECT().TwoColumnDetail("main.go go:generate module:publish", statusCreated).Once()
 
 	s.NoError(NewInitCommand(nil).Handle(ctx))
 
@@ -114,22 +114,22 @@ func (s *InitCommandTestSuite) TestCreatesThenReportsExisting() {
 	s.Equal(modify.ModulesStub(), modules)
 
 	// No app/facades here, so the config file uses the framework facades.
-	config, err := file.GetContent("config/modular.go")
+	config, err := file.GetContent("config/module.go")
 	s.NoError(err)
 	s.Contains(config, "package config")
 	s.Contains(config, `"github.com/goravel/framework/facades"`)
 	s.Contains(config, `facades.Config()`)
-	s.Contains(config, `config.Add("modular", map[string]any{`)
+	s.Contains(config, `config.Add("module", map[string]any{`)
 
 	app, err := file.GetContent("bootstrap/app.go")
 	s.NoError(err)
 
 	ctx = mocksconsole.NewContext(s.T())
 	ctx.EXPECT().TwoColumnDetail("modules/.gitkeep", statusExists).Once()
-	ctx.EXPECT().TwoColumnDetail("config/modular.go", statusExists).Once()
+	ctx.EXPECT().TwoColumnDetail("config/module.go", statusExists).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/modules.go", statusExists).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/app.go WithModules(Modules)", statusExists).Once()
-	ctx.EXPECT().TwoColumnDetail("main.go go:generate modular:publish", statusExists).Once()
+	ctx.EXPECT().TwoColumnDetail("main.go go:generate module:publish", statusExists).Once()
 
 	s.NoError(NewInitCommand(nil).Handle(ctx))
 
@@ -147,7 +147,7 @@ func (s *InitCommandTestSuite) TestGenerateDirective() {
 	rows := func(status string) *mocksconsole.Context {
 		ctx := mocksconsole.NewContext(s.T())
 		ctx.EXPECT().TwoColumnDetail(mock.Anything, mock.Anything).Times(4)
-		ctx.EXPECT().TwoColumnDetail("main.go go:generate modular:publish", status).Once()
+		ctx.EXPECT().TwoColumnDetail("main.go go:generate module:publish", status).Once()
 
 		return ctx
 	}
@@ -174,19 +174,19 @@ func (s *InitCommandTestSuite) TestAppFacadesAndConfiguredPath() {
 	s.Require().NoError(file.PutContent("app/facades/config.go", "package facades\n"))
 
 	config := mocksconfig.NewConfig(s.T())
-	config.EXPECT().GetString("modular.path", "modules").Return("src/modules").Once()
+	config.EXPECT().GetString("module.path", "modules").Return("src/modules").Once()
 
 	ctx := mocksconsole.NewContext(s.T())
 	ctx.EXPECT().TwoColumnDetail("src/modules/.gitkeep", statusCreated).Once()
-	ctx.EXPECT().TwoColumnDetail("config/modular.go", statusCreated).Once()
+	ctx.EXPECT().TwoColumnDetail("config/module.go", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/modules.go", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/app.go WithModules(Modules)", statusCreated).Once()
-	ctx.EXPECT().TwoColumnDetail("main.go go:generate modular:publish", statusCreated).Once()
+	ctx.EXPECT().TwoColumnDetail("main.go go:generate module:publish", statusCreated).Once()
 
 	s.NoError(NewInitCommand(config).Handle(ctx))
 
 	s.True(file.Exists("src/modules/.gitkeep"))
-	s.True(file.Contain("config/modular.go", `"github.com/goravel/framework/app/facades"`))
+	s.True(file.Contain("config/module.go", `"github.com/goravel/framework/app/facades"`))
 }
 
 func (s *InitCommandTestSuite) TestAssignedChainIsManual() {
@@ -196,10 +196,10 @@ func (s *InitCommandTestSuite) TestAssignedChainIsManual() {
 	warning := "Add .WithModules(Modules) to foundation.Setup() in bootstrap/app.go"
 	ctx := mocksconsole.NewContext(s.T())
 	ctx.EXPECT().TwoColumnDetail("modules/.gitkeep", statusCreated).Once()
-	ctx.EXPECT().TwoColumnDetail("config/modular.go", statusCreated).Once()
+	ctx.EXPECT().TwoColumnDetail("config/module.go", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/modules.go", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/app.go WithModules(Modules)", statusManual).Once()
-	ctx.EXPECT().TwoColumnDetail("main.go go:generate modular:publish", statusCreated).Once()
+	ctx.EXPECT().TwoColumnDetail("main.go go:generate module:publish", statusCreated).Once()
 	ctx.EXPECT().Warning(warning).Once()
 
 	s.NoError(NewInitCommand(nil).Handle(ctx))
@@ -212,10 +212,10 @@ func (s *InitCommandTestSuite) TestAssignedChainIsManual() {
 	// modules.go without WithModules: the same manual row again.
 	ctx = mocksconsole.NewContext(s.T())
 	ctx.EXPECT().TwoColumnDetail("modules/.gitkeep", statusExists).Once()
-	ctx.EXPECT().TwoColumnDetail("config/modular.go", statusExists).Once()
+	ctx.EXPECT().TwoColumnDetail("config/module.go", statusExists).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/modules.go", statusExists).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/app.go WithModules(Modules)", statusManual).Once()
-	ctx.EXPECT().TwoColumnDetail("main.go go:generate modular:publish", statusExists).Once()
+	ctx.EXPECT().TwoColumnDetail("main.go go:generate module:publish", statusExists).Once()
 	ctx.EXPECT().Warning(warning).Once()
 
 	s.NoError(NewInitCommand(nil).Handle(ctx))
@@ -238,7 +238,7 @@ func (s *InitCommandTestSuite) TestWriteFailures() {
 		s.Require().NoError(file.PutContent("modules", "file"))
 
 		s.Error(NewInitCommand(nil).Handle(mocksconsole.NewContext(s.T())))
-		s.False(file.Exists("config/modular.go"))
+		s.False(file.Exists("config/module.go"))
 		removeScaffold(s.T())
 	})
 
@@ -265,7 +265,7 @@ func (s *InitCommandTestSuite) TestWriteFailures() {
 
 		ctx := mocksconsole.NewContext(s.T())
 		ctx.EXPECT().TwoColumnDetail("modules/.gitkeep", statusCreated).Once()
-		ctx.EXPECT().TwoColumnDetail("config/modular.go", statusCreated).Once()
+		ctx.EXPECT().TwoColumnDetail("config/module.go", statusCreated).Once()
 		ctx.EXPECT().TwoColumnDetail("bootstrap/modules.go", statusCreated).Once()
 		ctx.EXPECT().TwoColumnDetail("bootstrap/app.go WithModules(Modules)", statusCreated).Once()
 

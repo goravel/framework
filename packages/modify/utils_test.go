@@ -4999,14 +4999,14 @@ func Boot() contractsfoundation.Application {
 	assert.Equal(t, `package bootstrap
 
 import (
-	"github.com/goravel/framework/contracts/modular"
+	"github.com/goravel/framework/contracts/module"
 
 	"goravel/modules/blog"
 	blogposts "goravel/modules/blog-posts"
 )
 
-func Modules() []modular.Module {
-	return []modular.Module{
+func Modules() []module.Module {
+	return []module.Module{
 		&blog.Module{},
 		&blogposts.Module{},
 	}
@@ -5019,13 +5019,13 @@ func Modules() []modular.Module {
 	assert.Equal(t, `package bootstrap
 
 import (
-	"github.com/goravel/framework/contracts/modular"
+	"github.com/goravel/framework/contracts/module"
 
 	blogposts "goravel/modules/blog-posts"
 )
 
-func Modules() []modular.Module {
-	return []modular.Module{
+func Modules() []module.Module {
+	return []module.Module{
 		&blogposts.Module{},
 	}
 }

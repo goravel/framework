@@ -13,20 +13,20 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	contractsmodular "github.com/goravel/framework/contracts/modular"
+	contractsmodule "github.com/goravel/framework/contracts/module"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/modular"
 	"github.com/goravel/framework/support/path"
 )
 
 type ListCommand struct {
-	registry  contractsmodular.Registry
+	registry  contractsmodule.Registry
 	buildInfo func() (*debug.BuildInfo, bool)
 	// out receives --json as is: ctx.Line would wrap it in colour codes.
 	out io.Writer
 }
 
-func NewListCommand(registry contractsmodular.Registry) *ListCommand {
+func NewListCommand(registry contractsmodule.Registry) *ListCommand {
 	return &ListCommand{registry: registry, buildInfo: debug.ReadBuildInfo, out: os.Stdout}
 }
 
@@ -44,7 +44,7 @@ type moduleInfo struct {
 
 // Signature The name and signature of the console command.
 func (r *ListCommand) Signature() string {
-	return "modular:list"
+	return "module:list"
 }
 
 // Description The console command description.
@@ -55,7 +55,7 @@ func (r *ListCommand) Description() string {
 // Extend The console command extend.
 func (r *ListCommand) Extend() command.Extend {
 	return command.Extend{
-		Category: "modular",
+		Category: "module",
 		Flags: []command.Flag{
 			&command.BoolFlag{
 				Name:  "json",
@@ -106,7 +106,7 @@ func (r *ListCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func (r *ListCommand) describe(module contractsmodular.Module, info *debug.BuildInfo) moduleInfo {
+func (r *ListCommand) describe(module contractsmodule.Module, info *debug.BuildInfo) moduleInfo {
 	dir, _ := r.registry.Path(module.Name())
 	described := moduleInfo{
 		Name:         module.Name(),
@@ -121,16 +121,16 @@ func (r *ListCommand) describe(module contractsmodular.Module, info *debug.Build
 	if dependency, ok := modular.DependencyOf(module, info); ok {
 		described.Publish = modular.PublishState(module, dependency, path.Base(filepath.FromSlash(dir)))
 	}
-	if p, ok := module.(contractsmodular.Ordered); ok {
+	if p, ok := module.(contractsmodule.Ordered); ok {
 		described.Order = p.Order()
 	}
-	if p, ok := module.(contractsmodular.ProvidesViteEntries); ok {
+	if p, ok := module.(contractsmodule.ProvidesViteEntries); ok {
 		described.ViteEntries = append(described.ViteEntries, p.ViteEntries()...)
 	}
-	if p, ok := module.(contractsmodular.ProvidesViteAlias); ok {
+	if p, ok := module.(contractsmodule.ProvidesViteAlias); ok {
 		maps.Copy(described.ViteAliases, p.ViteAliases())
 	}
-	if p, ok := module.(contractsmodular.ProvidesStatic); ok {
+	if p, ok := module.(contractsmodule.ProvidesStatic); ok {
 		described.Static = slices.Sorted(maps.Keys(p.Static()))
 	}
 

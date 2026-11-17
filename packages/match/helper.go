@@ -231,7 +231,7 @@ func Migrations() []match.GoNode {
 	}
 }
 
-// Modules matches the Modules() function returning a []modular.Module literal.
+// Modules matches the Modules() function returning a []module.Module literal.
 func Modules() []match.GoNode {
 	return []match.GoNode{
 		Func(Ident("Modules")),
@@ -239,7 +239,7 @@ func Modules() []match.GoNode {
 		CompositeLit(
 			ArrayType(
 				SelectorExpr(
-					Ident("modular"),
+					Ident("module"),
 					Ident("Module"),
 				),
 				AnyNode(),

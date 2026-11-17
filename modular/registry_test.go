@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/contracts/modular"
+	contractsmodule "github.com/goravel/framework/contracts/module"
 	"github.com/goravel/framework/errors"
 )
 
@@ -35,7 +35,7 @@ type routedModule struct{ plainModule }
 func (m *routedModule) Routes()                                        {}
 func (m *routedModule) ServiceProviders() []foundation.ServiceProvider { return nil }
 
-func names(modules []modular.Module) []string {
+func names(modules []contractsmodule.Module) []string {
 	var out []string
 	for _, m := range modules {
 		out = append(out, m.Name())
@@ -131,10 +131,10 @@ func TestRegistry_Capabilities(t *testing.T) {
 
 func TestProviding(t *testing.T) {
 	routed := &routedModule{plainModule{"blog"}}
-	modules := []modular.Module{&plainModule{"plain"}, routed}
+	modules := []contractsmodule.Module{&plainModule{"plain"}, routed}
 
-	assert.Equal(t, []modular.ProvidesRoutes{routed}, Providing[modular.ProvidesRoutes](modules))
-	assert.Empty(t, Providing[modular.ProvidesViews](modules))
+	assert.Equal(t, []contractsmodule.ProvidesRoutes{routed}, Providing[contractsmodule.ProvidesRoutes](modules))
+	assert.Empty(t, Providing[contractsmodule.ProvidesViews](modules))
 }
 
 func TestDefault(t *testing.T) {

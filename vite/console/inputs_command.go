@@ -13,7 +13,7 @@ import (
 	contractsconfig "github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	contractsmodular "github.com/goravel/framework/contracts/modular"
+	contractsmodule "github.com/goravel/framework/contracts/module"
 	contractsview "github.com/goravel/framework/contracts/view"
 	contractsvite "github.com/goravel/framework/contracts/vite"
 	"github.com/goravel/framework/errors"
@@ -74,12 +74,12 @@ type InputsCommand struct {
 	view      contractsview.View
 	vite      contractsvite.Vite
 	config    contractsconfig.Config
-	modules   contractsmodular.Registry
+	modules   contractsmodule.Registry
 	buildInfo func() (*debug.BuildInfo, bool)
 }
 
 // NewInputsCommand takes the module registry, nil when the application has none.
-func NewInputsCommand(views contractsview.View, vite contractsvite.Vite, config contractsconfig.Config, modules contractsmodular.Registry) *InputsCommand {
+func NewInputsCommand(views contractsview.View, vite contractsvite.Vite, config contractsconfig.Config, modules contractsmodule.Registry) *InputsCommand {
 	return &InputsCommand{view: views, vite: vite, config: config, modules: modules, buildInfo: debug.ReadBuildInfo}
 }
 
@@ -188,7 +188,7 @@ func (r *InputsCommand) moduleInputs() ([]ModuleInputs, error) {
 		}
 
 		input := ModuleInputs{Name: name, Path: dir, Entries: []string{}, Aliases: map[string]string{}}
-		if p, ok := module.(contractsmodular.ProvidesViteEntries); ok {
+		if p, ok := module.(contractsmodule.ProvidesViteEntries); ok {
 			for _, entry := range p.ViteEntries() {
 				// Checked like aliases: Vite would build a file outside the module otherwise.
 				cleaned, inside := path.CleanRelative(entry)
@@ -198,7 +198,7 @@ func (r *InputsCommand) moduleInputs() ([]ModuleInputs, error) {
 				input.Entries = append(input.Entries, stdpath.Join(dir, cleaned))
 			}
 		}
-		if p, ok := module.(contractsmodular.ProvidesViteAlias); ok {
+		if p, ok := module.(contractsmodule.ProvidesViteAlias); ok {
 			aliases := p.ViteAliases()
 			for _, key := range slices.Sorted(maps.Keys(aliases)) {
 				target, inside := path.CleanRelative(aliases[key])
@@ -221,8 +221,8 @@ func (r *InputsCommand) moduleInputs() ([]ModuleInputs, error) {
 }
 
 // checkPublished fails for a third-party module whose files are not in dir as
-// modular:publish writes them: Vite would build without them, or with old ones.
-func checkPublished(module contractsmodular.Module, info *debug.BuildInfo, dir string) error {
+// module:publish writes them: Vite would build without them, or with old ones.
+func checkPublished(module contractsmodule.Module, info *debug.BuildInfo, dir string) error {
 	dependency, ok := modular.DependencyOf(module, info)
 	if !ok {
 		return nil

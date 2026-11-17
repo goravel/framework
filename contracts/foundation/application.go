@@ -23,7 +23,7 @@ import (
 	"github.com/goravel/framework/contracts/http/client"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/mail"
-	"github.com/goravel/framework/contracts/modular"
+	"github.com/goravel/framework/contracts/module"
 	"github.com/goravel/framework/contracts/notification"
 	"github.com/goravel/framework/contracts/process"
 	"github.com/goravel/framework/contracts/queue"
@@ -181,8 +181,8 @@ type Application interface {
 	MakeLog() log.Log
 	// MakeMail resolves the mail instance.
 	MakeMail() mail.Mail
-	// MakeModular resolves the module registry; nil without foundation.Setup().
-	MakeModular() modular.Registry
+	// MakeModule resolves the module registry; nil without foundation.Setup().
+	MakeModule() module.Registry
 	// MakeNotification resolves the notification instance.
 	MakeNotification() notification.Manager
 	// MakeOrm resolves the orm instance.

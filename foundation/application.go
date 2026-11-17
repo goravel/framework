@@ -30,7 +30,7 @@ import (
 	"github.com/goravel/framework/contracts/database/seeder"
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/foundation"
-	contractsmodular "github.com/goravel/framework/contracts/modular"
+	contractsmodule "github.com/goravel/framework/contracts/module"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/route"
 	"github.com/goravel/framework/contracts/schedule"
@@ -90,7 +90,7 @@ type Application struct {
 	bootedRunners      []string
 	commandsFilter     []string
 	commandHooks       map[string][]contractsconsole.CommandHook
-	modules            []contractsmodular.Module
+	modules            []contractsmodule.Module
 	runnerWg           sync.WaitGroup
 	runnersToRun       []*RunnerWithInfo
 }
@@ -503,7 +503,7 @@ func (r *Application) configureCommands() {
 	if r.builder.commands != nil {
 		commands = r.builder.commands()
 	}
-	for _, module := range modular.Providing[contractsmodular.ProvidesCommands](r.modules) {
+	for _, module := range modular.Providing[contractsmodule.ProvidesCommands](r.modules) {
 		commands = append(commands, module.Commands()...)
 	}
 
@@ -522,12 +522,12 @@ func (r *Application) configureCustomConfig() {
 // app.lang_fs with module translations.
 func (r *Application) configureModuleConfig() {
 	translations := make(map[string]fs.FS)
-	var configs []contractsmodular.Module
+	var configs []contractsmodule.Module
 	for _, module := range r.modules {
-		if _, ok := module.(contractsmodular.ProvidesConfig); ok {
+		if _, ok := module.(contractsmodule.ProvidesConfig); ok {
 			configs = append(configs, module)
 		}
-		if p, ok := module.(contractsmodular.ProvidesTranslations); ok {
+		if p, ok := module.(contractsmodule.ProvidesTranslations); ok {
 			if fsys := p.Translations(); fsys != nil {
 				translations[module.Name()] = fsys
 			}
@@ -544,7 +544,7 @@ func (r *Application) configureModuleConfig() {
 	}
 
 	for _, module := range configs {
-		configFacade.Add("modules."+module.Name(), module.(contractsmodular.ProvidesConfig).Config())
+		configFacade.Add("modules."+module.Name(), module.(contractsmodule.ProvidesConfig).Config())
 	}
 
 	if len(translations) > 0 {
@@ -559,7 +559,7 @@ func (r *Application) configureEventListeners() {
 	if r.builder.eventToListeners != nil {
 		maps.Copy(eventToListeners, r.builder.eventToListeners())
 	}
-	for _, module := range modular.Providing[contractsmodular.ProvidesEvents](r.modules) {
+	for _, module := range modular.Providing[contractsmodule.ProvidesEvents](r.modules) {
 		// Concat keeps every listener of a shared event and never writes into the app's slice.
 		for e, listeners := range module.Events() {
 			eventToListeners[e] = slices.Concat(eventToListeners[e], listeners)
@@ -647,7 +647,7 @@ func (r *Application) configureJobs() {
 	if r.builder.jobs != nil {
 		jobs = r.builder.jobs()
 	}
-	for _, module := range modular.Providing[contractsmodular.ProvidesJobs](r.modules) {
+	for _, module := range modular.Providing[contractsmodule.ProvidesJobs](r.modules) {
 		jobs = append(jobs, module.Jobs()...)
 	}
 
@@ -663,7 +663,7 @@ func (r *Application) configureJobs() {
 
 // configureMiddleware: driver defaults, then modules, then WithMiddleware (final say).
 func (r *Application) configureMiddleware() {
-	modules := modular.Providing[contractsmodular.ProvidesGlobalMiddleware](r.modules)
+	modules := modular.Providing[contractsmodule.ProvidesGlobalMiddleware](r.modules)
 	if r.builder.middleware != nil || len(modules) > 0 {
 		routeFacade := r.MakeRoute()
 		if routeFacade == nil {
@@ -691,7 +691,7 @@ func (r *Application) configureMigrations() {
 	if r.builder.migrations != nil {
 		migrations = r.builder.migrations()
 	}
-	for _, module := range modular.Providing[contractsmodular.ProvidesMigrations](r.modules) {
+	for _, module := range modular.Providing[contractsmodule.ProvidesMigrations](r.modules) {
 		migrations = append(migrations, module.Migrations()...)
 	}
 
@@ -706,16 +706,16 @@ func (r *Application) configureMigrations() {
 }
 
 // configureModules binds a fresh registry and keeps the sorted modules. It runs
-// after WithConfig (modular.path) and before providers. Errors are reported.
+// after WithConfig (module.path) and before providers. Errors are reported.
 func (r *Application) configureModules() {
 	directory := modular.DefaultDirectory
-	var modules []contractsmodular.Module
+	var modules []contractsmodule.Module
 	if r.builder.modules != nil {
 		modules = r.builder.modules()
 	}
 	if len(modules) > 0 {
 		if config := r.MakeConfig(); config != nil {
-			directory = config.GetString("modular.path", modular.DefaultDirectory)
+			directory = config.GetString("module.path", modular.DefaultDirectory)
 		}
 	}
 
@@ -725,8 +725,8 @@ func (r *Application) configureModules() {
 	}
 
 	// Make caches instances; drop the previous registry on a rebuild.
-	r.Fresh(binding.Modular)
-	r.Instance(binding.Modular, registry)
+	r.Fresh(binding.Module)
+	r.Instance(binding.Module, registry)
 	modular.SetDefault(registry)
 	r.modules = registry.All()
 }
@@ -745,8 +745,8 @@ func (r *Application) configureRoutes() {
 		r.builder.routes()
 	}
 
-	statics := modular.Providing[contractsmodular.ProvidesStatic](r.modules)
-	web := modular.Providing[contractsmodular.ProvidesRoutes](r.modules)
+	statics := modular.Providing[contractsmodule.ProvidesStatic](r.modules)
+	web := modular.Providing[contractsmodule.ProvidesRoutes](r.modules)
 	if len(statics) == 0 && len(web) == 0 {
 		return
 	}
@@ -767,10 +767,10 @@ func (r *Application) configureRoutes() {
 // registerModuleStatic serves static paths in module, then prefix, order. Duplicate
 // or invalid ones are reported and skipped.
 func (r *Application) registerModuleStatic(routeFacade route.Route) {
-	registry := r.MakeModular()
+	registry := r.MakeModule()
 	served := make(map[string]string)
 	for _, module := range r.modules {
-		p, ok := module.(contractsmodular.ProvidesStatic)
+		p, ok := module.(contractsmodule.ProvidesStatic)
 		if !ok {
 			continue
 		}
@@ -860,7 +860,7 @@ func (r *Application) configureSchedule() {
 	if r.builder.schedule != nil {
 		events = r.builder.schedule()
 	}
-	for _, module := range modular.Providing[contractsmodular.ProvidesSchedule](r.modules) {
+	for _, module := range modular.Providing[contractsmodule.ProvidesSchedule](r.modules) {
 		events = append(events, module.Schedule()...)
 	}
 
@@ -879,7 +879,7 @@ func (r *Application) configureSeeders() {
 	if r.builder.seeders != nil {
 		seeders = r.builder.seeders()
 	}
-	for _, module := range modular.Providing[contractsmodular.ProvidesSeeders](r.modules) {
+	for _, module := range modular.Providing[contractsmodule.ProvidesSeeders](r.modules) {
 		seeders = append(seeders, module.Seeders()...)
 	}
 
@@ -910,7 +910,7 @@ func (r *Application) configureServiceProviders() {
 // registerModuleResources registers module views under "<name>/", after providers
 // boot and before configureViews compiles them.
 func (r *Application) registerModuleResources() {
-	modules := modular.Providing[contractsmodular.ProvidesViews](r.modules)
+	modules := modular.Providing[contractsmodule.ProvidesViews](r.modules)
 	if len(modules) == 0 {
 		return
 	}
@@ -922,7 +922,7 @@ func (r *Application) registerModuleResources() {
 	}
 
 	for _, module := range r.modules {
-		p, ok := module.(contractsmodular.ProvidesViews)
+		p, ok := module.(contractsmodule.ProvidesViews)
 		if !ok {
 			continue
 		}
@@ -1014,9 +1014,9 @@ func (r *Application) defaultCommands() []contractsconsole.Command {
 		console.NewPackageUninstallCommand(binding.Bindings, r.MakeProcess(), r.Json()),
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
 		modularconsole.NewInitCommand(r.MakeConfig()),
-		modularconsole.NewListCommand(r.MakeModular()),
+		modularconsole.NewListCommand(r.MakeModule()),
 		modularconsole.NewModuleMakeCommand(r.MakeConfig()),
-		modularconsole.NewPublishCommand(r.MakeModular()),
+		modularconsole.NewPublishCommand(r.MakeModule()),
 	}
 
 	if r.MakeRoute() != nil {

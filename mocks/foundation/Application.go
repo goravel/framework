@@ -42,7 +42,7 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
-	modular "github.com/goravel/framework/contracts/modular"
+	module "github.com/goravel/framework/contracts/module"
 
 	notification "github.com/goravel/framework/contracts/notification"
 
@@ -1991,49 +1991,49 @@ func (_c *Application_MakeMail_Call) RunAndReturn(run func() mail.Mail) *Applica
 	return _c
 }
 
-// MakeModular provides a mock function with no fields
-func (_m *Application) MakeModular() modular.Registry {
+// MakeModule provides a mock function with no fields
+func (_m *Application) MakeModule() module.Registry {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for MakeModular")
+		panic("no return value specified for MakeModule")
 	}
 
-	var r0 modular.Registry
-	if rf, ok := ret.Get(0).(func() modular.Registry); ok {
+	var r0 module.Registry
+	if rf, ok := ret.Get(0).(func() module.Registry); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(modular.Registry)
+			r0 = ret.Get(0).(module.Registry)
 		}
 	}
 
 	return r0
 }
 
-// Application_MakeModular_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MakeModular'
-type Application_MakeModular_Call struct {
+// Application_MakeModule_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MakeModule'
+type Application_MakeModule_Call struct {
 	*mock.Call
 }
 
-// MakeModular is a helper method to define mock.On call
-func (_e *Application_Expecter) MakeModular() *Application_MakeModular_Call {
-	return &Application_MakeModular_Call{Call: _e.mock.On("MakeModular")}
+// MakeModule is a helper method to define mock.On call
+func (_e *Application_Expecter) MakeModule() *Application_MakeModule_Call {
+	return &Application_MakeModule_Call{Call: _e.mock.On("MakeModule")}
 }
 
-func (_c *Application_MakeModular_Call) Run(run func()) *Application_MakeModular_Call {
+func (_c *Application_MakeModule_Call) Run(run func()) *Application_MakeModule_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *Application_MakeModular_Call) Return(_a0 modular.Registry) *Application_MakeModular_Call {
+func (_c *Application_MakeModule_Call) Return(_a0 module.Registry) *Application_MakeModule_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Application_MakeModular_Call) RunAndReturn(run func() modular.Registry) *Application_MakeModular_Call {
+func (_c *Application_MakeModule_Call) RunAndReturn(run func() module.Registry) *Application_MakeModule_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
-	contractsmodular "github.com/goravel/framework/contracts/modular"
+	contractsmodule "github.com/goravel/framework/contracts/module"
 	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
-	mocksmodular "github.com/goravel/framework/mocks/modular"
+	mocksmodule "github.com/goravel/framework/mocks/module"
 	"github.com/goravel/framework/modular"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/path"
@@ -53,7 +53,7 @@ func (s *PublishCommandTestSuite) TearDownTest() {
 	removeScaffold(s.T())
 }
 
-func (s *PublishCommandTestSuite) command(registry contractsmodular.Registry) *PublishCommand {
+func (s *PublishCommandTestSuite) command(registry contractsmodule.Registry) *PublishCommand {
 	cmd := NewPublishCommand(registry)
 	cmd.buildInfo = thirdPartyBuild
 
@@ -63,9 +63,9 @@ func (s *PublishCommandTestSuite) command(registry contractsmodular.Registry) *P
 func (s *PublishCommandTestSuite) TestSignature() {
 	cmd := NewPublishCommand(nil)
 
-	s.Equal("modular:publish", cmd.Signature())
+	s.Equal("module:publish", cmd.Signature())
 	s.Equal("Copy the sources of third-party modules into the project", cmd.Description())
-	s.Equal("modular", cmd.Extend().Category)
+	s.Equal("module", cmd.Extend().Category)
 	s.Len(cmd.Extend().Flags, 1)
 }
 
@@ -78,8 +78,8 @@ func (s *PublishCommandTestSuite) TestPublishesThirdPartyModules() {
 	plain := &testModule{"plain"}
 	local := &locatedModule{sourcesModule{testModule{"local"}, fstest.MapFS{"app.js": {Data: []byte("app")}}}}
 
-	registry := mocksmodular.NewRegistry(s.T())
-	registry.EXPECT().All().Return([]contractsmodular.Module{billing, plain, local})
+	registry := mocksmodule.NewRegistry(s.T())
+	registry.EXPECT().All().Return([]contractsmodule.Module{billing, plain, local})
 	registry.EXPECT().Path("billing").Return("modules/billing", true)
 	registry.EXPECT().Path("plain").Return("modules/plain", true)
 
@@ -109,8 +109,8 @@ func (s *PublishCommandTestSuite) TestPublishesThirdPartyModules() {
 func (s *PublishCommandTestSuite) TestModuleOption() {
 	billing := &sourcesModule{testModule{"billing"}, fstest.MapFS{"app.js": {Data: []byte("app")}}}
 
-	registry := mocksmodular.NewRegistry(s.T())
-	registry.EXPECT().All().Return([]contractsmodular.Module{billing, &testModule{"plain"}})
+	registry := mocksmodule.NewRegistry(s.T())
+	registry.EXPECT().All().Return([]contractsmodule.Module{billing, &testModule{"plain"}})
 	registry.EXPECT().Find("billing").Return(billing, true).Twice()
 	registry.EXPECT().Find("Billing").Return(nil, false).Once()
 	// Not found as given nor in kebab case, which is the same name here.
@@ -141,8 +141,8 @@ func (s *PublishCommandTestSuite) TestFailureDoesNotStopOtherModules() {
 	shop := &sourcesModule{testModule{"shop"}, fstest.MapFS{"app.js": {Data: []byte("app")}}}
 	s.Require().NoError(file.PutContent("modules/billing/module.go", "package billing\n"))
 
-	registry := mocksmodular.NewRegistry(s.T())
-	registry.EXPECT().All().Return([]contractsmodular.Module{billing, shop})
+	registry := mocksmodule.NewRegistry(s.T())
+	registry.EXPECT().All().Return([]contractsmodule.Module{billing, shop})
 	registry.EXPECT().Path("billing").Return("modules/billing", true)
 	registry.EXPECT().Path("shop").Return("modules/shop", true)
 
@@ -164,8 +164,8 @@ func (s *PublishCommandTestSuite) TestWriteFailure() {
 	s.Require().NoError(file.PutContent("modules/billing/"+modular.PublishMarker, `{"module": "github.com/goravel/framework"}`))
 	s.Require().NoError(file.PutContent("modules/billing/resources", "file"))
 
-	registry := mocksmodular.NewRegistry(s.T())
-	registry.EXPECT().All().Return([]contractsmodular.Module{billing})
+	registry := mocksmodule.NewRegistry(s.T())
+	registry.EXPECT().All().Return([]contractsmodule.Module{billing})
 	registry.EXPECT().Path("billing").Return("modules/billing", true)
 
 	ctx := mocksconsole.NewContext(s.T())

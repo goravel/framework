@@ -14,7 +14,7 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	contractsmodular "github.com/goravel/framework/contracts/modular"
+	contractsmodule "github.com/goravel/framework/contracts/module"
 	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/modular"
@@ -209,7 +209,7 @@ func TestNewMakeInModule(t *testing.T) {
 	tests := []struct {
 		name        string
 		module      string
-		registry    contractsmodular.Registry
+		registry    contractsmodule.Registry
 		root        string
 		expectRoot  string
 		expectError error

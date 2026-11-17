@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	contractsmodular "github.com/goravel/framework/contracts/modular"
+	contractsmodule "github.com/goravel/framework/contracts/module"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support"
 )
@@ -22,7 +22,7 @@ func TestStaticFS_Embedded(t *testing.T) {
 		"resources/secret.txt": {Data: []byte("secret")},
 	}
 
-	fsys, err := StaticFS("blog", "modules/blog", contractsmodular.Path{FS: embedded, Dir: "public"})
+	fsys, err := StaticFS("blog", "modules/blog", contractsmodule.Path{FS: embedded, Dir: "public"})
 	require.NoError(t, err)
 
 	content, err := fs.ReadFile(fsys, "robots.txt")
@@ -50,14 +50,14 @@ func TestStaticFS_Disk(t *testing.T) {
 	require.NoError(t, os.MkdirAll(dir, 0o755))
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "robots.txt"), []byte("disk"), 0o644))
 
-	fsys, err := StaticFS("blog", "modules/blog", contractsmodular.Path{Dir: "public"})
+	fsys, err := StaticFS("blog", "modules/blog", contractsmodule.Path{Dir: "public"})
 	require.NoError(t, err)
 
 	content, err := fs.ReadFile(fsys, "robots.txt")
 	require.NoError(t, err)
 	assert.Equal(t, "disk", string(content))
 
-	_, err = StaticFS("blog", "modules/blog", contractsmodular.Path{Dir: "missing"})
+	_, err = StaticFS("blog", "modules/blog", contractsmodule.Path{Dir: "missing"})
 	assert.ErrorIs(t, err, errors.ModularStaticDirUnreadable)
 }
 
@@ -65,17 +65,17 @@ func TestStaticFS_Invalid(t *testing.T) {
 	embedded := fstest.MapFS{"public/robots.txt": {Data: []byte("x")}}
 
 	for _, dir := range []string{"..", "../shop", "public/../../x", "/etc"} {
-		_, err := StaticFS("blog", "modules/blog", contractsmodular.Path{FS: embedded, Dir: dir})
+		_, err := StaticFS("blog", "modules/blog", contractsmodule.Path{FS: embedded, Dir: dir})
 		assert.ErrorIs(t, err, errors.ModularStaticDirInvalid, dir)
 	}
 
-	_, err := StaticFS("blog", "../blog", contractsmodular.Path{Dir: "public"})
+	_, err := StaticFS("blog", "../blog", contractsmodule.Path{Dir: "public"})
 	assert.ErrorIs(t, err, errors.ModularStaticDirInvalid, "the module directory must stay inside the project")
 
-	_, err = StaticFS("blog", "modules/blog", contractsmodular.Path{FS: embedded, Dir: "public/robots.txt"})
+	_, err = StaticFS("blog", "modules/blog", contractsmodule.Path{FS: embedded, Dir: "public/robots.txt"})
 	assert.ErrorIs(t, err, errors.ModularStaticDirUnreadable, "a file is not a directory")
 
-	_, err = StaticFS("blog", "modules/blog", contractsmodular.Path{FS: embedded, Dir: "missing"})
+	_, err = StaticFS("blog", "modules/blog", contractsmodule.Path{FS: embedded, Dir: "missing"})
 	assert.ErrorIs(t, err, errors.ModularStaticDirUnreadable)
 }
 

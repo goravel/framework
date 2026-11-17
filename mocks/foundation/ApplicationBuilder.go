@@ -16,7 +16,7 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
-	modular "github.com/goravel/framework/contracts/modular"
+	module "github.com/goravel/framework/contracts/module"
 
 	queue "github.com/goravel/framework/contracts/queue"
 
@@ -862,7 +862,7 @@ func (_c *ApplicationBuilder_WithMigrations_Call) RunAndReturn(run func(func() [
 }
 
 // WithModules provides a mock function with given fields: _a0
-func (_m *ApplicationBuilder) WithModules(_a0 func() []modular.Module) foundation.ApplicationBuilder {
+func (_m *ApplicationBuilder) WithModules(_a0 func() []module.Module) foundation.ApplicationBuilder {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
@@ -870,7 +870,7 @@ func (_m *ApplicationBuilder) WithModules(_a0 func() []modular.Module) foundatio
 	}
 
 	var r0 foundation.ApplicationBuilder
-	if rf, ok := ret.Get(0).(func(func() []modular.Module) foundation.ApplicationBuilder); ok {
+	if rf, ok := ret.Get(0).(func(func() []module.Module) foundation.ApplicationBuilder); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
@@ -887,14 +887,14 @@ type ApplicationBuilder_WithModules_Call struct {
 }
 
 // WithModules is a helper method to define mock.On call
-//   - _a0 func() []modular.Module
+//   - _a0 func() []module.Module
 func (_e *ApplicationBuilder_Expecter) WithModules(_a0 interface{}) *ApplicationBuilder_WithModules_Call {
 	return &ApplicationBuilder_WithModules_Call{Call: _e.mock.On("WithModules", _a0)}
 }
 
-func (_c *ApplicationBuilder_WithModules_Call) Run(run func(_a0 func() []modular.Module)) *ApplicationBuilder_WithModules_Call {
+func (_c *ApplicationBuilder_WithModules_Call) Run(run func(_a0 func() []module.Module)) *ApplicationBuilder_WithModules_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(func() []modular.Module))
+		run(args[0].(func() []module.Module))
 	})
 	return _c
 }
@@ -904,7 +904,7 @@ func (_c *ApplicationBuilder_WithModules_Call) Return(_a0 foundation.Application
 	return _c
 }
 
-func (_c *ApplicationBuilder_WithModules_Call) RunAndReturn(run func(func() []modular.Module) foundation.ApplicationBuilder) *ApplicationBuilder_WithModules_Call {
+func (_c *ApplicationBuilder_WithModules_Call) RunAndReturn(run func(func() []module.Module) foundation.ApplicationBuilder) *ApplicationBuilder_WithModules_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -17,7 +17,7 @@ import (
 	"github.com/goravel/framework/contracts/foundation"
 	contractsconfiguration "github.com/goravel/framework/contracts/foundation/configuration"
 	contractshttp "github.com/goravel/framework/contracts/http"
-	contractsmodular "github.com/goravel/framework/contracts/modular"
+	contractsmodule "github.com/goravel/framework/contracts/module"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/schedule"
 	"github.com/goravel/framework/errors"
@@ -45,7 +45,7 @@ type orderedTestModule struct {
 
 func (m *orderedTestModule) Order() int { return m.order }
 
-func moduleNames(modules []contractsmodular.Module) []string {
+func moduleNames(modules []contractsmodule.Module) []string {
 	var names []string
 	for _, module := range modules {
 		names = append(names, module.Name())
@@ -61,7 +61,7 @@ func (s *ApplicationTestSuite) TestConfigureModules() {
 
 		s.app.configureModules()
 
-		registry := s.app.MakeModular()
+		registry := s.app.MakeModule()
 		s.Require().NotNil(registry)
 		s.Empty(registry.All())
 		s.Empty(s.app.modules)
@@ -70,8 +70,8 @@ func (s *ApplicationTestSuite) TestConfigureModules() {
 	s.Run("modules are registered and kept in order", func() {
 		s.SetupTest()
 		builder := NewApplicationBuilder(s.app)
-		builder.modules = func() []contractsmodular.Module {
-			return []contractsmodular.Module{
+		builder.modules = func() []contractsmodule.Module {
+			return []contractsmodule.Module{
 				&orderedTestModule{testModule{"last"}, -1},
 				&testModule{"blog"},
 				&orderedTestModule{testModule{"shop"}, 5},
@@ -82,27 +82,27 @@ func (s *ApplicationTestSuite) TestConfigureModules() {
 		s.app.configureModules()
 
 		s.Equal([]string{"blog", "shop", "last"}, moduleNames(s.app.modules))
-		s.True(s.app.MakeModular().Has("blog"))
-		instance, err := s.app.Make(binding.Modular)
+		s.True(s.app.MakeModule().Has("blog"))
+		instance, err := s.app.Make(binding.Module)
 		s.NoError(err)
-		s.Same(s.app.MakeModular(), instance)
+		s.Same(s.app.MakeModule(), instance)
 	})
 
-	s.Run("module directories are resolved, third-party ones under modular.path", func() {
+	s.Run("module directories are resolved, third-party ones under module.path", func() {
 		s.SetupTest()
 		mockConfig := mocksconfig.NewConfig(s.T())
-		mockConfig.EXPECT().GetString("modular.path", "modules").Return("app/modules").Once()
+		mockConfig.EXPECT().GetString("module.path", "modules").Return("app/modules").Once()
 		s.app.Instance(binding.Config, mockConfig)
 		builder := NewApplicationBuilder(s.app)
-		builder.modules = func() []contractsmodular.Module {
-			return []contractsmodular.Module{&testModule{"blog"}}
+		builder.modules = func() []contractsmodule.Module {
+			return []contractsmodule.Module{&testModule{"blog"}}
 		}
 		s.app.builder = builder
 
 		s.app.configureModules()
 
 		// Under go test the main module is the framework.
-		dir, ok := s.app.MakeModular().Path("blog")
+		dir, ok := s.app.MakeModule().Path("blog")
 		s.True(ok)
 		s.Equal("foundation", dir)
 	})
@@ -110,8 +110,8 @@ func (s *ApplicationTestSuite) TestConfigureModules() {
 	s.Run("a duplicate name is reported and the modules before it are kept", func() {
 		s.SetupTest()
 		builder := NewApplicationBuilder(s.app)
-		builder.modules = func() []contractsmodular.Module {
-			return []contractsmodular.Module{&testModule{"blog"}, &testModule{"blog"}, &testModule{"shop"}}
+		builder.modules = func() []contractsmodule.Module {
+			return []contractsmodule.Module{&testModule{"blog"}, &testModule{"blog"}, &testModule{"shop"}}
 		}
 		s.app.builder = builder
 
@@ -123,23 +123,23 @@ func (s *ApplicationTestSuite) TestConfigureModules() {
 	s.Run("a rebuild binds a fresh registry", func() {
 		s.SetupTest()
 		builder := NewApplicationBuilder(s.app)
-		builder.modules = func() []contractsmodular.Module {
-			return []contractsmodular.Module{&testModule{"blog"}}
+		builder.modules = func() []contractsmodule.Module {
+			return []contractsmodule.Module{&testModule{"blog"}}
 		}
 		s.app.builder = builder
 
 		s.app.configureModules()
-		first := s.app.MakeModular()
+		first := s.app.MakeModule()
 		s.app.configureModules()
 
-		s.NotSame(first, s.app.MakeModular())
-		s.Len(s.app.MakeModular().All(), 1)
+		s.NotSame(first, s.app.MakeModule())
+		s.Len(s.app.MakeModule().All(), 1)
 	})
 
 	s.Run("without Build there is no registry", func() {
 		s.SetupTest()
 
-		s.Nil(s.app.MakeModular())
+		s.Nil(s.app.MakeModule())
 	})
 }
 
@@ -174,8 +174,8 @@ func (m *richModule) Events() map[event.Event][]event.Listener       { return m.
 func (m *richModule) Routes()                                        { *m.routed = append(*m.routed, m.name+":web") }
 
 // withModules points the builder at modules and runs configureModules.
-func (s *ApplicationTestSuite) withModules(builder *ApplicationBuilder, modules ...contractsmodular.Module) {
-	builder.modules = func() []contractsmodular.Module { return modules }
+func (s *ApplicationTestSuite) withModules(builder *ApplicationBuilder, modules ...contractsmodule.Module) {
+	builder.modules = func() []contractsmodule.Module { return modules }
 	s.app.builder = builder
 	s.app.configureModules()
 }
@@ -201,7 +201,7 @@ func (s *ApplicationTestSuite) TestConfigureModuleConfig() {
 		blogLang := fstest.MapFS{"en/messages.json": {Data: []byte(`{"title":"Blog"}`)}}
 
 		mockConfig := mocksconfig.NewConfig(s.T())
-		mockConfig.EXPECT().GetString("modular.path", "modules").Return("modules").Once()
+		mockConfig.EXPECT().GetString("module.path", "modules").Return("modules").Once()
 		mockConfig.EXPECT().Add("modules.blog", map[string]any{"enabled": true}).Return().Once()
 		mockConfig.EXPECT().Add("modules.shop", map[string]any{"currency": "EUR"}).Return().Once()
 		mockConfig.EXPECT().Get("app.lang_fs").Return(appLang).Once()
@@ -428,10 +428,10 @@ func (m *webOnlyModule) Routes() { *m.routed = append(*m.routed, m.name+":web") 
 
 type staticModule struct {
 	testModule
-	static map[string]contractsmodular.Path
+	static map[string]contractsmodule.Path
 }
 
-func (m *staticModule) Static() map[string]contractsmodular.Path { return m.static }
+func (m *staticModule) Static() map[string]contractsmodule.Path { return m.static }
 
 func (s *ApplicationTestSuite) TestConfigureRoutes_ModuleStatic() {
 	s.SetupTest()
@@ -451,12 +451,12 @@ func (s *ApplicationTestSuite) TestConfigureRoutes_ModuleStatic() {
 	s.app.Instance(binding.Route, mockRoute)
 
 	s.withModules(NewApplicationBuilder(s.app),
-		&staticModule{testModule: testModule{"blog"}, static: map[string]contractsmodular.Path{
+		&staticModule{testModule: testModule{"blog"}, static: map[string]contractsmodule.Path{
 			"blog/static/": {FS: public, Dir: "public"},
 			"/":            {FS: public, Dir: "public"},     // invalid prefix: reported
 			"/blog/secret": {FS: public, Dir: "../outside"}, // escapes the module: reported
 		}},
-		&staticModule{testModule: testModule{"shop"}, static: map[string]contractsmodular.Path{
+		&staticModule{testModule: testModule{"shop"}, static: map[string]contractsmodule.Path{
 			"/blog/static": {FS: public, Dir: "public"}, // taken by blog: reported
 		}},
 	)

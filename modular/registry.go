@@ -9,12 +9,12 @@ import (
 	"sync"
 
 	"github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/contracts/modular"
+	contractsmodule "github.com/goravel/framework/contracts/module"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/env"
 )
 
-var _ modular.Registry = (*Registry)(nil)
+var _ contractsmodule.Registry = (*Registry)(nil)
 
 // namePattern is a kebab-case module name, e.g. "blog" or "blog-posts".
 var namePattern = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`)
@@ -26,12 +26,12 @@ func ValidName(name string) bool {
 
 var (
 	defaultMu       sync.RWMutex
-	defaultRegistry modular.Registry
+	defaultRegistry contractsmodule.Registry
 )
 
 // SetDefault records the application's registry for code that cannot reach the
 // container (support/console). Build() calls it.
-func SetDefault(registry modular.Registry) {
+func SetDefault(registry contractsmodule.Registry) {
 	defaultMu.Lock()
 	defer defaultMu.Unlock()
 
@@ -39,7 +39,7 @@ func SetDefault(registry modular.Registry) {
 }
 
 // Default returns the application's registry, nil before Build().
-func Default() modular.Registry {
+func Default() contractsmodule.Registry {
 	defaultMu.RLock()
 	defer defaultMu.RUnlock()
 
@@ -47,7 +47,7 @@ func Default() modular.Registry {
 }
 
 // Local reports whether module's sources are in the application, not in a dependency.
-func Local(module modular.Module) bool {
+func Local(module contractsmodule.Module) bool {
 	info, _ := debug.ReadBuildInfo()
 	_, thirdParty := DependencyOf(module, info)
 
@@ -56,8 +56,8 @@ func Local(module modular.Module) bool {
 
 // Registry keeps modules in registration order.
 type Registry struct {
-	modules []modular.Module
-	byName  map[string]modular.Module
+	modules []contractsmodule.Module
+	byName  map[string]contractsmodule.Module
 	paths   map[string]string
 
 	// mainModule is the app's Go module path; directory holds third-party modules.
@@ -65,7 +65,7 @@ type Registry struct {
 	directory  string
 }
 
-// NewRegistry places third-party modules under directory (modular.path), "" for
+// NewRegistry places third-party modules under directory (module.path), "" for
 // DefaultDirectory.
 func NewRegistry(directory string) *Registry {
 	if directory == "" {
@@ -73,7 +73,7 @@ func NewRegistry(directory string) *Registry {
 	}
 
 	return &Registry{
-		byName:     make(map[string]modular.Module),
+		byName:     make(map[string]contractsmodule.Module),
 		paths:      make(map[string]string),
 		mainModule: env.MainPath(),
 		directory:  directory,
@@ -81,7 +81,7 @@ func NewRegistry(directory string) *Registry {
 }
 
 // Register stops at the first error; earlier modules stay registered.
-func (r *Registry) Register(modules ...modular.Module) error {
+func (r *Registry) Register(modules ...contractsmodule.Module) error {
 	for _, module := range modules {
 		if module == nil {
 			continue
@@ -109,16 +109,16 @@ func (r *Registry) Register(modules ...modular.Module) error {
 }
 
 // All sorts non-negative orders, then negative ones, ascending; ties keep registration order.
-func (r *Registry) All() []modular.Module {
+func (r *Registry) All() []contractsmodule.Module {
 	sorted := slices.Clone(r.modules)
-	slices.SortStableFunc(sorted, func(a, b modular.Module) int {
+	slices.SortStableFunc(sorted, func(a, b contractsmodule.Module) int {
 		return compareOrder(order(a), order(b))
 	})
 
 	return sorted
 }
 
-func (r *Registry) Find(name string) (modular.Module, bool) {
+func (r *Registry) Find(name string) (contractsmodule.Module, bool) {
 	module, ok := r.byName[name]
 
 	return module, ok
@@ -136,29 +136,29 @@ func (r *Registry) Path(name string) (string, bool) {
 	return dir, ok
 }
 
-func (r *Registry) Capabilities(module modular.Module) map[string]bool {
+func (r *Registry) Capabilities(module contractsmodule.Module) map[string]bool {
 	return map[string]bool{
 		"services":     implements[foundation.ProvidesServices](module),
-		"config":       implements[modular.ProvidesConfig](module),
-		"middleware":   implements[modular.ProvidesGlobalMiddleware](module),
-		"routes":       implements[modular.ProvidesRoutes](module),
-		"migrations":   implements[modular.ProvidesMigrations](module),
-		"seeders":      implements[modular.ProvidesSeeders](module),
-		"commands":     implements[modular.ProvidesCommands](module),
-		"jobs":         implements[modular.ProvidesJobs](module),
-		"events":       implements[modular.ProvidesEvents](module),
-		"schedule":     implements[modular.ProvidesSchedule](module),
-		"views":        implements[modular.ProvidesViews](module),
-		"translations": implements[modular.ProvidesTranslations](module),
-		"vite-entries": implements[modular.ProvidesViteEntries](module),
-		"vite-aliases": implements[modular.ProvidesViteAlias](module),
-		"static":       implements[modular.ProvidesStatic](module),
-		"sources":      implements[modular.ProvidesSources](module),
+		"config":       implements[contractsmodule.ProvidesConfig](module),
+		"middleware":   implements[contractsmodule.ProvidesGlobalMiddleware](module),
+		"routes":       implements[contractsmodule.ProvidesRoutes](module),
+		"migrations":   implements[contractsmodule.ProvidesMigrations](module),
+		"seeders":      implements[contractsmodule.ProvidesSeeders](module),
+		"commands":     implements[contractsmodule.ProvidesCommands](module),
+		"jobs":         implements[contractsmodule.ProvidesJobs](module),
+		"events":       implements[contractsmodule.ProvidesEvents](module),
+		"schedule":     implements[contractsmodule.ProvidesSchedule](module),
+		"views":        implements[contractsmodule.ProvidesViews](module),
+		"translations": implements[contractsmodule.ProvidesTranslations](module),
+		"vite-entries": implements[contractsmodule.ProvidesViteEntries](module),
+		"vite-aliases": implements[contractsmodule.ProvidesViteAlias](module),
+		"static":       implements[contractsmodule.ProvidesStatic](module),
+		"sources":      implements[contractsmodule.ProvidesSources](module),
 	}
 }
 
 // Providing returns the modules implementing T, as T.
-func Providing[T any](modules []modular.Module) []T {
+func Providing[T any](modules []contractsmodule.Module) []T {
 	var out []T
 	for _, module := range modules {
 		if p, ok := module.(T); ok {
@@ -169,14 +169,14 @@ func Providing[T any](modules []modular.Module) []T {
 	return out
 }
 
-func implements[T any](module modular.Module) bool {
+func implements[T any](module contractsmodule.Module) bool {
 	_, ok := module.(T)
 
 	return ok
 }
 
-func order(module modular.Module) int {
-	if o, ok := module.(modular.Ordered); ok {
+func order(module contractsmodule.Module) int {
+	if o, ok := module.(contractsmodule.Ordered); ok {
 		return o.Order()
 	}
 

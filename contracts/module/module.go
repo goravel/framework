@@ -1,4 +1,4 @@
-package modular
+package module
 
 import (
 	"io/fs"
@@ -101,7 +101,7 @@ type ProvidesViteAlias interface {
 	ViteAliases() map[string]string
 }
 
-// ProvidesSources ships files of a third-party module that modular:publish copies
+// ProvidesSources ships files of a third-party module that module:publish copies
 // into its directory for Vite and Tailwind, e.g. "resources/js/app.js". Go files
 // (*.go, go.mod, go.sum) are skipped.
 type ProvidesSources interface {
@@ -123,7 +123,7 @@ type Path struct {
 // Registry holds the application's modules.
 type Registry interface {
 	// Register adds modules and resolves their directories: Located, else the
-	// package path inside the app, else "<modular.path>/<name>" for another Go
+	// package path inside the app, else "<module.path>/<name>" for another Go
 	// module. Duplicate names and unresolvable directories are errors.
 	Register(modules ...Module) error
 	// All returns the modules sorted by Order.

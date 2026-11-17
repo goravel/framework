@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/goravel/framework/contracts/modular"
+	contractsmodule "github.com/goravel/framework/contracts/module"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/path"
 )
@@ -16,9 +16,9 @@ const DefaultDirectory = "modules"
 // ResolvePath returns the module directory relative to the project root: Located,
 // else the package path relative to mainModule, else "<directory>/<name>" for a
 // package of another Go module.
-func ResolvePath(module modular.Module, mainModule, directory string) (string, error) {
+func ResolvePath(module contractsmodule.Module, mainModule, directory string) (string, error) {
 	name := module.Name()
-	if located, ok := module.(modular.Located); ok {
+	if located, ok := module.(contractsmodule.Located); ok {
 		dir, ok := path.CleanRelative(located.Path())
 		if !ok || strings.TrimSpace(located.Path()) == "" {
 			return "", errors.ModularModulePathInvalid.Args(name, located.Path())
@@ -56,7 +56,7 @@ func derivePath(name, pkg, mainModule, directory string) (string, error) {
 }
 
 // packagePath is the import path of module's type, "" when unnamed.
-func packagePath(module modular.Module) string {
+func packagePath(module contractsmodule.Module) string {
 	t := reflect.TypeOf(module)
 	for t.Kind() == reflect.Pointer {
 		t = t.Elem()

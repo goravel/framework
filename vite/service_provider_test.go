@@ -70,7 +70,7 @@ func (s *ServiceProviderTestSuite) TestBoot() {
 		s.app.EXPECT().MakeView().Return(view).Once()
 		s.app.EXPECT().MakeVite().Return(NewVite(nil)).Once()
 		s.app.EXPECT().MakeConfig().Return(mocksconfig.NewConfig(s.T())).Once()
-		s.app.EXPECT().MakeModular().Return(nil).Once()
+		s.app.EXPECT().MakeModule().Return(nil).Once()
 		view.EXPECT().AddFuncs(mock.Anything).Run(func(funcs template.FuncMap) {
 			s.Len(funcs, 3)
 			s.Contains(funcs, "vite")
@@ -96,7 +96,7 @@ func (s *ServiceProviderTestSuite) TestBoot() {
 		s.app.EXPECT().MakeView().Return(view).Once()
 		s.app.EXPECT().MakeVite().Return(nil).Once()
 		s.app.EXPECT().MakeConfig().Return(mocksconfig.NewConfig(s.T())).Once()
-		s.app.EXPECT().MakeModular().Return(nil).Once()
+		s.app.EXPECT().MakeModule().Return(nil).Once()
 		s.expectInputsCommand()
 
 		output := color.CaptureOutput(func(io.Writer) {

@@ -100,8 +100,8 @@ func (kernel Kernel) Seeders() []seeder.Seeder {
 	}
 }
 
-func Modules() []modular.Module {
-	return []modular.Module{
+func Modules() []module.Module {
+	return []module.Module{
 		&blog.Module{},
 	}
 }`)
@@ -324,7 +324,7 @@ func (s *MatchHelperTestSuite) TestHelper() {
 			assert: func(node dst.Node) {
 				s.True(CompositeLit(EqualNode(&dst.ArrayType{
 					Elt: &dst.SelectorExpr{
-						X:   &dst.Ident{Name: "modular"},
+						X:   &dst.Ident{Name: "module"},
 						Sel: &dst.Ident{Name: "Module"},
 					},
 				})).MatchNode(node))

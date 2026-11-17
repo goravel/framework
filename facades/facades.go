@@ -24,7 +24,7 @@ import (
 	"github.com/goravel/framework/contracts/http/client"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/mail"
-	"github.com/goravel/framework/contracts/modular"
+	"github.com/goravel/framework/contracts/module"
 	"github.com/goravel/framework/contracts/notification"
 	"github.com/goravel/framework/contracts/process"
 	"github.com/goravel/framework/contracts/queue"
@@ -113,9 +113,9 @@ func Mail() mail.Mail {
 	return App().MakeMail()
 }
 
-// Modular returns the module registry; nil without foundation.Setup().
-func Modular() modular.Registry {
-	return App().MakeModular()
+// Module returns the module registry; nil without foundation.Setup().
+func Module() module.Registry {
+	return App().MakeModule()
 }
 
 func Notification() notification.Manager {

@@ -161,7 +161,7 @@ func (m *Module) Order() int {
 
 func (s *ModuleMakeCommandTestSuite) TestKebabNameAndConfiguredPath() {
 	config := mocksconfig.NewConfig(s.T())
-	config.EXPECT().GetString("modular.path", "modules").Return("src/modules").Once()
+	config.EXPECT().GetString("module.path", "modules").Return("src/modules").Once()
 
 	ctx := s.context("BlogPosts", false, false, 0)
 	ctx.EXPECT().Success("Module created successfully: src/modules/blog-posts").Once()
@@ -296,11 +296,11 @@ func (s *ModuleMakeCommandTestSuite) TestErrors() {
 	}
 
 	s.Run("package name of the contracts import", func() {
-		ctx := s.context("Modular", false, false, 0)
-		ctx.EXPECT().Error(errors.ModularModuleImportConflict.Args("modular", "modular", "github.com/goravel/framework/contracts/modular").Error()).Once()
+		ctx := s.context("Module", false, false, 0)
+		ctx.EXPECT().Error(errors.ModularModuleImportConflict.Args("module", "module", "github.com/goravel/framework/contracts/module").Error()).Once()
 
 		s.NoError(NewModuleMakeCommand(nil).Handle(ctx))
-		s.False(file.Exists("modules/modular"))
+		s.False(file.Exists("modules/module"))
 		s.False(file.Exists("bootstrap/modules.go"))
 	})
 

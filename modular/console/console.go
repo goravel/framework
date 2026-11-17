@@ -22,13 +22,13 @@ const (
 	statusSkippedNone  = "<fg=gray>SKIPPED (nothing to publish)</>"
 )
 
-// modulesDirectory is modular.path, also before config/modular.go exists.
+// modulesDirectory is module.path, also before config/module.go exists.
 func modulesDirectory(config config.Config) string {
 	if config == nil {
 		return modular.DefaultDirectory
 	}
 
-	return config.GetString("modular.path", modular.DefaultDirectory)
+	return config.GetString("module.path", modular.DefaultDirectory)
 }
 
 // facadesImport returns the app's facades package, or the framework's when the app has none.

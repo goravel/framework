@@ -26,7 +26,7 @@ func NewInitCommand(config config.Config) *InitCommand {
 
 // Signature The name and signature of the console command.
 func (r *InitCommand) Signature() string {
-	return "modular:init"
+	return "module:init"
 }
 
 // Description The console command description.
@@ -37,7 +37,7 @@ func (r *InitCommand) Description() string {
 // Extend The console command extend.
 func (r *InitCommand) Extend() command.Extend {
 	return command.Extend{
-		Category: "modular",
+		Category: "module",
 	}
 }
 
@@ -54,7 +54,7 @@ func (r *InitCommand) Handle(ctx console.Context) error {
 
 	facadesImport, facadesPackage := facadesImport()
 	configStub := Stubs{}.Config(packages.Paths().Config().Package(), facadesImport, facadesPackage)
-	if err := putIfMissing(ctx, filepath.ToSlash(packages.Paths().Config().String("modular.go")), path.Config("modular.go"), configStub); err != nil {
+	if err := putIfMissing(ctx, filepath.ToSlash(packages.Paths().Config().String("module.go")), path.Config("module.go"), configStub); err != nil {
 		return err
 	}
 
@@ -66,11 +66,11 @@ func (r *InitCommand) Handle(ctx console.Context) error {
 }
 
 // generateDirective makes go generate publish third-party modules.
-const generateDirective = "//go:generate go run . artisan modular:publish"
+const generateDirective = "//go:generate go run . artisan module:publish"
 
 // addGenerate adds generateDirective to main.go, above func main.
 func (r *InitCommand) addGenerate(ctx console.Context) error {
-	label := "main.go go:generate modular:publish"
+	label := "main.go go:generate module:publish"
 	mainFile := path.Base("main.go")
 
 	content, err := file.GetContent(mainFile)

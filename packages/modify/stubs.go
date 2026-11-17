@@ -49,10 +49,10 @@ func Migrations() []schema.Migration {
 func modules() string {
 	content := `package DummyPackage
 
-import "github.com/goravel/framework/contracts/modular"
+import "github.com/goravel/framework/contracts/module"
 
-func Modules() []modular.Module {
-	return []modular.Module{}
+func Modules() []module.Module {
+	return []module.Module{}
 }
 `
 

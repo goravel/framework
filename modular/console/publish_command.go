@@ -6,7 +6,7 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	contractsmodular "github.com/goravel/framework/contracts/modular"
+	contractsmodule "github.com/goravel/framework/contracts/module"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/modular"
 	"github.com/goravel/framework/support/path"
@@ -14,18 +14,18 @@ import (
 )
 
 type PublishCommand struct {
-	registry contractsmodular.Registry
+	registry contractsmodule.Registry
 	// buildInfo names the Go module and version of third-party modules.
 	buildInfo func() (*debug.BuildInfo, bool)
 }
 
-func NewPublishCommand(registry contractsmodular.Registry) *PublishCommand {
+func NewPublishCommand(registry contractsmodule.Registry) *PublishCommand {
 	return &PublishCommand{registry: registry, buildInfo: debug.ReadBuildInfo}
 }
 
 // Signature The name and signature of the console command.
 func (r *PublishCommand) Signature() string {
-	return "modular:publish"
+	return "module:publish"
 }
 
 // Description The console command description.
@@ -36,7 +36,7 @@ func (r *PublishCommand) Description() string {
 // Extend The console command extend.
 func (r *PublishCommand) Extend() command.Extend {
 	return command.Extend{
-		Category: "modular",
+		Category: "module",
 		Flags: []command.Flag{
 			&command.StringFlag{
 				Name:  "module",
@@ -62,7 +62,7 @@ func (r *PublishCommand) Handle(ctx console.Context) error {
 		if !ok {
 			return errors.ModularModuleNotFound.Args(name)
 		}
-		modules = []contractsmodular.Module{module}
+		modules = []contractsmodule.Module{module}
 	}
 
 	info, _ := r.buildInfo()
@@ -84,7 +84,7 @@ func (r *PublishCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func (r *PublishCommand) publish(module contractsmodular.Module, info *debug.BuildInfo) (string, error) {
+func (r *PublishCommand) publish(module contractsmodule.Module, info *debug.BuildInfo) (string, error) {
 	dependency, ok := modular.DependencyOf(module, info)
 	if !ok {
 		return statusSkippedLocal, nil

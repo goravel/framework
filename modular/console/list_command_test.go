@@ -7,10 +7,10 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	contractsmodular "github.com/goravel/framework/contracts/modular"
+	contractsmodule "github.com/goravel/framework/contracts/module"
 	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
-	mocksmodular "github.com/goravel/framework/mocks/modular"
+	mocksmodule "github.com/goravel/framework/mocks/module"
 	"github.com/goravel/framework/modular"
 	"github.com/goravel/framework/support/file"
 )
@@ -22,8 +22,8 @@ func (m *richModule) ViteEntries() []string { return []string{"resources/js/app.
 func (m *richModule) ViteAliases() map[string]string {
 	return map[string]string{"@blog-assets": "resources/assets"}
 }
-func (m *richModule) Static() map[string]contractsmodular.Path {
-	return map[string]contractsmodular.Path{"/blog/static": {Dir: "public"}, "/blog/docs": {Dir: "docs"}}
+func (m *richModule) Static() map[string]contractsmodule.Path {
+	return map[string]contractsmodule.Path{"/blog/static": {Dir: "public"}, "/blog/docs": {Dir: "docs"}}
 }
 
 type ListCommandTestSuite struct {
@@ -41,9 +41,9 @@ func (s *ListCommandTestSuite) TearDownTest() {
 func (s *ListCommandTestSuite) TestSignature() {
 	cmd := NewListCommand(nil)
 
-	s.Equal("modular:list", cmd.Signature())
+	s.Equal("module:list", cmd.Signature())
 	s.Equal("List the registered modules", cmd.Description())
-	s.Equal("modular", cmd.Extend().Category)
+	s.Equal("module", cmd.Extend().Category)
 	s.Len(cmd.Extend().Flags, 1)
 }
 
@@ -52,7 +52,7 @@ func (s *ListCommandTestSuite) TestRegistryNotSet() {
 }
 
 func (s *ListCommandTestSuite) TestEmpty() {
-	registry := mocksmodular.NewRegistry(s.T())
+	registry := mocksmodule.NewRegistry(s.T())
 	registry.EXPECT().All().Return(nil)
 
 	ctx := mocksconsole.NewContext(s.T())
@@ -73,8 +73,8 @@ func (s *ListCommandTestSuite) TestList() {
 	blog := &richModule{testModule{"blog"}}
 	billing := &sourcesModule{testModule{"billing"}, fstest.MapFS{"app.js": {Data: []byte("app")}}}
 
-	registry := mocksmodular.NewRegistry(s.T())
-	registry.EXPECT().All().Return([]contractsmodular.Module{blog, billing})
+	registry := mocksmodule.NewRegistry(s.T())
+	registry.EXPECT().All().Return([]contractsmodule.Module{blog, billing})
 	registry.EXPECT().Path("blog").Return("modules/blog", true)
 	registry.EXPECT().Path("billing").Return("modules/billing", true)
 	registry.EXPECT().Capabilities(blog).Return(map[string]bool{"vite-entries": true, "static": true, "views": false})
@@ -117,7 +117,7 @@ func (s *ListCommandTestSuite) TestList() {
 		}
 	]`, output.String())
 
-	// Published by modular:publish.
+	// Published by module:publish.
 	publishCtx := mocksconsole.NewContext(s.T())
 	publishCtx.EXPECT().Option("module").Return("billing").Once()
 	publishCtx.EXPECT().TwoColumnDetail("billing", statusPublished).Once()

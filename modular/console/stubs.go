@@ -21,7 +21,7 @@ import (
 
 func init() {
 	config := DummyFacadesPackage.Config()
-	config.Add("modular", map[string]any{
+	config.Add("module", map[string]any{
 		// Directory of the application's own modules, relative to the project root.
 		"path": "modules",
 	})
@@ -118,7 +118,7 @@ func (m *Module) Translations() fs.FS {
 }
 
 // ViteEntries are relative to the module directory, e.g. "resources/js/app.js".
-// ViteAliases() and Static() are optional too, see contracts/modular.
+// ViteAliases() and Static() are optional too, see contracts/module.
 func (m *Module) ViteEntries() []string {
 	return []string{}
 }

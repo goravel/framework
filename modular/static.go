@@ -6,14 +6,14 @@ import (
 	stdpath "path"
 	"strings"
 
-	"github.com/goravel/framework/contracts/modular"
+	contractsmodule "github.com/goravel/framework/contracts/module"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/path"
 )
 
 // StaticFS returns p.Dir inside p.FS, or on disk under root (the module directory)
 // when p.FS is nil. Directories are not listable, so drivers answer 404.
-func StaticFS(name, root string, p modular.Path) (fs.FS, error) {
+func StaticFS(name, root string, p contractsmodule.Path) (fs.FS, error) {
 	dir, ok := path.CleanRelative(p.Dir)
 	if !ok {
 		return nil, errors.ModularStaticDirInvalid.Args(name, p.Dir)

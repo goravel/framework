@@ -28,7 +28,7 @@ import (
 	contractshttpclient "github.com/goravel/framework/contracts/http/client"
 	contractslog "github.com/goravel/framework/contracts/log"
 	contractsmail "github.com/goravel/framework/contracts/mail"
-	contractsmodular "github.com/goravel/framework/contracts/modular"
+	contractsmodule "github.com/goravel/framework/contracts/module"
 	contractsnotification "github.com/goravel/framework/contracts/notification"
 	contractsprocess "github.com/goravel/framework/contracts/process"
 	contractsqueue "github.com/goravel/framework/contracts/queue"
@@ -285,14 +285,14 @@ func (r *Container) MakeMail() contractsmail.Mail {
 	return instance.(contractsmail.Mail)
 }
 
-func (r *Container) MakeModular() contractsmodular.Registry {
-	instance, err := r.Make(facades.FacadeToBinding[facades.Modular])
+func (r *Container) MakeModule() contractsmodule.Registry {
+	instance, err := r.Make(facades.FacadeToBinding[facades.Module])
 	if err != nil {
 		logMakeErrorIfNeeded(err)
 		return nil
 	}
 
-	return instance.(contractsmodular.Registry)
+	return instance.(contractsmodule.Registry)
 }
 
 func (r *Container) MakeNotification() contractsnotification.Manager {
