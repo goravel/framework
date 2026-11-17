@@ -1,5 +1,7 @@
 package queue
 
+import "context"
+
 type Queue interface {
 	// Connection gets a driver instance by connection name
 	Connection(name string) (Driver, error)
@@ -22,6 +24,20 @@ type Queue interface {
 }
 
 type Worker interface {
+	// Process runs a reserved job received outside of the worker loop (e.g.
+	// pushed by Lambda SQS event source mappings or Pub/Sub push
+	// subscriptions) with the same semantics as Run: retries through Release,
+	// chains, failed jobs and Delete. A failed job is recorded under the first
+	// queue name of the worker's queue list.
+	//
+	// released reports that the job did not finish and must stay in the
+	// queue: it was released for a retry (err is nil), or ctx was done before
+	// the job or its chain finished (err is the context error; a partly run
+	// chain is run again on redelivery). Otherwise the job is done: err is nil
+	// on success, or the reason it failed for good. When deleting the job
+	// fails, err also matches errors.QueueFailedToDeleteReservedJob and the
+	// job is still in the queue.
+	Process(ctx context.Context, reservedJob ReservedJob) (released bool, err error)
 	Run() error
 	Shutdown() error
 }

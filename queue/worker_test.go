@@ -133,7 +133,7 @@ func (s *WorkerTestSuite) Test_call() {
 
 		s.mockJob.EXPECT().Call(task.Job.Signature(), utils.ConvertArgs(task.Args)).Return(nil).Once()
 
-		released, err := s.worker.call(task, nil, s.worker.queue)
+		released, err := s.worker.call(context.Background(), task, nil, s.worker.queue, s.worker.sendFailedJob)
 		s.False(released)
 		s.NoError(err)
 	})
@@ -158,7 +158,7 @@ func (s *WorkerTestSuite) Test_call() {
 			},
 		}).Return("{\"signature\":\"test_job_one\",\"args\":[{\"type\":\"string\",\"value\":\"test\"}],\"delay\":null,\"uuid\":\"test\",\"chain\":[{\"signature\":\"test_job_two\",\"args\":[{\"type\":\"int\",\"value\":1}],\"delay\":null,\"uuid\":\"test\",\"chain\":[]}]}", nil).Once()
 
-		released, err := s.worker.call(task, nil, s.worker.queue)
+		released, err := s.worker.call(context.Background(), task, nil, s.worker.queue, s.worker.sendFailedJob)
 		s.False(released)
 		s.Equal(errors.QueueFailedToCallJob, err)
 	})
@@ -179,7 +179,7 @@ func (s *WorkerTestSuite) Test_call() {
 		mockReservedJob.EXPECT().Attempts().Return(1).Once()
 		mockReservedJob.EXPECT().Release(time.Duration(0)).Return(nil).Once()
 
-		released, err := s.worker.call(errorTask, mockReservedJob, s.worker.queue)
+		released, err := s.worker.call(context.Background(), errorTask, mockReservedJob, s.worker.queue, s.worker.sendFailedJob)
 		s.True(released)
 		s.NoError(err)
 	})
@@ -201,7 +201,7 @@ func (s *WorkerTestSuite) Test_call() {
 		mockReservedJob.EXPECT().Release(time.Duration(0)).Return(assert.AnError).Once()
 		s.mockLog.EXPECT().Error(errors.QueueFailedToReleaseReservedJob.Args(mockReservedJob, assert.AnError)).Once()
 
-		released, err := s.worker.call(errorTask, mockReservedJob, s.worker.queue)
+		released, err := s.worker.call(context.Background(), errorTask, mockReservedJob, s.worker.queue, s.worker.sendFailedJob)
 		s.True(released)
 		s.NoError(err)
 	})
@@ -221,7 +221,7 @@ func (s *WorkerTestSuite) Test_call() {
 		mockReservedJob.EXPECT().Attempts().Return(3).Once()
 		mockReservedJob.EXPECT().Release(time.Duration(0)).Return(nil).Once()
 
-		released, err := s.worker.call(retryTask, mockReservedJob, s.worker.queue)
+		released, err := s.worker.call(context.Background(), retryTask, mockReservedJob, s.worker.queue, s.worker.sendFailedJob)
 		s.True(released)
 		s.NoError(err)
 		s.Equal(3, retryTask.Job.(*TestJobRetry).attempt)
@@ -244,7 +244,7 @@ func (s *WorkerTestSuite) Test_call() {
 		mockReservedJob.EXPECT().Attempts().Return(1).Once()
 		mockReservedJob.EXPECT().Release(time.Duration(0)).Return(nil).Once()
 
-		released, err := s.worker.call(retryTask, mockReservedJob, s.worker.queue)
+		released, err := s.worker.call(context.Background(), retryTask, mockReservedJob, s.worker.queue, s.worker.sendFailedJob)
 		s.True(released)
 		s.NoError(err)
 		s.Equal(3, retryTask.Job.(*TestJobRetry).maxTries) // worker's tries handed to ShouldRetry
@@ -1328,4 +1328,204 @@ func (r *TestJobRetry) ShouldRetry(err error, attempt, maxTries int) (bool, time
 	r.attempt = attempt
 	r.maxTries = maxTries
 	return true, 0
+}
+
+func (s *WorkerTestSuite) Test_Process() {
+	carbon.SetTestNow(carbon.FromStdTime(time.Now()))
+	defer carbon.ClearTestNow()
+
+	task := contractsqueue.Task{
+		ChainJob: contractsqueue.ChainJob{
+			Job:  &TestJobErr{},
+			Args: []contractsqueue.Arg{{Type: "string", Value: "test"}},
+		},
+		UUID: "test",
+	}
+	taskJson := utils.Task{
+		Job:  utils.Job{Signature: task.Job.Signature(), Args: task.Args},
+		UUID: "test",
+	}
+	failedJob := func(queueName string) models.FailedJob {
+		return models.FailedJob{
+			UUID:       "test",
+			Connection: "sync",
+			Queue:      queueName,
+			Payload:    `{"signature":"test_job_err"}`,
+			Exception:  assert.AnError.Error(),
+			FailedAt:   carbon.NewDateTime(carbon.Now()),
+		}
+	}
+	chainTask := contractsqueue.Task{
+		ChainJob: contractsqueue.ChainJob{Job: &TestJobOne{}},
+		UUID:     "test",
+		Chain:    []contractsqueue.ChainJob{task.ChainJob},
+	}
+
+	s.Run("success deletes the job", func() {
+		s.SetupTest()
+
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+		mockReservedJob.EXPECT().Task().Return(task).Once()
+		s.mockJob.EXPECT().Call(task.Job.Signature(), utils.ConvertArgs(task.Args)).Return(nil).Once()
+		mockReservedJob.EXPECT().Delete().Return(nil).Once()
+
+		released, err := s.worker.Process(context.Background(), mockReservedJob)
+		s.False(released)
+		s.NoError(err)
+	})
+
+	s.Run("released for a retry keeps the job", func() {
+		s.SetupTest()
+		s.worker.tries = 3
+
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+		mockReservedJob.EXPECT().Task().Return(task).Once()
+		s.mockJob.EXPECT().Call(task.Job.Signature(), utils.ConvertArgs(task.Args)).Return(assert.AnError).Once()
+		mockReservedJob.EXPECT().Attempts().Return(1).Once()
+		mockReservedJob.EXPECT().Release(time.Duration(0)).Return(nil).Once()
+
+		released, err := s.worker.Process(context.Background(), mockReservedJob)
+		s.True(released)
+		s.NoError(err)
+	})
+
+	s.Run("failed for good is recorded under the first queue before returning", func() {
+		s.SetupTest()
+		s.worker.queue = "high, default"
+
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+		mockReservedJob.EXPECT().Task().Return(task).Once()
+		s.mockJob.EXPECT().Call(task.Job.Signature(), utils.ConvertArgs(task.Args)).Return(assert.AnError).Once()
+		mockReservedJob.EXPECT().Attempts().Return(1).Once()
+		s.mockJson.EXPECT().MarshalString(taskJson).Return(`{"signature":"test_job_err"}`, nil).Once()
+
+		// Process doesn't run the worker loop, so the failed job is recorded
+		// synchronously instead of through failedJobChan.
+		s.mockConfig.EXPECT().FailedDatabase().Return("mysql").Once()
+		s.mockConfig.EXPECT().FailedTable().Return("failed_jobs").Once()
+		s.mockDB.EXPECT().Connection("mysql").Return(s.mockDB).Once()
+		mockQuery := mocksdb.NewQuery(s.T())
+		s.mockDB.EXPECT().Table("failed_jobs").Return(mockQuery).Once()
+		job := failedJob("high")
+		mockQuery.EXPECT().Insert(&job).Return(nil, nil).Once()
+		mockReservedJob.EXPECT().Delete().Return(nil).Once()
+
+		released, err := s.worker.Process(context.Background(), mockReservedJob)
+		s.False(released)
+		s.Equal(errors.QueueFailedToCallJob, err)
+		s.Empty(s.worker.failedJobChan)
+	})
+
+	s.Run("failed chain job is recorded with the parent UUID", func() {
+		s.SetupTest()
+
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+		mockReservedJob.EXPECT().Task().Return(chainTask).Once()
+		s.mockJob.EXPECT().Call(chainTask.Job.Signature(), utils.ConvertArgs(chainTask.Args)).Return(nil).Once()
+		s.mockJob.EXPECT().Call(task.Job.Signature(), utils.ConvertArgs(task.Args)).Return(assert.AnError).Once()
+		s.mockJson.EXPECT().MarshalString(taskJson).Return(`{"signature":"test_job_err"}`, nil).Once()
+		s.mockConfig.EXPECT().FailedDatabase().Return("mysql").Once()
+		s.mockConfig.EXPECT().FailedTable().Return("failed_jobs").Once()
+		s.mockDB.EXPECT().Connection("mysql").Return(s.mockDB).Once()
+		mockQuery := mocksdb.NewQuery(s.T())
+		s.mockDB.EXPECT().Table("failed_jobs").Return(mockQuery).Once()
+		job := failedJob("default")
+		mockQuery.EXPECT().Insert(&job).Return(nil, nil).Once()
+		mockReservedJob.EXPECT().Delete().Return(nil).Once()
+
+		released, err := s.worker.Process(context.Background(), mockReservedJob)
+		s.False(released)
+		s.Equal(errors.QueueFailedToCallJob, err)
+		s.Empty(s.worker.failedJobChan)
+	})
+
+	s.Run("canceled context keeps the job without running it", func() {
+		s.SetupTest()
+
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+		mockReservedJob.EXPECT().Task().Return(task).Once()
+
+		released, err := s.worker.Process(ctx, mockReservedJob)
+		s.True(released)
+		s.ErrorIs(err, context.Canceled)
+	})
+
+	s.Run("context canceled before the chain finishes keeps the job", func() {
+		s.SetupTest()
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+		mockReservedJob.EXPECT().Task().Return(chainTask).Once()
+		s.mockJob.EXPECT().Call(chainTask.Job.Signature(), utils.ConvertArgs(chainTask.Args)).
+			Run(func(string, []any) { cancel() }).Return(nil).Once()
+
+		released, err := s.worker.Process(ctx, mockReservedJob)
+		s.True(released)
+		s.ErrorIs(err, context.Canceled)
+	})
+
+	s.Run("context done during the job delay keeps the job", func() {
+		s.SetupTest()
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+		defer cancel()
+
+		delayed := task
+		delayed.Delay = carbon.Now().AddHour().StdTime()
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+		mockReservedJob.EXPECT().Task().Return(delayed).Once()
+
+		released, err := s.worker.Process(ctx, mockReservedJob)
+		s.True(released)
+		s.ErrorIs(err, context.DeadlineExceeded)
+	})
+
+	s.Run("delete errors are returned", func() {
+		s.SetupTest()
+
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+		mockReservedJob.EXPECT().Task().Return(task).Once()
+		s.mockJob.EXPECT().Call(task.Job.Signature(), utils.ConvertArgs(task.Args)).Return(nil).Once()
+		mockReservedJob.EXPECT().Delete().Return(assert.AnError).Once()
+		s.mockLog.EXPECT().Error(errors.QueueFailedToDeleteReservedJob.Args(mockReservedJob, assert.AnError)).Once()
+
+		released, err := s.worker.Process(context.Background(), mockReservedJob)
+		s.False(released)
+		s.ErrorIs(err, errors.QueueFailedToDeleteReservedJob)
+	})
+
+	s.Run("delete errors after a failure are returned with the failure", func() {
+		s.SetupTest()
+
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+		mockReservedJob.EXPECT().Task().Return(task).Once()
+		s.mockJob.EXPECT().Call(task.Job.Signature(), utils.ConvertArgs(task.Args)).Return(assert.AnError).Once()
+		mockReservedJob.EXPECT().Attempts().Return(1).Once()
+		s.mockJson.EXPECT().MarshalString(taskJson).Return(`{"signature":"test_job_err"}`, nil).Once()
+		s.mockConfig.EXPECT().FailedDatabase().Return("").Once()
+		s.mockConfig.EXPECT().FailedTable().Return("").Once()
+		s.mockLog.EXPECT().Error(errors.QueueJobFailed.Args(failedJob("default"))).Once()
+		mockReservedJob.EXPECT().Delete().Return(assert.AnError).Once()
+		s.mockLog.EXPECT().Error(errors.QueueFailedToDeleteReservedJob.Args(mockReservedJob, assert.AnError)).Once()
+
+		released, err := s.worker.Process(context.Background(), mockReservedJob)
+		s.False(released)
+		s.ErrorIs(err, errors.QueueFailedToCallJob)
+		s.ErrorIs(err, errors.QueueFailedToDeleteReservedJob)
+	})
+}
+
+func TestSleepContext(t *testing.T) {
+	assert.NoError(t, sleepContext(context.Background(), 0))
+	assert.NoError(t, sleepContext(context.Background(), time.Millisecond))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	assert.ErrorIs(t, sleepContext(ctx, 0), context.Canceled)
+	assert.ErrorIs(t, sleepContext(ctx, time.Hour), context.Canceled)
 }
