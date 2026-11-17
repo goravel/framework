@@ -132,6 +132,12 @@ func (r *Worker) call(ctx context.Context, task queue.Task, reservedJob queue.Re
 			return false, nil
 		}
 
+		// The attempt may have failed because ctx was done while it ran; keep
+		// the job instead of retrying or failing it for good.
+		if err := ctx.Err(); err != nil {
+			return true, err
+		}
+
 		// The attempt count comes from the persisted reservation so the
 		// decision survives worker restarts and matches other workers.
 		if reservedJob != nil {
@@ -182,7 +188,7 @@ func (r *Worker) call(ctx context.Context, task queue.Task, reservedJob queue.Re
 
 		r.printFailedLog(task, duration)
 
-		return false, errors.QueueFailedToCallJob
+		return false, errors.Join(errors.QueueFailedToCallJob, callErr)
 	}
 }
 
@@ -404,11 +410,10 @@ func (r *Worker) processReservedJob(ctx context.Context, reservedJob queue.Reser
 				Chain:    task.Chain[i+1:],
 			}
 
-			// Chain jobs never release: reservedJob is nil, so retries stay
-			// in-memory inside call. If a future change ever breaks that
-			// invariant, stop the chain rather than silently continuing to
-			// the next job — hence the explicit released check (which also
-			// prevents the final Delete below from orphaning chain jobs).
+			// Chain jobs never release through the queue: reservedJob is nil,
+			// so retries stay in-memory inside call. A done context still
+			// returns released=true, which stops the chain here (and keeps the
+			// final Delete below from orphaning the rest of the chain).
 			released, err = r.call(ctx, chainTask, nil, queueName, recordFailed)
 			if released {
 				break

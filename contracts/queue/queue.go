@@ -32,9 +32,11 @@ type Worker interface {
 	//
 	// released reports that the job did not finish and must stay in the
 	// queue: it was released for a retry (err is nil), or ctx was done before
-	// the job or its chain finished (err is the context error; a partly run
-	// chain is run again on redelivery). Otherwise the job is done: err is nil
-	// on success, or the reason it failed for good. When deleting the job
+	// the job or its chain finished, including an attempt that failed while
+	// ctx was done (err is the context error; a partly run chain is run again
+	// on redelivery). Otherwise the job is done: err is nil on success, or
+	// matches errors.QueueFailedToCallJob joined with the job's error when it
+	// failed for good. When deleting the job
 	// fails, err also matches errors.QueueFailedToDeleteReservedJob and the
 	// job is still in the queue.
 	Process(ctx context.Context, reservedJob ReservedJob) (released bool, err error)

@@ -160,7 +160,7 @@ func (s *WorkerTestSuite) Test_call() {
 
 		released, err := s.worker.call(context.Background(), task, nil, s.worker.queue, s.worker.sendFailedJob)
 		s.False(released)
-		s.Equal(errors.QueueFailedToCallJob, err)
+		s.ErrorIs(err, errors.QueueFailedToCallJob)
 	})
 
 	s.Run("main job released on retry", func() {
@@ -1330,6 +1330,24 @@ func (r *TestJobRetry) ShouldRetry(err error, attempt, maxTries int) (bool, time
 	return true, 0
 }
 
+// TestJobRetryDelay retries after a delay long enough for a test to cancel
+// the context during the wait.
+type TestJobRetryDelay struct{}
+
+// Signature The name and signature of the job.
+func (r *TestJobRetryDelay) Signature() string {
+	return "test_job_retry_delay"
+}
+
+// Handle Execute the job.
+func (r *TestJobRetryDelay) Handle(args ...any) error {
+	return assert.AnError
+}
+
+func (r *TestJobRetryDelay) ShouldRetry(err error, attempt, maxTries int) (bool, time.Duration) {
+	return true, time.Hour
+}
+
 func (s *WorkerTestSuite) Test_Process() {
 	carbon.SetTestNow(carbon.FromStdTime(time.Now()))
 	defer carbon.ClearTestNow()
@@ -1412,7 +1430,8 @@ func (s *WorkerTestSuite) Test_Process() {
 
 		released, err := s.worker.Process(context.Background(), mockReservedJob)
 		s.False(released)
-		s.Equal(errors.QueueFailedToCallJob, err)
+		s.ErrorIs(err, errors.QueueFailedToCallJob)
+		s.ErrorIs(err, assert.AnError)
 		s.Empty(s.worker.failedJobChan)
 	})
 
@@ -1435,7 +1454,8 @@ func (s *WorkerTestSuite) Test_Process() {
 
 		released, err := s.worker.Process(context.Background(), mockReservedJob)
 		s.False(released)
-		s.Equal(errors.QueueFailedToCallJob, err)
+		s.ErrorIs(err, errors.QueueFailedToCallJob)
+		s.ErrorIs(err, assert.AnError)
 		s.Empty(s.worker.failedJobChan)
 	})
 
@@ -1467,6 +1487,43 @@ func (s *WorkerTestSuite) Test_Process() {
 		released, err := s.worker.Process(ctx, mockReservedJob)
 		s.True(released)
 		s.ErrorIs(err, context.Canceled)
+	})
+
+	s.Run("context done while the job fails keeps the job", func() {
+		s.SetupTest()
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+		mockReservedJob.EXPECT().Task().Return(task).Once()
+		s.mockJob.EXPECT().Call(task.Job.Signature(), utils.ConvertArgs(task.Args)).
+			Run(func(string, []any) { cancel() }).Return(assert.AnError).Once()
+
+		// Neither retried, recorded as failed nor deleted.
+		released, err := s.worker.Process(ctx, mockReservedJob)
+		s.True(released)
+		s.ErrorIs(err, context.Canceled)
+		s.Empty(s.worker.failedJobChan)
+	})
+
+	s.Run("context done during an in-memory chain retry keeps the job", func() {
+		s.SetupTest()
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+		defer cancel()
+
+		retryChain := contractsqueue.ChainJob{Job: &TestJobRetryDelay{}}
+		withRetryChain := task
+		withRetryChain.Chain = []contractsqueue.ChainJob{retryChain}
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+		mockReservedJob.EXPECT().Task().Return(withRetryChain).Once()
+		s.mockJob.EXPECT().Call(task.Job.Signature(), utils.ConvertArgs(task.Args)).Return(nil).Once()
+		s.mockJob.EXPECT().Call(retryChain.Job.Signature(), utils.ConvertArgs(retryChain.Args)).Return(assert.AnError).Once()
+
+		released, err := s.worker.Process(ctx, mockReservedJob)
+		s.True(released)
+		s.ErrorIs(err, context.DeadlineExceeded)
 	})
 
 	s.Run("context done during the job delay keeps the job", func() {
