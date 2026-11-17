@@ -2,7 +2,6 @@ package schedule
 
 import (
 	"context"
-	stderrors "errors"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -23,8 +22,9 @@ var cronParser = cron.NewParser(
 )
 
 // maxDelayIfStillRunning bounds how long Run waits for a previous run of
-// a DelayIfStillRunning event when the context has no deadline.
-const maxDelayIfStillRunning = time.Minute
+// a DelayIfStillRunning event when the context has no deadline. It is well
+// inside a minute, so the events behind it still run in the same tick.
+const maxDelayIfStillRunning = 10 * time.Second
 
 type Application struct {
 	artisan  console.Artisan
@@ -74,7 +74,8 @@ func (app *Application) Work() {
 // location. Events that fire more than once a minute run once. OnOneServer
 // uses the same cache lock as Work; SkipIfStillRunning and
 // DelayIfStillRunning use a cache lock held while the event runs, since the
-// previous run may be in another process.
+// previous run may be in another process. Once ctx is done, no further event
+// starts and its error is returned with the errors of the events.
 func (app *Application) Run(ctx context.Context) error {
 	return app.runDue(ctx, carbon.Now().StdTime())
 }
@@ -85,7 +86,7 @@ func (app *Application) runDue(ctx context.Context, at time.Time) error {
 	var errs []error
 	for _, event := range app.events {
 		if err := ctx.Err(); err != nil {
-			return stderrors.Join(append(errs, err)...)
+			return errors.Join(append(errs, err)...)
 		}
 
 		if !app.isDue(event, tick) {
@@ -112,7 +113,7 @@ func (app *Application) runDue(ctx context.Context, at time.Time) error {
 		release()
 	}
 
-	return stderrors.Join(errs...)
+	return errors.Join(errs...)
 }
 
 func (app *Application) Shutdown(ctx ...context.Context) error {
@@ -175,13 +176,21 @@ func (app *Application) onOneServerKey(event schedule.Event, at time.Time) strin
 }
 
 func (app *Application) runJob(event schedule.Event) {
-	if event.GetCommand() != "" {
-		if err := app.artisan.Call(event.GetCommand()); err != nil {
-			app.log.Errorf("run %s command error: %v", event.GetCommand(), err)
-		}
-	} else {
-		event.GetCallback()()
+	if err := app.execute(event); err != nil {
+		app.log.Errorf("run %s command error: %v", event.GetCommand(), err)
 	}
+}
+
+// execute runs the command or the callback of the event. Work and Run each
+// report its failure their own way.
+func (app *Application) execute(event schedule.Event) error {
+	if event.GetCommand() != "" {
+		return app.artisan.Call(event.GetCommand())
+	}
+
+	event.GetCallback()()
+
+	return nil
 }
 
 // isDue reports whether the event fires within the minute starting at tick.
@@ -199,7 +208,10 @@ func (app *Application) isDue(event schedule.Event, tick time.Time) bool {
 		return false
 	}
 
-	return spec.Next(tick.Add(-time.Nanosecond)).Before(tick.Add(time.Minute))
+	// An expression that can never match, like February 30, has no next time.
+	next := spec.Next(tick.Add(-time.Nanosecond))
+
+	return !next.IsZero() && next.Before(tick.Add(time.Minute))
 }
 
 // acquireOverlapLock prevents a SkipIfStillRunning or DelayIfStillRunning
@@ -245,18 +257,10 @@ func (app *Application) runEvent(event schedule.Event) (err error) {
 		}
 	}()
 
-	if event.GetCommand() != "" {
-		if callErr := app.artisan.Call(event.GetCommand()); callErr != nil {
-			err = errors.ScheduleEventFailed.Args(name, callErr)
-			app.log.Error(err)
-
-			return err
-		}
-
-		return nil
+	if execErr := app.execute(event); execErr != nil {
+		err = errors.ScheduleEventFailed.Args(name, execErr)
+		app.log.Error(err)
 	}
 
-	event.GetCallback()()
-
-	return nil
+	return err
 }

@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 
 	"github.com/goravel/framework/contracts/console/command"
 	consolemocks "github.com/goravel/framework/mocks/console"
@@ -24,9 +23,9 @@ func TestRunCommand_Handle(t *testing.T) {
 	runCommand := NewRun(mockSchedule)
 	mockContext := consolemocks.NewContext(t)
 
-	mockSchedule.EXPECT().Run(mock.Anything).Return(nil).Once()
+	mockSchedule.EXPECT().Run(mockContext).Return(nil).Once()
 	assert.NoError(t, runCommand.Handle(mockContext))
 
-	mockSchedule.EXPECT().Run(mock.Anything).Return(assert.AnError).Once()
+	mockSchedule.EXPECT().Run(mockContext).Return(assert.AnError).Once()
 	assert.Equal(t, assert.AnError, runCommand.Handle(mockContext))
 }

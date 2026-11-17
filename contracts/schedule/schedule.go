@@ -17,7 +17,8 @@ type Schedule interface {
 	// and returns when they have finished. It is meant for external triggers
 	// that start a short-lived process every minute (system cron, Kubernetes
 	// CronJob, serverless schedulers). The returned error joins the errors of
-	// the events that failed.
+	// the events that failed. Once ctx is done, no further event starts and
+	// ctx's error is returned too.
 	Run(ctx context.Context) error
 	// Work runs the schedules in a long-lived process, blocking until Shutdown.
 	Work()

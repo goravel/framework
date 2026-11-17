@@ -257,10 +257,10 @@ func (s *ApplicationTestSuite) TestRunDueDelayIfStillRunning() {
 	mockCache.EXPECT().Lock("long:running", 24*time.Hour).Return(mockLock).Twice()
 	// Waits for the previous run, bounded by the context deadline.
 	mockLock.EXPECT().Block(mock.MatchedBy(func(wait time.Duration) bool {
-		return wait > 9*time.Second && wait <= 10*time.Second
+		return wait > 4*time.Second && wait <= 5*time.Second
 	})).Return(true).Once()
 	mockLock.EXPECT().Release().Return(true).Once()
-	// Without a deadline it waits at most a minute, then skips.
+	// Without a deadline it waits at most maxDelayIfStillRunning, then skips.
 	mockLock.EXPECT().Block(maxDelayIfStillRunning).Return(false).Once()
 
 	app := NewApplication(mockArtisan, mockCache, nil, false)
@@ -268,11 +268,44 @@ func (s *ApplicationTestSuite) TestRunDueDelayIfStillRunning() {
 		app.Command("long").EveryMinute().DelayIfStillRunning(),
 	})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	s.NoError(app.runDue(ctx, time.Now()))
 	s.NoError(app.runDue(context.Background(), time.Now()))
+}
+
+func (s *ApplicationTestSuite) TestRunDueReleasesLockOfFailedEvent() {
+	mockArtisan := mocksconsole.NewArtisan(s.T())
+	mockArtisan.EXPECT().Call("broken").Return(assert.AnError).Once()
+
+	mockCache := mockscache.NewCache(s.T())
+	mockLock := mockscache.NewLock(s.T())
+	mockCache.EXPECT().Lock("broken:running", 24*time.Hour).Return(mockLock).Twice()
+	mockLock.EXPECT().Get().Return(true).Twice()
+	mockLock.EXPECT().Release().Return(true).Twice()
+
+	mockLog := mockslog.NewLog(s.T())
+	mockLog.EXPECT().Error(mock.Anything).Return().Once()
+	mockLog.EXPECT().Errorf("%v\n%s", mock.Anything, mock.Anything).Return().Once()
+
+	app := NewApplication(mockArtisan, mockCache, mockLog, false)
+	app.Register([]schedule.Event{
+		app.Command("broken").EveryMinute().SkipIfStillRunning(),
+		app.Call(func() { panic("boom") }).EveryMinute().Name("broken").SkipIfStillRunning(),
+	})
+
+	// The lock is released after a failed and after a panicking event.
+	s.Error(app.runDue(context.Background(), time.Now()))
+}
+
+func (s *ApplicationTestSuite) TestRunDueSkipsNeverMatchingCron() {
+	app := NewApplication(nil, nil, nil, false)
+	app.Register([]schedule.Event{
+		app.Call(func() { s.Fail("an expression that never matches must not run") }).Cron("0 0 30 2 *"),
+	})
+
+	s.NoError(app.runDue(context.Background(), time.Date(2026, 2, 28, 0, 0, 0, 0, time.UTC)))
 }
 
 func (s *ApplicationTestSuite) TestRunDueErrors() {
