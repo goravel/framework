@@ -13,6 +13,7 @@ var _ event.Instance = (*Application)(nil)
 
 type Application struct {
 	events     map[event.Event][]event.Listener
+	fake       *Fake
 	listeners  map[string][]*listener
 	queue      contractsqueue.Queue
 	registered map[string]any
@@ -21,11 +22,25 @@ type Application struct {
 }
 
 func NewApplication(queue contractsqueue.Queue) *Application {
-	return &Application{
+	app := &Application{
 		listeners:  make(map[string][]*listener),
 		queue:      queue,
 		registered: make(map[string]any),
 	}
+	app.fake = newFake(app)
+
+	return app
+}
+
+// Fake records the dispatched events instead of calling their listeners,
+// until Reset is called on the returned Fake. With no events every event is
+// faked; otherwise only the given ones are, as names, instances or wildcard
+// patterns, and the others still reach their listeners. Calling it again
+// replaces the faked events and keeps the records.
+func (app *Application) Fake(events ...any) event.Fake {
+	app.fake.enable(events)
+
+	return app.fake
 }
 
 // GetEvents returns a copy of the events registered through Register.
@@ -61,7 +76,13 @@ func (app *Application) Job(e event.Event, args []event.Arg) event.Task {
 		return newFailedTask(err)
 	}
 
-	return newTask(app.queue, args, e, app.prepareListeners(name))
+	return &fakeableTask{
+		fake:  app.fake,
+		event: e,
+		name:  name,
+		args:  args,
+		task:  newTask(app.queue, args, e, app.prepareListeners(name)),
+	}
 }
 
 // Register registers events and their listeners, the listeners are also

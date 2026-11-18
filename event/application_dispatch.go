@@ -43,6 +43,10 @@ func (app *Application) Dispatch(evt any, args ...[]event.Arg) event.Result {
 		payload = args[0]
 	}
 
+	if app.fake.record(evt, name, payload) {
+		return newResult(nil)
+	}
+
 	return newResult(dispatch(app.queue, evt, name, app.prepareListeners(name), payload, dispatchModeDispatch))
 }
 
