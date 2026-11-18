@@ -51,6 +51,7 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 	app.Commands([]console.Command{
 		scheduleconsole.NewList(app.MakeSchedule()),
 		scheduleconsole.NewRun(app.MakeSchedule()),
+		scheduleconsole.NewWork(app.MakeSchedule()),
 	})
 }
 
