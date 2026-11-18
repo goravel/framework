@@ -144,8 +144,7 @@ func TestRunningPool_Signal_Windows(t *testing.T) {
 				<-rp.Done()
 
 				err := rp.Signal(os.Interrupt)
-				fmt.Println("Signal on completed process", err.Error())
-				assert.Error(t, err, "Signaling a completed process should return an error on Windows")
+				require.Error(t, err, "Signaling a completed process should return an error on Windows")
 				// Windows error messages can vary but typically contain "process", "handle", or "invalid argument"
 				assert.True(t,
 					strings.Contains(err.Error(), "process") ||

@@ -66,6 +66,9 @@ func signal(p *os.Process, sig os.Signal) error {
 	if p == nil {
 		return errors.ProcessNotStarted
 	}
+	if !running(p) {
+		return os.ErrProcessDone
+	}
 
 	// Map os.Interrupt to CTRL_BREAK_EVENT for the process group when possible
 	if sig == os.Interrupt {
