@@ -14,6 +14,7 @@ type Application struct {
 	config    queue.Config
 	cache     cache.Cache
 	db        db.DB
+	fake      *Fake
 	jobStorer queue.JobStorer
 	json      foundation.Json
 	log       log.Log
@@ -24,6 +25,7 @@ func NewApplication(config queue.Config, cache cache.Cache, db db.DB, job queue.
 		config:    config,
 		cache:     cache,
 		db:        db,
+		fake:      NewFake(),
 		jobStorer: job,
 		json:      json,
 		log:       log,
@@ -35,7 +37,12 @@ func (r *Application) Connection(name string) (queue.Driver, error) {
 }
 
 func (r *Application) Chain(jobs []queue.ChainJob) queue.PendingJob {
-	return NewPendingChainJob(r.config, r.cache, r.db, r.jobStorer, r.json, jobs, r.log)
+	pendingJob := NewPendingChainJob(r.config, r.cache, r.db, r.jobStorer, r.json, jobs, r.log)
+	if pendingJob != nil {
+		pendingJob.fake = r.fake
+	}
+
+	return pendingJob
 }
 
 func (r *Application) GetJob(signature string) (queue.Job, error) {
@@ -50,12 +57,27 @@ func (r *Application) Failer() queue.Failer {
 	return NewFailer(r.config, r.db, r, r.json)
 }
 
+// Fake records the dispatched jobs instead of pushing them, until Reset is
+// called on the returned Fake. With no jobs every job is faked; otherwise
+// only the given ones are, by signature, and the others are still pushed.
+// DispatchSync is not faked: it runs the job right away, like Laravel's
+// dispatchSync. Calling it again replaces the faked jobs and keeps the
+// records.
+func (r *Application) Fake(jobs ...queue.Job) queue.Fake {
+	r.fake.enable(jobs)
+
+	return r.fake
+}
+
 func (r *Application) JobStorer() queue.JobStorer {
 	return r.jobStorer
 }
 
 func (r *Application) Job(job queue.Job, args ...[]queue.Arg) queue.PendingJob {
-	return NewPendingJob(r.config, r.cache, r.db, r.jobStorer, r.json, job, r.log, args...)
+	pendingJob := NewPendingJob(r.config, r.cache, r.db, r.jobStorer, r.json, job, r.log, args...)
+	pendingJob.fake = r.fake
+
+	return pendingJob
 }
 
 func (r *Application) Register(jobs []queue.Job) {
