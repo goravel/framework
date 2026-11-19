@@ -287,11 +287,32 @@ func TestAddWhere(t *testing.T) {
 }
 
 func TestCursor(t *testing.T) {
-	// The consumer receives one row and cancels the context. When it is canceled, the producer is blocked
-	// sending the third row, and the second one is in the buffer: the producer replaces it with the error.
+	t.Run("reads ahead of the consumer", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			ctx := context.Background()
+			query, fake, closeDB := newCursorQuery(t, ctx, cursorBufferSize+1)
+			defer closeDB()
+
+			ch := query.Cursor()
+			assert.NoError(t, (<-ch).Err())
+
+			// The consumer read one row and did not read again: the producer filled the whole buffer and
+			// reached the last row.
+			synctest.Wait()
+			assert.EqualValues(t, cursorBufferSize+1, fake.produced.Load())
+
+			for row := range ch {
+				assert.NoError(t, row.Err())
+			}
+		})
+	})
+
+	// The consumer receives one row and cancels the context. The producer has filled the buffer and is
+	// blocked on the next send when the context is canceled: it exits, closes the rows, and replaces a
+	// buffered row with the error.
 	cancelAfterFirstRow := func(t *testing.T) (chan contractsdb.Row, *cursorDriver, func()) {
 		ctx, cancel := context.WithCancel(context.Background())
-		query, fake, closeDB := newCursorQuery(t, ctx, 3)
+		query, fake, closeDB := newCursorQuery(t, ctx, 2*cursorBufferSize)
 
 		ch := query.Cursor()
 		first := <-ch
@@ -324,7 +345,9 @@ func TestCursor(t *testing.T) {
 				errs = append(errs, row.Err())
 			}
 
-			assert.Equal(t, []error{context.Canceled}, errs)
+			// The row read outside the loop, then the buffered rows with one replaced by the error.
+			assert.Len(t, errs, cursorBufferSize)
+			assert.Equal(t, context.Canceled, errs[len(errs)-1])
 			assert.True(t, fake.closed.Load())
 		})
 	})
@@ -2283,10 +2306,11 @@ func (m *ModelWithEmptyGlobalScopes) GlobalScopes() map[string]func(contractsorm
 }
 
 // cursorDriver is a database/sql driver whose queries return `rows` rows with an "id" column, and that
-// records when the rows are closed.
+// records how many rows it produced and when the rows are closed.
 type cursorDriver struct {
-	rows   int
-	closed atomic.Bool
+	rows     int
+	closed   atomic.Bool
+	produced atomic.Int64
 }
 
 func (r *cursorDriver) Open(string) (driver.Conn, error) { return &cursorConn{driver: r}, nil }
@@ -2323,6 +2347,7 @@ func (r *cursorRows) Next(dest []driver.Value) error {
 		return io.EOF
 	}
 	r.next++
+	r.driver.produced.Add(1)
 	dest[0] = int64(r.next)
 	return nil
 }

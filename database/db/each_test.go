@@ -20,10 +20,11 @@ import (
 )
 
 // eachDriver is a database/sql driver whose queries return `rows` rows with an "id" column, and that
-// records when the rows are closed.
+// records how many rows it produced and when the rows are closed.
 type eachDriver struct {
-	rows   int
-	closed atomic.Bool
+	rows     int
+	closed   atomic.Bool
+	produced atomic.Int64
 }
 
 func (r *eachDriver) Open(string) (driver.Conn, error) { return &eachConn{driver: r}, nil }
@@ -60,6 +61,7 @@ func (r *eachRows) Next(dest []driver.Value) error {
 		return io.EOF
 	}
 	r.next++
+	r.driver.produced.Add(1)
 	dest[0] = int64(r.next)
 	return nil
 }

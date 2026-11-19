@@ -23,6 +23,10 @@ import (
 	"github.com/goravel/framework/support/str"
 )
 
+// cursorBufferSize is the number of rows Cursor keeps buffered. Buffering lets the producer read the next
+// rows while the consumer scans the current one, instead of handing over one row at a time.
+const cursorBufferSize = 64
+
 type Query struct {
 	ctx          context.Context
 	err          error
@@ -115,10 +119,10 @@ func (r *Query) CrossJoin(query string, args ...any) db.Query {
 }
 
 func (r *Query) Cursor() chan db.Row {
-	ch := make(chan db.Row, 1)
-	// send blocks until the consumer receives the row or the query context is done. It allows the goroutine
-	// to exit (and release the rows and the connection) when the consumer stops ranging over the channel
-	// early (e.g. break) and cancels the context passed to WithContext.
+	ch := make(chan db.Row, cursorBufferSize)
+	// send buffers the row and blocks only while the buffer is full, or until the query context is
+	// done. Filling the buffer without the consumer reading it stops the goroutine, releasing rows
+	// and connection when the context is canceled.
 	send := func(row db.Row) bool {
 		select {
 		case ch <- row:
@@ -140,7 +144,8 @@ func (r *Query) Cursor() chan db.Row {
 
 		defer func() {
 			// The buffer keeps the error for a consumer that is still reading after the context is done,
-			// replacing a row that it has not received yet.
+			// replacing a row that it has not received yet. When the buffer is full, the send fails and
+			// one buffered row is dropped to make room.
 			if err != nil && !send(NewRow(nil, err)) {
 				select {
 				case <-ch:
@@ -163,6 +168,8 @@ func (r *Query) Cursor() chan db.Row {
 		if rows, err = r.readBuilder.QueryxContext(r.ctx, sql, args...); err != nil {
 			return
 		}
+		// -1 means the query never ran; from here count is the number of rows produced.
+		count = 0
 		defer errors.Ignore(rows.Close)
 
 		for rows.Next() {
