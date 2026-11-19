@@ -444,6 +444,41 @@ func (s *ApplicationTestSuite) TestConfigureRoutes_Modules() {
 		s.Equal([]string{"app", "blog:web", "shop:web"}, routed)
 	})
 
+	s.Run("late routes follow every module's routes, dependants first", func() {
+		s.SetupTest()
+		var routed []string
+
+		s.app.Instance(binding.Route, mocksroute.NewRoute(s.T()))
+
+		builder := NewApplicationBuilder(s.app)
+		builder.routes = func() { routed = append(routed, "app") }
+		s.withModules(builder,
+			&lateRoutesModule{webOnlyModule{testModule{"admin"}, &routed}},
+			&webOnlyModule{testModule{"shop"}, &routed},
+			&lateRoutesModule{webOnlyModule{testModule{"reports"}, &routed}},
+			&lateOnlyModule{dependentTestModule{testModule{"blog"}, []string{"admin"}}, &routed},
+		)
+		s.app.configureRoutes()
+
+		s.Equal([]string{
+			"app", "admin:web", "shop:web", "reports:web",
+			"blog:late", "reports:late", "admin:late",
+		}, routed)
+	})
+
+	s.Run("late routes alone need the route facade", func() {
+		s.SetupTest()
+		var routed []string
+
+		s.app.Instance(binding.Route, mocksroute.NewRoute(s.T()))
+		s.withModules(NewApplicationBuilder(s.app),
+			&lateOnlyModule{dependentTestModule{testModule{"admin"}, nil}, &routed},
+		)
+		s.app.configureRoutes()
+
+		s.Equal([]string{"admin:late"}, routed)
+	})
+
 	s.Run("without module routes or static files the route facade is not needed", func() {
 		s.SetupTest()
 		s.withModules(NewApplicationBuilder(s.app), &testModule{"plain"})
@@ -457,6 +492,19 @@ type webOnlyModule struct {
 }
 
 func (m *webOnlyModule) Routes() { *m.routed = append(*m.routed, m.name+":web") }
+
+type lateRoutesModule struct {
+	webOnlyModule
+}
+
+func (m *lateRoutesModule) LateRoutes() { *m.routed = append(*m.routed, m.name+":late") }
+
+type lateOnlyModule struct {
+	dependentTestModule
+	routed *[]string
+}
+
+func (m *lateOnlyModule) LateRoutes() { *m.routed = append(*m.routed, m.name+":late") }
 
 type staticModule struct {
 	testModule

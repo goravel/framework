@@ -48,6 +48,12 @@ type ProvidesRoutes interface {
 	Routes()
 }
 
+// ProvidesLateRoutes registers routes after every module's Routes(), in reverse
+// dependency order, so they follow the routes of the modules that depend on it.
+type ProvidesLateRoutes interface {
+	LateRoutes()
+}
+
 // ProvidesMigrations contributes database migrations.
 type ProvidesMigrations interface {
 	Migrations() []schema.Migration

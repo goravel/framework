@@ -156,6 +156,7 @@ func (r *Registry) Capabilities(module contractsmodule.Module) map[string]bool {
 		"config":       implements[contractsmodule.ProvidesConfig](module),
 		"middleware":   implements[contractsmodule.ProvidesGlobalMiddleware](module),
 		"routes":       implements[contractsmodule.ProvidesRoutes](module),
+		"late-routes":  implements[contractsmodule.ProvidesLateRoutes](module),
 		"migrations":   implements[contractsmodule.ProvidesMigrations](module),
 		"seeders":      implements[contractsmodule.ProvidesSeeders](module),
 		"commands":     implements[contractsmodule.ProvidesCommands](module),

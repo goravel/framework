@@ -742,7 +742,7 @@ func (r *Application) configurePaths() {
 }
 
 // configureRoutes runs WithRouting, then module static files on the root router
-// (no group middleware), then module routes.
+// (no group middleware), then module routes, then late module routes in reverse order.
 func (r *Application) configureRoutes() {
 	if r.builder.routes != nil {
 		r.builder.routes()
@@ -750,7 +750,8 @@ func (r *Application) configureRoutes() {
 
 	statics := modular.Providing[contractsmodule.ProvidesStatic](r.modules)
 	web := modular.Providing[contractsmodule.ProvidesRoutes](r.modules)
-	if len(statics) == 0 && len(web) == 0 {
+	late := modular.Providing[contractsmodule.ProvidesLateRoutes](r.modules)
+	if len(statics) == 0 && len(web) == 0 && len(late) == 0 {
 		return
 	}
 
@@ -764,6 +765,9 @@ func (r *Application) configureRoutes() {
 
 	for _, module := range web {
 		module.Routes()
+	}
+	for _, module := range slices.Backward(late) {
+		module.LateRoutes()
 	}
 }
 
