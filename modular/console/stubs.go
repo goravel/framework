@@ -72,27 +72,61 @@ func (r *moduleStubs) replace(content string) string {
 	).Replace(content)
 }
 
-// Module is module.go: full adds the provider, routes, config, views,
-// translations and Vite entries.
+// Module is module.go: full implements every capability of an application module
+// (not Located or ProvidesSources), the unused ones empty.
 func (r *moduleStubs) Module(full bool) string {
-	var imports, vars, methods []string
+	if !full {
+		return r.replace(`package DummyPackage
 
-	if full {
-		imports = append(imports, "\t\"embed\"\n\t\"io/fs\"\n", `	"github.com/goravel/framework/contracts/foundation"
-`, `	"DummyModule/providers"
-	"DummyModule/routes"
+type Module struct{}
+
+func (m *Module) Name() string {
+	return "DummyName"
+}
 `)
-		vars = append(vars, "//go:embed resources/views\nvar views embed.FS\n\n", "//go:embed lang\nvar lang embed.FS\n\n")
-		methods = append(methods, `
+	}
+
+	return r.replace(`package DummyPackage
+
+import (
+	"embed"
+	"io/fs"
+
+	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/contracts/database/seeder"
+	"github.com/goravel/framework/contracts/event"
+	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/contracts/module"
+	"github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/contracts/schedule"
+
+	"DummyModule/providers"
+	"DummyModule/routes"
+)
+
+//go:embed resources/views
+var views embed.FS
+
+//go:embed lang
+var lang embed.FS
+
+type Module struct{}
+
+func (m *Module) Name() string {
+	return "DummyName"
+}
+
+// Dependencies are module names registered before this one.
+func (m *Module) Dependencies() []string {
+	return []string{}
+}
+
 func (m *Module) ServiceProviders() []foundation.ServiceProvider {
 	return []foundation.ServiceProvider{
 		&providers.ServiceProvider{},
 	}
-}
-
-func (m *Module) Routes() {
-	routes.Web()
-	routes.Api()
 }
 
 // Config is available as "modules.DummyName", or through Config().Module("DummyName").
@@ -100,6 +134,43 @@ func (m *Module) Config() map[string]any {
 	return map[string]any{
 		"enabled": true,
 	}
+}
+
+func (m *Module) GlobalMiddleware() []http.Middleware {
+	return []http.Middleware{}
+}
+
+func (m *Module) Routes() {
+	routes.Web()
+	routes.Api()
+}
+
+// LateRoutes run after every module's Routes(), e.g. for a catch-all route.
+func (m *Module) LateRoutes() {
+}
+
+func (m *Module) Migrations() []schema.Migration {
+	return []schema.Migration{}
+}
+
+func (m *Module) Seeders() []seeder.Seeder {
+	return []seeder.Seeder{}
+}
+
+func (m *Module) Commands() []console.Command {
+	return []console.Command{}
+}
+
+func (m *Module) Jobs() []queue.Job {
+	return []queue.Job{}
+}
+
+func (m *Module) Events() map[event.Event][]event.Listener {
+	return map[event.Event][]event.Listener{}
+}
+
+func (m *Module) Schedule() []schedule.Event {
+	return []schedule.Event{}
 }
 
 // Views are named "DummyName/<file>", e.g. "DummyName/index.tmpl".
@@ -117,25 +188,20 @@ func (m *Module) Translations() fs.FS {
 }
 
 // ViteEntries are relative to the module directory, e.g. "resources/js/app.js".
-// ViteAliases() and Static() are optional too, see contracts/module.
 func (m *Module) ViteEntries() []string {
 	return []string{}
 }
-`)
-	}
 
-	content := "package DummyPackage\n\n"
-	if len(imports) > 0 {
-		content += "import (\n" + strings.Join(imports, "\n") + ")\n\n"
-	}
-	content += strings.Join(vars, "") + `type Module struct{}
-
-func (m *Module) Name() string {
-	return "DummyName"
+// ViteAliases map an alias to a directory of the module, e.g. "@DummyName-assets": "resources/assets".
+func (m *Module) ViteAliases() map[string]string {
+	return map[string]string{}
 }
-` + strings.Join(methods, "")
 
-	return r.replace(content)
+// Static serves files as-is under a URL prefix, e.g. "/DummyName/assets": {Dir: "public"}.
+func (m *Module) Static() map[string]module.Path {
+	return map[string]module.Path{}
+}
+`)
 }
 
 func (r *moduleStubs) ServiceProvider() string {

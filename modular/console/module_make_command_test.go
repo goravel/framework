@@ -109,9 +109,15 @@ func (s *ModuleMakeCommandTestSuite) TestDefault() {
 	s.Contains(module, "//go:embed lang\nvar lang embed.FS")
 	s.Contains(module, `"github.com/goravel/framework/modules/blog/providers"`)
 	s.Contains(module, "return \"blog\"\n")
-	for _, method := range []string{"ServiceProviders()", "Routes()", "Config()", "Views()", "Translations()", "ViteEntries()"} {
+	for _, method := range []string{
+		"Dependencies()", "ServiceProviders()", "Config()", "GlobalMiddleware()", "Routes()", "LateRoutes()",
+		"Migrations()", "Seeders()", "Commands()", "Jobs()", "Events()", "Schedule()",
+		"Views()", "Translations()", "ViteEntries()", "ViteAliases()", "Static()",
+	} {
 		s.Contains(module, "func (m *Module) "+method)
 	}
+	s.NotContains(module, "func (m *Module) Path()")
+	s.NotContains(module, "func (m *Module) Sources()")
 	s.Contains(module, "\troutes.Web()\n\troutes.Api()\n")
 
 	// No app/facades here, so the controller uses the framework facades.
