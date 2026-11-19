@@ -35,6 +35,10 @@ import (
 
 const Associations = clause.Associations
 
+// cursorBufferSize is the number of rows Cursor keeps buffered. Buffering lets the producer read the next
+// rows while the consumer scans the current one, instead of handing over one row at a time.
+const cursorBufferSize = 64
+
 type Query struct {
 	config            config.Config
 	ctx               context.Context
@@ -175,7 +179,7 @@ func (r *Query) Cursor() chan contractsdb.Row {
 		ctx = context.Background()
 	}
 
-	cursorChan := make(chan contractsdb.Row, 1)
+	cursorChan := make(chan contractsdb.Row, cursorBufferSize)
 	// send blocks until the consumer receives the row or the query context is done. It allows the goroutine
 	// to exit (and release the rows and the connection) when the consumer stops ranging over the channel
 	// early (e.g. break) and cancels the context passed to WithContext.
@@ -195,7 +199,8 @@ func (r *Query) Cursor() chan contractsdb.Row {
 		)
 		defer func() {
 			// The buffer keeps the error for a consumer that is still reading after the context is done,
-			// replacing a row that it has not received yet.
+			// replacing a row that it has not received yet. When the buffer is full, the send fails and
+			// one buffered row is dropped to make room.
 			if err != nil && !send(&Row{query: r, err: err}) {
 				select {
 				case <-cursorChan:

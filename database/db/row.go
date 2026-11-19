@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"reflect"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-viper/mapstructure/v2"
@@ -12,6 +13,91 @@ import (
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/str"
 )
+
+// maxNameCacheEntries bounds the memoised Studly and Snake conversions. Column names come from the schema
+// and field names from the model structs, so the set is small in practice; the bound only stops an
+// application that builds names at runtime (aliases, pivot columns) from growing the caches forever.
+const maxNameCacheEntries = 1024
+
+var (
+	// Type values compared by the decode hooks, resolved once instead of on every column and every row.
+	typeString    = reflect.TypeFor[string]()
+	typeTime      = reflect.TypeFor[time.Time]()
+	typeDeletedAt = reflect.TypeFor[gorm.DeletedAt]()
+	typeByteSlice = reflect.TypeFor[[]byte]()
+	typeScanner   = reflect.TypeFor[interface{ Scan(any) error }]()
+
+	// decodeHooks is composed once. Composing it per row rebuilt the same six hooks on every row.
+	decodeHooks = mapstructure.ComposeDecodeHookFunc(
+		ToStringHookFunc(), ToTimeHookFunc(), ToDeletedAtHookFunc(), ToScannerHookFunc(), ToSliceHookFunc(), ToMapHookFunc(),
+	)
+
+	studlyNames = newNameCache()
+	snakeNames  = newNameCache()
+)
+
+// nameCache memoises a name conversion. It is read for every column and field pair of every row, so it
+// uses a RWMutex and a plain map instead of a sync.Map.
+type nameCache struct {
+	mu sync.RWMutex
+	m  map[string]string
+}
+
+func newNameCache() *nameCache {
+	return &nameCache{m: make(map[string]string)}
+}
+
+func (c *nameCache) load(name string) (string, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	converted, ok := c.m[name]
+	return converted, ok
+}
+
+func (c *nameCache) store(name, converted string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if len(c.m) >= maxNameCacheEntries {
+		return
+	}
+
+	c.m[name] = converted
+}
+
+// studlyName returns name in StudlyCase. The conversion builds an x/text caser and the same names repeat
+// across the rows of a result set, so the result is memoised.
+func studlyName(name string) string {
+	if converted, ok := studlyNames.load(name); ok {
+		return converted
+	}
+
+	converted := str.Of(name).Studly().String()
+	studlyNames.store(name, converted)
+
+	return converted
+}
+
+// snakeName returns name in snake_case, memoised for the same reason as studlyName.
+func snakeName(name string) string {
+	if converted, ok := snakeNames.load(name); ok {
+		return converted
+	}
+
+	converted := str.Of(name).Snake().String()
+	snakeNames.store(name, converted)
+
+	return converted
+}
+
+// matchName reports whether the column mapKey fills the struct field fieldName. The three original
+// conditions are kept, with the one that needs no conversion first.
+func matchName(mapKey, fieldName string) bool {
+	return strings.EqualFold(mapKey, fieldName) ||
+		studlyName(mapKey) == fieldName ||
+		mapKey == snakeName(fieldName)
+}
 
 type Row struct {
 	err error
@@ -32,14 +118,10 @@ func (r *Row) Scan(value any) error {
 	}
 
 	msConfig := &mapstructure.DecoderConfig{
-		DecodeHook: mapstructure.ComposeDecodeHookFunc(
-			ToStringHookFunc(), ToTimeHookFunc(), ToDeletedAtHookFunc(), ToScannerHookFunc(), ToSliceHookFunc(), ToMapHookFunc(),
-		),
-		Squash: true,
-		Result: value,
-		MatchName: func(mapKey, fieldName string) bool {
-			return str.Of(mapKey).Studly().String() == fieldName || mapKey == str.Of(fieldName).Snake().String() || strings.EqualFold(mapKey, fieldName)
-		},
+		DecodeHook: decodeHooks,
+		Squash:     true,
+		Result:     value,
+		MatchName:  matchName,
 	}
 
 	decoder, err := mapstructure.NewDecoder(msConfig)
@@ -54,7 +136,7 @@ func (r *Row) Scan(value any) error {
 // Mysql returns []uint8 for String type when scanning the rows.
 func ToStringHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
-		if t != reflect.TypeFor[string]() {
+		if t != typeString {
 			return data, nil
 		}
 
@@ -69,17 +151,17 @@ func ToStringHookFunc() mapstructure.DecodeHookFunc {
 
 func ToTimeHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
-		if t != reflect.TypeFor[time.Time]() {
+		if t != typeTime {
 			return data, nil
 		}
 
-		switch f.Kind() {
-		case reflect.String:
-			return time.Parse(time.RFC3339, data.(string))
-		case reflect.Float64:
-			return time.Unix(0, int64(data.(float64))*int64(time.Millisecond)), nil
-		case reflect.Int64:
-			return time.Unix(0, data.(int64)*int64(time.Millisecond)), nil
+		switch value := data.(type) {
+		case string:
+			return time.Parse(time.RFC3339, value)
+		case float64:
+			return time.Unix(0, int64(value)*int64(time.Millisecond)), nil
+		case int64:
+			return time.Unix(0, value*int64(time.Millisecond)), nil
 		default:
 			return data, nil
 		}
@@ -88,16 +170,21 @@ func ToTimeHookFunc() mapstructure.DecodeHookFunc {
 
 func ToDeletedAtHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
-		if t != reflect.TypeFor[gorm.DeletedAt]() {
+		if t != typeDeletedAt {
 			return data, nil
 		}
 
-		if f == reflect.TypeFor[time.Time]() {
+		if f == typeTime {
 			return gorm.DeletedAt{Time: data.(time.Time), Valid: true}, nil
 		}
 
 		if f.Kind() == reflect.String {
-			return gorm.DeletedAt{Time: carbon.Parse(data.(string)).StdTime(), Valid: true}, nil
+			value, ok := data.(string)
+			if !ok {
+				return data, nil
+			}
+
+			return gorm.DeletedAt{Time: carbon.Parse(value).StdTime(), Valid: true}, nil
 		}
 
 		return data, nil
@@ -109,7 +196,7 @@ func ToDeletedAtHookFunc() mapstructure.DecodeHookFunc {
 func ToScannerHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
 		// Skip types that are handled by other specific hooks
-		if t == reflect.TypeFor[time.Time]() || t == reflect.TypeFor[gorm.DeletedAt]() {
+		if t == typeTime || t == typeDeletedAt {
 			return data, nil
 		}
 
@@ -118,17 +205,14 @@ func ToScannerHookFunc() mapstructure.DecodeHookFunc {
 			return data, nil
 		}
 
-		// Only process database types (string, []byte, []uint8, time.Time)
-		if f.Kind() != reflect.String && f != reflect.TypeFor[[]byte]() && f != reflect.TypeFor[[]uint8]() && f != reflect.TypeFor[time.Time]() {
+		// Only process database types (string, []byte, time.Time)
+		if f.Kind() != reflect.String && f != typeByteSlice && f != typeTime {
 			return data, nil
 		}
 
-		// Check if the target type implements a Scan method
-		scannerType := reflect.TypeOf((*interface{ Scan(any) error })(nil)).Elem()
-
 		// Create a pointer to the target type to check for Scan method
 		targetPtr := reflect.PointerTo(t)
-		if !targetPtr.Implements(scannerType) {
+		if !targetPtr.Implements(typeScanner) {
 			return data, nil
 		}
 
