@@ -220,6 +220,8 @@ var (
 	MigrationResetFailed           = New("migration reset failed: %v")
 	MigrationRollbackFailed        = New("migration rollback failed: %v")
 
+	ModularDependencyCycle        = New("modules depend on each other: %s").SetModule(ModuleModular)
+	ModularDependencyMissing      = New("module %s depends on module %s, which is not registered").SetModule(ModuleModular)
 	ModularModuleDuplicate        = New("module %q is registered more than once").SetModule(ModuleModular)
 	ModularModuleExists           = New("module %s already exists at %s, use --force to overwrite it").SetModule(ModuleModular)
 	ModularModuleImportConflict   = New("module %s: package name %q is already used by the import %q in bootstrap/modules.go, choose another name").SetModule(ModuleModular)

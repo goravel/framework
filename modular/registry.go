@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"runtime/debug"
 	"slices"
+	"strings"
 	"sync"
 
 	"github.com/goravel/framework/contracts/foundation"
@@ -59,6 +60,8 @@ type Registry struct {
 	modules []contractsmodule.Module
 	byName  map[string]contractsmodule.Module
 	paths   map[string]string
+	// sorted caches the dependency order, nil until needed.
+	sorted []contractsmodule.Module
 
 	// mainModule is the app's Go module path; directory holds third-party modules.
 	mainModule string
@@ -80,7 +83,8 @@ func NewRegistry(directory string) *Registry {
 	}
 }
 
-// Register stops at the first error; earlier modules stay registered.
+// Register adds modules and resolves their directories (Located, app package, or module.path).
+// It stops at the first error; earlier modules stay registered.
 func (r *Registry) Register(modules ...contractsmodule.Module) error {
 	for _, module := range modules {
 		if module == nil {
@@ -103,19 +107,29 @@ func (r *Registry) Register(modules ...contractsmodule.Module) error {
 		r.byName[name] = module
 		r.paths[name] = dir
 		r.modules = append(r.modules, module)
+		r.sorted = nil
 	}
 
 	return nil
 }
 
-// All sorts non-negative orders, then negative ones, ascending; ties keep registration order.
+// All returns the modules in registration order, each after its dependencies.
+// It is plain registration order when the dependencies cannot be resolved.
 func (r *Registry) All() []contractsmodule.Module {
-	sorted := slices.Clone(r.modules)
-	slices.SortStableFunc(sorted, func(a, b contractsmodule.Module) int {
-		return compareOrder(order(a), order(b))
-	})
+	if r.sorted == nil {
+		r.sorted, _ = r.sort()
+	}
 
-	return sorted
+	return slices.Clone(r.sorted)
+}
+
+// Resolve reports a dependency that is not registered, or a cycle. Call it once
+// every module is registered.
+func (r *Registry) Resolve() error {
+	sorted, err := r.sort()
+	r.sorted = sorted
+
+	return err
 }
 
 func (r *Registry) Find(name string) (contractsmodule.Module, bool) {
@@ -175,30 +189,57 @@ func implements[T any](module contractsmodule.Module) bool {
 	return ok
 }
 
-func order(module contractsmodule.Module) int {
-	if o, ok := module.(contractsmodule.Ordered); ok {
-		return o.Order()
-	}
+// sort places each module after its dependencies, depth first in registration
+// order. On an error it returns the registration order.
+func (r *Registry) sort() ([]contractsmodule.Module, error) {
+	const (
+		visiting = iota + 1
+		done
+	)
 
-	return 0
-}
+	sorted := make([]contractsmodule.Module, 0, len(r.modules))
+	state := make(map[string]int, len(r.modules))
+	var stack []string
 
-// compareOrder sorts non-negative orders before negative ones, each ascending.
-func compareOrder(a, b int) int {
-	if (a < 0) != (b < 0) {
-		if a < 0 {
-			return 1
+	var visit func(module contractsmodule.Module) error
+	visit = func(module contractsmodule.Module) error {
+		name := module.Name()
+		if state[name] == done {
+			return nil
 		}
 
-		return -1
+		stack = append(stack, name)
+		if state[name] == visiting {
+			cycle := stack[slices.Index(stack, name):]
+
+			return errors.ModularDependencyCycle.Args(strings.Join(cycle, " -> "))
+		}
+		state[name] = visiting
+
+		if dependent, ok := module.(contractsmodule.Dependent); ok {
+			for _, dependency := range dependent.Dependencies() {
+				required, ok := r.byName[dependency]
+				if !ok {
+					return errors.ModularDependencyMissing.Args(name, dependency)
+				}
+				if err := visit(required); err != nil {
+					return err
+				}
+			}
+		}
+
+		stack = stack[:len(stack)-1]
+		state[name] = done
+		sorted = append(sorted, module)
+
+		return nil
 	}
 
-	switch {
-	case a < b:
-		return -1
-	case a > b:
-		return 1
-	default:
-		return 0
+	for _, module := range r.modules {
+		if err := visit(module); err != nil {
+			return slices.Clone(r.modules), err
+		}
 	}
+
+	return sorted, nil
 }

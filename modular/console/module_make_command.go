@@ -61,10 +61,6 @@ func (r *ModuleMakeCommand) Extend() command.Extend {
 				Name:  "plain",
 				Usage: "Create only module.go",
 			},
-			&command.IntFlag{
-				Name:  "order",
-				Usage: "The module order: lower first, negative last",
-			},
 			&command.BoolFlag{
 				Name:    "force",
 				Aliases: []string{"f"},
@@ -106,7 +102,6 @@ func (r *ModuleMakeCommand) makeOne(ctx console.Context, name string) error {
 	if err != nil {
 		return err
 	}
-	stubs.order = ctx.OptionInt("order")
 
 	root := path.Base(filepath.FromSlash(stubs.dir))
 	if file.Exists(root) && !ctx.OptionBool("force") {
@@ -202,7 +197,6 @@ type moduleStubs struct {
 	title  string // Blog Posts
 	dir    string // modules/blog-posts
 	module string // <main>/modules/blog-posts
-	order  int
 }
 
 func newModuleStubs(name, directory string) (*moduleStubs, error) {

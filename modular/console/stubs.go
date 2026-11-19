@@ -1,7 +1,6 @@
 package console
 
 import (
-	"fmt"
 	"sort"
 	"strings"
 
@@ -123,13 +122,6 @@ func (m *Module) ViteEntries() []string {
 	return []string{}
 }
 `)
-	}
-	if r.order != 0 {
-		methods = append(methods, fmt.Sprintf(`
-func (m *Module) Order() int {
-	return %d
-}
-`, r.order))
 	}
 
 	content := "package DummyPackage\n\n"

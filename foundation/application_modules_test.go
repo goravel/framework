@@ -38,12 +38,12 @@ type testModule struct{ name string }
 
 func (m *testModule) Name() string { return m.name }
 
-type orderedTestModule struct {
+type dependentTestModule struct {
 	testModule
-	order int
+	dependencies []string
 }
 
-func (m *orderedTestModule) Order() int { return m.order }
+func (m *dependentTestModule) Dependencies() []string { return m.dependencies }
 
 func moduleNames(modules []contractsmodule.Module) []string {
 	var names []string
@@ -67,21 +67,21 @@ func (s *ApplicationTestSuite) TestConfigureModules() {
 		s.Empty(s.app.modules)
 	})
 
-	s.Run("modules are registered and kept in order", func() {
+	s.Run("modules are registered and kept in dependency order", func() {
 		s.SetupTest()
 		builder := NewApplicationBuilder(s.app)
 		builder.modules = func() []contractsmodule.Module {
 			return []contractsmodule.Module{
-				&orderedTestModule{testModule{"last"}, -1},
+				&dependentTestModule{testModule{"comments"}, []string{"blog"}},
 				&testModule{"blog"},
-				&orderedTestModule{testModule{"shop"}, 5},
+				&testModule{"shop"},
 			}
 		}
 		s.app.builder = builder
 
 		s.app.configureModules()
 
-		s.Equal([]string{"blog", "shop", "last"}, moduleNames(s.app.modules))
+		s.Equal([]string{"blog", "comments", "shop"}, moduleNames(s.app.modules))
 		s.True(s.app.MakeModule().Has("blog"))
 		instance, err := s.app.Make(binding.Module)
 		s.NoError(err)
@@ -107,7 +107,7 @@ func (s *ApplicationTestSuite) TestConfigureModules() {
 		s.Equal("foundation", dir)
 	})
 
-	s.Run("a duplicate name is reported and the modules before it are kept", func() {
+	s.Run("a duplicate name stops the boot", func() {
 		s.SetupTest()
 		builder := NewApplicationBuilder(s.app)
 		builder.modules = func() []contractsmodule.Module {
@@ -115,9 +115,41 @@ func (s *ApplicationTestSuite) TestConfigureModules() {
 		}
 		s.app.builder = builder
 
-		s.app.configureModules()
+		s.PanicsWithError(`[modular] module "blog" is registered more than once`, func() {
+			s.app.configureModules()
+		})
+	})
 
-		s.Equal([]string{"blog"}, moduleNames(s.app.modules))
+	s.Run("an unresolvable dependency stops the boot", func() {
+		s.SetupTest()
+		builder := NewApplicationBuilder(s.app)
+		builder.modules = func() []contractsmodule.Module {
+			return []contractsmodule.Module{
+				&dependentTestModule{testModule{"comments"}, []string{"blog"}},
+				&testModule{"shop"},
+			}
+		}
+		s.app.builder = builder
+
+		s.PanicsWithError("[modular] module comments depends on module blog, which is not registered", func() {
+			s.app.configureModules()
+		})
+	})
+
+	s.Run("a dependency cycle stops the boot", func() {
+		s.SetupTest()
+		builder := NewApplicationBuilder(s.app)
+		builder.modules = func() []contractsmodule.Module {
+			return []contractsmodule.Module{
+				&dependentTestModule{testModule{"blog"}, []string{"comments"}},
+				&dependentTestModule{testModule{"comments"}, []string{"blog"}},
+			}
+		}
+		s.app.builder = builder
+
+		s.PanicsWithError("[modular] modules depend on each other: blog -> comments -> blog", func() {
+			s.app.configureModules()
+		})
 	})
 
 	s.Run("a rebuild binds a fresh registry", func() {

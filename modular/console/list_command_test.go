@@ -17,8 +17,8 @@ import (
 
 type richModule struct{ testModule }
 
-func (m *richModule) Order() int            { return -1 }
-func (m *richModule) ViteEntries() []string { return []string{"resources/js/app.js"} }
+func (m *richModule) Dependencies() []string { return []string{"billing"} }
+func (m *richModule) ViteEntries() []string  { return []string{"resources/js/app.js"} }
 func (m *richModule) ViteAliases() map[string]string {
 	return map[string]string{"@blog-assets": "resources/assets"}
 }
@@ -83,12 +83,13 @@ func (s *ListCommandTestSuite) TestList() {
 	// Both are modules of this application: nothing is published.
 	ctx := mocksconsole.NewContext(s.T())
 	ctx.EXPECT().OptionBool("json").Return(false).Once()
-	ctx.EXPECT().TwoColumnDetail("<fg=green;op=bold>blog</> modules/blog", "local, order -1").Once()
+	ctx.EXPECT().TwoColumnDetail("<fg=green;op=bold>blog</> modules/blog", "local").Once()
 	ctx.EXPECT().Line("    <fg=gray>static, vite-entries</>").Once()
+	ctx.EXPECT().Line("    <fg=gray>depends on: billing</>").Once()
 	ctx.EXPECT().Line("    <fg=gray>vite entries: resources/js/app.js</>").Once()
 	ctx.EXPECT().Line("    <fg=gray>vite aliases: @blog-assets -> resources/assets</>").Once()
 	ctx.EXPECT().Line("    <fg=gray>static: /blog/docs, /blog/static</>").Once()
-	ctx.EXPECT().TwoColumnDetail("<fg=green;op=bold>billing</> modules/billing", "local, order 0").Once()
+	ctx.EXPECT().TwoColumnDetail("<fg=green;op=bold>billing</> modules/billing", "local").Once()
 	ctx.EXPECT().Line("    <fg=gray>sources</>").Once()
 
 	s.NoError(NewListCommand(registry).Handle(ctx))
@@ -104,14 +105,14 @@ func (s *ListCommandTestSuite) TestList() {
 	s.NoError(cmd.Handle(ctx))
 	s.JSONEq(`[
 		{
-			"name": "blog", "path": "modules/blog", "order": -1, "publish": "none",
+			"name": "blog", "path": "modules/blog", "dependencies": ["billing"], "publish": "none",
 			"capabilities": {"vite-entries": true, "static": true, "views": false},
 			"vite_entries": ["resources/js/app.js"],
 			"vite_aliases": {"@blog-assets": "resources/assets"},
 			"static": ["/blog/docs", "/blog/static"]
 		},
 		{
-			"name": "billing", "path": "modules/billing", "order": 0, "publish": "missing",
+			"name": "billing", "path": "modules/billing", "dependencies": [], "publish": "missing",
 			"capabilities": {"sources": true},
 			"vite_entries": [], "vite_aliases": {}, "static": []
 		}
@@ -131,7 +132,7 @@ func (s *ListCommandTestSuite) TestList() {
 	ctx.EXPECT().OptionBool("json").Return(true).Once()
 	output.Reset()
 	s.NoError(cmd.Handle(ctx))
-	s.Contains(output.String(), `"name":"billing","path":"modules/billing","order":0,"publish":"published"`)
+	s.Contains(output.String(), `"name":"billing","path":"modules/billing","dependencies":[],"publish":"published"`)
 
 	// Something else in the directory of a third-party module is a conflict.
 	s.Require().NoError(file.Remove("modules/billing/" + modular.PublishMarker))
@@ -139,5 +140,5 @@ func (s *ListCommandTestSuite) TestList() {
 	ctx.EXPECT().OptionBool("json").Return(true).Once()
 	output.Reset()
 	s.NoError(cmd.Handle(ctx))
-	s.Contains(output.String(), `"name":"billing","path":"modules/billing","order":0,"publish":"conflict"`)
+	s.Contains(output.String(), `"name":"billing","path":"modules/billing","dependencies":[],"publish":"conflict"`)
 }

@@ -275,65 +275,6 @@ func (_c *Registry_Path_Call) RunAndReturn(run func(string) (string, bool)) *Reg
 	return _c
 }
 
-// Register provides a mock function with given fields: modules
-func (_m *Registry) Register(modules ...module.Module) error {
-	_va := make([]interface{}, len(modules))
-	for _i := range modules {
-		_va[_i] = modules[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Register")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(...module.Module) error); ok {
-		r0 = rf(modules...)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// Registry_Register_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Register'
-type Registry_Register_Call struct {
-	*mock.Call
-}
-
-// Register is a helper method to define mock.On call
-//   - modules ...module.Module
-func (_e *Registry_Expecter) Register(modules ...interface{}) *Registry_Register_Call {
-	return &Registry_Register_Call{Call: _e.mock.On("Register",
-		append([]interface{}{}, modules...)...)}
-}
-
-func (_c *Registry_Register_Call) Run(run func(modules ...module.Module)) *Registry_Register_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]module.Module, len(args)-0)
-		for i, a := range args[0:] {
-			if a != nil {
-				variadicArgs[i] = a.(module.Module)
-			}
-		}
-		run(variadicArgs...)
-	})
-	return _c
-}
-
-func (_c *Registry_Register_Call) Return(_a0 error) *Registry_Register_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Registry_Register_Call) RunAndReturn(run func(...module.Module) error) *Registry_Register_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // NewRegistry creates a new instance of Registry. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewRegistry(t interface {

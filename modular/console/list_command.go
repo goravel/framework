@@ -34,7 +34,7 @@ func NewListCommand(registry contractsmodule.Registry) *ListCommand {
 type moduleInfo struct {
 	Name         string            `json:"name"`
 	Path         string            `json:"path"`
-	Order        int               `json:"order"`
+	Dependencies []string          `json:"dependencies"`
 	Publish      string            `json:"publish"`
 	Capabilities map[string]bool   `json:"capabilities"`
 	ViteEntries  []string          `json:"vite_entries"`
@@ -96,7 +96,7 @@ func (r *ListCommand) Handle(ctx console.Context) error {
 	for _, module := range modules {
 		ctx.TwoColumnDetail(
 			fmt.Sprintf("<fg=green;op=bold>%s</> %s", module.Name, module.Path),
-			fmt.Sprintf("%s, order %d", module.Publish, module.Order),
+			module.Publish,
 		)
 		for _, detail := range module.details() {
 			ctx.Line("    <fg=gray>" + detail + "</>")
@@ -111,6 +111,7 @@ func (r *ListCommand) describe(module contractsmodule.Module, info *debug.BuildI
 	described := moduleInfo{
 		Name:         module.Name(),
 		Path:         dir,
+		Dependencies: []string{},
 		Publish:      modular.PublishLocal,
 		Capabilities: r.registry.Capabilities(module),
 		ViteEntries:  []string{},
@@ -121,8 +122,8 @@ func (r *ListCommand) describe(module contractsmodule.Module, info *debug.BuildI
 	if dependency, ok := modular.DependencyOf(module, info); ok {
 		described.Publish = modular.PublishState(module, dependency, path.Base(filepath.FromSlash(dir)))
 	}
-	if p, ok := module.(contractsmodule.Ordered); ok {
-		described.Order = p.Order()
+	if p, ok := module.(contractsmodule.Dependent); ok {
+		described.Dependencies = append(described.Dependencies, p.Dependencies()...)
 	}
 	if p, ok := module.(contractsmodule.ProvidesViteEntries); ok {
 		described.ViteEntries = append(described.ViteEntries, p.ViteEntries()...)
@@ -149,6 +150,9 @@ func (r moduleInfo) details() []string {
 	var details []string
 	if len(capabilities) > 0 {
 		details = append(details, strings.Join(capabilities, ", "))
+	}
+	if len(r.Dependencies) > 0 {
+		details = append(details, "depends on: "+strings.Join(r.Dependencies, ", "))
 	}
 	if len(r.ViteEntries) > 0 {
 		details = append(details, "vite entries: "+strings.Join(r.ViteEntries, ", "))

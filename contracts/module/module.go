@@ -27,10 +27,10 @@ type Located interface {
 	Path() string
 }
 
-// Ordered sets the module order: lower first, negative last, ties by registration.
-// The default is 0.
-type Ordered interface {
-	Order() int
+// Dependent names the modules that come before this one. Other modules keep
+// the order they are registered in.
+type Dependent interface {
+	Dependencies() []string
 }
 
 // ProvidesConfig contributes the config stored under "modules.<name>".
@@ -120,13 +120,9 @@ type Path struct {
 	Dir string
 }
 
-// Registry holds the application's modules.
+// Registry holds the application's modules. The framework registers them at boot.
 type Registry interface {
-	// Register adds modules and resolves their directories: Located, else the
-	// package path inside the app, else "<module.path>/<name>" for another Go
-	// module. Duplicate names and unresolvable directories are errors.
-	Register(modules ...Module) error
-	// All returns the modules sorted by Order.
+	// All returns the modules in registration order, each after its dependencies.
 	All() []Module
 	// Find returns the module named name.
 	Find(name string) (Module, bool)

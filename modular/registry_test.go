@@ -23,12 +23,12 @@ type locatedModule struct {
 
 func (m *locatedModule) Path() string { return m.path }
 
-type orderedModule struct {
+type dependentModule struct {
 	plainModule
-	order int
+	dependencies []string
 }
 
-func (m *orderedModule) Order() int { return m.order }
+func (m *dependentModule) Dependencies() []string { return m.dependencies }
 
 type routedModule struct{ plainModule }
 
@@ -47,14 +47,63 @@ func names(modules []contractsmodule.Module) []string {
 func TestRegistry_All(t *testing.T) {
 	registry := NewRegistry("")
 	require.NoError(t, registry.Register(
-		&orderedModule{plainModule{"last"}, -1},
-		&orderedModule{plainModule{"ten"}, 10},
-		&plainModule{"zero-a"},
-		&orderedModule{plainModule{"before-last"}, -5},
-		&plainModule{"zero-b"},
+		&dependentModule{plainModule{"admin"}, []string{"comments", "blog"}},
+		&plainModule{"shop"},
+		&dependentModule{plainModule{"comments"}, []string{"blog", "blog"}},
+		&plainModule{"blog"},
 	))
 
-	assert.Equal(t, []string{"zero-a", "zero-b", "ten", "before-last", "last"}, names(registry.All()))
+	assert.Equal(t, []string{"blog", "comments", "admin", "shop"}, names(registry.All()))
+	assert.NoError(t, registry.Resolve())
+
+	// A later registration is sorted too.
+	require.NoError(t, registry.Register(&plainModule{"forum"}))
+	assert.Equal(t, []string{"blog", "comments", "admin", "shop", "forum"}, names(registry.All()))
+}
+
+func TestRegistry_Resolve(t *testing.T) {
+	tests := []struct {
+		name    string
+		modules []contractsmodule.Module
+		err     string
+	}{
+		{
+			name: "missing dependency",
+			modules: []contractsmodule.Module{
+				&dependentModule{plainModule{"comments"}, []string{"blog"}},
+				&plainModule{"shop"},
+			},
+			err: "[modular] module comments depends on module blog, which is not registered",
+		},
+		{
+			name: "cycle",
+			modules: []contractsmodule.Module{
+				&plainModule{"shop"},
+				&dependentModule{plainModule{"blog"}, []string{"comments"}},
+				&dependentModule{plainModule{"comments"}, []string{"tags"}},
+				&dependentModule{plainModule{"tags"}, []string{"blog"}},
+			},
+			err: "[modular] modules depend on each other: blog -> comments -> tags -> blog",
+		},
+		{
+			name: "self dependency",
+			modules: []contractsmodule.Module{
+				&dependentModule{plainModule{"blog"}, []string{"blog"}},
+			},
+			err: "[modular] modules depend on each other: blog -> blog",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			registry := NewRegistry("")
+			require.NoError(t, registry.Register(test.modules...))
+
+			assert.EqualError(t, registry.Resolve(), test.err)
+			// Registration order is kept.
+			assert.Equal(t, names(test.modules), names(registry.All()))
+		})
+	}
 }
 
 func TestRegistry_Register(t *testing.T) {
@@ -154,14 +203,4 @@ func TestLocal(t *testing.T) {
 	require.True(t, ok)
 	_, thirdParty := DependencyOf(&plainModule{"blog"}, info)
 	assert.Equal(t, !thirdParty, Local(&plainModule{"blog"}))
-}
-
-func TestCompareOrder(t *testing.T) {
-	assert.Equal(t, -1, compareOrder(1, 2))
-	assert.Equal(t, 1, compareOrder(2, 1))
-	assert.Equal(t, 0, compareOrder(2, 2))
-	assert.Equal(t, -1, compareOrder(-2, -1))
-	assert.Equal(t, 1, compareOrder(-1, -2))
-	assert.Equal(t, -1, compareOrder(5, -1), "negative orders go last")
-	assert.Equal(t, 1, compareOrder(-1, 0))
 }

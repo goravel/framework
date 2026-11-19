@@ -705,8 +705,8 @@ func (r *Application) configureMigrations() {
 	}
 }
 
-// configureModules binds a fresh registry and keeps the sorted modules. It runs
-// after WithConfig (module.path) and before providers. Errors are reported.
+// configureModules binds a fresh registry and keeps the modules in dependency order. It runs
+// after WithConfig (module.path) and before providers. A bad module or an unsortable dependency panics.
 func (r *Application) configureModules() {
 	directory := modular.DefaultDirectory
 	var modules []contractsmodule.Module
@@ -721,7 +721,10 @@ func (r *Application) configureModules() {
 
 	registry := modular.NewRegistry(directory)
 	if err := registry.Register(modules...); err != nil {
-		color.Errorln(err)
+		panic(err)
+	}
+	if err := registry.Resolve(); err != nil {
+		panic(err)
 	}
 
 	// Make caches instances; drop the previous registry on a rebuild.
