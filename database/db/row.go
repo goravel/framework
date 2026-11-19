@@ -91,8 +91,8 @@ func snakeName(name string) string {
 	return converted
 }
 
-// matchName reports whether the column mapKey fills the struct field fieldName. The three original
-// conditions are kept, with the one that needs no conversion first.
+// matchName reports whether the column mapKey fills the struct field fieldName: by case-insensitive
+// equality, by StudlyCase, or by snake_case. Equality runs first because it needs no conversion.
 func matchName(mapKey, fieldName string) bool {
 	return strings.EqualFold(mapKey, fieldName) ||
 		studlyName(mapKey) == fieldName ||

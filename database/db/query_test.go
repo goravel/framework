@@ -211,7 +211,7 @@ func (s *QueryTestSuite) TestCursor() {
 		s.Equal([]error{assert.AnError}, errs)
 	})
 
-	s.Run("trace reports the number of rows the consumer received", func() {
+	s.Run("trace reports the number of rows the query produced", func() {
 		rows, _, closeDB := newEachRows(s.T(), 3)
 		defer closeDB()
 
@@ -242,8 +242,8 @@ func (s *QueryTestSuite) TestCursor() {
 			ch := s.query.Cursor()
 			s.NoError((<-ch).Err())
 
-			// The consumer read one row and did not read again: the producer filled the whole buffer and is
-			// blocked on the send after it.
+			// The consumer read one row and did not read again: the producer filled the whole buffer and
+			// reached the last row.
 			synctest.Wait()
 			s.EqualValues(cursorBufferSize+1, fake.produced.Load())
 

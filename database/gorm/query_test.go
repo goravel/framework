@@ -296,8 +296,8 @@ func TestCursor(t *testing.T) {
 			ch := query.Cursor()
 			assert.NoError(t, (<-ch).Err())
 
-			// The consumer read one row and did not read again: the producer filled the whole buffer and is
-			// blocked on the send after it.
+			// The consumer read one row and did not read again: the producer filled the whole buffer and
+			// reached the last row.
 			synctest.Wait()
 			assert.EqualValues(t, cursorBufferSize+1, fake.produced.Load())
 
