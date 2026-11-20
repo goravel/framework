@@ -1,10 +1,14 @@
 package queue
 
 import (
+	"reflect"
 	"slices"
 	"sync"
+	"sync/atomic"
+	"time"
 
 	contractsqueue "github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/support/str"
 )
 
 var _ contractsqueue.Fake = (*Fake)(nil)
@@ -13,11 +17,11 @@ var _ contractsqueue.Fake = (*Fake)(nil)
 // singleton, so the fake belongs to the Application and every PendingJob it
 // creates sees it.
 type Fake struct {
-	mu         sync.RWMutex
-	enabled    bool
-	all        bool
-	signatures []string
-	pushed     []contractsqueue.Pushed
+	mu       sync.RWMutex
+	enabled  atomic.Bool
+	all      bool
+	patterns []string
+	pushed   []*pushed
 }
 
 func NewFake() *Fake {
@@ -31,101 +35,82 @@ func (r *Fake) AssertNothingPushed() bool {
 	return len(r.pushed) == 0
 }
 
-func (r *Fake) AssertNotPushed(job contractsqueue.Job, assertion ...func(pushed contractsqueue.Pushed) bool) bool {
+func (r *Fake) AssertNotPushed(job any, assertion ...func(pushed contractsqueue.Pushed) bool) bool {
 	return !r.AssertPushed(job, assertion...)
 }
 
-func (r *Fake) AssertPushed(job contractsqueue.Job, assertion ...func(pushed contractsqueue.Pushed) bool) bool {
+func (r *Fake) AssertPushed(job any, assertion ...func(pushed contractsqueue.Pushed) bool) bool {
 	return len(r.Pushed(job, assertion...)) > 0
 }
 
-func (r *Fake) AssertPushedOn(queue string, job contractsqueue.Job, assertion ...func(pushed contractsqueue.Pushed) bool) bool {
+func (r *Fake) AssertPushedOn(queue string, job any, assertion ...func(pushed contractsqueue.Pushed) bool) bool {
 	onQueue := func(pushed contractsqueue.Pushed) bool {
-		return pushed.Queue == queue
+		return pushed.Queue() == queue
 	}
 
 	return r.AssertPushed(job, append([]func(pushed contractsqueue.Pushed) bool{onQueue}, assertion...)...)
 }
 
-func (r *Fake) AssertPushedTimes(job contractsqueue.Job, times int) bool {
+func (r *Fake) AssertPushedTimes(job any, times int) bool {
 	return len(r.Pushed(job)) == times
 }
 
-func (r *Fake) Pushed(job contractsqueue.Job, filter ...func(pushed contractsqueue.Pushed) bool) []contractsqueue.Pushed {
-	if job == nil {
+func (r *Fake) Pushed(job any, filter ...func(pushed contractsqueue.Pushed) bool) []contractsqueue.Pushed {
+	pattern, ok := jobPattern(job)
+	if !ok {
 		return nil
 	}
-	signature := job.Signature()
 
+	// The records are never changed once kept, so they can be handed out
+	// as they are.
+	var records []contractsqueue.Pushed
 	r.mu.RLock()
-	records := slices.Clone(r.pushed)
+	for _, record := range r.pushed {
+		if matchSignature(pattern, record.signature) {
+			records = append(records, record)
+		}
+	}
 	r.mu.RUnlock()
 
 	// Filters run without the lock, so they may call the fake again.
-	result := make([]contractsqueue.Pushed, 0, len(records))
-	for _, record := range records {
-		if record.Job.Signature() != signature {
-			continue
-		}
-
-		record = clonePushed(record)
-		if matchesAll(record, filter) {
-			result = append(result, record)
-		}
-	}
-
-	return slices.Clip(result)
+	return slices.DeleteFunc(records, func(record contractsqueue.Pushed) bool {
+		return !matchesAll(record, filter)
+	})
 }
 
 func (r *Fake) Reset() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.enabled = false
+	r.enabled.Store(false)
 	r.all = false
-	r.signatures = nil
+	r.patterns = nil
 	r.pushed = nil
 }
 
-// enable starts faking the given jobs, every job when there is none.
-func (r *Fake) enable(jobs []contractsqueue.Job) {
-	signatures := make([]string, 0, len(jobs))
+// enable starts faking the given jobs, every job when there is none. A job
+// that has no signature can never be pushed, so it fakes nothing.
+func (r *Fake) enable(jobs []any) {
+	patterns := make([]string, 0, len(jobs))
 	for _, job := range jobs {
-		if job != nil {
-			signatures = append(signatures, job.Signature())
+		if pattern, ok := jobPattern(job); ok {
+			patterns = append(patterns, pattern)
 		}
 	}
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.enabled = true
+	r.enabled.Store(true)
 	r.all = len(jobs) == 0
-	r.signatures = signatures
+	r.patterns = patterns
 }
 
-// fakes reports whether the job is faked.
-func (r *Fake) fakes(job contractsqueue.Job) bool {
-	if r == nil || job == nil {
-		return false
-	}
-
-	signature := job.Signature()
-
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	return r.fakesLocked(signature)
-}
-
-func (r *Fake) fakesLocked(signature string) bool {
-	return r.enabled && (r.all || slices.Contains(r.signatures, signature))
-}
-
-// record keeps the task when its job is faked, and reports whether it did,
-// in which case the task must not be pushed.
-func (r *Fake) record(task contractsqueue.Task, connection, queue string) bool {
-	if r == nil || task.Job == nil {
+// record keeps the task when its job is faked, and reports whether it did, in
+// which case the task must not be pushed. It takes no lock while nothing is
+// faked, so dispatching outside of tests stays lock free.
+func (r *Fake) record(task contractsqueue.Task, delay time.Time, connection, queue string) bool {
+	if r == nil || !r.enabled.Load() || task.Job == nil {
 		return false
 	}
 
@@ -134,32 +119,55 @@ func (r *Fake) record(task contractsqueue.Task, connection, queue string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if !r.fakesLocked(signature) {
+	if !r.fakes(signature) {
 		return false
 	}
 
-	r.pushed = append(r.pushed, clonePushed(contractsqueue.Pushed{
-		Job:        task.Job,
-		Args:       task.Args,
-		Connection: connection,
-		Queue:      queue,
-		Delay:      task.Delay,
-		Chain:      task.Chain,
-	}))
+	r.pushed = append(r.pushed, &pushed{
+		job:        task.Job,
+		signature:  signature,
+		args:       slices.Clone(task.Args),
+		connection: connection,
+		queue:      queue,
+		delay:      delay,
+		chain:      cloneChain(task.Chain),
+	})
 
 	return true
 }
 
-// clonePushed copies the slices of the record, so the records and the ones
-// handed out never share them with the caller.
-func clonePushed(pushed contractsqueue.Pushed) contractsqueue.Pushed {
-	pushed.Args = slices.Clone(pushed.Args)
-	pushed.Chain = slices.Clone(pushed.Chain)
-	for i := range pushed.Chain {
-		pushed.Chain[i].Args = slices.Clone(pushed.Chain[i].Args)
+func (r *Fake) fakes(signature string) bool {
+	if !r.enabled.Load() {
+		return false
+	}
+	if r.all {
+		return true
 	}
 
-	return pushed
+	return slices.ContainsFunc(r.patterns, func(pattern string) bool {
+		return matchSignature(pattern, signature)
+	})
+}
+
+// jobPattern returns what a job is looked up by: the signature of an
+// instance, or the string itself, a signature or a wildcard pattern.
+func jobPattern(job any) (string, bool) {
+	var pattern string
+	switch j := job.(type) {
+	case string:
+		pattern = j
+	case contractsqueue.Job:
+		if isNil(j) {
+			return "", false
+		}
+		pattern = j.Signature()
+	}
+
+	return pattern, pattern != ""
+}
+
+func matchSignature(pattern, signature string) bool {
+	return str.Of(signature).Is(pattern)
 }
 
 func matchesAll(pushed contractsqueue.Pushed, filters []func(pushed contractsqueue.Pushed) bool) bool {
@@ -170,4 +178,82 @@ func matchesAll(pushed contractsqueue.Pushed, filters []func(pushed contractsque
 	}
 
 	return true
+}
+
+func cloneChain(chain []contractsqueue.ChainJob) []contractsqueue.ChainJob {
+	chain = slices.Clone(chain)
+	for i := range chain {
+		chain[i].Args = slices.Clone(chain[i].Args)
+	}
+
+	return chain
+}
+
+// isNil reports whether the value is nil, a nil pointer held in an interface
+// included.
+func isNil(value any) bool {
+	if value == nil {
+		return true
+	}
+
+	rv := reflect.ValueOf(value)
+	switch rv.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return rv.IsNil()
+	default:
+		return false
+	}
+}
+
+var _ contractsqueue.Pushed = (*pushed)(nil)
+
+// pushed is a record of the fake. It is never changed once kept, and the
+// slices are handed out as copies, so a test can not change it.
+type pushed struct {
+	job        contractsqueue.Job
+	signature  string
+	args       []contractsqueue.Arg
+	connection string
+	queue      string
+	delay      time.Time
+	chain      []contractsqueue.ChainJob
+}
+
+func (r *pushed) Args() []contractsqueue.Arg {
+	return slices.Clone(r.args)
+}
+
+func (r *pushed) Chain() []contractsqueue.ChainJob {
+	return cloneChain(r.chain)
+}
+
+func (r *pushed) Connection() string {
+	return r.connection
+}
+
+func (r *pushed) Delay() time.Time {
+	return r.delay
+}
+
+func (r *pushed) HasChain(jobs ...any) bool {
+	if len(r.chain) != len(jobs) {
+		return false
+	}
+
+	for i, job := range jobs {
+		signature, ok := jobPattern(job)
+		if !ok || isNil(r.chain[i].Job) || r.chain[i].Job.Signature() != signature {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (r *pushed) Job() contractsqueue.Job {
+	return r.job
+}
+
+func (r *pushed) Queue() string {
+	return r.queue
 }

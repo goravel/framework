@@ -11,11 +11,12 @@ type Queue interface {
 	Failer() Failer
 	// Fake records the dispatched jobs instead of pushing them, until Reset
 	// is called on the returned Fake. With no jobs every job is faked;
-	// otherwise only the given ones are, by signature, and the others are
-	// still pushed. DispatchSync is not faked: it runs the job right away,
-	// like Laravel's dispatchSync. Calling it again replaces the faked jobs
-	// and keeps the records.
-	Fake(jobs ...Job) Fake
+	// otherwise only the given ones are, as instances, signatures or wildcard
+	// patterns such as "emails.*", and the others are still pushed. A chain
+	// is faked when its first job is. DispatchSync is not faked: it runs the
+	// job right away, like Laravel's dispatchSync. Calling it again replaces
+	// the faked jobs and keeps the records.
+	Fake(jobs ...any) Fake
 	// GetJob gets job by signature
 	GetJob(signature string) (Job, error)
 	// GetJobs gets all jobs

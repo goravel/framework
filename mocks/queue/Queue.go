@@ -174,13 +174,9 @@ func (_c *Queue_Failer_Call) RunAndReturn(run func() queue.Failer) *Queue_Failer
 }
 
 // Fake provides a mock function with given fields: jobs
-func (_m *Queue) Fake(jobs ...queue.Job) queue.Fake {
-	_va := make([]interface{}, len(jobs))
-	for _i := range jobs {
-		_va[_i] = jobs[_i]
-	}
+func (_m *Queue) Fake(jobs ...interface{}) queue.Fake {
 	var _ca []interface{}
-	_ca = append(_ca, _va...)
+	_ca = append(_ca, jobs...)
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
@@ -188,7 +184,7 @@ func (_m *Queue) Fake(jobs ...queue.Job) queue.Fake {
 	}
 
 	var r0 queue.Fake
-	if rf, ok := ret.Get(0).(func(...queue.Job) queue.Fake); ok {
+	if rf, ok := ret.Get(0).(func(...interface{}) queue.Fake); ok {
 		r0 = rf(jobs...)
 	} else {
 		if ret.Get(0) != nil {
@@ -205,18 +201,18 @@ type Queue_Fake_Call struct {
 }
 
 // Fake is a helper method to define mock.On call
-//   - jobs ...queue.Job
+//   - jobs ...interface{}
 func (_e *Queue_Expecter) Fake(jobs ...interface{}) *Queue_Fake_Call {
 	return &Queue_Fake_Call{Call: _e.mock.On("Fake",
 		append([]interface{}{}, jobs...)...)}
 }
 
-func (_c *Queue_Fake_Call) Run(run func(jobs ...queue.Job)) *Queue_Fake_Call {
+func (_c *Queue_Fake_Call) Run(run func(jobs ...interface{})) *Queue_Fake_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]queue.Job, len(args)-0)
+		variadicArgs := make([]interface{}, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(queue.Job)
+				variadicArgs[i] = a.(interface{})
 			}
 		}
 		run(variadicArgs...)
@@ -229,7 +225,7 @@ func (_c *Queue_Fake_Call) Return(_a0 queue.Fake) *Queue_Fake_Call {
 	return _c
 }
 
-func (_c *Queue_Fake_Call) RunAndReturn(run func(...queue.Job) queue.Fake) *Queue_Fake_Call {
+func (_c *Queue_Fake_Call) RunAndReturn(run func(...interface{}) queue.Fake) *Queue_Fake_Call {
 	_c.Call.Return(run)
 	return _c
 }

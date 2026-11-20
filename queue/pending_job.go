@@ -105,12 +105,8 @@ func (r *PendingJob) Delay(delay time.Time) contractsqueue.PendingJob {
 func (r *PendingJob) Dispatch() error {
 	// A faked job is recorded before the connection is resolved, so tests do
 	// not need the connection to be reachable, or even configured.
-	if r.fake.fakes(r.task.Job) {
-		task := r.task
-		task.Delay = r.delayedUntil()
-		if r.fake.record(task, r.connection, r.queue) {
-			return nil
-		}
+	if r.fake.record(r.task, r.delayedUntil(), r.connection, r.queue) {
+		return nil
 	}
 
 	driver, err := r.driverCreator.Create(r.connection)

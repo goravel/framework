@@ -57,13 +57,11 @@ func (r *Application) Failer() queue.Failer {
 	return NewFailer(r.config, r.db, r, r.json)
 }
 
-// Fake records the dispatched jobs instead of pushing them, until Reset is
-// called on the returned Fake. With no jobs every job is faked; otherwise
-// only the given ones are, by signature, and the others are still pushed.
-// DispatchSync is not faked: it runs the job right away, like Laravel's
-// dispatchSync. Calling it again replaces the faked jobs and keeps the
-// records.
-func (r *Application) Fake(jobs ...queue.Job) queue.Fake {
+// Fake starts faking the jobs, see queue.Queue for the accepted forms.
+func (r *Application) Fake(jobs ...any) queue.Fake {
+	if r.fake == nil {
+		r.fake = NewFake()
+	}
 	r.fake.enable(jobs)
 
 	return r.fake

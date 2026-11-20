@@ -21,7 +21,7 @@ func (_m *Fake) EXPECT() *Fake_Expecter {
 }
 
 // AssertNotPushed provides a mock function with given fields: job, assertion
-func (_m *Fake) AssertNotPushed(job queue.Job, assertion ...func(queue.Pushed) bool) bool {
+func (_m *Fake) AssertNotPushed(job interface{}, assertion ...func(queue.Pushed) bool) bool {
 	_va := make([]interface{}, len(assertion))
 	for _i := range assertion {
 		_va[_i] = assertion[_i]
@@ -36,7 +36,7 @@ func (_m *Fake) AssertNotPushed(job queue.Job, assertion ...func(queue.Pushed) b
 	}
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(queue.Job, ...func(queue.Pushed) bool) bool); ok {
+	if rf, ok := ret.Get(0).(func(interface{}, ...func(queue.Pushed) bool) bool); ok {
 		r0 = rf(job, assertion...)
 	} else {
 		r0 = ret.Get(0).(bool)
@@ -51,14 +51,14 @@ type Fake_AssertNotPushed_Call struct {
 }
 
 // AssertNotPushed is a helper method to define mock.On call
-//   - job queue.Job
+//   - job interface{}
 //   - assertion ...func(queue.Pushed) bool
 func (_e *Fake_Expecter) AssertNotPushed(job interface{}, assertion ...interface{}) *Fake_AssertNotPushed_Call {
 	return &Fake_AssertNotPushed_Call{Call: _e.mock.On("AssertNotPushed",
 		append([]interface{}{job}, assertion...)...)}
 }
 
-func (_c *Fake_AssertNotPushed_Call) Run(run func(job queue.Job, assertion ...func(queue.Pushed) bool)) *Fake_AssertNotPushed_Call {
+func (_c *Fake_AssertNotPushed_Call) Run(run func(job interface{}, assertion ...func(queue.Pushed) bool)) *Fake_AssertNotPushed_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := make([]func(queue.Pushed) bool, len(args)-1)
 		for i, a := range args[1:] {
@@ -66,7 +66,7 @@ func (_c *Fake_AssertNotPushed_Call) Run(run func(job queue.Job, assertion ...fu
 				variadicArgs[i] = a.(func(queue.Pushed) bool)
 			}
 		}
-		run(args[0].(queue.Job), variadicArgs...)
+		run(args[0].(interface{}), variadicArgs...)
 	})
 	return _c
 }
@@ -76,7 +76,7 @@ func (_c *Fake_AssertNotPushed_Call) Return(_a0 bool) *Fake_AssertNotPushed_Call
 	return _c
 }
 
-func (_c *Fake_AssertNotPushed_Call) RunAndReturn(run func(queue.Job, ...func(queue.Pushed) bool) bool) *Fake_AssertNotPushed_Call {
+func (_c *Fake_AssertNotPushed_Call) RunAndReturn(run func(interface{}, ...func(queue.Pushed) bool) bool) *Fake_AssertNotPushed_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -127,7 +127,7 @@ func (_c *Fake_AssertNothingPushed_Call) RunAndReturn(run func() bool) *Fake_Ass
 }
 
 // AssertPushed provides a mock function with given fields: job, assertion
-func (_m *Fake) AssertPushed(job queue.Job, assertion ...func(queue.Pushed) bool) bool {
+func (_m *Fake) AssertPushed(job interface{}, assertion ...func(queue.Pushed) bool) bool {
 	_va := make([]interface{}, len(assertion))
 	for _i := range assertion {
 		_va[_i] = assertion[_i]
@@ -142,7 +142,7 @@ func (_m *Fake) AssertPushed(job queue.Job, assertion ...func(queue.Pushed) bool
 	}
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(queue.Job, ...func(queue.Pushed) bool) bool); ok {
+	if rf, ok := ret.Get(0).(func(interface{}, ...func(queue.Pushed) bool) bool); ok {
 		r0 = rf(job, assertion...)
 	} else {
 		r0 = ret.Get(0).(bool)
@@ -157,14 +157,14 @@ type Fake_AssertPushed_Call struct {
 }
 
 // AssertPushed is a helper method to define mock.On call
-//   - job queue.Job
+//   - job interface{}
 //   - assertion ...func(queue.Pushed) bool
 func (_e *Fake_Expecter) AssertPushed(job interface{}, assertion ...interface{}) *Fake_AssertPushed_Call {
 	return &Fake_AssertPushed_Call{Call: _e.mock.On("AssertPushed",
 		append([]interface{}{job}, assertion...)...)}
 }
 
-func (_c *Fake_AssertPushed_Call) Run(run func(job queue.Job, assertion ...func(queue.Pushed) bool)) *Fake_AssertPushed_Call {
+func (_c *Fake_AssertPushed_Call) Run(run func(job interface{}, assertion ...func(queue.Pushed) bool)) *Fake_AssertPushed_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := make([]func(queue.Pushed) bool, len(args)-1)
 		for i, a := range args[1:] {
@@ -172,7 +172,7 @@ func (_c *Fake_AssertPushed_Call) Run(run func(job queue.Job, assertion ...func(
 				variadicArgs[i] = a.(func(queue.Pushed) bool)
 			}
 		}
-		run(args[0].(queue.Job), variadicArgs...)
+		run(args[0].(interface{}), variadicArgs...)
 	})
 	return _c
 }
@@ -182,13 +182,13 @@ func (_c *Fake_AssertPushed_Call) Return(_a0 bool) *Fake_AssertPushed_Call {
 	return _c
 }
 
-func (_c *Fake_AssertPushed_Call) RunAndReturn(run func(queue.Job, ...func(queue.Pushed) bool) bool) *Fake_AssertPushed_Call {
+func (_c *Fake_AssertPushed_Call) RunAndReturn(run func(interface{}, ...func(queue.Pushed) bool) bool) *Fake_AssertPushed_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // AssertPushedOn provides a mock function with given fields: _a0, job, assertion
-func (_m *Fake) AssertPushedOn(_a0 string, job queue.Job, assertion ...func(queue.Pushed) bool) bool {
+func (_m *Fake) AssertPushedOn(_a0 string, job interface{}, assertion ...func(queue.Pushed) bool) bool {
 	_va := make([]interface{}, len(assertion))
 	for _i := range assertion {
 		_va[_i] = assertion[_i]
@@ -203,7 +203,7 @@ func (_m *Fake) AssertPushedOn(_a0 string, job queue.Job, assertion ...func(queu
 	}
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(string, queue.Job, ...func(queue.Pushed) bool) bool); ok {
+	if rf, ok := ret.Get(0).(func(string, interface{}, ...func(queue.Pushed) bool) bool); ok {
 		r0 = rf(_a0, job, assertion...)
 	} else {
 		r0 = ret.Get(0).(bool)
@@ -219,14 +219,14 @@ type Fake_AssertPushedOn_Call struct {
 
 // AssertPushedOn is a helper method to define mock.On call
 //   - _a0 string
-//   - job queue.Job
+//   - job interface{}
 //   - assertion ...func(queue.Pushed) bool
 func (_e *Fake_Expecter) AssertPushedOn(_a0 interface{}, job interface{}, assertion ...interface{}) *Fake_AssertPushedOn_Call {
 	return &Fake_AssertPushedOn_Call{Call: _e.mock.On("AssertPushedOn",
 		append([]interface{}{_a0, job}, assertion...)...)}
 }
 
-func (_c *Fake_AssertPushedOn_Call) Run(run func(_a0 string, job queue.Job, assertion ...func(queue.Pushed) bool)) *Fake_AssertPushedOn_Call {
+func (_c *Fake_AssertPushedOn_Call) Run(run func(_a0 string, job interface{}, assertion ...func(queue.Pushed) bool)) *Fake_AssertPushedOn_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := make([]func(queue.Pushed) bool, len(args)-2)
 		for i, a := range args[2:] {
@@ -234,7 +234,7 @@ func (_c *Fake_AssertPushedOn_Call) Run(run func(_a0 string, job queue.Job, asse
 				variadicArgs[i] = a.(func(queue.Pushed) bool)
 			}
 		}
-		run(args[0].(string), args[1].(queue.Job), variadicArgs...)
+		run(args[0].(string), args[1].(interface{}), variadicArgs...)
 	})
 	return _c
 }
@@ -244,13 +244,13 @@ func (_c *Fake_AssertPushedOn_Call) Return(_a0 bool) *Fake_AssertPushedOn_Call {
 	return _c
 }
 
-func (_c *Fake_AssertPushedOn_Call) RunAndReturn(run func(string, queue.Job, ...func(queue.Pushed) bool) bool) *Fake_AssertPushedOn_Call {
+func (_c *Fake_AssertPushedOn_Call) RunAndReturn(run func(string, interface{}, ...func(queue.Pushed) bool) bool) *Fake_AssertPushedOn_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // AssertPushedTimes provides a mock function with given fields: job, times
-func (_m *Fake) AssertPushedTimes(job queue.Job, times int) bool {
+func (_m *Fake) AssertPushedTimes(job interface{}, times int) bool {
 	ret := _m.Called(job, times)
 
 	if len(ret) == 0 {
@@ -258,7 +258,7 @@ func (_m *Fake) AssertPushedTimes(job queue.Job, times int) bool {
 	}
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(queue.Job, int) bool); ok {
+	if rf, ok := ret.Get(0).(func(interface{}, int) bool); ok {
 		r0 = rf(job, times)
 	} else {
 		r0 = ret.Get(0).(bool)
@@ -273,15 +273,15 @@ type Fake_AssertPushedTimes_Call struct {
 }
 
 // AssertPushedTimes is a helper method to define mock.On call
-//   - job queue.Job
+//   - job interface{}
 //   - times int
 func (_e *Fake_Expecter) AssertPushedTimes(job interface{}, times interface{}) *Fake_AssertPushedTimes_Call {
 	return &Fake_AssertPushedTimes_Call{Call: _e.mock.On("AssertPushedTimes", job, times)}
 }
 
-func (_c *Fake_AssertPushedTimes_Call) Run(run func(job queue.Job, times int)) *Fake_AssertPushedTimes_Call {
+func (_c *Fake_AssertPushedTimes_Call) Run(run func(job interface{}, times int)) *Fake_AssertPushedTimes_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(queue.Job), args[1].(int))
+		run(args[0].(interface{}), args[1].(int))
 	})
 	return _c
 }
@@ -291,13 +291,13 @@ func (_c *Fake_AssertPushedTimes_Call) Return(_a0 bool) *Fake_AssertPushedTimes_
 	return _c
 }
 
-func (_c *Fake_AssertPushedTimes_Call) RunAndReturn(run func(queue.Job, int) bool) *Fake_AssertPushedTimes_Call {
+func (_c *Fake_AssertPushedTimes_Call) RunAndReturn(run func(interface{}, int) bool) *Fake_AssertPushedTimes_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Pushed provides a mock function with given fields: job, filter
-func (_m *Fake) Pushed(job queue.Job, filter ...func(queue.Pushed) bool) []queue.Pushed {
+func (_m *Fake) Pushed(job interface{}, filter ...func(queue.Pushed) bool) []queue.Pushed {
 	_va := make([]interface{}, len(filter))
 	for _i := range filter {
 		_va[_i] = filter[_i]
@@ -312,7 +312,7 @@ func (_m *Fake) Pushed(job queue.Job, filter ...func(queue.Pushed) bool) []queue
 	}
 
 	var r0 []queue.Pushed
-	if rf, ok := ret.Get(0).(func(queue.Job, ...func(queue.Pushed) bool) []queue.Pushed); ok {
+	if rf, ok := ret.Get(0).(func(interface{}, ...func(queue.Pushed) bool) []queue.Pushed); ok {
 		r0 = rf(job, filter...)
 	} else {
 		if ret.Get(0) != nil {
@@ -329,14 +329,14 @@ type Fake_Pushed_Call struct {
 }
 
 // Pushed is a helper method to define mock.On call
-//   - job queue.Job
+//   - job interface{}
 //   - filter ...func(queue.Pushed) bool
 func (_e *Fake_Expecter) Pushed(job interface{}, filter ...interface{}) *Fake_Pushed_Call {
 	return &Fake_Pushed_Call{Call: _e.mock.On("Pushed",
 		append([]interface{}{job}, filter...)...)}
 }
 
-func (_c *Fake_Pushed_Call) Run(run func(job queue.Job, filter ...func(queue.Pushed) bool)) *Fake_Pushed_Call {
+func (_c *Fake_Pushed_Call) Run(run func(job interface{}, filter ...func(queue.Pushed) bool)) *Fake_Pushed_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := make([]func(queue.Pushed) bool, len(args)-1)
 		for i, a := range args[1:] {
@@ -344,7 +344,7 @@ func (_c *Fake_Pushed_Call) Run(run func(job queue.Job, filter ...func(queue.Pus
 				variadicArgs[i] = a.(func(queue.Pushed) bool)
 			}
 		}
-		run(args[0].(queue.Job), variadicArgs...)
+		run(args[0].(interface{}), variadicArgs...)
 	})
 	return _c
 }
@@ -354,7 +354,7 @@ func (_c *Fake_Pushed_Call) Return(_a0 []queue.Pushed) *Fake_Pushed_Call {
 	return _c
 }
 
-func (_c *Fake_Pushed_Call) RunAndReturn(run func(queue.Job, ...func(queue.Pushed) bool) []queue.Pushed) *Fake_Pushed_Call {
+func (_c *Fake_Pushed_Call) RunAndReturn(run func(interface{}, ...func(queue.Pushed) bool) []queue.Pushed) *Fake_Pushed_Call {
 	_c.Call.Return(run)
 	return _c
 }
