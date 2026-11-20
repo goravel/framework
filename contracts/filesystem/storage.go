@@ -13,7 +13,12 @@ type Storage interface {
 	// local disk in a new empty temporary directory, until Reset is called
 	// on the returned Fake. The disk does not need to be configured; its
 	// url is kept, so Url builds the same links. Only the first disk is
-	// used. Faking a disk again replaces its fake with a new empty one.
+	// used. Faking a disk again replaces its fake with a new empty one,
+	// which then restores the disk on its own Reset.
+	//
+	// Fake and Reset are meant for the setup and the teardown of a test:
+	// they must not run while another goroutine uses the default disk
+	// through Storage.
 	Fake(disk ...string) Fake
 }
 
@@ -32,7 +37,8 @@ type Fake interface {
 	// exists.
 	AssertMissing(path ...string) bool
 	// Reset restores the disk the fake replaced and removes the temporary
-	// directory. Call it when the test ends, e.g. with t.Cleanup.
+	// directory, reporting why the directory could not be removed. Call it
+	// when the test ends, e.g. t.Cleanup(func() { _ = fake.Reset() }).
 	Reset() error
 }
 

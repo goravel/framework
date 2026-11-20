@@ -2,6 +2,7 @@ package filesystem
 
 import (
 	"os"
+	"path/filepath"
 	"sync"
 	"testing"
 
@@ -12,6 +13,8 @@ import (
 )
 
 func newFakeTestStorage(t *testing.T) (*Storage, string) {
+	t.Helper()
+
 	root := t.TempDir()
 	config := mocksconfig.NewConfig(t)
 	config.EXPECT().GetString("filesystems.default").Return("local").Once()
@@ -36,7 +39,7 @@ func TestFake_ReplacesTheDefaultDisk(t *testing.T) {
 	assert.NoError(t, storage.Put("avatars/1.png", "image"))
 	assert.NoError(t, storage.Disk("local").Put("avatars/2.png", "image"))
 
-	assert.NoFileExists(t, root+"/avatars/1.png")
+	assert.NoFileExists(t, filepath.Join(root, "avatars", "1.png"))
 	assert.True(t, fake.AssertExists("avatars/1.png", "avatars/2.png", "avatars"))
 	assert.False(t, fake.AssertExists("avatars/1.png", "avatars/3.png"))
 	assert.True(t, fake.AssertMissing("avatars/3.png", "other"))
@@ -116,6 +119,34 @@ func TestFake_ConcurrentDisk(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+}
+
+func TestStorage_ConcurrentDiskLoadsOnce(t *testing.T) {
+	storage, _ := newFakeTestStorage(t)
+	config := storage.config.(*mocksconfig.Config)
+	config.EXPECT().GetString("filesystems.disks.backup.driver").Return("local").Maybe()
+	config.EXPECT().GetString("filesystems.disks.backup.root").Return(t.TempDir()).Maybe()
+	config.EXPECT().GetString("filesystems.disks.backup.url").Return("").Maybe()
+
+	const callers = 20
+	var (
+		wg      sync.WaitGroup
+		drivers = make([]any, callers)
+	)
+	for i := range callers {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			drivers[i] = storage.Disk("backup")
+		}()
+	}
+	wg.Wait()
+
+	// Every caller gets the driver that was stored, even the ones that
+	// loaded their own meanwhile.
+	for _, driver := range drivers {
+		assert.Same(t, drivers[0], driver)
+	}
 }
 
 func TestFake_RootIsATemporaryDirectory(t *testing.T) {

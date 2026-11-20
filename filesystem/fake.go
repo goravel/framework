@@ -1,7 +1,6 @@
 package filesystem
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/goravel/framework/contracts/filesystem"
@@ -78,26 +77,26 @@ func (r *Storage) Fake(disk ...string) filesystem.Fake {
 	}
 
 	fake := &Fake{
-		Local: &Local{
-			config: r.config,
-			root:   root,
-			url:    r.config.GetString(fmt.Sprintf("filesystems.disks.%s.url", name)),
-		},
+		Local:   newLocalWithRoot(r.config, name, root),
 		storage: r,
 		disk:    name,
 	}
 
 	r.mu.Lock()
-	defer r.mu.Unlock()
-
 	fake.original = r.drivers[name]
-	if previous, ok := fake.original.(*Fake); ok {
-		// The previous fake is replaced, Reset restores what it replaced.
+	previous, replacesFake := fake.original.(*Fake)
+	if replacesFake {
+		// The new fake takes over the driver the previous fake replaced, so
+		// its own Reset restores it, and the previous fake's Reset does
+		// nothing from here on.
 		fake.original = previous.original
+	}
+	r.setDriverLocked(name, fake)
+	r.mu.Unlock()
+
+	if replacesFake {
 		_ = os.RemoveAll(previous.root)
 	}
-
-	r.setDriverLocked(name, fake)
 
 	return fake
 }
