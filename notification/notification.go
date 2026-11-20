@@ -64,10 +64,8 @@ func (m *Manager) Send(
 	notifiable contractsnotification.Notifiable,
 	n contractsnotification.Notification,
 ) error {
-	if m.fake.isEnabled() {
-		_, queued := n.(contractsnotification.ShouldQueue)
-		m.fake.record(notifiable, n, queued)
-
+	_, shouldQueue := n.(contractsnotification.ShouldQueue)
+	if m.fake.record(notifiable, n, shouldQueue && m.queue != nil) {
 		return nil
 	}
 
@@ -81,9 +79,7 @@ func (m *Manager) SendNow(
 	notifiable contractsnotification.Notifiable,
 	n contractsnotification.Notification,
 ) error {
-	if m.fake.isEnabled() {
-		m.fake.record(notifiable, n, false)
-
+	if m.fake.record(notifiable, n, false) {
 		return nil
 	}
 

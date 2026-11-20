@@ -39,22 +39,31 @@ func TestFake_RecordsInsteadOfDelivering(t *testing.T) {
 	// A model loaded again matches by its primary key.
 	assert.True(t, fake.AssertSentTo(&fakeUser{ID: "1"}, (*fakeNotification)(nil)))
 	assert.True(t, fake.AssertSentTo(user, &fakeNotification{}, func(sent contractsnotification.Sent) bool {
-		return sent.HasChannel("a") && !sent.Queued
+		return sent.HasChannel("a") && !sent.Queued()
 	}))
 	assert.False(t, fake.AssertSentTo(user, &fakeNotification{}, func(sent contractsnotification.Sent) bool {
 		return sent.HasChannel("b")
 	}))
 	assert.True(t, fake.AssertSentTo(user, &shouldQueueNotification{}, func(sent contractsnotification.Sent) bool {
-		return sent.Queued && sent.HasChannel("b")
+		return sent.Queued() && sent.HasChannel("b")
 	}))
 	assert.True(t, fake.AssertSentTo(user, &shouldQueueNotification{}, func(sent contractsnotification.Sent) bool {
-		return !sent.Queued && sent.HasChannel("a")
+		return !sent.Queued() && sent.HasChannel("a")
 	}))
 	assert.True(t, fake.AssertNotSentTo(&fakeUser{ID: "2"}, &fakeNotification{}))
+	assert.False(t, fake.AssertNotSentTo(user, &fakeNotification{}))
+	assert.False(t, fake.AssertNotSentTo(user, &fakeNotification{}, func(sent contractsnotification.Sent) bool {
+		return sent.HasChannel("a")
+	}))
+	assert.True(t, fake.AssertNotSentTo(user, &fakeNotification{}, func(sent contractsnotification.Sent) bool {
+		return sent.HasChannel("b")
+	}))
 	assert.True(t, fake.AssertNotSentTo(user, &afterSendingNotification{}))
 	assert.True(t, fake.AssertNothingSentTo(&fakeUser{ID: "2"}))
 	assert.False(t, fake.AssertNothingSentTo(user))
 	assert.True(t, fake.AssertSentTimes(&shouldQueueNotification{}, 2))
+	assert.False(t, fake.AssertSentTimes(&shouldQueueNotification{}, 1))
+	assert.False(t, fake.AssertCount(2))
 	assert.Len(t, fake.Sent(&fakeNotification{}), 1)
 	assert.Nil(t, fake.Sent(nil))
 }
@@ -69,8 +78,19 @@ func TestFake_ComparesOtherNotifiablesDeeply(t *testing.T) {
 	assert.True(t, fake.AssertSentTo(&fakeNotifiable{email: "ana@example.com"}, &fakeNotification{}))
 	assert.False(t, fake.AssertSentTo(&fakeNotifiable{email: "bob@example.com"}, &fakeNotification{}))
 	assert.True(t, fake.AssertSentTo(queueTestNotifiable{}, &fakeNotification{}))
-	// A user without a primary key is compared deeply too.
-	assert.False(t, fake.AssertSentTo(&fakeUser{}, &fakeNotification{}))
+	assert.False(t, fake.AssertSentTo(nil, &fakeNotification{}))
+}
+
+func TestFake_ComparesUnsavedModelsDeeply(t *testing.T) {
+	mgr := NewManager(mockslog.NewLog(t), nil)
+	fake := mgr.Fake()
+
+	// Without a primary key there is no route to compare, so the whole user is.
+	assert.NoError(t, mgr.Send(&fakeUser{Email: "ana@example.com"}, &fakeNotification{channels: []string{"a"}}))
+
+	assert.True(t, fake.AssertSentTo(&fakeUser{Email: "ana@example.com"}, &fakeNotification{}))
+	assert.False(t, fake.AssertSentTo(&fakeUser{Email: "bob@example.com"}, &fakeNotification{}))
+	assert.False(t, fake.AssertSentTo(&fakeUser{ID: "1", Email: "ana@example.com"}, &fakeNotification{}))
 	assert.False(t, fake.AssertSentTo(nil, &fakeNotification{}))
 }
 
@@ -86,7 +106,7 @@ func TestFake_LeavesOutChannelsShouldSendRejects(t *testing.T) {
 
 	sent := fake.Sent(&shouldSendNotification{})
 	assert.Len(t, sent, 1)
-	assert.Equal(t, []string{"a"}, sent[0].Channels)
+	assert.Equal(t, []string{"a"}, sent[0].Channels())
 	assert.True(t, fake.AssertCount(1))
 }
 
@@ -98,12 +118,24 @@ func TestFake_OnDemand(t *testing.T) {
 	assert.NoError(t, mgr.Send(&fakeUser{ID: "1"}, &shouldQueueNotification{channels: []string{"mail"}}))
 
 	assert.True(t, fake.AssertSentOnDemand(&fakeNotification{}, func(sent contractsnotification.Sent) bool {
-		return sent.Notifiable.RouteNotificationFor("mail") == "ana@example.com"
+		return sent.Notifiable().RouteNotificationFor("mail") == "ana@example.com"
 	}))
 	assert.False(t, fake.AssertSentOnDemand(&fakeNotification{}, func(sent contractsnotification.Sent) bool {
-		return sent.Notifiable.RouteNotificationFor("mail") == "bob@example.com"
+		return sent.Notifiable().RouteNotificationFor("mail") == "bob@example.com"
 	}))
 	assert.False(t, fake.AssertSentOnDemand(&shouldQueueNotification{}))
+}
+
+func TestFake_QueuedNeedsAQueue(t *testing.T) {
+	mgr := NewManager(mockslog.NewLog(t), nil)
+	fake := mgr.Fake()
+
+	// Without a queue a ShouldQueue notification is delivered right away.
+	assert.NoError(t, mgr.Send(&fakeUser{ID: "1"}, &shouldQueueNotification{channels: []string{"a"}}))
+
+	assert.True(t, fake.AssertSentTo(&fakeUser{ID: "1"}, &shouldQueueNotification{}, func(sent contractsnotification.Sent) bool {
+		return !sent.Queued()
+	}))
 }
 
 func TestFake_CallingFakeAgainKeepsTheRecords(t *testing.T) {
@@ -138,7 +170,7 @@ func TestFake_RecordsAreCopies(t *testing.T) {
 	assert.NoError(t, mgr.Send(&fakeUser{ID: "1"}, notification))
 
 	notification.channels[0] = "changed"
-	fake.Sent(notification)[0].Channels[0] = "changed"
+	fake.Sent(notification)[0].Channels()[0] = "changed"
 
 	assert.True(t, fake.AssertSentTo(&fakeUser{ID: "1"}, notification, func(sent contractsnotification.Sent) bool {
 		return sent.HasChannel("a")

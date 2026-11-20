@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"slices"
 	"sync"
+	"sync/atomic"
 
 	contractsnotification "github.com/goravel/framework/contracts/notification"
 )
@@ -15,8 +16,8 @@ var _ contractsnotification.Fake = (*Fake)(nil)
 // through the facade sees it.
 type Fake struct {
 	mu      sync.RWMutex
-	enabled bool
-	sent    []contractsnotification.Sent
+	enabled atomic.Bool
+	sent    []*sent
 }
 
 func NewFake() *Fake {
@@ -24,7 +25,10 @@ func NewFake() *Fake {
 }
 
 func (r *Fake) AssertCount(count int) bool {
-	return len(r.all()) == count
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	return len(r.sent) == count
 }
 
 func (r *Fake) AssertNothingSent() bool {
@@ -32,8 +36,8 @@ func (r *Fake) AssertNothingSent() bool {
 }
 
 func (r *Fake) AssertNothingSentTo(notifiable contractsnotification.Notifiable) bool {
-	return !slices.ContainsFunc(r.all(), func(sent contractsnotification.Sent) bool {
-		return sameNotifiable(sent.Notifiable, notifiable)
+	return !slices.ContainsFunc(r.records(), func(record *sent) bool {
+		return sameNotifiable(record.notifiable, notifiable)
 	})
 }
 
@@ -43,7 +47,7 @@ func (r *Fake) AssertNotSentTo(notifiable contractsnotification.Notifiable, noti
 
 func (r *Fake) AssertSentOnDemand(notification contractsnotification.Notification, assertion ...func(sent contractsnotification.Sent) bool) bool {
 	onDemand := func(sent contractsnotification.Sent) bool {
-		_, ok := sent.Notifiable.(contractsnotification.OnDemandNotifiable)
+		_, ok := sent.Notifiable().(contractsnotification.OnDemandNotifiable)
 		return ok
 	}
 
@@ -56,7 +60,7 @@ func (r *Fake) AssertSentTimes(notification contractsnotification.Notification, 
 
 func (r *Fake) AssertSentTo(notifiable contractsnotification.Notifiable, notification contractsnotification.Notification, assertion ...func(sent contractsnotification.Sent) bool) bool {
 	to := func(sent contractsnotification.Sent) bool {
-		return sameNotifiable(sent.Notifiable, notifiable)
+		return sameNotifiable(sent.Notifiable(), notifiable)
 	}
 
 	return len(r.Sent(notification, append([]func(sent contractsnotification.Sent) bool{to}, assertion...)...)) > 0
@@ -68,11 +72,12 @@ func (r *Fake) Sent(notification contractsnotification.Notification, filter ...f
 		return nil
 	}
 
-	// Filters run without the lock, so they may call the fake again.
-	records := r.all()
-	result := make([]contractsnotification.Sent, 0, len(records))
-	for _, record := range records {
-		if elemType(reflect.TypeOf(record.Notification)) != notificationType {
+	// Filters run without the lock, so they may call the fake again. The
+	// records are never changed once kept, so they can be handed out as they
+	// are.
+	var result []contractsnotification.Sent
+	for _, record := range r.records() {
+		if elemType(reflect.TypeOf(record.notification)) != notificationType {
 			continue
 		}
 
@@ -81,72 +86,65 @@ func (r *Fake) Sent(notification contractsnotification.Notification, filter ...f
 		}
 	}
 
-	return slices.Clip(result)
+	return result
 }
 
 func (r *Fake) Reset() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.enabled = false
+	r.enabled.Store(false)
 	r.sent = nil
 }
 
-// all returns copies of every record.
-func (r *Fake) all() []contractsnotification.Sent {
+// records returns a snapshot of the records.
+func (r *Fake) records() []*sent {
 	r.mu.RLock()
-	records := slices.Clone(r.sent)
-	r.mu.RUnlock()
+	defer r.mu.RUnlock()
 
-	for i := range records {
-		records[i].Channels = slices.Clone(records[i].Channels)
-	}
-
-	return records
+	return slices.Clone(r.sent)
 }
 
 // enable starts faking. It is idempotent: while faking, the records are kept.
 func (r *Fake) enable() {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	r.enabled = true
-}
-
-func (r *Fake) isEnabled() bool {
-	if r == nil {
-		return false
-	}
-
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	return r.enabled
+	r.enabled.Store(true)
 }
 
 // record keeps the notification with the channels it would have been sent
 // through, like Laravel's fake: the ones ShouldSend rejects are left out,
-// and nothing is recorded when no channel is left.
-func (r *Fake) record(notifiable contractsnotification.Notifiable, notification contractsnotification.Notification, queued bool) {
-	channels := notification.Via(notifiable)
+// and nothing is recorded when no channel is left. It reports whether the
+// fake took the notification, in which case it must not be delivered. It
+// decides and records under one lock, so a send racing Reset is either
+// recorded before the records are cleared or delivered.
+func (r *Fake) record(notifiable contractsnotification.Notifiable, notification contractsnotification.Notification, queued bool) bool {
+	if r == nil || !r.enabled.Load() {
+		return false
+	}
+
+	// Via and ShouldSend are user code, so they run without the lock.
+	channels := slices.Clone(notification.Via(notifiable))
 	if shouldSend, ok := notification.(contractsnotification.NotificationWithShouldSend); ok {
-		channels = slices.DeleteFunc(slices.Clone(channels), func(channel string) bool {
+		channels = slices.DeleteFunc(channels, func(channel string) bool {
 			return !shouldSend.ShouldSend(notifiable, channel)
 		})
-	}
-	if len(channels) == 0 {
-		return
 	}
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.sent = append(r.sent, contractsnotification.Sent{
-		Notifiable:   notifiable,
-		Notification: notification,
-		Channels:     slices.Clone(channels),
-		Queued:       queued,
-	})
+	if !r.enabled.Load() {
+		return false
+	}
+	if len(channels) > 0 {
+		r.sent = append(r.sent, &sent{
+			notifiable:   notifiable,
+			notification: notification,
+			channels:     channels,
+			queued:       queued,
+		})
+	}
+
+	return true
 }
 
 // sameNotifiable reports whether both notifiables are the same recipient:
@@ -185,4 +183,35 @@ func matchesAll(sent contractsnotification.Sent, filters []func(sent contractsno
 	}
 
 	return true
+}
+
+var _ contractsnotification.Sent = (*sent)(nil)
+
+// sent is a record of the fake. It is never changed once kept, and Channels
+// hands out a copy, so a test can not change it.
+type sent struct {
+	notifiable   contractsnotification.Notifiable
+	notification contractsnotification.Notification
+	channels     []string
+	queued       bool
+}
+
+func (r *sent) Channels() []string {
+	return slices.Clone(r.channels)
+}
+
+func (r *sent) HasChannel(channel string) bool {
+	return slices.Contains(r.channels, channel)
+}
+
+func (r *sent) Notifiable() contractsnotification.Notifiable {
+	return r.notifiable
+}
+
+func (r *sent) Notification() contractsnotification.Notification {
+	return r.notification
+}
+
+func (r *sent) Queued() bool {
+	return r.queued
 }
