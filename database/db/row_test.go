@@ -4,6 +4,8 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -1414,8 +1416,8 @@ func TestScan_ToScanner(t *testing.T) {
 				result := target.(*struct {
 					CreatedAt carbon.DateTime
 				})
-				// When source is time.Time, f != reflect.TypeOf(time.Time{}) is false,
-				// so ToScannerHookFunc does NOT skip and continues processing
+				// ToScannerHookFunc only skips time.Time and gorm.DeletedAt targets, so a time.Time
+				// source still reaches the carbon.DateTime target.
 				assert.False(t, result.CreatedAt.IsZero())
 			},
 		},
@@ -1916,5 +1918,164 @@ func TestScan_ToTime(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestMatchName(t *testing.T) {
+	tests := []struct {
+		name      string
+		mapKey    string
+		fieldName string
+		want      bool
+	}{
+		{name: "identical", mapKey: "id", fieldName: "id", want: true},
+		{name: "same name different case", mapKey: "id", fieldName: "ID", want: true},
+		{name: "snake case column", mapKey: "created_at", fieldName: "CreatedAt", want: true},
+		{name: "acronym field", mapKey: "user_id", fieldName: "UserID", want: true},
+		{name: "acronym field same case", mapKey: "UserID", fieldName: "UserID", want: true},
+		{name: "different field", mapKey: "created_at", fieldName: "UpdatedAt", want: false},
+		{name: "empty field", mapKey: "name", fieldName: "", want: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, matchName(tt.mapKey, tt.fieldName))
+		})
+	}
+}
+
+func TestStudlyName(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{input: "id", want: "Id"},
+		{input: "user_id", want: "UserId"},
+		{input: "created_at", want: "CreatedAt"},
+		{input: "url_value", want: "UrlValue"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.want, studlyName(tt.input))
+
+			// The conversion is memoised, so the name is in the cache after the first call.
+			converted, ok := studlyNames.load(tt.input)
+			assert.True(t, ok)
+			assert.Equal(t, tt.want, converted)
+		})
+	}
+}
+
+func TestSnakeName(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{input: "ID", want: "id"},
+		{input: "UserID", want: "user_id"},
+		{input: "CreatedAt", want: "created_at"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.want, snakeName(tt.input))
+
+			// The conversion is memoised, so the name is in the cache after the first call.
+			converted, ok := snakeNames.load(tt.input)
+			assert.True(t, ok)
+			assert.Equal(t, tt.want, converted)
+		})
+	}
+}
+
+func TestNameCache(t *testing.T) {
+	cache := newNameCache()
+
+	_, ok := cache.load("user_id")
+	assert.False(t, ok, "an unknown name misses")
+
+	cache.store("user_id", "UserId")
+	converted, ok := cache.load("user_id")
+	assert.True(t, ok)
+	assert.Equal(t, "UserId", converted)
+
+	// The cache stops growing once it reaches the bound.
+	for i := 0; i < maxNameCacheEntries+10; i++ {
+		cache.store(fmt.Sprintf("name_%d", i), fmt.Sprintf("Name%d", i))
+	}
+
+	assert.Len(t, cache.m, maxNameCacheEntries)
+}
+
+func TestScanConcurrent(t *testing.T) {
+	now := time.Now()
+	type User struct {
+		ID        int
+		Name      string
+		CreatedAt time.Time
+	}
+
+	row := NewRow(map[string]any{"id": 1, "name": "goravel", "created_at": now}, nil)
+
+	var wg sync.WaitGroup
+	for i := 0; i < 16; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			var user User
+			assert.NoError(t, row.Scan(&user))
+			assert.Equal(t, 1, user.ID)
+			assert.Equal(t, "goravel", user.Name)
+			assert.True(t, user.CreatedAt.Equal(now))
+		}()
+	}
+	wg.Wait()
+}
+
+func TestScanNamedTypeDoesNotPanic(t *testing.T) {
+	type Status string
+
+	t.Run("named string to time.Time", func(t *testing.T) {
+		target := &struct {
+			CreatedAt time.Time
+		}{}
+
+		err := NewRow(map[string]any{"created_at": Status("2026-01-01T00:00:00Z")}, nil).Scan(target)
+		assert.Error(t, err)
+	})
+
+	t.Run("named string to gorm.DeletedAt", func(t *testing.T) {
+		target := &struct {
+			DeletedAt gorm.DeletedAt
+		}{}
+
+		err := NewRow(map[string]any{"deleted_at": Status("2026-01-01T00:00:00Z")}, nil).Scan(target)
+		assert.Error(t, err)
+	})
+}
+
+func BenchmarkRowScan(b *testing.B) {
+	type User struct {
+		ID        int
+		Name      string
+		Email     string
+		CreatedAt time.Time
+	}
+
+	row := NewRow(map[string]any{
+		"id":         1,
+		"name":       "goravel",
+		"email":      "goravel@example.com",
+		"created_at": time.Now(),
+	}, nil)
+
+	b.ReportAllocs()
+	for b.Loop() {
+		var user User
+		if err := row.Scan(&user); err != nil {
+			b.Fatal(err)
+		}
 	}
 }
