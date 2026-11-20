@@ -12,6 +12,7 @@ import (
 type Manager struct {
 	mu       sync.RWMutex
 	channels map[string]contractsnotification.Channel
+	fake     *Fake
 	log      log.Log
 	queue    queue.Queue
 }
@@ -19,6 +20,7 @@ type Manager struct {
 func NewManager(logger log.Log, q queue.Queue) *Manager {
 	return &Manager{
 		channels: make(map[string]contractsnotification.Channel),
+		fake:     NewFake(),
 		log:      logger,
 		queue:    q,
 	}
@@ -42,6 +44,15 @@ func (m *Manager) Channel(name string) contractsnotification.Channel {
 	return ch
 }
 
+// Fake records the notifications sent through Send, SendNow and Route
+// instead of delivering them, until Reset is called on the returned Fake.
+// Calling it again while faking keeps the records.
+func (m *Manager) Fake() contractsnotification.Fake {
+	m.fake.enable()
+
+	return m.fake
+}
+
 func (m *Manager) Route(channel string, route any) contractsnotification.OnDemandNotifiable {
 	return &onDemandNotifiable{
 		manager: m,
@@ -53,6 +64,11 @@ func (m *Manager) Send(
 	notifiable contractsnotification.Notifiable,
 	n contractsnotification.Notification,
 ) error {
+	_, shouldQueue := n.(contractsnotification.ShouldQueue)
+	if m.fake.record(notifiable, n, shouldQueue && m.queue != nil) {
+		return nil
+	}
+
 	if sq, ok := n.(contractsnotification.ShouldQueue); ok && m.queue != nil {
 		return m.dispatchQueued(notifiable, n, sq)
 	}
@@ -63,6 +79,10 @@ func (m *Manager) SendNow(
 	notifiable contractsnotification.Notifiable,
 	n contractsnotification.Notification,
 ) error {
+	if m.fake.record(notifiable, n, false) {
+		return nil
+	}
+
 	return m.dispatchSync(notifiable, n)
 }
 
