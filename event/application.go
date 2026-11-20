@@ -32,11 +32,7 @@ func NewApplication(queue contractsqueue.Queue) *Application {
 	return app
 }
 
-// Fake records the dispatched events instead of calling their listeners,
-// until Reset is called on the returned Fake. With no events every event is
-// faked; otherwise only the given ones are, as names, instances or wildcard
-// patterns, and the others still reach their listeners. Calling it again
-// replaces the faked events and keeps the records.
+// Fake starts faking the events, see event.Instance for the accepted forms.
 func (app *Application) Fake(events ...any) event.Fake {
 	app.fake.enable(events)
 
@@ -76,13 +72,11 @@ func (app *Application) Job(e event.Event, args []event.Arg) event.Task {
 		return newFailedTask(err)
 	}
 
-	return &fakeableTask{
-		fake:  app.fake,
-		event: e,
-		name:  name,
-		args:  args,
-		task:  newTask(app.queue, args, e, app.prepareListeners(name)),
-	}
+	// The fake is consulted when the task is dispatched, like Dispatch does.
+	task := newTask(app.queue, args, e, app.prepareListeners(name))
+	task.fake = app.fake
+
+	return task
 }
 
 // Register registers events and their listeners, the listeners are also

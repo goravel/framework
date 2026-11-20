@@ -25,18 +25,22 @@ func TestFake_RecordsInsteadOfCallingListeners(t *testing.T) {
 	assert.Empty(t, listener.args)
 	assert.True(t, fake.AssertDispatched(&userCreated{}))
 	assert.True(t, fake.AssertDispatched((*userCreated)(nil), func(dispatched event.Dispatched) bool {
-		return dispatched.Event == evt && dispatched.HasArg("goravel")
+		return dispatched.Event() == evt && dispatched.HasArg("goravel")
 	}))
 	assert.False(t, fake.AssertDispatched(&userCreated{}, func(dispatched event.Dispatched) bool {
 		return dispatched.HasArg("other")
 	}))
 	assert.True(t, fake.AssertNotDispatched(&userUpdated{}))
+	assert.False(t, fake.AssertNotDispatched(&userCreated{}))
 	assert.True(t, fake.AssertDispatchedTimes(&userCreated{}, 1))
+	assert.False(t, fake.AssertDispatchedTimes(&userCreated{}, 0))
+	assert.False(t, fake.AssertDispatchedTimes(&userCreated{}, 2))
 	assert.False(t, fake.AssertNothingDispatched())
 
 	dispatched := fake.Dispatched(&userCreated{})
 	assert.Len(t, dispatched, 1)
-	assert.Equal(t, typeName(reflect.TypeOf(evt)), dispatched[0].Name)
+	assert.Equal(t, typeName(reflect.TypeOf(evt)), dispatched[0].Name())
+	assert.Equal(t, []event.Arg{{Type: "string", Value: "goravel"}}, dispatched[0].Args())
 	assert.Equal(t, "goravel", dispatched[0].Arg(0))
 	assert.Nil(t, dispatched[0].Arg(1))
 }
@@ -162,6 +166,18 @@ func TestFake_Job(t *testing.T) {
 	assert.Len(t, listener.args, 1)
 }
 
+func TestFake_NewTaskIsNotFaked(t *testing.T) {
+	app := newFakeTestApp(t)
+	fake := app.Fake()
+	listener := &recordingListener{signature: "listener"}
+
+	// A task built by hand belongs to no Application, so no fake sees it.
+	assert.NoError(t, NewTask(nil, nil, &userCreated{}, []event.Listener{listener}).Dispatch())
+
+	assert.Len(t, listener.args, 1)
+	assert.True(t, fake.AssertNothingDispatched())
+}
+
 func TestFake_AssertListening(t *testing.T) {
 	app := newFakeTestApp(t)
 	listener := &recordingListener{signature: "created"}
@@ -178,6 +194,8 @@ func TestFake_AssertListening(t *testing.T) {
 	assert.False(t, fake.AssertListening("user.deleted", ""))
 	assert.False(t, fake.AssertListening("user.deleted", func(evt any, args ...any) error { return nil }))
 	assert.False(t, fake.AssertListening(123, listener))
+	assert.False(t, fake.AssertListening(&userCreated{}, (*recordingListener)(nil)))
+	assert.False(t, fake.AssertListening(&userCreated{}, nil))
 }
 
 func TestFake_RecordsAreCopies(t *testing.T) {
@@ -189,7 +207,7 @@ func TestFake_RecordsAreCopies(t *testing.T) {
 	args[0].Value = "changed"
 
 	dispatched := fake.Dispatched("app.started")
-	dispatched[0].Args[0].Value = "changed"
+	dispatched[0].Args()[0].Value = "changed"
 
 	assert.True(t, fake.AssertDispatched("app.started", func(dispatched event.Dispatched) bool {
 		return dispatched.HasArg("goravel")
@@ -228,7 +246,7 @@ func TestFake_Concurrent(t *testing.T) {
 }
 
 func TestDispatched_HasArgComparesUncomparableValues(t *testing.T) {
-	dispatched := event.Dispatched{Args: []event.Arg{{Value: []string{"a"}}}}
+	dispatched := &dispatched{args: []event.Arg{{Value: []string{"a"}}}}
 
 	assert.True(t, dispatched.HasArg([]string{"a"}))
 	assert.False(t, dispatched.HasArg([]string{"b"}))

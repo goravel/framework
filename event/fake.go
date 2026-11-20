@@ -1,8 +1,10 @@
 package event
 
 import (
+	"reflect"
 	"slices"
 	"sync"
+	"sync/atomic"
 
 	"github.com/goravel/framework/contracts/event"
 )
@@ -15,10 +17,10 @@ var _ event.Fake = (*Fake)(nil)
 type Fake struct {
 	app        *Application
 	mu         sync.RWMutex
-	enabled    bool
+	enabled    atomic.Bool
 	all        bool
 	patterns   []string
-	dispatched []event.Dispatched
+	dispatched []*dispatched
 }
 
 func newFake(app *Application) *Fake {
@@ -44,7 +46,7 @@ func (r *Fake) AssertListening(evt any, target any) bool {
 	case string:
 		signature = l
 	case event.Listener:
-		if l == nil {
+		if isNil(l) {
 			return false
 		}
 		signature = l.Signature()
@@ -78,31 +80,28 @@ func (r *Fake) Dispatched(evt any, filter ...func(dispatched event.Dispatched) b
 		return nil
 	}
 
+	// The records are never changed once kept, so they can be handed out
+	// as they are.
+	var records []event.Dispatched
 	r.mu.RLock()
-	records := slices.Clone(r.dispatched)
+	for _, record := range r.dispatched {
+		if matchWildcard(pattern, record.name) {
+			records = append(records, record)
+		}
+	}
 	r.mu.RUnlock()
 
 	// Filters run without the lock, so they may call the fake again.
-	result := make([]event.Dispatched, 0, len(records))
-	for _, record := range records {
-		if !matchWildcard(pattern, record.Name) {
-			continue
-		}
-
-		record.Args = slices.Clone(record.Args)
-		if matchesAll(record, filter) {
-			result = append(result, record)
-		}
-	}
-
-	return slices.Clip(result)
+	return slices.DeleteFunc(records, func(record event.Dispatched) bool {
+		return !matchesAll(record, filter)
+	})
 }
 
 func (r *Fake) Reset() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.enabled = false
+	r.enabled.Store(false)
 	r.all = false
 	r.patterns = nil
 	r.dispatched = nil
@@ -124,15 +123,16 @@ func (r *Fake) enable(events []any) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.enabled = true
+	r.enabled.Store(true)
 	r.all = len(events) == 0
 	r.patterns = patterns
 }
 
 // record keeps the dispatch when the event is faked, and reports whether it
-// did, in which case the listeners must not be called.
+// did, in which case the listeners must not be called. It takes no lock while
+// nothing is faked, so dispatching outside of tests stays lock free.
 func (r *Fake) record(evt any, name string, args []event.Arg) bool {
-	if r == nil {
+	if r == nil || !r.enabled.Load() {
 		return false
 	}
 
@@ -143,17 +143,17 @@ func (r *Fake) record(evt any, name string, args []event.Arg) bool {
 		return false
 	}
 
-	r.dispatched = append(r.dispatched, event.Dispatched{
-		Event: evt,
-		Name:  name,
-		Args:  slices.Clone(args),
+	r.dispatched = append(r.dispatched, &dispatched{
+		event: evt,
+		name:  name,
+		args:  slices.Clone(args),
 	})
 
 	return true
 }
 
 func (r *Fake) fakes(name string) bool {
-	if !r.enabled {
+	if !r.enabled.Load() {
 		return false
 	}
 	if r.all {
@@ -175,20 +175,54 @@ func matchesAll(dispatched event.Dispatched, filters []func(dispatched event.Dis
 	return true
 }
 
-// fakeableTask is the task Job returns. Whether the event is faked is decided
-// when the task is dispatched, like Dispatch does.
-type fakeableTask struct {
-	fake  *Fake
-	event event.Event
-	name  string
-	args  []event.Arg
-	task  event.Task
+// isNil reports whether the value is nil, a nil pointer held in an interface
+// included.
+func isNil(value any) bool {
+	if value == nil {
+		return true
+	}
+
+	rv := reflect.ValueOf(value)
+	switch rv.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return rv.IsNil()
+	default:
+		return false
+	}
 }
 
-func (r *fakeableTask) Dispatch() error {
-	if r.fake.record(r.event, r.name, r.args) {
+var _ event.Dispatched = (*dispatched)(nil)
+
+// dispatched is a record of the fake. It is never changed once kept, and Args
+// hands out a copy, so a test can not change it.
+type dispatched struct {
+	event any
+	name  string
+	args  []event.Arg
+}
+
+func (r *dispatched) Arg(index int) any {
+	if index < 0 || index >= len(r.args) {
 		return nil
 	}
 
-	return r.task.Dispatch()
+	return r.args[index].Value
+}
+
+func (r *dispatched) Args() []event.Arg {
+	return slices.Clone(r.args)
+}
+
+func (r *dispatched) Event() any {
+	return r.event
+}
+
+func (r *dispatched) HasArg(value any) bool {
+	return slices.ContainsFunc(r.args, func(arg event.Arg) bool {
+		return reflect.DeepEqual(arg.Value, value)
+	})
+}
+
+func (r *dispatched) Name() string {
+	return r.name
 }

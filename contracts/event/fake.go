@@ -1,10 +1,5 @@
 package event
 
-import (
-	"reflect"
-	"slices"
-)
-
 // Fake records the events dispatched while faking instead of calling their
 // listeners.
 //
@@ -16,8 +11,8 @@ type Fake interface {
 	// AssertDispatched reports whether the event was dispatched, and when
 	// assertions are given, whether one of its dispatches matches all of them.
 	AssertDispatched(event any, assertion ...func(dispatched Dispatched) bool) bool
-	// AssertDispatchedTimes reports whether the event was dispatched exactly
-	// times times.
+	// AssertDispatchedTimes reports whether the event was dispatched the
+	// given number of times.
 	AssertDispatchedTimes(event any, times int) bool
 	// AssertListening reports whether the listener is registered for the
 	// event, directly or through a matching wildcard pattern. The listener is
@@ -39,31 +34,20 @@ type Fake interface {
 }
 
 // Dispatched is an event recorded by the fake.
-type Dispatched struct {
-	// Event is the value passed to Dispatch: the event itself, or its name
-	// for events dispatched by name.
-	Event any
-	// Name is the name the event was dispatched under, the one a wildcard
-	// listener would receive.
-	Name string
-	// Args is the payload passed to Dispatch. The listeners are not called,
-	// so Event.Handle does not prepare it either.
-	Args []Arg
-}
-
-// Arg returns the value of the argument at index, or nil when there is none.
-func (r Dispatched) Arg(index int) any {
-	if index < 0 || index >= len(r.Args) {
-		return nil
-	}
-
-	return r.Args[index].Value
-}
-
-// HasArg reports whether one of the arguments has the value, compared with
-// reflect.DeepEqual.
-func (r Dispatched) HasArg(value any) bool {
-	return slices.ContainsFunc(r.Args, func(arg Arg) bool {
-		return reflect.DeepEqual(arg.Value, value)
-	})
+type Dispatched interface {
+	// Arg returns the value of the argument at index, or nil when there is
+	// none.
+	Arg(index int) any
+	// Args returns a copy of the payload passed to Dispatch. The listeners
+	// are not called, so Event.Handle does not prepare it either.
+	Args() []Arg
+	// Event returns the value passed to Dispatch: the event itself, or its
+	// name for events dispatched by name.
+	Event() any
+	// HasArg reports whether one of the arguments has the value, compared
+	// with reflect.DeepEqual.
+	HasArg(value any) bool
+	// Name returns the name the event was dispatched under, the one a
+	// wildcard listener would receive.
+	Name() string
 }
