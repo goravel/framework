@@ -236,3 +236,29 @@ func (s *EventTestSuite) TestSimplifyRanges() {
 	}
 
 }
+
+func (s *EventTestSuite) TestHooks() {
+	before := func() {}
+	after := func() {}
+	success := func() {}
+	failure := func(error) {}
+
+	event := s.event.Before(before).Before(nil).
+		After(after).After(nil).
+		OnSuccess(success).OnSuccess(nil).
+		OnFailure(failure).OnFailure(nil)
+
+	// Nil callbacks are ignored.
+	s.Len(event.GetBeforeCallbacks(), 1)
+	s.Len(event.GetAfterCallbacks(), 1)
+	s.Len(event.GetSuccessCallbacks(), 1)
+	s.Len(event.GetFailureCallbacks(), 1)
+
+	event.Before(before)
+	s.Len(event.GetBeforeCallbacks(), 2)
+}
+
+func (s *EventTestSuite) TestTimezone() {
+	s.Equal("", s.event.GetTimezone())
+	s.Equal("America/Santiago", s.event.Timezone("America/Santiago").GetTimezone())
+}

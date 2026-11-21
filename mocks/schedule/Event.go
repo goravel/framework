@@ -22,6 +22,54 @@ func (_m *Event) EXPECT() *Event_Expecter {
 	return &Event_Expecter{mock: &_m.Mock}
 }
 
+// After provides a mock function with given fields: callback
+func (_m *Event) After(callback func()) schedule.Event {
+	ret := _m.Called(callback)
+
+	if len(ret) == 0 {
+		panic("no return value specified for After")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func(func()) schedule.Event); ok {
+		r0 = rf(callback)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_After_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'After'
+type Event_After_Call struct {
+	*mock.Call
+}
+
+// After is a helper method to define mock.On call
+//   - callback func()
+func (_e *Event_Expecter) After(callback interface{}) *Event_After_Call {
+	return &Event_After_Call{Call: _e.mock.On("After", callback)}
+}
+
+func (_c *Event_After_Call) Run(run func(callback func())) *Event_After_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func()))
+	})
+	return _c
+}
+
+func (_c *Event_After_Call) Return(_a0 schedule.Event) *Event_After_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_After_Call) RunAndReturn(run func(func()) schedule.Event) *Event_After_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // At provides a mock function with given fields: _a0
 func (_m *Event) At(_a0 string) schedule.Event {
 	ret := _m.Called(_a0)
@@ -66,6 +114,54 @@ func (_c *Event_At_Call) Return(_a0 schedule.Event) *Event_At_Call {
 }
 
 func (_c *Event_At_Call) RunAndReturn(run func(string) schedule.Event) *Event_At_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Before provides a mock function with given fields: callback
+func (_m *Event) Before(callback func()) schedule.Event {
+	ret := _m.Called(callback)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Before")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func(func()) schedule.Event); ok {
+		r0 = rf(callback)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_Before_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Before'
+type Event_Before_Call struct {
+	*mock.Call
+}
+
+// Before is a helper method to define mock.On call
+//   - callback func()
+func (_e *Event_Expecter) Before(callback interface{}) *Event_Before_Call {
+	return &Event_Before_Call{Call: _e.mock.On("Before", callback)}
+}
+
+func (_c *Event_Before_Call) Run(run func(callback func())) *Event_Before_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func()))
+	})
+	return _c
+}
+
+func (_c *Event_Before_Call) Return(_a0 schedule.Event) *Event_Before_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_Before_Call) RunAndReturn(run func(func()) schedule.Event) *Event_Before_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1261,6 +1357,100 @@ func (_c *Event_Fridays_Call) RunAndReturn(run func() schedule.Event) *Event_Fri
 	return _c
 }
 
+// GetAfterCallbacks provides a mock function with no fields
+func (_m *Event) GetAfterCallbacks() []func() {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetAfterCallbacks")
+	}
+
+	var r0 []func()
+	if rf, ok := ret.Get(0).(func() []func()); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]func())
+		}
+	}
+
+	return r0
+}
+
+// Event_GetAfterCallbacks_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAfterCallbacks'
+type Event_GetAfterCallbacks_Call struct {
+	*mock.Call
+}
+
+// GetAfterCallbacks is a helper method to define mock.On call
+func (_e *Event_Expecter) GetAfterCallbacks() *Event_GetAfterCallbacks_Call {
+	return &Event_GetAfterCallbacks_Call{Call: _e.mock.On("GetAfterCallbacks")}
+}
+
+func (_c *Event_GetAfterCallbacks_Call) Run(run func()) *Event_GetAfterCallbacks_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Event_GetAfterCallbacks_Call) Return(_a0 []func()) *Event_GetAfterCallbacks_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_GetAfterCallbacks_Call) RunAndReturn(run func() []func()) *Event_GetAfterCallbacks_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetBeforeCallbacks provides a mock function with no fields
+func (_m *Event) GetBeforeCallbacks() []func() {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetBeforeCallbacks")
+	}
+
+	var r0 []func()
+	if rf, ok := ret.Get(0).(func() []func()); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]func())
+		}
+	}
+
+	return r0
+}
+
+// Event_GetBeforeCallbacks_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetBeforeCallbacks'
+type Event_GetBeforeCallbacks_Call struct {
+	*mock.Call
+}
+
+// GetBeforeCallbacks is a helper method to define mock.On call
+func (_e *Event_Expecter) GetBeforeCallbacks() *Event_GetBeforeCallbacks_Call {
+	return &Event_GetBeforeCallbacks_Call{Call: _e.mock.On("GetBeforeCallbacks")}
+}
+
+func (_c *Event_GetBeforeCallbacks_Call) Run(run func()) *Event_GetBeforeCallbacks_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Event_GetBeforeCallbacks_Call) Return(_a0 []func()) *Event_GetBeforeCallbacks_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_GetBeforeCallbacks_Call) RunAndReturn(run func() []func()) *Event_GetBeforeCallbacks_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetCallback provides a mock function with no fields
 func (_m *Event) GetCallback() func() {
 	ret := _m.Called()
@@ -1443,6 +1633,53 @@ func (_c *Event_GetDelayIfStillRunning_Call) RunAndReturn(run func() bool) *Even
 	return _c
 }
 
+// GetFailureCallbacks provides a mock function with no fields
+func (_m *Event) GetFailureCallbacks() []func(error) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetFailureCallbacks")
+	}
+
+	var r0 []func(error)
+	if rf, ok := ret.Get(0).(func() []func(error)); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]func(error))
+		}
+	}
+
+	return r0
+}
+
+// Event_GetFailureCallbacks_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetFailureCallbacks'
+type Event_GetFailureCallbacks_Call struct {
+	*mock.Call
+}
+
+// GetFailureCallbacks is a helper method to define mock.On call
+func (_e *Event_Expecter) GetFailureCallbacks() *Event_GetFailureCallbacks_Call {
+	return &Event_GetFailureCallbacks_Call{Call: _e.mock.On("GetFailureCallbacks")}
+}
+
+func (_c *Event_GetFailureCallbacks_Call) Run(run func()) *Event_GetFailureCallbacks_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Event_GetFailureCallbacks_Call) Return(_a0 []func(error)) *Event_GetFailureCallbacks_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_GetFailureCallbacks_Call) RunAndReturn(run func() []func(error)) *Event_GetFailureCallbacks_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetName provides a mock function with no fields
 func (_m *Event) GetName() string {
 	ret := _m.Called()
@@ -1529,6 +1766,98 @@ func (_c *Event_GetSkipIfStillRunning_Call) Return(_a0 bool) *Event_GetSkipIfSti
 }
 
 func (_c *Event_GetSkipIfStillRunning_Call) RunAndReturn(run func() bool) *Event_GetSkipIfStillRunning_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetSuccessCallbacks provides a mock function with no fields
+func (_m *Event) GetSuccessCallbacks() []func() {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetSuccessCallbacks")
+	}
+
+	var r0 []func()
+	if rf, ok := ret.Get(0).(func() []func()); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]func())
+		}
+	}
+
+	return r0
+}
+
+// Event_GetSuccessCallbacks_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetSuccessCallbacks'
+type Event_GetSuccessCallbacks_Call struct {
+	*mock.Call
+}
+
+// GetSuccessCallbacks is a helper method to define mock.On call
+func (_e *Event_Expecter) GetSuccessCallbacks() *Event_GetSuccessCallbacks_Call {
+	return &Event_GetSuccessCallbacks_Call{Call: _e.mock.On("GetSuccessCallbacks")}
+}
+
+func (_c *Event_GetSuccessCallbacks_Call) Run(run func()) *Event_GetSuccessCallbacks_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Event_GetSuccessCallbacks_Call) Return(_a0 []func()) *Event_GetSuccessCallbacks_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_GetSuccessCallbacks_Call) RunAndReturn(run func() []func()) *Event_GetSuccessCallbacks_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetTimezone provides a mock function with no fields
+func (_m *Event) GetTimezone() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTimezone")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Event_GetTimezone_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTimezone'
+type Event_GetTimezone_Call struct {
+	*mock.Call
+}
+
+// GetTimezone is a helper method to define mock.On call
+func (_e *Event_Expecter) GetTimezone() *Event_GetTimezone_Call {
+	return &Event_GetTimezone_Call{Call: _e.mock.On("GetTimezone")}
+}
+
+func (_c *Event_GetTimezone_Call) Run(run func()) *Event_GetTimezone_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Event_GetTimezone_Call) Return(_a0 string) *Event_GetTimezone_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_GetTimezone_Call) RunAndReturn(run func() string) *Event_GetTimezone_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1815,6 +2144,54 @@ func (_c *Event_Name_Call) RunAndReturn(run func(string) schedule.Event) *Event_
 	return _c
 }
 
+// OnFailure provides a mock function with given fields: callback
+func (_m *Event) OnFailure(callback func(error)) schedule.Event {
+	ret := _m.Called(callback)
+
+	if len(ret) == 0 {
+		panic("no return value specified for OnFailure")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func(func(error)) schedule.Event); ok {
+		r0 = rf(callback)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_OnFailure_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OnFailure'
+type Event_OnFailure_Call struct {
+	*mock.Call
+}
+
+// OnFailure is a helper method to define mock.On call
+//   - callback func(error)
+func (_e *Event_Expecter) OnFailure(callback interface{}) *Event_OnFailure_Call {
+	return &Event_OnFailure_Call{Call: _e.mock.On("OnFailure", callback)}
+}
+
+func (_c *Event_OnFailure_Call) Run(run func(callback func(error))) *Event_OnFailure_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func(error)))
+	})
+	return _c
+}
+
+func (_c *Event_OnFailure_Call) Return(_a0 schedule.Event) *Event_OnFailure_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_OnFailure_Call) RunAndReturn(run func(func(error)) schedule.Event) *Event_OnFailure_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // OnOneServer provides a mock function with no fields
 func (_m *Event) OnOneServer() schedule.Event {
 	ret := _m.Called()
@@ -1858,6 +2235,54 @@ func (_c *Event_OnOneServer_Call) Return(_a0 schedule.Event) *Event_OnOneServer_
 }
 
 func (_c *Event_OnOneServer_Call) RunAndReturn(run func() schedule.Event) *Event_OnOneServer_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// OnSuccess provides a mock function with given fields: callback
+func (_m *Event) OnSuccess(callback func()) schedule.Event {
+	ret := _m.Called(callback)
+
+	if len(ret) == 0 {
+		panic("no return value specified for OnSuccess")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func(func()) schedule.Event); ok {
+		r0 = rf(callback)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_OnSuccess_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OnSuccess'
+type Event_OnSuccess_Call struct {
+	*mock.Call
+}
+
+// OnSuccess is a helper method to define mock.On call
+//   - callback func()
+func (_e *Event_Expecter) OnSuccess(callback interface{}) *Event_OnSuccess_Call {
+	return &Event_OnSuccess_Call{Call: _e.mock.On("OnSuccess", callback)}
+}
+
+func (_c *Event_OnSuccess_Call) Run(run func(callback func())) *Event_OnSuccess_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func()))
+	})
+	return _c
+}
+
+func (_c *Event_OnSuccess_Call) Return(_a0 schedule.Event) *Event_OnSuccess_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_OnSuccess_Call) RunAndReturn(run func(func()) schedule.Event) *Event_OnSuccess_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -2093,6 +2518,54 @@ func (_c *Event_Thursdays_Call) Return(_a0 schedule.Event) *Event_Thursdays_Call
 }
 
 func (_c *Event_Thursdays_Call) RunAndReturn(run func() schedule.Event) *Event_Thursdays_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Timezone provides a mock function with given fields: timezone
+func (_m *Event) Timezone(timezone string) schedule.Event {
+	ret := _m.Called(timezone)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Timezone")
+	}
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func(string) schedule.Event); ok {
+		r0 = rf(timezone)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// Event_Timezone_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Timezone'
+type Event_Timezone_Call struct {
+	*mock.Call
+}
+
+// Timezone is a helper method to define mock.On call
+//   - timezone string
+func (_e *Event_Expecter) Timezone(timezone interface{}) *Event_Timezone_Call {
+	return &Event_Timezone_Call{Call: _e.mock.On("Timezone", timezone)}
+}
+
+func (_c *Event_Timezone_Call) Run(run func(timezone string)) *Event_Timezone_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Event_Timezone_Call) Return(_a0 schedule.Event) *Event_Timezone_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Event_Timezone_Call) RunAndReturn(run func(string) schedule.Event) *Event_Timezone_Call {
 	_c.Call.Return(run)
 	return _c
 }

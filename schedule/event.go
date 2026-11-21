@@ -14,6 +14,11 @@ type Event struct {
 	command             string
 	cron                string
 	name                string
+	timezone            string
+	after               []func()
+	before              []func()
+	failure             []func(err error)
+	success             []func()
 	delayIfStillRunning bool
 	onOneServer         bool
 	skipIfStillRunning  bool
@@ -34,9 +39,28 @@ func NewCommandEvent(command string) *Event {
 	}
 }
 
+// After registers a callback to run after the event, whether it succeeded
+// or failed.
+func (r *Event) After(callback func()) schedule.Event {
+	if callback != nil {
+		r.after = append(r.after, callback)
+	}
+
+	return r
+}
+
 // At schedule the command at a given time.
 func (r *Event) At(time string) schedule.Event {
 	return r.DailyAt(time)
+}
+
+// Before registers a callback to run before the event.
+func (r *Event) Before(callback func()) schedule.Event {
+	if callback != nil {
+		r.before = append(r.before, callback)
+	}
+
+	return r
 }
 
 // Cron The Cron expression representing the event's frequency.
@@ -185,6 +209,14 @@ func (r *Event) EverySixHours() schedule.Event {
 	return event.Cron(r.spliceIntoPosition(2, "*/6"))
 }
 
+func (r *Event) GetAfterCallbacks() []func() {
+	return r.after
+}
+
+func (r *Event) GetBeforeCallbacks() []func() {
+	return r.before
+}
+
 func (r *Event) GetCron() string {
 	return r.cron
 }
@@ -197,6 +229,10 @@ func (r *Event) GetCallback() func() {
 	return r.callback
 }
 
+func (r *Event) GetFailureCallbacks() []func(err error) {
+	return r.failure
+}
+
 func (r *Event) GetName() string {
 	return r.name
 }
@@ -207,6 +243,14 @@ func (r *Event) GetSkipIfStillRunning() bool {
 
 func (r *Event) GetDelayIfStillRunning() bool {
 	return r.delayIfStillRunning
+}
+
+func (r *Event) GetSuccessCallbacks() []func() {
+	return r.success
+}
+
+func (r *Event) GetTimezone() string {
+	return r.timezone
 }
 
 // Hourly schedule the event to run hourly.
@@ -313,8 +357,26 @@ func (r *Event) Name(name string) schedule.Event {
 	return r
 }
 
+// OnFailure registers a callback to run when the event fails.
+func (r *Event) OnFailure(callback func(err error)) schedule.Event {
+	if callback != nil {
+		r.failure = append(r.failure, callback)
+	}
+
+	return r
+}
+
 func (r *Event) OnOneServer() schedule.Event {
 	r.onOneServer = true
+
+	return r
+}
+
+// OnSuccess registers a callback to run when the event succeeds.
+func (r *Event) OnSuccess(callback func()) schedule.Event {
+	if callback != nil {
+		r.success = append(r.success, callback)
+	}
 
 	return r
 }
@@ -322,6 +384,13 @@ func (r *Event) OnOneServer() schedule.Event {
 // SkipIfStillRunning do not allow the event to overlap each other.
 func (r *Event) SkipIfStillRunning() schedule.Event {
 	r.skipIfStillRunning = true
+
+	return r
+}
+
+// Timezone sets the timezone in which the cron expression is evaluated.
+func (r *Event) Timezone(timezone string) schedule.Event {
+	r.timezone = timezone
 
 	return r
 }

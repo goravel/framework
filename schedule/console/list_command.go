@@ -58,9 +58,13 @@ func (r *List) Handle(ctx console.Context) error {
 	spacing := r.getCronExpressionSpacing(events)
 	for _, event := range events {
 		expression := event.GetCron()
+		spec := expression
+		if timezone := event.GetTimezone(); timezone != "" {
+			spec = "CRON_TZ=" + timezone + " " + expression
+		}
 		ctx.TwoColumnDetail(
 			fmt.Sprintf("<fg=yellow>%s</>  %s", r.formatCronExpression(expression, spacing), r.getCommand(event)),
-			fmt.Sprintf("<fg=7472a3>Next Due: %s</>", r.getNextDueDate(expression)),
+			fmt.Sprintf("<fg=7472a3>Next Due: %s</>", r.getNextDueDate(spec)),
 		)
 	}
 	return nil
