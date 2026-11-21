@@ -33,6 +33,7 @@ func TestListCommand(t *testing.T) {
 	cmd := mocksschedule.NewEvent(t)
 	cmd.EXPECT().GetCommand().Return("send:emails name").Once()
 	cmd.EXPECT().GetCron().Return("* * * * *").Twice()
+	cmd.EXPECT().GetTimezone().Return("").Once()
 	mockContext.EXPECT().TwoColumnDetail(
 		"<fg=yellow>  *    *  * * *</>  artisan send:emails <fg=yellow>name</>",
 		"<fg=7472a3>Next Due: 1 minute after</>",
@@ -44,8 +45,9 @@ func TestListCommand(t *testing.T) {
 	closure.EXPECT().GetCommand().Return("").Once()
 	closure.EXPECT().GetCallback().Return(func() {}).Once()
 	closure.EXPECT().GetCron().Return("*/30 * * * *").Twice()
+	closure.EXPECT().GetTimezone().Return("").Once()
 	mockContext.EXPECT().TwoColumnDetail(
-		fmt.Sprintf("<fg=yellow>  */30 *  * * *</>  Closure at: %s:45", filepath.Join("schedule", "console", "list_command_test.go")),
+		fmt.Sprintf("<fg=yellow>  */30 *  * * *</>  Closure at: %s:46", filepath.Join("schedule", "console", "list_command_test.go")),
 		"<fg=7472a3>Next Due: 30 minutes after</>",
 	).Once()
 
@@ -54,15 +56,28 @@ func TestListCommand(t *testing.T) {
 	namedClosure.EXPECT().GetName().Return("test-command").Once()
 	namedClosure.EXPECT().GetCommand().Return("").Once()
 	namedClosure.EXPECT().GetCron().Return("00 10 * * *").Twice()
+	namedClosure.EXPECT().GetTimezone().Return("").Once()
 	mockContext.EXPECT().TwoColumnDetail(
 		"<fg=yellow>  00   10 * * *</>  test-command",
 		"<fg=7472a3>Next Due: 10 hours after</>",
+	).Once()
+
+	// schedule closure command(with a timezone two hours ahead of UTC)
+	zonedClosure := mocksschedule.NewEvent(t)
+	zonedClosure.EXPECT().GetName().Return("zoned-command").Once()
+	zonedClosure.EXPECT().GetCommand().Return("").Once()
+	zonedClosure.EXPECT().GetCron().Return("00 10 * * *").Twice()
+	zonedClosure.EXPECT().GetTimezone().Return("Etc/GMT-2").Once()
+	mockContext.EXPECT().TwoColumnDetail(
+		"<fg=yellow>  00   10 * * *</>  zoned-command",
+		"<fg=7472a3>Next Due: 8 hours after</>",
 	).Once()
 
 	// schedule command(second-level cron)
 	secondlyCommand := mocksschedule.NewEvent(t)
 	secondlyCommand.EXPECT().GetCommand().Return("do:something --every --second").Once()
 	secondlyCommand.EXPECT().GetCron().Return("* * * * * *").Twice()
+	secondlyCommand.EXPECT().GetTimezone().Return("").Once()
 	mockContext.EXPECT().TwoColumnDetail(
 		"<fg=yellow>* *    *  * * *</>  artisan do:something <fg=yellow>--every --second</>",
 		"<fg=7472a3>Next Due: 1 second after</>",
@@ -72,6 +87,7 @@ func TestListCommand(t *testing.T) {
 		cmd,
 		closure,
 		namedClosure,
+		zonedClosure,
 		secondlyCommand,
 	}).Once()
 	mockContext.EXPECT().NewLine().Once()

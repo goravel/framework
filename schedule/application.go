@@ -141,7 +141,7 @@ func (app *Application) addEvents(events []schedule.Event) {
 		} else if event.GetSkipIfStillRunning() {
 			chain = cron.NewChain(cron.SkipIfStillRunning(NewLogger(app.log, app.debug)), cron.Recover(NewLogger(app.log, app.debug)))
 		}
-		_, err := app.cron.AddJob(event.GetCron(), chain.Then(app.getJob(event)))
+		_, err := app.cron.AddJob(cronSpec(event), chain.Then(app.getJob(event)))
 
 		if err != nil {
 			app.log.Errorf("add schedule error: %v", err)
@@ -181,9 +181,42 @@ func (app *Application) runJob(event schedule.Event) {
 	}
 }
 
-// execute runs the command or the callback of the event. Work and Run each
-// report its failure their own way.
-func (app *Application) execute(event schedule.Event) error {
+// execute runs the command or the callback of the event between its hooks:
+// the Before callbacks, then the event, then the OnSuccess or the OnFailure
+// callbacks and the After callbacks. Work and Run each report its failure
+// their own way, so a panic of the event is passed on once the hooks ran.
+func (app *Application) execute(event schedule.Event) (err error) {
+	for _, callback := range event.GetBeforeCallbacks() {
+		callback()
+	}
+
+	defer func() {
+		recovered := recover()
+
+		failure := err
+		if recovered != nil {
+			failure = errors.ScheduleEventPanicked.Args(eventName(event), recovered)
+		}
+
+		if failure != nil {
+			for _, callback := range event.GetFailureCallbacks() {
+				callback(failure)
+			}
+		} else {
+			for _, callback := range event.GetSuccessCallbacks() {
+				callback()
+			}
+		}
+
+		for _, callback := range event.GetAfterCallbacks() {
+			callback()
+		}
+
+		if recovered != nil {
+			panic(recovered)
+		}
+	}()
+
 	if event.GetCommand() != "" {
 		return app.artisan.Call(event.GetCommand())
 	}
@@ -195,9 +228,9 @@ func (app *Application) execute(event schedule.Event) error {
 
 // isDue reports whether the event fires within the minute starting at tick.
 func (app *Application) isDue(event schedule.Event, tick time.Time) bool {
-	spec, err := cronParser.Parse(event.GetCron())
+	spec, err := cronParser.Parse(cronSpec(event))
 	if err != nil {
-		// Register only keeps events with a valid expression.
+		// Register only keeps events with a valid expression and timezone.
 		return false
 	}
 
@@ -245,10 +278,7 @@ func (app *Application) acquireOverlapLock(ctx context.Context, event schedule.E
 
 // runEvent runs the event and logs its failure, with the stack for a panic.
 func (app *Application) runEvent(event schedule.Event) (err error) {
-	name := event.GetName()
-	if name == "" {
-		name = event.GetCron()
-	}
+	name := eventName(event)
 
 	defer func() {
 		if recovered := recover(); recovered != nil {
@@ -263,4 +293,24 @@ func (app *Application) runEvent(event schedule.Event) (err error) {
 	}
 
 	return err
+}
+
+// cronSpec returns the cron expression of the event with its timezone, in
+// the form the cron parser reads.
+func cronSpec(event schedule.Event) string {
+	if timezone := event.GetTimezone(); timezone != "" {
+		return "CRON_TZ=" + timezone + " " + event.GetCron()
+	}
+
+	return event.GetCron()
+}
+
+// eventName returns the name of the event, or its cron expression when it
+// has none.
+func eventName(event schedule.Event) string {
+	if name := event.GetName(); name != "" {
+		return name
+	}
+
+	return event.GetCron()
 }

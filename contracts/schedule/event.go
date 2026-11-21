@@ -3,8 +3,14 @@ package schedule
 import "time"
 
 type Event interface {
+	// After registers a callback to run after the event, whether it succeeded
+	// or failed. It runs after the OnSuccess or OnFailure callbacks.
+	After(callback func()) Event
 	// At schedule the event to run at the specified time.
 	At(time string) Event
+	// Before registers a callback to run before the event. A callback that
+	// panics stops the event, and no other hook runs.
+	Before(callback func()) Event
 	// Cron schedule the event using the given Cron expression.
 	Cron(expression string) Event
 	// Daily schedule the event to run daily.
@@ -53,18 +59,29 @@ type Event interface {
 	EveryFourHours() Event
 	// EverySixHours schedule the event to run every six hours.
 	EverySixHours() Event
+	// GetAfterCallbacks returns the callbacks registered with After.
+	GetAfterCallbacks() []func()
+	// GetBeforeCallbacks returns the callbacks registered with Before.
+	GetBeforeCallbacks() []func()
 	// GetCron get cron expression.
 	GetCron() string
 	// GetCommand get the command.
 	GetCommand() string
 	// GetCallback get callback.
 	GetCallback() func()
+	// GetFailureCallbacks returns the callbacks registered with OnFailure.
+	GetFailureCallbacks() []func(err error)
 	// GetName get name.
 	GetName() string
 	// GetSkipIfStillRunning get skipIfStillRunning bool.
 	GetSkipIfStillRunning() bool
 	// GetDelayIfStillRunning get delayIfStillRunning bool.
 	GetDelayIfStillRunning() bool
+	// GetSuccessCallbacks returns the callbacks registered with OnSuccess.
+	GetSuccessCallbacks() []func()
+	// GetTimezone returns the timezone set with Timezone, empty for the
+	// schedule's timezone.
+	GetTimezone() string
 	// Hourly schedule the event to run hourly.
 	Hourly() Event
 	// HourlyAt schedule the event to run hourly at a given offset in the hour.
@@ -101,8 +118,18 @@ type Event interface {
 	IsOnOneServer() bool
 	// Name set the event name.
 	Name(name string) Event
+	// OnFailure registers a callback to run when the event fails: its command
+	// returns an error, or its callback panics. The callback receives that
+	// error.
+	OnFailure(callback func(err error)) Event
 	// OnOneServer only allow the event to run on one server for each cron expression.
 	OnOneServer() Event
+	// OnSuccess registers a callback to run when the event succeeds.
+	OnSuccess(callback func()) Event
 	// SkipIfStillRunning if the event is still running, the event will be skipped.
 	SkipIfStillRunning() Event
+	// Timezone sets the IANA timezone, such as "America/Santiago", in which
+	// the cron expression is evaluated, instead of the schedule's timezone.
+	// An event with an unknown timezone is not registered.
+	Timezone(timezone string) Event
 }

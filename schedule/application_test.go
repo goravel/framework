@@ -317,7 +317,7 @@ func (s *ApplicationTestSuite) TestRunDueErrors() {
 	mockLog.EXPECT().Error(mock.Anything).Return().Once()
 	// A panic is logged with its stack.
 	mockLog.EXPECT().Errorf("%v\n%s", mock.MatchedBy(func(err error) bool {
-		return strings.Contains(err.Error(), "schedule event panicking panicked: boom")
+		return strings.Contains(err.Error(), "[schedule] schedule event panicking panicked: boom")
 	}), mock.MatchedBy(func(stack []byte) bool {
 		return strings.Contains(string(stack), "runtime/debug.Stack")
 	})).Return().Once()
@@ -332,7 +332,7 @@ func (s *ApplicationTestSuite) TestRunDueErrors() {
 	// A failing event doesn't stop the others, and every failure is returned.
 	err := app.runDue(context.Background(), time.Now())
 	s.ErrorContains(err, "schedule event broken failed: "+assert.AnError.Error())
-	s.ErrorContains(err, "schedule event panicking panicked: boom")
+	s.ErrorContains(err, "[schedule] schedule event panicking panicked: boom")
 }
 
 func (s *ApplicationTestSuite) TestRunDueSkipsInvalidCron() {
@@ -401,4 +401,123 @@ func (s *ApplicationTestSuite) TestRunDueWarnsUnnamedEvent() {
 
 	s.NoError(app.runDue(context.Background(), time.Now()))
 	s.Equal(1, callbackCall)
+}
+
+func (s *ApplicationTestSuite) TestRunDueHooks() {
+	mockArtisan := mocksconsole.NewArtisan(s.T())
+	mockArtisan.EXPECT().Call("fine").Return(nil).Once()
+	mockArtisan.EXPECT().Call("broken").Return(assert.AnError).Once()
+
+	mockLog := mockslog.NewLog(s.T())
+	mockLog.EXPECT().Error(mock.Anything).Return().Once()
+	mockLog.EXPECT().Errorf("%v\n%s", mock.Anything, mock.Anything).Return().Once()
+
+	var calls []string
+	var failures []error
+	hooks := func(event schedule.Event, name string) schedule.Event {
+		return event.
+			Before(func() { calls = append(calls, name+":before") }).
+			OnSuccess(func() { calls = append(calls, name+":success") }).
+			OnFailure(func(err error) {
+				calls = append(calls, name+":failure")
+				failures = append(failures, err)
+			}).
+			After(func() { calls = append(calls, name+":after") })
+	}
+
+	app := NewApplication(mockArtisan, nil, mockLog, false)
+	app.Register([]schedule.Event{
+		hooks(app.Command("fine").EveryMinute(), "fine"),
+		hooks(app.Command("broken").EveryMinute(), "broken"),
+		hooks(app.Call(func() {
+			calls = append(calls, "panicking:run")
+			panic("boom")
+		}).EveryMinute().Name("panicking"), "panicking"),
+	})
+
+	s.Error(app.runDue(context.Background(), time.Now()))
+	s.Equal([]string{
+		"fine:before", "fine:success", "fine:after",
+		"broken:before", "broken:failure", "broken:after",
+		"panicking:before", "panicking:run", "panicking:failure", "panicking:after",
+	}, calls)
+	s.Require().Len(failures, 2)
+	s.ErrorIs(failures[0], assert.AnError)
+	s.EqualError(failures[1], "[schedule] schedule event panicking panicked: boom")
+}
+
+func (s *ApplicationTestSuite) TestRunDueBeforeHookPanics() {
+	mockLog := mockslog.NewLog(s.T())
+	mockLog.EXPECT().Errorf("%v\n%s", mock.Anything, mock.Anything).Return().Once()
+
+	var calls []string
+	app := NewApplication(nil, nil, mockLog, false)
+	app.Register([]schedule.Event{
+		app.Call(func() { calls = append(calls, "run") }).EveryMinute().Name("guarded").
+			Before(func() { panic("not now") }).
+			OnSuccess(func() { calls = append(calls, "success") }).
+			OnFailure(func(error) { calls = append(calls, "failure") }).
+			After(func() { calls = append(calls, "after") }),
+	})
+
+	// The event doesn't run, and neither do the other hooks.
+	s.ErrorContains(app.runDue(context.Background(), time.Now()), "schedule event guarded panicked: not now")
+	s.Empty(calls)
+}
+
+func (s *ApplicationTestSuite) TestWorkHooks() {
+	mockArtisan := mocksconsole.NewArtisan(s.T())
+	mockArtisan.EXPECT().Call("broken").Return(assert.AnError).Once()
+
+	mockLog := mockslog.NewLog(s.T())
+	mockLog.EXPECT().Errorf("run %s command error: %v", "broken", assert.AnError).Return().Once()
+
+	var calls []string
+	app := NewApplication(mockArtisan, nil, mockLog, false)
+	broken := app.Command("broken").EveryMinute().
+		OnFailure(func(err error) { calls = append(calls, "broken:failure:"+err.Error()) }).
+		After(func() { calls = append(calls, "broken:after") })
+	panicking := app.Call(func() { panic("boom") }).EveryMinute().Name("panicking").
+		OnFailure(func(err error) { calls = append(calls, "panicking:failure:"+err.Error()) }).
+		After(func() { calls = append(calls, "panicking:after") })
+
+	app.getJob(broken).Run()
+	// The panic is passed on once the hooks ran, so the cron chain recovers
+	// and logs it like before.
+	s.PanicsWithValue("boom", func() { app.getJob(panicking).Run() })
+
+	s.Equal([]string{
+		"broken:failure:" + assert.AnError.Error(), "broken:after",
+		"panicking:failure:[schedule] schedule event panicking panicked: boom", "panicking:after",
+	}, calls)
+}
+
+func (s *ApplicationTestSuite) TestRunDueTimezone() {
+	santiago, err := time.LoadLocation("America/Santiago")
+	s.Require().NoError(err)
+
+	callbackCall := 0
+	app := NewApplication(nil, nil, nil, false)
+	app.Register([]schedule.Event{
+		app.Call(func() { callbackCall++ }).DailyAt("09:00").Timezone("America/Santiago"),
+	})
+
+	// 09:00 in Santiago is a different minute in the schedule's timezone.
+	s.NoError(app.runDue(context.Background(), time.Date(2026, 11, 20, 9, 0, 0, 0, santiago)))
+	s.Equal(1, callbackCall)
+
+	s.NoError(app.runDue(context.Background(), time.Date(2026, 11, 20, 9, 0, 0, 0, time.UTC)))
+	s.Equal(1, callbackCall)
+}
+
+func (s *ApplicationTestSuite) TestRegisterUnknownTimezone() {
+	mockLog := mockslog.NewLog(s.T())
+	mockLog.EXPECT().Errorf("add schedule error: %v", mock.Anything).Return().Once()
+
+	app := NewApplication(nil, nil, mockLog, false)
+	app.Register([]schedule.Event{
+		app.Call(func() {}).EveryMinute().Timezone("Mars/Olympus_Mons"),
+	})
+
+	s.Empty(app.Events())
 }
