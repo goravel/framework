@@ -444,6 +444,67 @@ func (_c *Storage_Exists_Call) RunAndReturn(run func(string) bool) *Storage_Exis
 	return _c
 }
 
+// Fake provides a mock function with given fields: disk
+func (_m *Storage) Fake(disk ...string) filesystem.Fake {
+	_va := make([]interface{}, len(disk))
+	for _i := range disk {
+		_va[_i] = disk[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Fake")
+	}
+
+	var r0 filesystem.Fake
+	if rf, ok := ret.Get(0).(func(...string) filesystem.Fake); ok {
+		r0 = rf(disk...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(filesystem.Fake)
+		}
+	}
+
+	return r0
+}
+
+// Storage_Fake_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Fake'
+type Storage_Fake_Call struct {
+	*mock.Call
+}
+
+// Fake is a helper method to define mock.On call
+//   - disk ...string
+func (_e *Storage_Expecter) Fake(disk ...interface{}) *Storage_Fake_Call {
+	return &Storage_Fake_Call{Call: _e.mock.On("Fake",
+		append([]interface{}{}, disk...)...)}
+}
+
+func (_c *Storage_Fake_Call) Run(run func(disk ...string)) *Storage_Fake_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Storage_Fake_Call) Return(_a0 filesystem.Fake) *Storage_Fake_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Storage_Fake_Call) RunAndReturn(run func(...string) filesystem.Fake) *Storage_Fake_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Files provides a mock function with given fields: path
 func (_m *Storage) Files(path string) ([]string, error) {
 	ret := _m.Called(path)

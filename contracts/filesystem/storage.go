@@ -9,6 +9,37 @@ type Storage interface {
 	Driver
 	// Disk gets the instance of the given disk.
 	Disk(disk string) Driver
+	// Fake replaces the disk, the default one when none is given, with a
+	// local disk in a new empty temporary directory, until Reset is called
+	// on the returned Fake. The disk does not need to be configured; its
+	// url is kept, so Url builds the same links. Only the first disk is
+	// used. Faking a disk again replaces its fake with a new empty one,
+	// which then restores the disk on its own Reset.
+	//
+	// Fake and Reset are meant for the setup and the teardown of a test:
+	// they must not run while another goroutine uses the default disk
+	// through Storage.
+	Fake(disk ...string) Fake
+}
+
+// Fake is a disk replaced by Storage.Fake.
+type Fake interface {
+	Driver
+	// AssertCount reports whether the directory holds exactly count files,
+	// counting those of its subdirectories too when recursive is true.
+	AssertCount(path string, count int, recursive ...bool) bool
+	// AssertDirectoryEmpty reports whether the directory holds no file, in
+	// it or in its subdirectories.
+	AssertDirectoryEmpty(path string) bool
+	// AssertExists reports whether every given file or directory exists.
+	AssertExists(path ...string) bool
+	// AssertMissing reports whether none of the given files or directories
+	// exists.
+	AssertMissing(path ...string) bool
+	// Reset restores the disk the fake replaced and removes the temporary
+	// directory, reporting why the directory could not be removed. Call it
+	// when the test ends, e.g. t.Cleanup(func() { _ = fake.Reset() }).
+	Reset() error
 }
 
 type Driver interface {

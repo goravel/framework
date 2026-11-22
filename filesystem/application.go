@@ -2,6 +2,7 @@ package filesystem
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/filesystem"
@@ -17,8 +18,10 @@ const (
 
 type Storage struct {
 	filesystem.Driver
-	config  config.Config
-	drivers map[string]filesystem.Driver
+	config      config.Config
+	defaultDisk string
+	drivers     map[string]filesystem.Driver
+	mu          sync.RWMutex
 }
 
 func NewStorage(config config.Config) (*Storage, error) {
@@ -35,9 +38,10 @@ func NewStorage(config config.Config) (*Storage, error) {
 	drivers := make(map[string]filesystem.Driver)
 	drivers[defaultDisk] = driver
 	return &Storage{
-		Driver:  driver,
-		config:  config,
-		drivers: drivers,
+		Driver:      driver,
+		config:      config,
+		defaultDisk: defaultDisk,
+		drivers:     drivers,
 	}, nil
 }
 
@@ -65,7 +69,10 @@ func NewDriver(config config.Config, disk string) (filesystem.Driver, error) {
 }
 
 func (r *Storage) Disk(disk string) filesystem.Driver {
-	if driver, exist := r.drivers[disk]; exist {
+	r.mu.RLock()
+	driver, exist := r.drivers[disk]
+	r.mu.RUnlock()
+	if exist {
 		return driver
 	}
 
@@ -74,6 +81,13 @@ func (r *Storage) Disk(disk string) filesystem.Driver {
 		panic(err)
 	}
 
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	// Another call may have loaded or faked the disk meanwhile.
+	if existing, exist := r.drivers[disk]; exist {
+		return existing
+	}
 	r.drivers[disk] = driver
 
 	return driver

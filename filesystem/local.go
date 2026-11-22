@@ -22,11 +22,17 @@ type Local struct {
 }
 
 func NewLocal(config config.Config, disk string) (*Local, error) {
+	return newLocalWithRoot(config, disk, config.GetString(fmt.Sprintf("filesystems.disks.%s.root", disk))), nil
+}
+
+// newLocalWithRoot builds the local driver of the disk on the given root,
+// which is how a fake keeps the rest of the disk's configuration.
+func newLocalWithRoot(config config.Config, disk, root string) *Local {
 	return &Local{
 		config: config,
-		root:   config.GetString(fmt.Sprintf("filesystems.disks.%s.root", disk)),
+		root:   root,
 		url:    config.GetString(fmt.Sprintf("filesystems.disks.%s.url", disk)),
-	}, nil
+	}
 }
 
 func (r *Local) AllDirectories(path string) ([]string, error) {
