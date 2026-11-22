@@ -15,10 +15,8 @@ type Event struct {
 	cron                string
 	name                string
 	timezone            string
-	after               []func()
-	before              []func()
-	failure             []func(err error)
-	success             []func()
+	afterCallbacks      []func(err error)
+	beforeCallbacks     []func()
 	delayIfStillRunning bool
 	onOneServer         bool
 	skipIfStillRunning  bool
@@ -43,7 +41,9 @@ func NewCommandEvent(command string) *Event {
 // or failed.
 func (r *Event) After(callback func()) schedule.Event {
 	if callback != nil {
-		r.after = append(r.after, callback)
+		r.afterCallbacks = append(r.afterCallbacks, func(error) {
+			callback()
+		})
 	}
 
 	return r
@@ -57,7 +57,7 @@ func (r *Event) At(time string) schedule.Event {
 // Before registers a callback to run before the event.
 func (r *Event) Before(callback func()) schedule.Event {
 	if callback != nil {
-		r.before = append(r.before, callback)
+		r.beforeCallbacks = append(r.beforeCallbacks, callback)
 	}
 
 	return r
@@ -209,12 +209,12 @@ func (r *Event) EverySixHours() schedule.Event {
 	return event.Cron(r.spliceIntoPosition(2, "*/6"))
 }
 
-func (r *Event) GetAfterCallbacks() []func() {
-	return r.after
+func (r *Event) GetAfterCallbacks() []func(err error) {
+	return slices.Clone(r.afterCallbacks)
 }
 
 func (r *Event) GetBeforeCallbacks() []func() {
-	return r.before
+	return slices.Clone(r.beforeCallbacks)
 }
 
 func (r *Event) GetCron() string {
@@ -229,10 +229,6 @@ func (r *Event) GetCallback() func() {
 	return r.callback
 }
 
-func (r *Event) GetFailureCallbacks() []func(err error) {
-	return r.failure
-}
-
 func (r *Event) GetName() string {
 	return r.name
 }
@@ -243,10 +239,6 @@ func (r *Event) GetSkipIfStillRunning() bool {
 
 func (r *Event) GetDelayIfStillRunning() bool {
 	return r.delayIfStillRunning
-}
-
-func (r *Event) GetSuccessCallbacks() []func() {
-	return r.success
 }
 
 func (r *Event) GetTimezone() string {
@@ -360,7 +352,11 @@ func (r *Event) Name(name string) schedule.Event {
 // OnFailure registers a callback to run when the event fails.
 func (r *Event) OnFailure(callback func(err error)) schedule.Event {
 	if callback != nil {
-		r.failure = append(r.failure, callback)
+		r.afterCallbacks = append(r.afterCallbacks, func(err error) {
+			if err != nil {
+				callback(err)
+			}
+		})
 	}
 
 	return r
@@ -375,7 +371,11 @@ func (r *Event) OnOneServer() schedule.Event {
 // OnSuccess registers a callback to run when the event succeeds.
 func (r *Event) OnSuccess(callback func()) schedule.Event {
 	if callback != nil {
-		r.success = append(r.success, callback)
+		r.afterCallbacks = append(r.afterCallbacks, func(err error) {
+			if err == nil {
+				callback()
+			}
+		})
 	}
 
 	return r

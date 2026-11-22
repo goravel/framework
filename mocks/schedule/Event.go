@@ -1358,19 +1358,19 @@ func (_c *Event_Fridays_Call) RunAndReturn(run func() schedule.Event) *Event_Fri
 }
 
 // GetAfterCallbacks provides a mock function with no fields
-func (_m *Event) GetAfterCallbacks() []func() {
+func (_m *Event) GetAfterCallbacks() []func(error) {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAfterCallbacks")
 	}
 
-	var r0 []func()
-	if rf, ok := ret.Get(0).(func() []func()); ok {
+	var r0 []func(error)
+	if rf, ok := ret.Get(0).(func() []func(error)); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]func())
+			r0 = ret.Get(0).([]func(error))
 		}
 	}
 
@@ -1394,12 +1394,12 @@ func (_c *Event_GetAfterCallbacks_Call) Run(run func()) *Event_GetAfterCallbacks
 	return _c
 }
 
-func (_c *Event_GetAfterCallbacks_Call) Return(_a0 []func()) *Event_GetAfterCallbacks_Call {
+func (_c *Event_GetAfterCallbacks_Call) Return(_a0 []func(error)) *Event_GetAfterCallbacks_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Event_GetAfterCallbacks_Call) RunAndReturn(run func() []func()) *Event_GetAfterCallbacks_Call {
+func (_c *Event_GetAfterCallbacks_Call) RunAndReturn(run func() []func(error)) *Event_GetAfterCallbacks_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1633,53 +1633,6 @@ func (_c *Event_GetDelayIfStillRunning_Call) RunAndReturn(run func() bool) *Even
 	return _c
 }
 
-// GetFailureCallbacks provides a mock function with no fields
-func (_m *Event) GetFailureCallbacks() []func(error) {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetFailureCallbacks")
-	}
-
-	var r0 []func(error)
-	if rf, ok := ret.Get(0).(func() []func(error)); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]func(error))
-		}
-	}
-
-	return r0
-}
-
-// Event_GetFailureCallbacks_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetFailureCallbacks'
-type Event_GetFailureCallbacks_Call struct {
-	*mock.Call
-}
-
-// GetFailureCallbacks is a helper method to define mock.On call
-func (_e *Event_Expecter) GetFailureCallbacks() *Event_GetFailureCallbacks_Call {
-	return &Event_GetFailureCallbacks_Call{Call: _e.mock.On("GetFailureCallbacks")}
-}
-
-func (_c *Event_GetFailureCallbacks_Call) Run(run func()) *Event_GetFailureCallbacks_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Event_GetFailureCallbacks_Call) Return(_a0 []func(error)) *Event_GetFailureCallbacks_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Event_GetFailureCallbacks_Call) RunAndReturn(run func() []func(error)) *Event_GetFailureCallbacks_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // GetName provides a mock function with no fields
 func (_m *Event) GetName() string {
 	ret := _m.Called()
@@ -1766,53 +1719,6 @@ func (_c *Event_GetSkipIfStillRunning_Call) Return(_a0 bool) *Event_GetSkipIfSti
 }
 
 func (_c *Event_GetSkipIfStillRunning_Call) RunAndReturn(run func() bool) *Event_GetSkipIfStillRunning_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetSuccessCallbacks provides a mock function with no fields
-func (_m *Event) GetSuccessCallbacks() []func() {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetSuccessCallbacks")
-	}
-
-	var r0 []func()
-	if rf, ok := ret.Get(0).(func() []func()); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]func())
-		}
-	}
-
-	return r0
-}
-
-// Event_GetSuccessCallbacks_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetSuccessCallbacks'
-type Event_GetSuccessCallbacks_Call struct {
-	*mock.Call
-}
-
-// GetSuccessCallbacks is a helper method to define mock.On call
-func (_e *Event_Expecter) GetSuccessCallbacks() *Event_GetSuccessCallbacks_Call {
-	return &Event_GetSuccessCallbacks_Call{Call: _e.mock.On("GetSuccessCallbacks")}
-}
-
-func (_c *Event_GetSuccessCallbacks_Call) Run(run func()) *Event_GetSuccessCallbacks_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Event_GetSuccessCallbacks_Call) Return(_a0 []func()) *Event_GetSuccessCallbacks_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Event_GetSuccessCallbacks_Call) RunAndReturn(run func() []func()) *Event_GetSuccessCallbacks_Call {
 	_c.Call.Return(run)
 	return _c
 }

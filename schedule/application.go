@@ -13,12 +13,8 @@ import (
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/schedule"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/schedule/utils"
 	"github.com/goravel/framework/support/carbon"
-)
-
-// cronParser parses the cron expressions of the events, with optional seconds.
-var cronParser = cron.NewParser(
-	cron.SecondOptional | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor,
 )
 
 // maxDelayIfStillRunning bounds how long Run waits for a previous run of
@@ -42,7 +38,7 @@ func NewApplication(artisan console.Artisan, cache cache.Cache, log log.Log, deb
 	return &Application{
 		artisan:  artisan,
 		cache:    cache,
-		cron:     cron.New(cron.WithParser(cronParser), cron.WithLogger(NewLogger(log, debug)), cron.WithLocation(location)),
+		cron:     cron.New(cron.WithParser(utils.CronParser), cron.WithLogger(NewLogger(log, debug)), cron.WithLocation(location)),
 		location: location,
 		log:      log,
 		debug:    debug,
@@ -141,7 +137,7 @@ func (app *Application) addEvents(events []schedule.Event) {
 		} else if event.GetSkipIfStillRunning() {
 			chain = cron.NewChain(cron.SkipIfStillRunning(NewLogger(app.log, app.debug)), cron.Recover(NewLogger(app.log, app.debug)))
 		}
-		_, err := app.cron.AddJob(cronSpec(event), chain.Then(app.getJob(event)))
+		_, err := app.cron.AddJob(utils.CronSpec(event), chain.Then(app.getJob(event)))
 
 		if err != nil {
 			app.log.Errorf("add schedule error: %v", err)
@@ -182,9 +178,10 @@ func (app *Application) runJob(event schedule.Event) {
 }
 
 // execute runs the command or the callback of the event between its hooks:
-// the Before callbacks, then the event, then the OnSuccess or the OnFailure
-// callbacks and the After callbacks. Work and Run each report its failure
-// their own way, so a panic of the event is passed on once the hooks ran.
+// the Before callbacks, then the event, then the After, OnSuccess and
+// OnFailure callbacks in the order they were registered, as Laravel does.
+// Work and Run each report its failure their own way, so a panic of the
+// event is passed on once the hooks ran.
 func (app *Application) execute(event schedule.Event) (err error) {
 	for _, callback := range event.GetBeforeCallbacks() {
 		callback()
@@ -198,18 +195,8 @@ func (app *Application) execute(event schedule.Event) (err error) {
 			failure = errors.ScheduleEventPanicked.Args(eventName(event), recovered)
 		}
 
-		if failure != nil {
-			for _, callback := range event.GetFailureCallbacks() {
-				callback(failure)
-			}
-		} else {
-			for _, callback := range event.GetSuccessCallbacks() {
-				callback()
-			}
-		}
-
 		for _, callback := range event.GetAfterCallbacks() {
-			callback()
+			app.runAfterCallback(event, callback, failure)
 		}
 
 		if recovered != nil {
@@ -228,7 +215,7 @@ func (app *Application) execute(event schedule.Event) (err error) {
 
 // isDue reports whether the event fires within the minute starting at tick.
 func (app *Application) isDue(event schedule.Event, tick time.Time) bool {
-	spec, err := cronParser.Parse(cronSpec(event))
+	spec, err := utils.CronParser.Parse(utils.CronSpec(event))
 	if err != nil {
 		// Register only keeps events with a valid expression and timezone.
 		return false
@@ -295,14 +282,17 @@ func (app *Application) runEvent(event schedule.Event) (err error) {
 	return err
 }
 
-// cronSpec returns the cron expression of the event with its timezone, in
-// the form the cron parser reads.
-func cronSpec(event schedule.Event) string {
-	if timezone := event.GetTimezone(); timezone != "" {
-		return "CRON_TZ=" + timezone + " " + event.GetCron()
-	}
+// runAfterCallback runs a callback registered with After, OnSuccess or
+// OnFailure. A callback that panics is logged, so the others still run and
+// the event keeps its own result.
+func (app *Application) runAfterCallback(event schedule.Event, callback func(err error), failure error) {
+	defer func() {
+		if recovered := recover(); recovered != nil && app.log != nil {
+			app.log.Error(errors.ScheduleEventHookPanicked.Args(eventName(event), recovered))
+		}
+	}()
 
-	return event.GetCron()
+	callback(failure)
 }
 
 // eventName returns the name of the event, or its cron expression when it

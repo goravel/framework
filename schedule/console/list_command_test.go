@@ -32,7 +32,7 @@ func TestListCommand(t *testing.T) {
 	// schedule artisan command
 	cmd := mocksschedule.NewEvent(t)
 	cmd.EXPECT().GetCommand().Return("send:emails name").Once()
-	cmd.EXPECT().GetCron().Return("* * * * *").Twice()
+	cmd.EXPECT().GetCron().Return("* * * * *").Times(3)
 	cmd.EXPECT().GetTimezone().Return("").Once()
 	mockContext.EXPECT().TwoColumnDetail(
 		"<fg=yellow>  *    *  * * *</>  artisan send:emails <fg=yellow>name</>",
@@ -44,7 +44,7 @@ func TestListCommand(t *testing.T) {
 	closure.EXPECT().GetName().Return("").Once()
 	closure.EXPECT().GetCommand().Return("").Once()
 	closure.EXPECT().GetCallback().Return(func() {}).Once()
-	closure.EXPECT().GetCron().Return("*/30 * * * *").Twice()
+	closure.EXPECT().GetCron().Return("*/30 * * * *").Times(3)
 	closure.EXPECT().GetTimezone().Return("").Once()
 	mockContext.EXPECT().TwoColumnDetail(
 		fmt.Sprintf("<fg=yellow>  */30 *  * * *</>  Closure at: %s:46", filepath.Join("schedule", "console", "list_command_test.go")),
@@ -55,7 +55,7 @@ func TestListCommand(t *testing.T) {
 	namedClosure := mocksschedule.NewEvent(t)
 	namedClosure.EXPECT().GetName().Return("test-command").Once()
 	namedClosure.EXPECT().GetCommand().Return("").Once()
-	namedClosure.EXPECT().GetCron().Return("00 10 * * *").Twice()
+	namedClosure.EXPECT().GetCron().Return("00 10 * * *").Times(3)
 	namedClosure.EXPECT().GetTimezone().Return("").Once()
 	mockContext.EXPECT().TwoColumnDetail(
 		"<fg=yellow>  00   10 * * *</>  test-command",
@@ -66,7 +66,7 @@ func TestListCommand(t *testing.T) {
 	zonedClosure := mocksschedule.NewEvent(t)
 	zonedClosure.EXPECT().GetName().Return("zoned-command").Once()
 	zonedClosure.EXPECT().GetCommand().Return("").Once()
-	zonedClosure.EXPECT().GetCron().Return("00 10 * * *").Twice()
+	zonedClosure.EXPECT().GetCron().Return("00 10 * * *").Times(3)
 	zonedClosure.EXPECT().GetTimezone().Return("Etc/GMT-2").Once()
 	mockContext.EXPECT().TwoColumnDetail(
 		"<fg=yellow>  00   10 * * *</>  zoned-command",
@@ -76,7 +76,7 @@ func TestListCommand(t *testing.T) {
 	// schedule command(second-level cron)
 	secondlyCommand := mocksschedule.NewEvent(t)
 	secondlyCommand.EXPECT().GetCommand().Return("do:something --every --second").Once()
-	secondlyCommand.EXPECT().GetCron().Return("* * * * * *").Twice()
+	secondlyCommand.EXPECT().GetCron().Return("* * * * * *").Times(3)
 	secondlyCommand.EXPECT().GetTimezone().Return("").Once()
 	mockContext.EXPECT().TwoColumnDetail(
 		"<fg=yellow>* *    *  * * *</>  artisan do:something <fg=yellow>--every --second</>",
