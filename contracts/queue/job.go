@@ -56,8 +56,11 @@ type ChainJob struct {
 // one with the same unique ID is pending or running, like Laravel's
 // ShouldBeUnique. Dispatch takes a cache lock for the job and skips it,
 // returning nil, when the lock is already taken. The lock is released once
-// the job succeeds or fails for good, not while it waits for a retry.
-// DispatchSync does not check it. It needs a cache store.
+// the job succeeds or fails for good, not while it waits for a retry; the
+// jobs chained to it don't hold it. DispatchSync does not check it. It needs
+// a cache store shared by the dispatcher and the workers, such as Redis or
+// the database: with a store local to each process, such as memory, every
+// process takes its own lock.
 type JobWithUnique interface {
 	// UniqueID returns what tells apart the jobs with the same signature,
 	// from the values the job is dispatched with, as Handle receives them.
@@ -65,7 +68,7 @@ type JobWithUnique interface {
 	UniqueID(args ...any) string
 	// UniqueFor returns how long the lock is held at most, so a job that
 	// never finishes does not block the next ones forever. Zero holds it
-	// until the job is processed.
+	// until the job is processed, without expiring.
 	UniqueFor() time.Duration
 }
 

@@ -397,7 +397,7 @@ func (r *Worker) processReservedJob(ctx context.Context, reservedJob queue.Reser
 	}
 
 	// The job succeeded or failed for good, so a unique job can be pushed
-	// again.
+	// again. As in Laravel, the jobs chained to it don't hold its lock.
 	releaseUniqueLock(r.cache, task)
 
 	if err != nil {

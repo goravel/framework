@@ -18,8 +18,8 @@ func isUniqueJob(task contractsqueue.Task) bool {
 	return ok
 }
 
-// uniqueLockKey returns the key of the unique lock of the task's job, or
-// false when the job is not unique.
+// uniqueLockKey returns the key of the unique lock of the task's job, and
+// whether the job is unique.
 func uniqueLockKey(task contractsqueue.Task) (string, bool) {
 	unique, ok := task.Job.(contractsqueue.JobWithUnique)
 	if !ok {
@@ -36,7 +36,8 @@ func uniqueLockKey(task contractsqueue.Task) (string, bool) {
 
 // acquireUniqueLock takes the unique lock of the task's job. It returns false
 // when a job with the same unique ID is already pending or running, in which
-// case the task must not be pushed.
+// case the task must not be pushed. It returns QueueUniqueJobWithoutCache
+// when the job is unique but no cache store is bound.
 func acquireUniqueLock(cache contractscache.Cache, task contractsqueue.Task) (bool, error) {
 	key, ok := uniqueLockKey(task)
 	if !ok {

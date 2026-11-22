@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/goravel/framework/cache"
@@ -155,13 +156,13 @@ func TestDispatchUniqueJobReleasesTheLock(t *testing.T) {
 		mockDriverCreator.EXPECT().Create("redis").Return(mockDriver, nil)
 		mockDriver.EXPECT().Driver().Return("redis")
 
-		pendingJob := newUniquePendingJob(memory, mockDriverCreator, &uniqueTestJob{uniqueFor: 50 * time.Millisecond}, "1")
+		pendingJob := newUniquePendingJob(memory, mockDriverCreator, &uniqueTestJob{uniqueFor: time.Second}, "1")
 		mockDriver.EXPECT().Push(pendingJob.task, "default").Return(nil).Twice()
 
 		assert.NoError(t, pendingJob.Dispatch())
 		assert.NoError(t, pendingJob.Dispatch())
 
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(1100 * time.Millisecond)
 		assert.NoError(t, pendingJob.Dispatch())
 	})
 }
@@ -207,6 +208,25 @@ func (s *WorkerTestSuite) Test_ProcessReleasesTheUniqueLock() {
 		released, err := s.worker.Process(context.Background(), mockReservedJob)
 		s.False(released)
 		s.NoError(err)
+		s.True(memory.Lock(key).Get())
+	})
+
+	s.Run("after the job fails for good", func() {
+		s.SetupTest()
+		memory := newUniqueTestCache(s.T())
+		s.worker.cache = memory
+		s.True(memory.Lock(key).Get())
+
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+		mockReservedJob.EXPECT().Task().Return(task).Once()
+		s.mockJob.EXPECT().Call(task.Job.Signature(), utils.ConvertArgs(task.Args)).Return(assert.AnError).Once()
+		mockReservedJob.EXPECT().Attempts().Return(1).Maybe()
+		mockReservedJob.EXPECT().Delete().Return(nil).Once()
+		s.mockJson.EXPECT().MarshalString(mock.Anything).Return("{}", nil).Once()
+
+		released, err := s.worker.processReservedJob(context.Background(), mockReservedJob, s.worker.queue, s.worker.sendFailedJob)
+		s.False(released)
+		s.ErrorIs(err, errors.QueueFailedToCallJob)
 		s.True(memory.Lock(key).Get())
 	})
 
