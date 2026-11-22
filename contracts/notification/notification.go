@@ -139,6 +139,11 @@ type Manager interface {
 	Channel(name string) Channel
 
 	Route(channel string, route any) OnDemandNotifiable
+
+	// Fake records the notifications sent through Send, SendNow and Route
+	// instead of delivering them, until Reset is called on the returned
+	// Fake. Calling it again while faking keeps the records.
+	Fake() Fake
 }
 
 type OnDemandNotifiable interface {
