@@ -43,13 +43,18 @@ func (app *Application) Dispatch(evt any, args ...[]event.Arg) event.Result {
 		payload = args[0]
 	}
 
-	return newResult(dispatch(app.queue, evt, name, app.prepareListeners(name), payload, dispatchModeDispatch))
+	return newResult(dispatch(app.queue, app.fake, evt, name, app.prepareListeners(name), payload, dispatchModeDispatch))
 }
 
 // dispatch is the single pipeline behind both Dispatch and the deprecated Task.
 // The listeners are snapshotted by the caller, so a listener registering another
-// listener only affects later dispatches.
-func dispatch(queue contractsqueue.Queue, evt any, eventName string, listeners []*listener, args []event.Arg, mode dispatchMode) []error {
+// listener only affects later dispatches. A faked event is recorded instead,
+// whichever entry point dispatched it.
+func dispatch(queue contractsqueue.Queue, fake *Fake, evt any, eventName string, listeners []*listener, args []event.Arg, mode dispatchMode) []error {
+	if fake.record(evt, eventName, args) {
+		return nil
+	}
+
 	if len(listeners) == 0 {
 		if mode.requireListeners {
 			return []error{errors.EventListenerNotBind.Args(evt)}

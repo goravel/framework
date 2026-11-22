@@ -281,7 +281,6 @@ var (
 			PkgPath:     "github.com/goravel/framework/queue",
 			Dependencies: []string{
 				Config,
-				Cache,
 				DB,
 				Log,
 				Schema,
