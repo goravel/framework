@@ -48,6 +48,7 @@ func TestRouteListCommand(t *testing.T) {
 					{Name: "test", Method: "GET", Path: "/test"},
 					{Name: "test2", Method: "POST", Path: "/test2"},
 				}).Once()
+				mockContext.EXPECT().Option("domain").Return("").Once()
 				mockContext.EXPECT().Option("method").Return("").Once()
 				mockContext.EXPECT().Option("name").Return("").Once()
 				mockContext.EXPECT().Option("path").Return("").Once()
@@ -67,6 +68,7 @@ func TestRouteListCommand(t *testing.T) {
 					{Name: "test", Method: "GET", Path: "/test"},
 					{Name: "test2", Method: "POST", Path: "/test2"},
 				}).Once()
+				mockContext.EXPECT().Option("domain").Return("").Once()
 				mockContext.EXPECT().Option("method").Return("POST").Once()
 				mockContext.EXPECT().Option("name").Return("").Once()
 				mockContext.EXPECT().Option("path").Return("").Once()
@@ -94,6 +96,7 @@ func TestRouteListCommand(t *testing.T) {
 					{Name: "test", Method: "GET", Path: "/test", Handler: "goravel/routes.testHandler"},
 					{Method: "POST", Path: "/test2", Handler: "goravel/routes.testHandler2"},
 				}).Once()
+				mockContext.EXPECT().Option("domain").Return("").Once()
 				mockContext.EXPECT().Option("method").Return("").Once()
 				mockContext.EXPECT().Option("name").Return("").Once()
 				mockContext.EXPECT().Option("path").Return("test").Once()
@@ -119,6 +122,26 @@ func TestRouteListCommand(t *testing.T) {
 				"\x1b[0m\x1b[39m  \x1b[0m\n\x1b[39m\x1b[0m\x1b[39m   \x1b[90m" +
 				"                                                        " +
 				"\x1b[0m\x1b[39m \x1b[34;1mShowing [2] routes\x1b[0m\x1b[39m  \x1b[0m\n\x1b[39m\x1b[0m",
+		},
+		{
+			name: "filter by domain",
+			setup: func() {
+				mockContext.EXPECT().NewLine().Return().Once()
+				mockRoute.EXPECT().GetRoutes().Return([]http.Info{
+					{Method: "GET|HEAD", Path: "/", Domain: "admin.example.com"},
+					{Method: "GET|HEAD", Path: "/users/{id}", Domain: "{account}.example.com"},
+					{Method: "POST", Path: "/test"},
+				}).Once()
+				mockContext.EXPECT().Option("domain").Return("example.com").Once()
+				mockContext.EXPECT().Option("method").Return("").Once()
+				mockContext.EXPECT().Option("name").Return("").Once()
+				mockContext.EXPECT().Option("path").Return("").Once()
+				mockContext.EXPECT().OptionSlice("except-path").Return(nil).Once()
+				mockContext.EXPECT().TwoColumnDetail("<fg=blue>GET</><fg=gray>|</><fg=gray>HEAD</>     admin.example.com", "").Once()
+				mockContext.EXPECT().TwoColumnDetail("<fg=blue>GET</><fg=gray>|</><fg=gray>HEAD</>     <fg=yellow>{account}</>.example.com/users/<fg=yellow>{id}</>", "").Once()
+				mockContext.EXPECT().NewLine().Return().Once()
+				mockContext.EXPECT().TwoColumnDetail("", "<fg=blue;op=bold>Showing [2] routes</>", ' ').Once()
+			},
 		},
 	}
 

@@ -48,6 +48,12 @@ type Route interface {
 }
 
 type Router interface {
+	// Domain limits the routes registered with the router to requests for the
+	// given host, such as "admin.example.com". A segment in braces, such as
+	// "{account}.example.com", matches one label of the host and is read like
+	// a route parameter. Routes on a domain take priority over the routes
+	// without one, which match any host.
+	Domain(domain string) Router
 	// Group creates a new router group with the specified handler.
 	Group(handler GroupFunc)
 	// Prefix adds a common prefix to the routes registered with the router.

@@ -129,9 +129,11 @@ type FormRequestWithPrepareForValidation interface {
 }
 
 type Info struct {
-	Handler            string      `json:"handler"`
-	Method             string      `json:"method"`
-	Name               string      `json:"name"`
-	Path               string      `json:"path"`
+	// Domain is the host the route is limited to, empty for any host.
+	Domain             string       `json:"domain,omitempty"`
+	Handler            string       `json:"handler"`
+	Method             string       `json:"method"`
+	Name               string       `json:"name"`
+	Path               string       `json:"path"`
 	ExcludedMiddleware []Middleware `json:"excluded_middleware,omitempty"`
 }

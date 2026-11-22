@@ -56,6 +56,10 @@ func (r *RouteListCommand) Extend() command.Extend {
 		Category: "route",
 		Flags: []command.Flag{
 			&command.StringFlag{
+				Name:  "domain",
+				Usage: "Filter the routes by domain",
+			},
+			&command.StringFlag{
 				Name:  "method",
 				Usage: "Filter the routes by method",
 			},
@@ -91,7 +95,7 @@ func (r *RouteListCommand) Handle(ctx console.Context) error {
 	}
 
 	for _, item := range filteredRoutes {
-		ctx.TwoColumnDetail(fmt.Sprintf("%s %s", formatMethod(item.Method), formatPath(item.Path)), formateNameHandler(item.Name, item.Handler))
+		ctx.TwoColumnDetail(fmt.Sprintf("%s %s", formatMethod(item.Method), formatPath(item.Domain, item.Path)), formateNameHandler(item.Name, item.Handler))
 	}
 
 	ctx.NewLine()
@@ -107,6 +111,12 @@ func filterRoutes(ctx console.Context, routes []http.Info) []http.Info {
 			return strings.Contains(strings.ToLower(s), strings.ToLower(substr))
 		}
 	)
+	if domain := ctx.Option("domain"); domain != "" {
+		matcher = append(matcher, func(route http.Info) bool {
+			return contains(route.Domain, domain)
+		})
+	}
+
 	if method := ctx.Option("method"); method != "" {
 		matcher = append(matcher, func(route http.Info) bool {
 			return contains(route.Method, method)
@@ -176,9 +186,13 @@ func formatMethod(method string) string {
 	return result
 }
 
-func formatPath(path string) string {
+func formatPath(domain, path string) string {
 	if cleared := strings.TrimPrefix(path, "/"); cleared != "" {
 		path = cleared
+	}
+	if domain != "" {
+		// As Laravel shows it: the domain, then the path.
+		path = strings.TrimSuffix(domain+"/"+strings.TrimPrefix(path, "/"), "/")
 	}
 
 	return routeParamsRegex.ReplaceAllString(path, "<fg=yellow>$1</>")
