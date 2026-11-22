@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 	mocksqueue "github.com/goravel/framework/mocks/queue"
@@ -28,7 +29,8 @@ func TestFake_RecordsInsteadOfPushing(t *testing.T) {
 
 	delay := time.Now().Add(time.Minute)
 	args := []contractsqueue.Arg{{Type: "string", Value: "goravel"}}
-	assert.NoError(t, app.Job(&TestJobOne{}, args).OnQueue("emails").Delay(delay).Dispatch())
+	job := &TestJobOne{}
+	assert.NoError(t, app.Job(job, args).OnQueue("emails").Delay(delay).Dispatch())
 
 	assert.True(t, fake.AssertPushed(&TestJobOne{}))
 	assert.True(t, fake.AssertPushed(&TestJobOne{}, func(pushed contractsqueue.Pushed) bool {
@@ -45,8 +47,9 @@ func TestFake_RecordsInsteadOfPushing(t *testing.T) {
 	assert.True(t, fake.AssertNotPushed(&TestJobTwo{}))
 	assert.False(t, fake.AssertNotPushed(&TestJobOne{}))
 	assert.False(t, fake.AssertNothingPushed())
-	assert.Len(t, fake.Pushed(&TestJobOne{}), 1)
-	assert.Same(t, fake.Pushed(&TestJobOne{})[0].Job(), fake.Pushed(&TestJobOne{})[0].Job())
+	pushed := fake.Pushed(&TestJobOne{})
+	require.Len(t, pushed, 1)
+	assert.Same(t, job, pushed[0].Job())
 	assert.Nil(t, fake.Pushed(nil))
 	assert.Nil(t, fake.Pushed((*TestJobOne)(nil)))
 	assert.Nil(t, fake.Pushed(""))
@@ -120,25 +123,19 @@ func TestFake_OnlyTheGivenJobs(t *testing.T) {
 }
 
 func testFakeOnlyTheGivenJob(t *testing.T, job any) {
+	app := newFakeTestApp(t)
+	fake := app.Fake(job)
+
 	mockDriverCreator := mocksqueue.NewDriverCreator(t)
 	mockDriver := mocksqueue.NewDriver(t)
-	fake := NewFake()
-	fake.enable([]any{job})
 
-	faked := &PendingJob{
-		connection:    "redis",
-		driverCreator: mockDriverCreator,
-		fake:          fake,
-		queue:         "default",
-		task:          contractsqueue.Task{ChainJob: contractsqueue.ChainJob{Job: &TestJobOne{}}},
-	}
-	pushed := &PendingJob{
-		connection:    "redis",
-		driverCreator: mockDriverCreator,
-		fake:          fake,
-		queue:         "default",
-		task:          contractsqueue.Task{ChainJob: contractsqueue.ChainJob{Job: &TestJobTwo{}}},
-	}
+	faked, ok := app.Job(&TestJobOne{}).(*PendingJob)
+	require.True(t, ok)
+	faked.driverCreator = mockDriverCreator
+	pushed, ok := app.Job(&TestJobTwo{}).(*PendingJob)
+	require.True(t, ok)
+	pushed.driverCreator = mockDriverCreator
+
 	mockDriverCreator.EXPECT().Create("redis").Return(mockDriver, nil).Once()
 	mockDriver.EXPECT().Push(pushed.task, "default").Return(nil).Once()
 

@@ -34,7 +34,9 @@ type Fake interface {
 
 // Pushed is a job recorded by the fake, as it would have been pushed.
 type Pushed interface {
-	// Args returns a copy of the payload of the job.
+	// Args returns a copy of the payload of the job. Only the slice is
+	// copied: a value of reference type, such as a slice or a map, is shared
+	// with the caller.
 	Args() []Arg
 	// Chain returns a copy of the jobs chained after Job, run one by one
 	// after it.
