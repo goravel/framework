@@ -1,6 +1,7 @@
 package gorm
 
 import (
+	"math"
 	"reflect"
 	"slices"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/str"
 )
 
 // relationOperators are the operators accepted to compare the number of
@@ -121,7 +123,23 @@ func (r *Query) relationExistenceExpression(parent *schema.Schema, parentTable s
 		return nil, errors.OrmQueryRelationNotFound.Args(name, parent.Name)
 	}
 
-	sub := r.newRelationQuery(reflect.New(relation.FieldSchema.ModelType).Interface())
+	model := reflect.New(relation.FieldSchema.ModelType).Interface()
+	if err := r.checkRelationConnection(name, model); err != nil {
+		return nil, err
+	}
+
+	sub := r.newRelationQuery(model)
+
+	// A relation on the same table, such as the children of a tree node,
+	// queries the related records under an alias. Otherwise the table of
+	// the subquery hides the parent's, and the condition would compare each
+	// related record with itself.
+	relatedTable := relation.FieldSchema.Table
+	if relatedTable == parentTable {
+		relatedTable = str.Of(name).Snake().String() + "_" + relatedTable
+		sub = sub.Table(r.quote(clause.Table{Name: relation.FieldSchema.Table}) + " AS " + relatedTable).(*Query)
+	}
+
 	operator, count := existence.operator, existence.count
 	if nested {
 		sub = sub.addWhere(contractsdriver.Where{
@@ -141,7 +159,7 @@ func (r *Query) relationExistenceExpression(parent *schema.Schema, parentTable s
 		sub = query
 	}
 
-	sub = r.constrainToParent(sub, relation, parentTable)
+	sub = r.constrainToParent(sub, relation, relatedTable, parentTable)
 
 	built := sub.addGlobalScopes().buildConditions()
 	if err := built.instance.Error; err != nil {
@@ -159,10 +177,9 @@ func (r *Query) relationExistenceExpression(parent *schema.Schema, parentTable s
 }
 
 // constrainToParent limits the related records to the ones of the parent
-// row, joining the pivot table of a many to many relation.
-func (r *Query) constrainToParent(sub *Query, relation *schema.Relationship, parentTable string) *Query {
-	relatedTable := relation.FieldSchema.Table
-
+// row, joining the pivot table of a many to many relation. The related table
+// is the table of the related records in the subquery, or its alias.
+func (r *Query) constrainToParent(sub *Query, relation *schema.Relationship, relatedTable, parentTable string) *Query {
 	if relation.JoinTable != nil {
 		pivot := relation.JoinTable.Table
 
@@ -196,6 +213,22 @@ func (r *Query) constrainToParent(sub *Query, relation *schema.Relationship, par
 	}
 
 	return sub
+}
+
+// checkRelationConnection returns an error when the related model uses
+// another connection than the query: the subquery runs inside the query, so
+// it can't reach another database.
+func (r *Query) checkRelationConnection(relation string, model any) error {
+	connectionModel, ok := model.(contractsorm.ModelWithConnection)
+	if !ok {
+		return nil
+	}
+
+	if connection := connectionModel.Connection(); connection != "" && connection != r.dbConfig.Connection {
+		return errors.OrmQueryRelationDifferentConnection.Args(relation, connection, r.dbConfig.Connection)
+	}
+
+	return nil
 }
 
 // newRelationQuery returns an empty query on the related model, sharing the
@@ -232,13 +265,23 @@ func relationCount(args []any) (string, int64, error) {
 		return "", 0, errors.OrmQueryInvalidRelationCount
 	}
 
-	count := reflect.ValueOf(args[1])
-	switch count.Kind() {
+	var count int64
+	value := reflect.ValueOf(args[1])
+	switch value.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return operator, count.Int(), nil
+		count = value.Int()
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return operator, int64(count.Uint()), nil
+		if value.Uint() > math.MaxInt64 {
+			return "", 0, errors.OrmQueryInvalidRelationCount
+		}
+		count = int64(value.Uint())
 	default:
 		return "", 0, errors.OrmQueryInvalidRelationCount
 	}
+
+	if count < 0 {
+		return "", 0, errors.OrmQueryInvalidRelationCount
+	}
+
+	return operator, count, nil
 }

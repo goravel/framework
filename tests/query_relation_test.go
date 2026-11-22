@@ -73,6 +73,37 @@ func (s *QueryTestSuite) TestRelationExistence() {
 			}).Count()
 			s.Nil(err)
 			s.Equal(int64(2), count)
+
+			// Relations on the same table: root -> child -> grandchild.
+			root := Node{Name: "has_node_root"}
+			s.Nil(query.Query().Create(&root))
+			child := Node{Name: "has_node_child", ParentID: &root.ID}
+			s.Nil(query.Query().Create(&child))
+			grandchild := Node{Name: "has_node_grandchild", ParentID: &child.ID}
+			s.Nil(query.Query().Create(&grandchild))
+
+			nodeNames := func(relationQuery contractsorm.Query) []string {
+				var nodes []Node
+				s.Nil(relationQuery.Order("id").Find(&nodes))
+
+				result := make([]string, 0, len(nodes))
+				for _, node := range nodes {
+					result = append(result, node.Name)
+				}
+
+				return result
+			}
+			nodes := func() contractsorm.Query {
+				return query.Query().Model(&Node{})
+			}
+
+			s.Equal([]string{"has_node_root", "has_node_child"}, nodeNames(nodes().Has("Children")))
+			s.Equal([]string{"has_node_child", "has_node_grandchild"}, nodeNames(nodes().Has("Parent")))
+			s.Equal([]string{"has_node_grandchild"}, nodeNames(nodes().DoesntHave("Children")))
+			s.Equal([]string{"has_node_root"}, nodeNames(nodes().Has("Children.Children")))
+			s.Equal([]string{"has_node_child"}, nodeNames(nodes().WhereHas("Children", func(query contractsorm.Query) contractsorm.Query {
+				return query.Where("name", "has_node_grandchild")
+			})))
 		})
 	}
 }

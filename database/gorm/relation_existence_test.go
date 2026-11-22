@@ -81,6 +81,30 @@ type relationScopedUser struct {
 	Books []*relationScopedBook `gorm:"foreignKey:RelationUserID"`
 }
 
+// relationNode is a tree whose relations are on its own table.
+type relationNode struct {
+	ID        uint
+	ParentID  *uint
+	Parent    *relationNode   `gorm:"foreignKey:ParentID"`
+	Children  []*relationNode `gorm:"foreignKey:ParentID"`
+	Friends   []*relationNode `gorm:"many2many:relation_node_friends"`
+	DeletedAt gormio.DeletedAt
+}
+
+type relationConnectionBook struct {
+	ID             uint
+	RelationUserID uint
+}
+
+func (r *relationConnectionBook) Connection() string {
+	return "other"
+}
+
+type relationConnectionUser struct {
+	ID    uint
+	Books []*relationConnectionBook `gorm:"foreignKey:RelationUserID"`
+}
+
 func TestRelationExistence(t *testing.T) {
 	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{DryRun: true})
 	require.NoError(t, err)
@@ -258,6 +282,47 @@ func TestRelationExistence(t *testing.T) {
 			},
 			expectSql:  "SELECT * FROM `relation_users` WHERE `name` = ? OR NOT EXISTS (SELECT 1 FROM `relation_books` WHERE `published` = ? AND `relation_books`.`relation_user_id` = `relation_users`.`id`)",
 			expectVars: []any{"goravel", true},
+		},
+		{
+			name:      "Has with a self referencing has many",
+			query:     func() contractsorm.Query { return newQuery().Model(&relationNode{}).Has("Children") },
+			expectSql: "SELECT * FROM `relation_nodes` WHERE EXISTS (SELECT 1 FROM `relation_nodes` AS children_relation_nodes WHERE `children_relation_nodes`.`parent_id` = `relation_nodes`.`id` AND `children_relation_nodes`.`deleted_at` IS NULL) AND `relation_nodes`.`deleted_at` IS NULL",
+		},
+		{
+			name:      "Has with a self referencing belongs to",
+			query:     func() contractsorm.Query { return newQuery().Model(&relationNode{}).Has("Parent") },
+			expectSql: "SELECT * FROM `relation_nodes` WHERE EXISTS (SELECT 1 FROM `relation_nodes` AS parent_relation_nodes WHERE `parent_relation_nodes`.`id` = `relation_nodes`.`parent_id` AND `parent_relation_nodes`.`deleted_at` IS NULL) AND `relation_nodes`.`deleted_at` IS NULL",
+		},
+		{
+			name:      "Has with a self referencing many to many",
+			query:     func() contractsorm.Query { return newQuery().Model(&relationNode{}).Has("Friends") },
+			expectSql: "SELECT * FROM `relation_nodes` WHERE EXISTS (SELECT 1 FROM `relation_nodes` AS friends_relation_nodes INNER JOIN `relation_node_friends` ON `relation_node_friends`.`friend_id` = `friends_relation_nodes`.`id` WHERE `relation_node_friends`.`relation_node_id` = `relation_nodes`.`id` AND `friends_relation_nodes`.`deleted_at` IS NULL) AND `relation_nodes`.`deleted_at` IS NULL",
+		},
+		{
+			name:       "Has with a nested self referencing relation",
+			query:      func() contractsorm.Query { return newQuery().Model(&relationNode{}).Has("Children.Children", ">=", 2) },
+			expectSql:  "SELECT * FROM `relation_nodes` WHERE EXISTS (SELECT 1 FROM `relation_nodes` AS children_relation_nodes WHERE (SELECT COUNT(*) FROM `relation_nodes` WHERE `relation_nodes`.`parent_id` = `children_relation_nodes`.`id` AND `relation_nodes`.`deleted_at` IS NULL) >= ? AND `children_relation_nodes`.`parent_id` = `relation_nodes`.`id` AND `children_relation_nodes`.`deleted_at` IS NULL) AND `relation_nodes`.`deleted_at` IS NULL",
+			expectVars: []any{int64(2)},
+		},
+		{
+			name: "WhereHas with a self referencing relation",
+			query: func() contractsorm.Query {
+				return newQuery().Model(&relationNode{}).WhereHas("Children", func(query contractsorm.Query) contractsorm.Query {
+					return query.Where("id > ?", 1)
+				})
+			},
+			expectSql:  "SELECT * FROM `relation_nodes` WHERE EXISTS (SELECT 1 FROM `relation_nodes` AS children_relation_nodes WHERE id > ? AND `children_relation_nodes`.`parent_id` = `relation_nodes`.`id` AND `children_relation_nodes`.`deleted_at` IS NULL) AND `relation_nodes`.`deleted_at` IS NULL",
+			expectVars: []any{1},
+		},
+		{
+			name:        "Has with a related model on another connection",
+			query:       func() contractsorm.Query { return newQuery().Model(&relationConnectionUser{}).Has("Books") },
+			expectError: errors.OrmQueryRelationDifferentConnection.Args("Books", "other", ""),
+		},
+		{
+			name:        "Has with a negative count",
+			query:       func() contractsorm.Query { return users().Has("Books", ">=", -1) },
+			expectError: errors.OrmQueryInvalidRelationCount,
 		},
 		{
 			name:        "Has with an empty relation",

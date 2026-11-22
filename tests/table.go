@@ -28,6 +28,7 @@ const (
 	TestTableMorphableEntities
 	TestTableUuidMorphableEntities
 	TestTableUlidMorphableEntities
+	TestTableNodes
 )
 
 type testTables struct {
@@ -61,6 +62,7 @@ func (r *testTables) All() map[TestTable]func() ([]string, error) {
 		TestTableMorphableEntities:     r.morphableEntities,
 		TestTableUuidMorphableEntities: r.uuidMorphableEntities,
 		TestTableUlidMorphableEntities: r.ulidMorphableEntities,
+		TestTableNodes:                 r.nodes,
 	}
 }
 
@@ -213,6 +215,27 @@ func (r *testTables) books() ([]string, error) {
 	blueprint.String("name")
 	blueprint.Timestamps()
 	blueprint.SoftDeletes()
+
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
+}
+
+func (r *testTables) nodes() ([]string, error) {
+	dropSql, err := r.dropSql("nodes")
+	if err != nil {
+		return nil, err
+	}
+
+	blueprint := schema.NewBlueprint(nil, "", "nodes")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.UnsignedBigInteger("parent_id").Nullable()
+	blueprint.String("name")
+	blueprint.Timestamps()
 
 	createSql, err := blueprint.ToSql(r.grammar)
 	if err != nil {
