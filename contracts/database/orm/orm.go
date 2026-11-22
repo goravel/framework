@@ -307,6 +307,13 @@ type Query interface {
 	WithTrashed() Query
 	// With returns a new query instance with the given relationships eager loaded.
 	With(query string, args ...any) Query
+	// WithCount selects the number of related records through the relation, the Go field name of a
+	// relationship, in a column named after it in snake case with a "_count" suffix, e.g. "books_count" for
+	// "Books". "Books as published_books_count" names the column. The model needs a field for the column, such
+	// as `BooksCount int64 `gorm:"->"``. The callback, which receives a query on the related model, limits the
+	// records that are counted. The model of the query, from Model or the destination of Find, First or
+	// similar, must be set.
+	WithCount(relation string, callback ...func(Query) Query) Query
 }
 
 type QueryWithContext interface {

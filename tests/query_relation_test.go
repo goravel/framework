@@ -76,3 +76,60 @@ func (s *QueryTestSuite) TestRelationExistence() {
 		})
 	}
 }
+
+// userWithCounts reads the users with the number of their related records.
+type userWithCounts struct {
+	Model
+	Name       string
+	Books      []*Book `gorm:"foreignKey:UserID"`
+	Roles      []*Role `gorm:"many2many:role_user;joinForeignKey:UserID"`
+	BooksCount int64   `gorm:"->"`
+	DraftCount int64   `gorm:"->"`
+	RolesCount int64   `gorm:"->"`
+}
+
+func (r *userWithCounts) TableName() string {
+	return "users"
+}
+
+func (s *QueryTestSuite) TestWithCount() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			withBooks := User{
+				Name:  "count_user_books",
+				Books: []*Book{{Name: "count_book_published"}, {Name: "count_book_draft"}},
+				Roles: []*Role{{Name: "count_role"}},
+			}
+			s.Nil(query.Query().Select(orm.Associations).Create(&withBooks))
+
+			withoutBooks := User{Name: "count_user_without_books"}
+			s.Nil(query.Query().Create(&withoutBooks))
+
+			var users []userWithCounts
+			s.Nil(query.Query().Model(&userWithCounts{}).
+				Where("name LIKE ?", "count_user_%").
+				WithCount("Books").
+				WithCount("Books as draft_count", func(query contractsorm.Query) contractsorm.Query {
+					return query.Where("name", "count_book_draft")
+				}).
+				WithCount("Roles").
+				Order("id").
+				Find(&users))
+
+			s.Require().Len(users, 2)
+			s.Equal("count_user_books", users[0].Name)
+			s.Equal(int64(2), users[0].BooksCount)
+			s.Equal(int64(1), users[0].DraftCount)
+			s.Equal(int64(1), users[0].RolesCount)
+			s.Equal("count_user_without_books", users[1].Name)
+			s.Equal(int64(0), users[1].BooksCount)
+			s.Equal(int64(0), users[1].DraftCount)
+			s.Equal(int64(0), users[1].RolesCount)
+
+			// The counts are not part of the row count.
+			count, err := query.Query().Model(&userWithCounts{}).Where("name LIKE ?", "count_user_%").WithCount("Books").Count()
+			s.Nil(err)
+			s.Equal(int64(2), count)
+		})
+	}
+}

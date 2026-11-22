@@ -22,6 +22,9 @@ type relationUser struct {
 	Comments []*relationComment
 	Phones   []*relationPhone `gorm:"polymorphic:Phoneable"`
 	Roles    []*relationRole  `gorm:"many2many:relation_role_users"`
+
+	BooksCount     int64 `gorm:"->"`
+	PublishedCount int64 `gorm:"->"`
 }
 
 type relationAddress struct {

@@ -22,6 +22,7 @@ type Conditions struct {
 	selectRaw           *Select
 	where               []contractsdriver.Where
 	with                []With
+	withCount           []relationCountColumn
 	distinct            bool
 	lockForUpdate       bool
 	sharedLock          bool
