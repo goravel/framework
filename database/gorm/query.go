@@ -1702,6 +1702,9 @@ func (r *Query) buildSharedLock(db *gormio.DB) *gormio.DB {
 func (r *Query) buildSubquery(sub func(contractsorm.Query) contractsorm.Query) (*gormio.DB, error) {
 	db := r.instance.Session(&gormio.Session{NewDB: true, Initialized: true})
 	queryImpl := NewQuery(r.ctx, r.config, r.dbConfig, db, r.grammar, r.log, r.modelToObserver, nil, r.telemetryResolver)
+	// The group has the model of the query, so the relation conditions inside it resolve their relations.
+	queryImpl.conditions.model = r.conditions.model
+	queryImpl.conditions.dest = r.conditions.dest
 	query := sub(queryImpl)
 	var ok bool
 	if queryImpl, ok = query.(*Query); ok {
@@ -1757,6 +1760,15 @@ func (r *Query) buildWhere(db *gormio.DB) *gormio.DB {
 				}
 
 				item.Query = sub
+				item.Args = nil
+			case relationExistence:
+				expression, err := r.buildRelationExistence(db, query)
+				if err != nil {
+					r.conditions.err = errors.Join(r.conditions.err, err)
+					continue
+				}
+
+				item.Query = expression
 				item.Args = nil
 			case string:
 				if strings.Contains(query, "->") {
