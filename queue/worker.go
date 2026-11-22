@@ -21,6 +21,7 @@ import (
 )
 
 type Worker struct {
+	cache  cache.Cache
 	config queue.Config
 	db     db.DB
 	driver queue.Driver
@@ -57,6 +58,7 @@ func NewWorker(config queue.Config, cache cache.Cache, db db.DB, job queue.JobSt
 	shutdownCtx, shutdownCancel := context.WithCancel(context.Background())
 
 	return &Worker{
+		cache:  cache,
 		config: config,
 		db:     db,
 		driver: driver,
@@ -393,6 +395,10 @@ func (r *Worker) processReservedJob(ctx context.Context, reservedJob queue.Reser
 		// it ran); its row must remain and no failed job is recorded.
 		return true, err
 	}
+
+	// The job succeeded or failed for good, so a unique job can be pushed
+	// again.
+	releaseUniqueLock(r.cache, task)
 
 	if err != nil {
 		if !errors.Is(err, errors.QueueFailedToCallJob) {

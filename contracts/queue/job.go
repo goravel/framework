@@ -52,6 +52,23 @@ type ChainJob struct {
 	Args  []Arg     `json:"args"`
 }
 
+// JobWithUnique is implemented by jobs that must not be pushed again while
+// one with the same unique ID is pending or running, like Laravel's
+// ShouldBeUnique. Dispatch takes a cache lock for the job and skips it,
+// returning nil, when the lock is already taken. The lock is released once
+// the job succeeds or fails for good, not while it waits for a retry.
+// DispatchSync does not check it. It needs a cache store.
+type JobWithUnique interface {
+	// UniqueID returns what tells apart the jobs with the same signature,
+	// from the values the job is dispatched with, as Handle receives them.
+	// An empty ID makes the job unique by its signature alone.
+	UniqueID(args ...any) string
+	// UniqueFor returns how long the lock is held at most, so a job that
+	// never finishes does not block the next ones forever. Zero holds it
+	// until the job is processed.
+	UniqueFor() time.Duration
+}
+
 type JobWithShouldRetry interface {
 	// ShouldRetry determines if the job should be retried based on the error.
 	// maxTries is the queue worker's configured tries: queue.Args.Tries for
