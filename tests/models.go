@@ -37,6 +37,7 @@ type User struct {
 	Avatar  string
 	Address *Address
 	Books   []*Book
+	Tasks   []*Task
 	House   *House   `gorm:"polymorphic:Houseable"`
 	Phones  []*Phone `gorm:"polymorphic:Phoneable"`
 	Roles   []*Role  `gorm:"many2many:role_user"`
@@ -437,6 +438,24 @@ type Book struct {
 	Author *Author
 }
 
+// Task is a direct has-many association of User with soft deletes and a global scope, so related scopes can be
+// verified independently from the parent.
+type Task struct {
+	Model
+	SoftDeletes
+	UserID uint
+	Name   string
+	Status string
+}
+
+func (r *Task) GlobalScopes() map[string]func(contractsorm.Query) contractsorm.Query {
+	return map[string]func(contractsorm.Query) contractsorm.Query{
+		"active": func(query contractsorm.Query) contractsorm.Query {
+			return query.Where("status", "active")
+		},
+	}
+}
+
 type Author struct {
 	Model
 	BookID uint   `db:"book_id"`
@@ -611,4 +630,100 @@ type UlidMorphableEntity struct {
 	Name          string `json:"name"`
 	MorphableID   string `gorm:"type:char(26)" json:"morphable_id"`
 	MorphableType string `json:"morphable_type"`
+}
+
+// CustomKeyDepartment associates its staff through a custom foreign key and reference, so the keys cannot come
+// from naming conventions. Its profile uses the same custom keys in the opposite direction.
+type CustomKeyDepartment struct {
+	Model
+	Name    string
+	Code    string
+	Staff   []*CustomKeyEmployee `gorm:"foreignKey:DepartmentCode;references:Code"`
+	Profile *CustomKeyProfile    `gorm:"foreignKey:DepartmentCode;references:Code"`
+}
+
+type CustomKeyEmployee struct {
+	Model
+	Name           string
+	DepartmentCode string
+	Department     *CustomKeyDepartment `gorm:"foreignKey:DepartmentCode;references:Code"`
+}
+
+// CustomKeyProfile is the optional has-one side of CustomKeyDepartment.
+type CustomKeyProfile struct {
+	Model
+	Name           string
+	DepartmentCode string
+}
+
+// CompositeParent associates its items through two columns, so a partial match is not an association. FirstItem is
+// the has-one view of the same reference pair.
+type CompositeParent struct {
+	Model
+	Name      string
+	Region    string
+	Code      string
+	Items     []*CompositeItem `gorm:"foreignKey:ParentRegion,ParentCode;references:Region,Code"`
+	FirstItem *CompositeItem   `gorm:"foreignKey:ParentRegion,ParentCode;references:Region,Code"`
+}
+
+type CompositeItem struct {
+	Model
+	Name         string
+	ParentRegion string
+	ParentCode   string
+	Parent       *CompositeParent `gorm:"foreignKey:ParentRegion,ParentCode;references:Region,Code"`
+}
+
+// CompositePost associates its tags through a pivot table whose own side and related side each use two columns, so a
+// partial match on either side is not an association.
+type CompositePost struct {
+	ID       uint `gorm:"primaryKey;autoIncrement:false"`
+	TenantID uint `gorm:"primaryKey"`
+	Title    string
+	Tags     []*CompositeTag `gorm:"many2many:composite_post_tag;references:Kind,Code;joinReferences:TagKind,TagCode"`
+}
+
+type CompositeTag struct {
+	ID   uint `gorm:"primaryKey;autoIncrement:false"`
+	Kind string
+	Code string
+}
+
+// Employee is a self-relation: a record can have a manager, reports, and friends. It also points to its parent
+// record, and at most one record names it as the parent.
+type Employee struct {
+	Model
+	SoftDeletes
+	Name      string
+	ParentID  *uint
+	ManagerID *uint
+	Manager   *Employee      `gorm:"foreignKey:ManagerID"`
+	Reports   []*Employee    `gorm:"foreignKey:ManagerID"`
+	Child     *EmployeeChild `gorm:"foreignKey:ParentID"`
+	Friends   []*Employee    `gorm:"many2many:employee_friend"`
+}
+
+// EmployeeChild is the related side of a has-one self relation. GORM resolves a struct field of the same type as
+// belongs-to, so the has-one direction needs its own type over the employees table.
+type EmployeeChild struct {
+	Model
+	SoftDeletes
+	ParentID *uint
+}
+
+func (r *EmployeeChild) TableName() string {
+	return "employees"
+}
+
+// CustomJoinPost and CustomJoinTag share a pivot table whose columns do not follow the conventional names.
+type CustomJoinPost struct {
+	Model
+	Title string
+	Tags  []*CustomJoinTag `gorm:"many2many:custom_join_post_tag;joinForeignKey:PostRef;joinReferences:TagRef"`
+}
+
+type CustomJoinTag struct {
+	Model
+	Name string
 }

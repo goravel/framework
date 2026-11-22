@@ -1594,6 +1594,65 @@ func (_c *Query_GroupBy_Call) RunAndReturn(run func(...string) orm.Query) *Query
 	return _c
 }
 
+// Has provides a mock function with given fields: relationship, args
+func (_m *Query) Has(relationship string, args ...interface{}) orm.Query {
+	var _ca []interface{}
+	_ca = append(_ca, relationship)
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Has")
+	}
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) orm.Query); ok {
+		r0 = rf(relationship, args...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_Has_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Has'
+type Query_Has_Call struct {
+	*mock.Call
+}
+
+// Has is a helper method to define mock.On call
+//   - relationship string
+//   - args ...interface{}
+func (_e *Query_Expecter) Has(relationship interface{}, args ...interface{}) *Query_Has_Call {
+	return &Query_Has_Call{Call: _e.mock.On("Has",
+		append([]interface{}{relationship}, args...)...)}
+}
+
+func (_c *Query_Has_Call) Run(run func(relationship string, args ...interface{})) *Query_Has_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Query_Has_Call) Return(_a0 orm.Query) *Query_Has_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_Has_Call) RunAndReturn(run func(string, ...interface{}) orm.Query) *Query_Has_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Having provides a mock function with given fields: query, args
 func (_m *Query) Having(query interface{}, args ...interface{}) orm.Query {
 	var _ca []interface{}
@@ -4973,6 +5032,66 @@ func (_c *Query_WhereExists_Call) Return(_a0 orm.Query) *Query_WhereExists_Call 
 }
 
 func (_c *Query_WhereExists_Call) RunAndReturn(run func(func() orm.Query) orm.Query) *Query_WhereExists_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WhereHas provides a mock function with given fields: relationship, callback, args
+func (_m *Query) WhereHas(relationship string, callback func(orm.Query) orm.Query, args ...interface{}) orm.Query {
+	var _ca []interface{}
+	_ca = append(_ca, relationship, callback)
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WhereHas")
+	}
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string, func(orm.Query) orm.Query, ...interface{}) orm.Query); ok {
+		r0 = rf(relationship, callback, args...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_WhereHas_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WhereHas'
+type Query_WhereHas_Call struct {
+	*mock.Call
+}
+
+// WhereHas is a helper method to define mock.On call
+//   - relationship string
+//   - callback func(orm.Query) orm.Query
+//   - args ...interface{}
+func (_e *Query_Expecter) WhereHas(relationship interface{}, callback interface{}, args ...interface{}) *Query_WhereHas_Call {
+	return &Query_WhereHas_Call{Call: _e.mock.On("WhereHas",
+		append([]interface{}{relationship, callback}, args...)...)}
+}
+
+func (_c *Query_WhereHas_Call) Run(run func(relationship string, callback func(orm.Query) orm.Query, args ...interface{})) *Query_WhereHas_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-2)
+		for i, a := range args[2:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].(string), args[1].(func(orm.Query) orm.Query), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Query_WhereHas_Call) Return(_a0 orm.Query) *Query_WhereHas_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_WhereHas_Call) RunAndReturn(run func(string, func(orm.Query) orm.Query, ...interface{}) orm.Query) *Query_WhereHas_Call {
 	_c.Call.Return(run)
 	return _c
 }

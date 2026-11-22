@@ -104,6 +104,13 @@ type Query interface {
 	Group(column string) Query
 	// GroupBy specifies the group method on the query.
 	GroupBy(column ...string) Query
+	// Has adds a condition that selects records with related records matching the given operator and count.
+	// With no arguments it selects records with at least one related record. With arguments it requires exactly
+	// an operator and a non-negative integer count; the supported operators are =, !=, <>, <, <=, > and >=.
+	// Direct one-to-one, one-to-many, belongs-to and many-to-many relationships are supported, including
+	// associations through a pivot table, composite references and self relationships. Nested and polymorphic
+	// relationships are not supported for now.
+	Has(relationship string, args ...any) Query
 	// Having specifying HAVING conditions for the query.
 	Having(query any, args ...any) Query
 	// Increment increments the given column's value by the given amount (default 1).
@@ -246,6 +253,10 @@ type Query interface {
 	WhereColumn(column1 string, column2 ...string) Query
 	// WhereExists adds an exists clause to the query.
 	WhereExists(query func() Query) Query
+	// WhereHas adds a condition that selects records whose related records match the callback. It accepts the same
+	// relationship, operator and count arguments as Has. A nil callback adds no constraints and behaves like Has.
+	// The callback can change the related query only.
+	WhereHas(relationship string, callback func(query Query) Query, args ...any) Query
 	// WhereIn adds a "where column in" clause to the query.
 	WhereIn(column string, values []any) Query
 	// WhereJsonContains add a "where JSON contains" clause to the query.

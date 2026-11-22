@@ -14,6 +14,7 @@ type Conditions struct {
 	offset              *int
 	table               *Table
 	groupBy             []string
+	has                 []hasCondition
 	join                []contractsdriver.Join
 	omit                []string
 	order               []any
@@ -33,6 +34,15 @@ type Conditions struct {
 type Select struct {
 	query any
 	args  []any
+}
+
+// hasCondition is a pending relationship filter. It is resolved when the query is built, because the parent model
+// may only be known from the destination of a terminal operation.
+type hasCondition struct {
+	relationship string
+	callback     func(contractsorm.Query) contractsorm.Query
+	operator     string
+	count        int64
 }
 
 type Table struct {

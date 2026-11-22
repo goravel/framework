@@ -11,6 +11,19 @@ const (
 	TestTableAddresses TestTable = iota
 	TestTableAuthors
 	TestTableBooks
+	TestTableCompositeItems
+	TestTableCompositeParents
+	TestTableCompositePostTag
+	TestTableCompositePosts
+	TestTableCompositeTags
+	TestTableCustomJoinPostTag
+	TestTableCustomJoinPosts
+	TestTableCustomJoinTags
+	TestTableCustomKeyDepartments
+	TestTableCustomKeyEmployees
+	TestTableCustomKeyProfiles
+	TestTableEmployeeFriend
+	TestTableEmployees
 	TestTableHouses
 	TestTablePeoples
 	TestTablePhones
@@ -18,6 +31,7 @@ const (
 	TestTableReviews
 	TestTableRoles
 	TestTableRoleUser
+	TestTableTasks
 	TestTableUsers
 	TestTableUser
 	TestTableSchema
@@ -44,6 +58,19 @@ func (r *testTables) All() map[TestTable]func() ([]string, error) {
 		TestTableAddresses:             r.addresses,
 		TestTableAuthors:               r.authors,
 		TestTableBooks:                 r.books,
+		TestTableCompositeItems:        r.compositeItems,
+		TestTableCompositeParents:      r.compositeParents,
+		TestTableCompositePostTag:      r.compositePostTag,
+		TestTableCompositePosts:        r.compositePosts,
+		TestTableCompositeTags:         r.compositeTags,
+		TestTableCustomJoinPostTag:     r.customJoinPostTag,
+		TestTableCustomJoinPosts:       r.customJoinPosts,
+		TestTableCustomJoinTags:        r.customJoinTags,
+		TestTableCustomKeyDepartments:  r.customKeyDepartments,
+		TestTableCustomKeyEmployees:    r.customKeyEmployees,
+		TestTableCustomKeyProfiles:     r.customKeyProfiles,
+		TestTableEmployeeFriend:        r.employeeFriend,
+		TestTableEmployees:             r.employees,
 		TestTableHouses:                r.houses,
 		TestTablePeoples:               r.peoples,
 		TestTablePhones:                r.phones,
@@ -51,6 +78,7 @@ func (r *testTables) All() map[TestTable]func() ([]string, error) {
 		TestTableReviews:               r.reviews,
 		TestTableRoles:                 r.roles,
 		TestTableRoleUser:              r.roleUser,
+		TestTableTasks:                 r.tasks,
 		TestTableUsers:                 r.users,
 		TestTableUser:                  r.user,
 		TestTableSchema:                r.schemas,
@@ -222,6 +250,29 @@ func (r *testTables) books() ([]string, error) {
 	return append(dropSql, createSql...), nil
 }
 
+func (r *testTables) tasks() ([]string, error) {
+	dropSql, err := r.dropSql("tasks")
+	if err != nil {
+		return nil, err
+	}
+
+	blueprint := schema.NewBlueprint(nil, "", "tasks")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.UnsignedBigInteger("user_id").Nullable()
+	blueprint.String("name")
+	blueprint.String("status")
+	blueprint.Timestamps()
+	blueprint.SoftDeletes()
+
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
+}
+
 func (r *testTables) authors() ([]string, error) {
 	dropSql, err := r.dropSql("authors")
 	if err != nil {
@@ -324,6 +375,280 @@ func (r *testTables) roleUser() ([]string, error) {
 	blueprint.UnsignedBigInteger("user_id")
 	blueprint.Timestamps()
 	blueprint.SoftDeletes()
+
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
+}
+
+func (r *testTables) customJoinPosts() ([]string, error) {
+	dropSql, err := r.dropSql("custom_join_posts")
+	if err != nil {
+		return nil, err
+	}
+
+	blueprint := schema.NewBlueprint(nil, "", "custom_join_posts")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.String("title")
+	blueprint.Timestamps()
+
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
+}
+
+func (r *testTables) customJoinTags() ([]string, error) {
+	dropSql, err := r.dropSql("custom_join_tags")
+	if err != nil {
+		return nil, err
+	}
+
+	blueprint := schema.NewBlueprint(nil, "", "custom_join_tags")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.String("name")
+	blueprint.Timestamps()
+
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
+}
+
+func (r *testTables) customJoinPostTag() ([]string, error) {
+	dropSql, err := r.dropSql("custom_join_post_tag")
+	if err != nil {
+		return nil, err
+	}
+
+	blueprint := schema.NewBlueprint(nil, "", "custom_join_post_tag")
+	blueprint.Create()
+	blueprint.UnsignedBigInteger("post_ref")
+	blueprint.UnsignedBigInteger("tag_ref")
+	blueprint.Primary("post_ref", "tag_ref")
+
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
+}
+
+func (r *testTables) customKeyDepartments() ([]string, error) {
+	dropSql, err := r.dropSql("custom_key_departments")
+	if err != nil {
+		return nil, err
+	}
+
+	blueprint := schema.NewBlueprint(nil, "", "custom_key_departments")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.String("name")
+	blueprint.String("code")
+	blueprint.Timestamps()
+
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
+}
+
+func (r *testTables) customKeyEmployees() ([]string, error) {
+	dropSql, err := r.dropSql("custom_key_employees")
+	if err != nil {
+		return nil, err
+	}
+
+	blueprint := schema.NewBlueprint(nil, "", "custom_key_employees")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.String("name")
+	blueprint.String("department_code")
+	blueprint.Timestamps()
+
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
+}
+
+func (r *testTables) customKeyProfiles() ([]string, error) {
+	dropSql, err := r.dropSql("custom_key_profiles")
+	if err != nil {
+		return nil, err
+	}
+
+	blueprint := schema.NewBlueprint(nil, "", "custom_key_profiles")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.String("name")
+	blueprint.String("department_code")
+	blueprint.Timestamps()
+
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
+}
+
+func (r *testTables) compositeParents() ([]string, error) {
+	dropSql, err := r.dropSql("composite_parents")
+	if err != nil {
+		return nil, err
+	}
+
+	blueprint := schema.NewBlueprint(nil, "", "composite_parents")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.String("name")
+	blueprint.String("region")
+	blueprint.String("code")
+	blueprint.Timestamps()
+
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
+}
+
+func (r *testTables) compositeItems() ([]string, error) {
+	dropSql, err := r.dropSql("composite_items")
+	if err != nil {
+		return nil, err
+	}
+
+	blueprint := schema.NewBlueprint(nil, "", "composite_items")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.String("name")
+	blueprint.String("parent_region")
+	blueprint.String("parent_code")
+	blueprint.Timestamps()
+
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
+}
+
+func (r *testTables) compositePosts() ([]string, error) {
+	dropSql, err := r.dropSql("composite_posts")
+	if err != nil {
+		return nil, err
+	}
+
+	blueprint := schema.NewBlueprint(nil, "", "composite_posts")
+	blueprint.Create()
+	blueprint.UnsignedBigInteger("id")
+	blueprint.UnsignedBigInteger("tenant_id")
+	blueprint.String("title")
+	blueprint.Primary("id", "tenant_id")
+
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
+}
+
+func (r *testTables) compositeTags() ([]string, error) {
+	dropSql, err := r.dropSql("composite_tags")
+	if err != nil {
+		return nil, err
+	}
+
+	blueprint := schema.NewBlueprint(nil, "", "composite_tags")
+	blueprint.Create()
+	blueprint.UnsignedBigInteger("id")
+	blueprint.String("kind")
+	blueprint.String("code")
+	blueprint.Primary("id")
+
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
+}
+
+func (r *testTables) compositePostTag() ([]string, error) {
+	dropSql, err := r.dropSql("composite_post_tag")
+	if err != nil {
+		return nil, err
+	}
+
+	blueprint := schema.NewBlueprint(nil, "", "composite_post_tag")
+	blueprint.Create()
+	blueprint.UnsignedBigInteger("composite_post_id")
+	blueprint.UnsignedBigInteger("composite_post_tenant_id")
+	blueprint.String("tag_kind")
+	blueprint.String("tag_code")
+	blueprint.Primary("composite_post_id", "composite_post_tenant_id", "tag_kind", "tag_code")
+
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
+}
+
+func (r *testTables) employees() ([]string, error) {
+	dropSql, err := r.dropSql("employees")
+	if err != nil {
+		return nil, err
+	}
+
+	blueprint := schema.NewBlueprint(nil, "", "employees")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.String("name")
+	blueprint.UnsignedBigInteger("parent_id").Nullable()
+	blueprint.UnsignedBigInteger("manager_id").Nullable()
+	blueprint.Timestamps()
+	blueprint.SoftDeletes()
+
+	createSql, err := blueprint.ToSql(r.grammar)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(dropSql, createSql...), nil
+}
+
+func (r *testTables) employeeFriend() ([]string, error) {
+	dropSql, err := r.dropSql("employee_friend")
+	if err != nil {
+		return nil, err
+	}
+
+	blueprint := schema.NewBlueprint(nil, "", "employee_friend")
+	blueprint.Create()
+	blueprint.UnsignedBigInteger("employee_id")
+	blueprint.UnsignedBigInteger("friend_id")
+	blueprint.Primary("employee_id", "friend_id")
 
 	createSql, err := blueprint.ToSql(r.grammar)
 	if err != nil {

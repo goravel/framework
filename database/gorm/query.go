@@ -138,6 +138,9 @@ func (r *Query) Context() context.Context {
 
 func (r *Query) Count() (int64, error) {
 	query := buildSelectForCount(r)
+	if err := query.conditionsError(); err != nil {
+		return 0, err
+	}
 
 	var count int64
 	if err := query.instance.Count(&count).Error; err != nil {
@@ -309,6 +312,9 @@ func (r *Query) Exec(sql string, values ...any) (*contractsdb.Result, error) {
 
 func (r *Query) Exists() (bool, error) {
 	query := r.addGlobalScopes().buildConditions()
+	if err := query.conditionsError(); err != nil {
+		return false, err
+	}
 
 	var exists bool
 	err := query.instance.Select("1").Limit(1).Find(&exists).Error
@@ -919,6 +925,10 @@ func (r *Query) Sum(column string, dest any) error {
 	}
 
 	query := r.addGlobalScopes().buildConditions()
+	if err := query.conditionsError(); err != nil {
+		return err
+	}
+
 	return query.instance.Select("SUM(" + column + ")").Row().Scan(dest)
 }
 
@@ -929,6 +939,10 @@ func (r *Query) Avg(column string, dest any) error {
 	}
 
 	query := r.addGlobalScopes().buildConditions()
+	if err := query.conditionsError(); err != nil {
+		return err
+	}
+
 	return query.instance.Select("AVG(" + column + ")").Row().Scan(dest)
 }
 
@@ -939,6 +953,10 @@ func (r *Query) Min(column string, dest any) error {
 	}
 
 	query := r.addGlobalScopes().buildConditions()
+	if err := query.conditionsError(); err != nil {
+		return err
+	}
+
 	return query.instance.Select("MIN(" + column + ")").Row().Scan(dest)
 }
 
@@ -949,6 +967,10 @@ func (r *Query) Max(column string, dest any) error {
 	}
 
 	query := r.addGlobalScopes().buildConditions()
+	if err := query.conditionsError(); err != nil {
+		return err
+	}
+
 	return query.instance.Select("MAX(" + column + ")").Row().Scan(dest)
 }
 
@@ -1501,7 +1523,9 @@ func (r *Query) buildConditions() *Query {
 	db = query.buildWith(db)
 	db = query.buildWithTrashed(db)
 	db = query.buildWhere(db)
-	// Last, so errors collected while building the where clauses (e.g. inside groups) are applied too.
+	db = query.buildHas(db)
+	// Last, so errors collected while building the where clauses (e.g. inside groups) and the relationship filters
+	// are applied too.
 	db = query.buildError(db)
 
 	return query.new(db)
@@ -1516,6 +1540,13 @@ func (r *Query) buildDistinct(db *gormio.DB) *gormio.DB {
 	r.conditions.distinct = false
 
 	return db
+}
+
+// conditionsError returns the error collected while building the query clauses, if any. A terminal operation that
+// asks GORM to run an aggregate or a find returns it directly: GORM would add its own error to the statement and hide
+// the original from errors.Is.
+func (r *Query) conditionsError() error {
+	return r.instance.Error
 }
 
 func (r *Query) buildError(db *gormio.DB) *gormio.DB {
@@ -1705,7 +1736,18 @@ func (r *Query) buildSubquery(sub func(contractsorm.Query) contractsorm.Query) (
 	query := sub(queryImpl)
 	var ok bool
 	if queryImpl, ok = query.(*Query); ok {
+		// A where group has no destination, so relationship filters inside it resolve the parent model from the
+		// query that owns the group. The fallback is copied after the callback, so a group that sets its own model
+		// keeps it, and before the where clauses build, so nested groups inherit it too.
+		if queryImpl.conditions.model == nil {
+			queryImpl.conditions.model = r.conditions.model
+		}
+		if queryImpl.conditions.dest == nil {
+			queryImpl.conditions.dest = r.conditions.dest
+		}
+
 		db = queryImpl.buildWhere(db)
+		db = queryImpl.buildHas(db)
 
 		return db, queryImpl.conditions.err
 	}
