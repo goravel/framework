@@ -8,7 +8,6 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/env"
@@ -49,12 +48,6 @@ func (r *InitCommand) Handle(ctx console.Context) error {
 
 	directory := modulesDirectory(r.config)
 	if err := putIfMissing(ctx, filepath.ToSlash(filepath.Join(directory, ".gitkeep")), path.Base(directory, ".gitkeep"), ""); err != nil {
-		return err
-	}
-
-	facadesImport, facadesPackage := facadesImport()
-	configStub := Stubs{}.Config(packages.Paths().Config().Package(), facadesImport, facadesPackage)
-	if err := putIfMissing(ctx, filepath.ToSlash(packages.Paths().Config().String("module.go")), path.Config("module.go"), configStub); err != nil {
 		return err
 	}
 

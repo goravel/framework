@@ -11,29 +11,6 @@ import (
 
 type Stubs struct{}
 
-func (r Stubs) Config(pkg, facadesImport, facadesPackage string) string {
-	content := `package DummyPackage
-
-import (
-	"DummyFacadesImport"
-)
-
-func init() {
-	config := DummyFacadesPackage.Config()
-	config.Add("module", map[string]any{
-		// Directory of the application's own modules, relative to the project root.
-		"path": "modules",
-	})
-}
-`
-
-	return strings.NewReplacer(
-		"DummyPackage", pkg,
-		"DummyFacadesImport", facadesImport,
-		"DummyFacadesPackage", facadesPackage,
-	).Replace(content)
-}
-
 // routeFacade returns the facades package exposing Route(): the app's when it
 // has one, else the framework's.
 func routeFacade() (importPath, pkg string) {

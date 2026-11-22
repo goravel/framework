@@ -5,9 +5,7 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/modular"
-	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/support/path"
 )
 
 const (
@@ -22,24 +20,13 @@ const (
 	statusSkippedNone  = "<fg=gray>SKIPPED (nothing to publish)</>"
 )
 
-// modulesDirectory is module.path, also before config/module.go exists.
+// modulesDirectory is module.path, or the default when config/module.go does not set it.
 func modulesDirectory(config config.Config) string {
 	if config == nil {
 		return modular.DefaultDirectory
 	}
 
 	return config.GetString("module.path", modular.DefaultDirectory)
-}
-
-// facadesImport returns the app's facades package, or the framework's when the app has none.
-func facadesImport() (importPath, pkg string) {
-	if file.Exists(path.Facade()) {
-		facades := packages.Paths().Facades()
-
-		return facades.Import(), facades.Package()
-	}
-
-	return "github.com/goravel/framework/facades", "facades"
 }
 
 // putIfMissing writes content to file unless it exists and prints a row named label.

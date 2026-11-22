@@ -85,7 +85,6 @@ func (s *InitCommandTestSuite) TestReturnsUnparsableApp() {
 
 	ctx := mocksconsole.NewContext(s.T())
 	ctx.EXPECT().TwoColumnDetail("modules/.gitkeep", statusCreated).Once()
-	ctx.EXPECT().TwoColumnDetail("config/module.go", statusCreated).Once()
 
 	err := NewInitCommand(nil).Handle(ctx)
 
@@ -100,7 +99,6 @@ func (s *InitCommandTestSuite) TestCreatesThenReportsExisting() {
 
 	ctx := mocksconsole.NewContext(s.T())
 	ctx.EXPECT().TwoColumnDetail("modules/.gitkeep", statusCreated).Once()
-	ctx.EXPECT().TwoColumnDetail("config/module.go", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/modules.go", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/app.go WithModules(Modules)", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("main.go go:generate module:publish", statusCreated).Once()
@@ -112,21 +110,13 @@ func (s *InitCommandTestSuite) TestCreatesThenReportsExisting() {
 	modules, err := file.GetContent("bootstrap/modules.go")
 	s.NoError(err)
 	s.Equal(modify.ModulesStub(), modules)
-
-	// No app/facades here, so the config file uses the framework facades.
-	config, err := file.GetContent("config/module.go")
-	s.NoError(err)
-	s.Contains(config, "package config")
-	s.Contains(config, `"github.com/goravel/framework/facades"`)
-	s.Contains(config, `facades.Config()`)
-	s.Contains(config, `config.Add("module", map[string]any{`)
+	s.False(file.Exists("config/module.go"))
 
 	app, err := file.GetContent("bootstrap/app.go")
 	s.NoError(err)
 
 	ctx = mocksconsole.NewContext(s.T())
 	ctx.EXPECT().TwoColumnDetail("modules/.gitkeep", statusExists).Once()
-	ctx.EXPECT().TwoColumnDetail("config/module.go", statusExists).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/modules.go", statusExists).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/app.go WithModules(Modules)", statusExists).Once()
 	ctx.EXPECT().TwoColumnDetail("main.go go:generate module:publish", statusExists).Once()
@@ -146,7 +136,7 @@ func (s *InitCommandTestSuite) TestGenerateDirective() {
 	s.Require().NoError(file.PutContent("bootstrap/app.go", chainedApp))
 	rows := func(status string) *mocksconsole.Context {
 		ctx := mocksconsole.NewContext(s.T())
-		ctx.EXPECT().TwoColumnDetail(mock.Anything, mock.Anything).Times(4)
+		ctx.EXPECT().TwoColumnDetail(mock.Anything, mock.Anything).Times(3)
 		ctx.EXPECT().TwoColumnDetail("main.go go:generate module:publish", status).Once()
 
 		return ctx
@@ -168,17 +158,15 @@ func (s *InitCommandTestSuite) TestGenerateDirective() {
 	s.NoError(NewInitCommand(nil).Handle(rows(statusExists)))
 }
 
-func (s *InitCommandTestSuite) TestAppFacadesAndConfiguredPath() {
+func (s *InitCommandTestSuite) TestConfiguredPath() {
 	s.Require().NoError(file.PutContent("bootstrap/app.go", chainedApp))
 	s.Require().NoError(file.PutContent("main.go", mainFile))
-	s.Require().NoError(file.PutContent("app/facades/config.go", "package facades\n"))
 
 	config := mocksconfig.NewConfig(s.T())
 	config.EXPECT().GetString("module.path", "modules").Return("src/modules").Once()
 
 	ctx := mocksconsole.NewContext(s.T())
 	ctx.EXPECT().TwoColumnDetail("src/modules/.gitkeep", statusCreated).Once()
-	ctx.EXPECT().TwoColumnDetail("config/module.go", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/modules.go", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/app.go WithModules(Modules)", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("main.go go:generate module:publish", statusCreated).Once()
@@ -186,7 +174,7 @@ func (s *InitCommandTestSuite) TestAppFacadesAndConfiguredPath() {
 	s.NoError(NewInitCommand(config).Handle(ctx))
 
 	s.True(file.Exists("src/modules/.gitkeep"))
-	s.True(file.Contain("config/module.go", `"github.com/goravel/framework/app/facades"`))
+	s.False(file.Exists("config/module.go"))
 }
 
 func (s *InitCommandTestSuite) TestAssignedChainIsManual() {
@@ -196,7 +184,6 @@ func (s *InitCommandTestSuite) TestAssignedChainIsManual() {
 	warning := "Add .WithModules(Modules) to foundation.Setup() in bootstrap/app.go"
 	ctx := mocksconsole.NewContext(s.T())
 	ctx.EXPECT().TwoColumnDetail("modules/.gitkeep", statusCreated).Once()
-	ctx.EXPECT().TwoColumnDetail("config/module.go", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/modules.go", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/app.go WithModules(Modules)", statusManual).Once()
 	ctx.EXPECT().TwoColumnDetail("main.go go:generate module:publish", statusCreated).Once()
@@ -212,7 +199,6 @@ func (s *InitCommandTestSuite) TestAssignedChainIsManual() {
 	// modules.go without WithModules: the same manual row again.
 	ctx = mocksconsole.NewContext(s.T())
 	ctx.EXPECT().TwoColumnDetail("modules/.gitkeep", statusExists).Once()
-	ctx.EXPECT().TwoColumnDetail("config/module.go", statusExists).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/modules.go", statusExists).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/app.go WithModules(Modules)", statusManual).Once()
 	ctx.EXPECT().TwoColumnDetail("main.go go:generate module:publish", statusExists).Once()
@@ -238,18 +224,6 @@ func (s *InitCommandTestSuite) TestWriteFailures() {
 		s.Require().NoError(file.PutContent("modules", "file"))
 
 		s.Error(NewInitCommand(nil).Handle(mocksconsole.NewContext(s.T())))
-		s.False(file.Exists("config/module.go"))
-		removeScaffold(s.T())
-	})
-
-	s.Run("the config directory is a file", func() {
-		s.Require().NoError(file.PutContent("bootstrap/app.go", chainedApp))
-		s.Require().NoError(file.PutContent("config", "file"))
-
-		ctx := mocksconsole.NewContext(s.T())
-		ctx.EXPECT().TwoColumnDetail("modules/.gitkeep", statusCreated).Once()
-
-		s.Error(NewInitCommand(nil).Handle(ctx))
 		s.False(file.Exists("bootstrap/modules.go"))
 		removeScaffold(s.T())
 	})
@@ -265,7 +239,6 @@ func (s *InitCommandTestSuite) TestWriteFailures() {
 
 		ctx := mocksconsole.NewContext(s.T())
 		ctx.EXPECT().TwoColumnDetail("modules/.gitkeep", statusCreated).Once()
-		ctx.EXPECT().TwoColumnDetail("config/module.go", statusCreated).Once()
 		ctx.EXPECT().TwoColumnDetail("bootstrap/modules.go", statusCreated).Once()
 		ctx.EXPECT().TwoColumnDetail("bootstrap/app.go WithModules(Modules)", statusCreated).Once()
 
