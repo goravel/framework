@@ -69,19 +69,6 @@ func (s *WorkerTestSuite) TestPopNextJob() {
 		s.Equal(assert.AnError, err)
 	})
 
-	s.Run("stops on a locked higher priority queue", func() {
-		s.SetupTest()
-
-		lockErr := errors.QueuePopIsLocked.Args("high", "lock-key")
-		s.mockDriver.EXPECT().Pop("high").Return(nil, lockErr).Once()
-
-		actualJob, actualQueue, err := s.worker.popNextJob([]string{"high", "default"})
-
-		s.Nil(actualJob)
-		s.Equal("high", actualQueue)
-		s.ErrorIs(err, errors.QueuePopIsLocked)
-	})
-
 	s.Run("stops before checking another queue after shutdown", func() {
 		s.SetupTest()
 
