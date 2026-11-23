@@ -16,6 +16,7 @@ type PendingJob struct {
 	connection    string
 	driverCreator contractsqueue.DriverCreator
 	delay         time.Time
+	fake          *Fake
 	queue         string
 	task          contractsqueue.Task
 }
@@ -102,6 +103,12 @@ func (r *PendingJob) Delay(delay time.Time) contractsqueue.PendingJob {
 
 // Dispatch dispatches the task
 func (r *PendingJob) Dispatch() error {
+	// A faked job is recorded before the connection is resolved, so tests do
+	// not need the connection to be reachable, or even configured.
+	if r.fake.record(r.task, r.delayedUntil(), r.connection, r.queue) {
+		return nil
+	}
+
 	driver, err := r.driverCreator.Create(r.connection)
 	if err != nil {
 		return err
@@ -134,11 +141,18 @@ func (r *PendingJob) OnQueue(queue string) contractsqueue.PendingJob {
 }
 
 func (r *PendingJob) recalculateDelay() {
-	if !r.delay.IsZero() {
-		if !r.task.Delay.IsZero() {
-			r.task.Delay = r.task.Delay.Add(carbon.Now().DiffAbsInDuration(carbon.FromStdTime(r.delay)))
-		} else {
-			r.task.Delay = r.delay
-		}
+	r.task.Delay = r.delayedUntil()
+}
+
+// delayedUntil returns when the task becomes available, combining the delay
+// of the pending job with the one of the task.
+func (r *PendingJob) delayedUntil() time.Time {
+	if r.delay.IsZero() {
+		return r.task.Delay
 	}
+	if r.task.Delay.IsZero() {
+		return r.delay
+	}
+
+	return r.task.Delay.Add(carbon.Now().DiffAbsInDuration(carbon.FromStdTime(r.delay)))
 }
