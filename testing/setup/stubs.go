@@ -82,3 +82,18 @@ func Testing() testing.Testing {
 
 	return strings.ReplaceAll(content, "DummyPackage", pkg)
 }
+
+func (s Stubs) FakeFacade(pkg string) string {
+	content := `package DummyPackage
+
+import (
+	"github.com/goravel/framework/contracts/testing"
+)
+
+func Fake() testing.Fake {
+	return App().MakeFake()
+}
+`
+
+	return strings.ReplaceAll(content, "DummyPackage", pkg)
+}
