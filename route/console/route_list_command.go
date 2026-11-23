@@ -191,8 +191,9 @@ func formatPath(domain, path string) string {
 		path = cleared
 	}
 	if domain != "" {
-		// As Laravel shows it: the domain, then the path.
-		path = strings.TrimSuffix(domain+"/"+strings.TrimPrefix(path, "/"), "/")
+		// As Laravel shows it: the domain, then the path, so the root of a
+		// domain ends with a slash.
+		path = domain + "/" + strings.TrimPrefix(path, "/")
 	}
 
 	return routeParamsRegex.ReplaceAllString(path, "<fg=yellow>$1</>")

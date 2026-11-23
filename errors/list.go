@@ -320,6 +320,7 @@ var (
 
 	RouteDefaultDriverNotSet = New("please set default driver")
 	RouteInvalidDriver       = New("init %s route driver fail: route must be implement route.Route or func() (route.Route, error)")
+	RouteInvalidDomain       = New("invalid route domain %q: use a host name such as admin.example.com, where a whole label can be a parameter such as {account}").SetModule(ModuleRoute)
 
 	SchemaConnectionNotFound   = New("connection %s not found")
 	SchemaDriverNotSupported   = New("driver %s is not supported")

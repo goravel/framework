@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"io"
 	"testing"
 
@@ -137,10 +138,29 @@ func TestRouteListCommand(t *testing.T) {
 				mockContext.EXPECT().Option("name").Return("").Once()
 				mockContext.EXPECT().Option("path").Return("").Once()
 				mockContext.EXPECT().OptionSlice("except-path").Return(nil).Once()
-				mockContext.EXPECT().TwoColumnDetail("<fg=blue>GET</><fg=gray>|</><fg=gray>HEAD</>     admin.example.com", "").Once()
+				mockContext.EXPECT().TwoColumnDetail("<fg=blue>GET</><fg=gray>|</><fg=gray>HEAD</>     admin.example.com/", "").Once()
 				mockContext.EXPECT().TwoColumnDetail("<fg=blue>GET</><fg=gray>|</><fg=gray>HEAD</>     <fg=yellow>{account}</>.example.com/users/<fg=yellow>{id}</>", "").Once()
 				mockContext.EXPECT().NewLine().Return().Once()
 				mockContext.EXPECT().TwoColumnDetail("", "<fg=blue;op=bold>Showing [2] routes</>", ' ').Once()
+			},
+		},
+		{
+			name: "filter by domain and path",
+			setup: func() {
+				mockContext.EXPECT().NewLine().Return().Once()
+				mockRoute.EXPECT().GetRoutes().Return([]http.Info{
+					{Method: "GET|HEAD", Path: "/", Domain: "admin.example.com"},
+					{Method: "GET|HEAD", Path: "/users", Domain: "admin.example.com"},
+					{Method: "GET|HEAD", Path: "/users"},
+				}).Once()
+				mockContext.EXPECT().Option("domain").Return("Admin").Once()
+				mockContext.EXPECT().Option("method").Return("").Once()
+				mockContext.EXPECT().Option("name").Return("").Once()
+				mockContext.EXPECT().Option("path").Return("users").Once()
+				mockContext.EXPECT().OptionSlice("except-path").Return(nil).Once()
+				mockContext.EXPECT().TwoColumnDetail("<fg=blue>GET</><fg=gray>|</><fg=gray>HEAD</>     admin.example.com/users", "").Once()
+				mockContext.EXPECT().NewLine().Return().Once()
+				mockContext.EXPECT().TwoColumnDetail("", "<fg=blue;op=bold>Showing [1] routes</>", ' ').Once()
 			},
 		},
 	}
@@ -155,4 +175,14 @@ func TestRouteListCommand(t *testing.T) {
 			}))
 		})
 	}
+}
+
+func TestInfoDomainJSON(t *testing.T) {
+	withoutDomain, err := json.Marshal(http.Info{Method: "GET", Path: "/"})
+	assert.NoError(t, err)
+	assert.NotContains(t, string(withoutDomain), "domain")
+
+	withDomain, err := json.Marshal(http.Info{Domain: "admin.example.com", Method: "GET", Path: "/"})
+	assert.NoError(t, err)
+	assert.Contains(t, string(withDomain), `"domain":"admin.example.com"`)
 }
