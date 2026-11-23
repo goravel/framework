@@ -4,6 +4,8 @@ import (
 	"os"
 
 	"github.com/goravel/framework/contracts/facades"
+	contractspackages "github.com/goravel/framework/contracts/packages"
+	contractsmodify "github.com/goravel/framework/contracts/packages/modify"
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support/path"
@@ -11,6 +13,11 @@ import (
 
 func main() {
 	setup := packages.Setup(os.Args)
+
+	setup.Install(installActions(setup)...).Uninstall(uninstallActions(setup)...).Execute()
+}
+
+func installActions(setup contractspackages.Setup) []contractsmodify.Apply {
 	stubs := Stubs{}
 	sessionConfigPath := path.Config("session.go")
 	sessionFacadePath := path.Facade("session.go")
@@ -19,12 +26,8 @@ func main() {
 	facadesPackage := setup.Paths().Facades().Package()
 	envPath := path.Base(".env")
 	envExamplePath := path.Base(".env.example")
-	env := `
-SESSION_DRIVER=file
-SESSION_LIFETIME=120
-`
 
-	setup.Install(
+	return []contractsmodify.Apply{
 		// Avoid duplicate installation when installing drivers
 		modify.WhenFacade(facades.Session,
 			// Add the session service provider to the providers array in bootstrap/providers.go
@@ -36,11 +39,28 @@ SESSION_LIFETIME=120
 			// Add the Session facade
 			modify.File(sessionFacadePath).Overwrite(stubs.SessionFacade(facadesPackage)),
 
-			// Add configurations to the .env and .env.example files
-			modify.WhenFileNotContains(envPath, "SESSION_DRIVER", modify.File(envPath).Append(env)),
-			modify.WhenFileNotContains(envExamplePath, "SESSION_DRIVER", modify.File(envExamplePath).Append(env)),
+			// Add the session driver and lifetime to the .env and .env.example files
+			modify.WhenFileExists(envPath, modify.EnvWhenMissing(envPath, "SESSION_DRIVER", "file")),
+			modify.WhenFileExists(envPath, modify.EnvWhenMissing(envPath, "SESSION_LIFETIME", "120")),
+			modify.WhenFileExists(envExamplePath, modify.EnvWhenMissing(envExamplePath, "SESSION_DRIVER", "file")),
+			modify.WhenFileExists(envExamplePath, modify.EnvWhenMissing(envExamplePath, "SESSION_LIFETIME", "120")),
 		),
-	).Uninstall(
+
+		// Selecting the file driver overwrites the selector, so a stale value cannot survive.
+		modify.WhenDriver("file",
+			modify.WhenFileExists(envPath, modify.Env(envPath, "SESSION_DRIVER", "file")),
+			modify.WhenFileExists(envExamplePath, modify.Env(envExamplePath, "SESSION_DRIVER", "file")),
+		),
+	}
+}
+
+func uninstallActions(setup contractspackages.Setup) []contractsmodify.Apply {
+	sessionConfigPath := path.Config("session.go")
+	sessionFacadePath := path.Facade("session.go")
+	sessionServiceProvider := "&session.ServiceProvider{}"
+	moduleImport := setup.Paths().Module().Import()
+
+	return []contractsmodify.Apply{
 		modify.WhenFacade(facades.Session,
 			// Remove config/session.go
 			modify.File(sessionConfigPath).Remove(),
@@ -51,5 +71,5 @@ SESSION_LIFETIME=120
 			// Remove the Session facade
 			modify.File(sessionFacadePath).Remove(),
 		),
-	).Execute()
+	}
 }
