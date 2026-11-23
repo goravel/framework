@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	gormio "gorm.io/gorm"
+	"gorm.io/gorm/schema"
 	gormtests "gorm.io/gorm/utils/tests"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
@@ -315,6 +316,12 @@ func TestRelationExistence(t *testing.T) {
 			expectVars: []any{1},
 		},
 		{
+			name:       "Has with a count on a self referencing relation",
+			query:      func() contractsorm.Query { return newQuery().Model(&relationNode{}).Has("Children", ">=", 2) },
+			expectSql:  "SELECT * FROM `relation_nodes` WHERE (SELECT COUNT(*) FROM `relation_nodes` AS children_relation_nodes WHERE `children_relation_nodes`.`parent_id` = `relation_nodes`.`id` AND `children_relation_nodes`.`deleted_at` IS NULL) >= ? AND `relation_nodes`.`deleted_at` IS NULL",
+			expectVars: []any{int64(2)},
+		},
+		{
 			name:        "Has with a related model on another connection",
 			query:       func() contractsorm.Query { return newQuery().Model(&relationConnectionUser{}).Has("Books") },
 			expectError: errors.OrmQueryRelationDifferentConnection.Args("Books", "other", ""),
@@ -403,6 +410,47 @@ func TestRelationExistence(t *testing.T) {
 			} else {
 				assert.Equal(t, test.expectVars, statement.Vars)
 			}
+		})
+	}
+}
+
+func TestRelationExistenceWithTablePrefix(t *testing.T) {
+	db, err := gormio.Open(gormtests.DummyDialector{}, &gormio.Config{
+		DryRun:         true,
+		NamingStrategy: schema.NamingStrategy{TablePrefix: "pre_"},
+	})
+	require.NoError(t, err)
+
+	newQuery := func() contractsorm.Query {
+		return NewQuery(context.Background(), nil, contractsdatabase.Config{Prefix: "pre_"}, db, nil, nil, nil, nil, nil)
+	}
+
+	tests := []struct {
+		name      string
+		query     contractsorm.Query
+		expectSql string
+	}{
+		{
+			name:      "a self referencing relation",
+			query:     newQuery().Model(&relationNode{}).Has("Children"),
+			expectSql: "SELECT * FROM `pre_relation_nodes` WHERE EXISTS (SELECT 1 FROM `pre_relation_nodes` AS children_pre_relation_nodes WHERE `children_pre_relation_nodes`.`parent_id` = `pre_relation_nodes`.`id` AND `children_pre_relation_nodes`.`deleted_at` IS NULL) AND `pre_relation_nodes`.`deleted_at` IS NULL",
+		},
+		{
+			name:      "a relation on another table",
+			query:     newQuery().Model(&relationUser{}).Has("Books"),
+			expectSql: "SELECT * FROM `pre_relation_users` WHERE EXISTS (SELECT 1 FROM `pre_relation_books` WHERE `pre_relation_books`.`relation_user_id` = `pre_relation_users`.`id`)",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			dest := &[]map[string]any{}
+			query := test.query.(*Query).buildConditions()
+			require.NoError(t, query.instance.Error)
+
+			statement := query.instance.Find(dest).Statement
+			assert.NoError(t, statement.Error)
+			assert.Equal(t, test.expectSql, statement.SQL.String())
 		})
 	}
 }

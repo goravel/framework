@@ -101,6 +101,8 @@ func (s *QueryTestSuite) TestRelationExistence() {
 			s.Equal([]string{"has_node_child", "has_node_grandchild"}, nodeNames(nodes().Has("Parent")))
 			s.Equal([]string{"has_node_grandchild"}, nodeNames(nodes().DoesntHave("Children")))
 			s.Equal([]string{"has_node_root"}, nodeNames(nodes().Has("Children.Children")))
+			s.Equal([]string{"has_node_root", "has_node_child"}, nodeNames(nodes().Has("Children", "=", 1)))
+			s.Empty(nodeNames(nodes().Has("Children", ">", 1)))
 			s.Equal([]string{"has_node_child"}, nodeNames(nodes().WhereHas("Children", func(query contractsorm.Query) contractsorm.Query {
 				return query.Where("name", "has_node_grandchild")
 			})))

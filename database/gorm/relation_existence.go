@@ -137,7 +137,11 @@ func (r *Query) relationExistenceExpression(parent *schema.Schema, parentTable s
 	relatedTable := relation.FieldSchema.Table
 	if relatedTable == parentTable {
 		relatedTable = str.Of(name).Snake().String() + "_" + relatedTable
-		sub = sub.Table(r.quote(clause.Table{Name: relation.FieldSchema.Table}) + " AS " + relatedTable).(*Query)
+		// The schema's table already carries the connection's prefix, so it
+		// is set as is rather than through Table, which would add it again.
+		conditions := sub.conditions
+		conditions.table = &Table{name: r.quote(clause.Table{Name: relation.FieldSchema.Table}) + " AS " + relatedTable}
+		sub = sub.setConditions(conditions)
 	}
 
 	operator, count := existence.operator, existence.count
