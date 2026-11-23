@@ -249,3 +249,51 @@ func (s *WorkerTestSuite) Test_ProcessReleasesTheUniqueLock() {
 		s.False(memory.Lock(key).Get())
 	})
 }
+
+func (s *WorkerTestSuite) Test_ProcessChainedUniqueJob() {
+	task := contractsqueue.Task{
+		ChainJob: contractsqueue.ChainJob{Job: &TestJobOne{}},
+		Chain: []contractsqueue.ChainJob{
+			{Job: &uniqueTestJob{}, Args: []contractsqueue.Arg{{Type: "string", Value: "1"}}},
+			{Job: &TestJobTwo{}},
+		},
+		UUID: "test",
+	}
+	key := uniqueLockPrefix + "unique_test_job:1"
+
+	s.Run("takes and releases its lock", func() {
+		s.SetupTest()
+		memory := newUniqueTestCache(s.T())
+		s.worker.cache = memory
+
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+		mockReservedJob.EXPECT().Task().Return(task).Once()
+		s.mockJob.EXPECT().Call("test_job_one", []any{}).Return(nil).Once()
+		s.mockJob.EXPECT().Call("unique_test_job", []any{"1"}).Return(nil).Once()
+		s.mockJob.EXPECT().Call("test_job_two", []any{}).Return(nil).Once()
+		mockReservedJob.EXPECT().Delete().Return(nil).Once()
+
+		released, err := s.worker.Process(context.Background(), mockReservedJob)
+		s.False(released)
+		s.NoError(err)
+		s.True(memory.Lock(key).Get())
+	})
+
+	s.Run("is skipped with the rest of the chain while another copy holds the lock", func() {
+		s.SetupTest()
+		memory := newUniqueTestCache(s.T())
+		s.worker.cache = memory
+		s.True(memory.Lock(key).Get())
+
+		mockReservedJob := mocksqueue.NewReservedJob(s.T())
+		mockReservedJob.EXPECT().Task().Return(task).Once()
+		s.mockJob.EXPECT().Call("test_job_one", []any{}).Return(nil).Once()
+		mockReservedJob.EXPECT().Delete().Return(nil).Once()
+
+		released, err := s.worker.Process(context.Background(), mockReservedJob)
+		s.False(released)
+		s.NoError(err)
+		// The other copy still holds it.
+		s.False(memory.Lock(key).Get())
+	})
+}

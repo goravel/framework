@@ -57,13 +57,15 @@ type ChainJob struct {
 // ShouldBeUnique. Dispatch takes a cache lock for the job and skips it,
 // returning nil, when the lock is already taken. The lock is released once
 // the job succeeds or fails for good, not while it waits for a retry; the
-// jobs chained to it don't hold it. DispatchSync does not check it. It needs
+// jobs chained to it don't hold it. A unique job in a chain takes its lock
+// when its turn comes, and is skipped with the rest of the chain while
+// another copy holds it. DispatchSync does not check it. It needs
 // a cache store shared by the dispatcher and the workers, such as Redis or
 // the database: with a store local to each process, such as memory, every
 // process takes its own lock.
 type JobWithUnique interface {
-	// UniqueID returns what tells apart the jobs with the same signature,
-	// from the values the job is dispatched with, as Handle receives them.
+	// UniqueID returns the ID that tells the jobs with the same signature apart,
+	// built from the values the job is dispatched with, as Handle receives them.
 	// An empty ID makes the job unique by its signature alone.
 	UniqueID(args ...any) string
 	// UniqueFor returns how long the lock is held at most, so a job that
