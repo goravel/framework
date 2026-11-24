@@ -21,19 +21,19 @@ func (_m *ProvidesStatic) EXPECT() *ProvidesStatic_Expecter {
 }
 
 // Static provides a mock function with no fields
-func (_m *ProvidesStatic) Static() map[string]module.Path {
+func (_m *ProvidesStatic) Static() map[string]module.Files {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Static")
 	}
 
-	var r0 map[string]module.Path
-	if rf, ok := ret.Get(0).(func() map[string]module.Path); ok {
+	var r0 map[string]module.Files
+	if rf, ok := ret.Get(0).(func() map[string]module.Files); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]module.Path)
+			r0 = ret.Get(0).(map[string]module.Files)
 		}
 	}
 
@@ -57,12 +57,12 @@ func (_c *ProvidesStatic_Static_Call) Run(run func()) *ProvidesStatic_Static_Cal
 	return _c
 }
 
-func (_c *ProvidesStatic_Static_Call) Return(_a0 map[string]module.Path) *ProvidesStatic_Static_Call {
+func (_c *ProvidesStatic_Static_Call) Return(_a0 map[string]module.Files) *ProvidesStatic_Static_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ProvidesStatic_Static_Call) RunAndReturn(run func() map[string]module.Path) *ProvidesStatic_Static_Call {
+func (_c *ProvidesStatic_Static_Call) RunAndReturn(run func() map[string]module.Files) *ProvidesStatic_Static_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -3,8 +3,7 @@
 package module
 
 import (
-	fs "io/fs"
-
+	module "github.com/goravel/framework/contracts/module"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -22,20 +21,18 @@ func (_m *ProvidesViews) EXPECT() *ProvidesViews_Expecter {
 }
 
 // Views provides a mock function with no fields
-func (_m *ProvidesViews) Views() fs.FS {
+func (_m *ProvidesViews) Views() module.Files {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Views")
 	}
 
-	var r0 fs.FS
-	if rf, ok := ret.Get(0).(func() fs.FS); ok {
+	var r0 module.Files
+	if rf, ok := ret.Get(0).(func() module.Files); ok {
 		r0 = rf()
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(fs.FS)
-		}
+		r0 = ret.Get(0).(module.Files)
 	}
 
 	return r0
@@ -58,12 +55,12 @@ func (_c *ProvidesViews_Views_Call) Run(run func()) *ProvidesViews_Views_Call {
 	return _c
 }
 
-func (_c *ProvidesViews_Views_Call) Return(_a0 fs.FS) *ProvidesViews_Views_Call {
+func (_c *ProvidesViews_Views_Call) Return(_a0 module.Files) *ProvidesViews_Views_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ProvidesViews_Views_Call) RunAndReturn(run func() fs.FS) *ProvidesViews_Views_Call {
+func (_c *ProvidesViews_Views_Call) RunAndReturn(run func() module.Files) *ProvidesViews_Views_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -22,8 +22,8 @@ func (m *richModule) ViteEntries() []string  { return []string{"resources/js/app
 func (m *richModule) ViteAliases() map[string]string {
 	return map[string]string{"@blog-assets": "resources/assets"}
 }
-func (m *richModule) Static() map[string]contractsmodule.Path {
-	return map[string]contractsmodule.Path{"/blog/static": {Dir: "public"}, "/blog/docs": {Dir: "docs"}}
+func (m *richModule) Static() map[string]contractsmodule.Files {
+	return map[string]contractsmodule.Files{"/blog/static": {Dir: "public"}, "/blog/docs": {Dir: "docs"}}
 }
 
 type ListCommandTestSuite struct {

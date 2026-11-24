@@ -85,14 +85,16 @@ type ProvidesSchedule interface {
 }
 
 // ProvidesViews contributes views: "index.tmpl" becomes "<name>/index.tmpl".
+// The default directory is "resources/views".
 type ProvidesViews interface {
-	Views() fs.FS
+	Views() Files
 }
 
 // ProvidesTranslations contributes translations: "en/messages.json" is the group
-// "<name>/messages". The "*" group (en.json) is not supported.
+// "<name>/messages". The "*" group (en.json) is not supported. The default
+// directory is "lang".
 type ProvidesTranslations interface {
-	Translations() fs.FS
+	Translations() Files
 }
 
 // ProvidesViteEntries lists Vite entries relative to the module directory, built
@@ -114,15 +116,16 @@ type ProvidesSources interface {
 	Sources() fs.FS
 }
 
-// ProvidesStatic serves files as-is: URL prefix -> Path.
+// ProvidesStatic serves files as-is: URL prefix -> files. There is no default directory.
 type ProvidesStatic interface {
-	Static() map[string]Path
+	Static() map[string]Files
 }
 
-// Path is a static directory: Dir inside FS, or on disk relative to the module
-// directory when FS is nil. Dir must stay inside the module.
-type Path struct {
-	FS  fs.FS
+// Files is a directory of files: Dir inside FS, or on disk relative to the module
+// directory when FS is nil. Dir must stay inside the module; the zero value is no files.
+type Files struct {
+	FS fs.FS
+	// Dir "" is the capability's default directory inside FS, "." the root of FS.
 	Dir string
 }
 

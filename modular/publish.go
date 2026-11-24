@@ -175,9 +175,16 @@ func publishFiles(module contractsmodule.Module, dependency Dependency) (map[str
 		}
 	}
 
-	if p, ok := module.(contractsmodule.ProvidesViews); ok && !hasPrefix(files, viewsDirectory+"/") {
-		if err := readFiles(p.Views(), viewsDirectory, files); err != nil {
-			return nil, err
+	// Views on disk are in place already, only an fs.FS is copied.
+	if p, ok := module.(contractsmodule.ProvidesViews); ok && !hasPrefix(files, ViewsDirectory+"/") {
+		if views := p.Views(); views.FS != nil {
+			fsys, _, err := Files(module.Name(), "Views()", "", ViewsDirectory, views)
+			if err != nil {
+				return nil, err
+			}
+			if err := readFiles(fsys, ViewsDirectory, files); err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -189,9 +196,6 @@ func publishFiles(module contractsmodule.Module, dependency Dependency) (map[str
 
 	return files, nil
 }
-
-// viewsDirectory is where a module's views live inside its directory.
-const viewsDirectory = "resources/views"
 
 func readFiles(fsys fs.FS, prefix string, files map[string][]byte) error {
 	if fsys == nil {

@@ -528,7 +528,12 @@ func (r *Application) configureModuleConfig() {
 			configs = append(configs, module)
 		}
 		if p, ok := module.(contractsmodule.ProvidesTranslations); ok {
-			if fsys := p.Translations(); fsys != nil {
+			root, _ := r.MakeModule().Path(module.Name())
+			fsys, ok, err := modular.Files(module.Name(), "Translations()", root, modular.TranslationsDirectory, p.Translations())
+			if err != nil {
+				color.Errorln(err)
+			}
+			if ok {
 				translations[module.Name()] = fsys
 			}
 		}
@@ -795,9 +800,11 @@ func (r *Application) registerModuleStatic(routeFacade route.Route) {
 			}
 
 			root, _ := registry.Path(module.Name())
-			fsys, err := modular.StaticFS(module.Name(), root, paths[prefix])
+			fsys, ok, err := modular.StaticFS(module.Name(), root, paths[prefix])
 			if err != nil {
 				color.Errorln(err)
+			}
+			if !ok {
 				continue
 			}
 
@@ -928,20 +935,19 @@ func (r *Application) registerModuleResources() {
 		return
 	}
 
-	for _, module := range r.modules {
-		p, ok := module.(contractsmodule.ProvidesViews)
+	registry := r.MakeModule()
+	for _, module := range modules {
+		name := module.(contractsmodule.Module).Name()
+		root, _ := registry.Path(name)
+		fsys, ok, err := modular.Files(name, "Views()", root, modular.ViewsDirectory, module.Views())
+		if err != nil {
+			color.Errorln(err)
+		}
 		if !ok {
 			continue
 		}
 
-		fsys := p.Views()
-		if fsys == nil {
-			// LoadViewsFromFS panics on a nil filesystem.
-			color.Errorln(errors.ModularViewsFSRequired.Args(module.Name()))
-			continue
-		}
-
-		viewFacade.LoadViewsFromFS(modular.NewPrefixFS(module.Name(), fsys), ".")
+		viewFacade.LoadViewsFromFS(modular.NewPrefixFS(name, fsys), ".")
 	}
 }
 

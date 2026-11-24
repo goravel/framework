@@ -67,7 +67,6 @@ func (m *Module) Name() string {
 
 import (
 	"embed"
-	"io/fs"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/database/schema"
@@ -151,17 +150,14 @@ func (m *Module) Schedule() []schedule.Event {
 }
 
 // Views are named "DummyName/<file>", e.g. "DummyName/index.tmpl".
-func (m *Module) Views() fs.FS {
-	sub, _ := fs.Sub(views, "resources/views")
-
-	return sub
+// module.Files{Dir: "resources/views"} reads them from disk instead.
+func (m *Module) Views() module.Files {
+	return module.Files{FS: views}
 }
 
 // Translations are grouped as "DummyName/<file>", e.g. "DummyName/messages.title".
-func (m *Module) Translations() fs.FS {
-	sub, _ := fs.Sub(lang, "lang")
-
-	return sub
+func (m *Module) Translations() module.Files {
+	return module.Files{FS: lang}
 }
 
 // ViteEntries are relative to the module directory, e.g. "resources/js/app.js".
@@ -175,8 +171,8 @@ func (m *Module) ViteAliases() map[string]string {
 }
 
 // Static serves files as-is under a URL prefix, e.g. "/DummyName/assets": {Dir: "public"}.
-func (m *Module) Static() map[string]module.Path {
-	return map[string]module.Path{}
+func (m *Module) Static() map[string]module.Files {
+	return map[string]module.Files{}
 }
 `)
 }

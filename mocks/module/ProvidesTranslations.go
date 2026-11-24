@@ -3,8 +3,7 @@
 package module
 
 import (
-	fs "io/fs"
-
+	module "github.com/goravel/framework/contracts/module"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -22,20 +21,18 @@ func (_m *ProvidesTranslations) EXPECT() *ProvidesTranslations_Expecter {
 }
 
 // Translations provides a mock function with no fields
-func (_m *ProvidesTranslations) Translations() fs.FS {
+func (_m *ProvidesTranslations) Translations() module.Files {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Translations")
 	}
 
-	var r0 fs.FS
-	if rf, ok := ret.Get(0).(func() fs.FS); ok {
+	var r0 module.Files
+	if rf, ok := ret.Get(0).(func() module.Files); ok {
 		r0 = rf()
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(fs.FS)
-		}
+		r0 = ret.Get(0).(module.Files)
 	}
 
 	return r0
@@ -58,12 +55,12 @@ func (_c *ProvidesTranslations_Translations_Call) Run(run func()) *ProvidesTrans
 	return _c
 }
 
-func (_c *ProvidesTranslations_Translations_Call) Return(_a0 fs.FS) *ProvidesTranslations_Translations_Call {
+func (_c *ProvidesTranslations_Translations_Call) Return(_a0 module.Files) *ProvidesTranslations_Translations_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ProvidesTranslations_Translations_Call) RunAndReturn(run func() fs.FS) *ProvidesTranslations_Translations_Call {
+func (_c *ProvidesTranslations_Translations_Call) RunAndReturn(run func() module.Files) *ProvidesTranslations_Translations_Call {
 	_c.Call.Return(run)
 	return _c
 }

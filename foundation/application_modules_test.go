@@ -4,6 +4,8 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
+	"os"
+	"path/filepath"
 	"slices"
 	"testing/fstest"
 
@@ -30,6 +32,7 @@ import (
 	mocksroute "github.com/goravel/framework/mocks/route"
 	mocksschedule "github.com/goravel/framework/mocks/schedule"
 	mocksview "github.com/goravel/framework/mocks/view"
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -180,7 +183,7 @@ type richModule struct {
 	testModule
 	config      map[string]any
 	translation fs.FS
-	views       fs.FS
+	views       any
 	middleware  []contractshttp.Middleware
 	providers   []foundation.ServiceProvider
 	commands    []console.Command
@@ -192,9 +195,21 @@ type richModule struct {
 	routed      *[]string
 }
 
-func (m *richModule) Config() map[string]any                         { return m.config }
-func (m *richModule) Translations() fs.FS                            { return m.translation }
-func (m *richModule) Views() fs.FS                                   { return m.views }
+func (m *richModule) Config() map[string]any              { return m.config }
+func (m *richModule) Translations() contractsmodule.Files { return filesOf(m.translation) }
+func (m *richModule) Views() contractsmodule.Files        { return filesOf(m.views) }
+
+// filesOf turns a test value into files: an fs.FS, a path, or nothing.
+func filesOf(value any) contractsmodule.Files {
+	switch value := value.(type) {
+	case fs.FS:
+		return contractsmodule.Files{FS: value, Dir: "."}
+	case string:
+		return contractsmodule.Files{Dir: value}
+	}
+
+	return contractsmodule.Files{}
+}
 func (m *richModule) GlobalMiddleware() []contractshttp.Middleware   { return m.middleware }
 func (m *richModule) ServiceProviders() []foundation.ServiceProvider { return m.providers }
 func (m *richModule) Commands() []console.Command                    { return m.commands }
@@ -324,9 +339,34 @@ func (s *ApplicationTestSuite) TestRegisterModuleResources() {
 
 		s.withModules(NewApplicationBuilder(s.app),
 			&richModule{testModule: testModule{"blog"}, views: fstest.MapFS{"index.tmpl": {Data: []byte("x")}}},
-			&richModule{testModule: testModule{"broken"}}, // nil views: reported, not registered
+			&richModule{testModule: testModule{"empty"}}, // nil views: skipped
 			&testModule{"plain"},
 		)
+		s.app.registerModuleResources()
+	})
+
+	s.Run("a views path is read from the module directory", func() {
+		s.SetupTest()
+		relativePath := support.RelativePath
+		defer func() { support.RelativePath = relativePath }()
+		support.RelativePath = s.T().TempDir()
+
+		mockView := mocksview.NewView(s.T())
+		mockView.EXPECT().LoadViewsFromFS(mock.MatchedBy(func(fsys fs.FS) bool {
+			_, err := fs.Stat(fsys, "blog/index.tmpl")
+
+			return err == nil
+		}), ".").Return().Once()
+		s.app.Instance(binding.View, mockView)
+
+		s.withModules(NewApplicationBuilder(s.app),
+			&richModule{testModule: testModule{"blog"}, views: "resources/views"},
+			&richModule{testModule: testModule{"broken"}, views: "missing"}, // reported, not registered
+		)
+		root, _ := s.app.MakeModule().Path("blog")
+		dir := filepath.Join(support.RelativePath, root, "resources", "views")
+		s.Require().NoError(os.MkdirAll(dir, 0o755))
+		s.Require().NoError(os.WriteFile(filepath.Join(dir, "index.tmpl"), []byte("x"), 0o644))
 		s.app.registerModuleResources()
 	})
 
@@ -508,14 +548,14 @@ func (m *lateOnlyModule) LateRoutes() { *m.routed = append(*m.routed, m.name+":l
 
 type staticModule struct {
 	testModule
-	static map[string]contractsmodule.Path
+	static map[string]contractsmodule.Files
 }
 
-func (m *staticModule) Static() map[string]contractsmodule.Path { return m.static }
+func (m *staticModule) Static() map[string]contractsmodule.Files { return m.static }
 
 func (s *ApplicationTestSuite) TestConfigureRoutes_ModuleStatic() {
 	s.SetupTest()
-	public := fstest.MapFS{"public/robots.txt": {Data: []byte("x")}}
+	public := contractsmodule.Files{FS: fstest.MapFS{"public/robots.txt": {Data: []byte("x")}}, Dir: "public"}
 
 	mockRoute := mocksroute.NewRoute(s.T())
 	mockRoute.EXPECT().StaticFS("/blog/static", mock.MatchedBy(func(fsys http.FileSystem) bool {
@@ -531,13 +571,14 @@ func (s *ApplicationTestSuite) TestConfigureRoutes_ModuleStatic() {
 	s.app.Instance(binding.Route, mockRoute)
 
 	s.withModules(NewApplicationBuilder(s.app),
-		&staticModule{testModule: testModule{"blog"}, static: map[string]contractsmodule.Path{
-			"blog/static/": {FS: public, Dir: "public"},
-			"/":            {FS: public, Dir: "public"},     // invalid prefix: reported
-			"/blog/secret": {FS: public, Dir: "../outside"}, // escapes the module: reported
+		&staticModule{testModule: testModule{"blog"}, static: map[string]contractsmodule.Files{
+			"blog/static/": public,
+			"/":            public,              // invalid prefix: reported
+			"/blog/secret": {Dir: "../outside"}, // escapes the module: reported
+			"/blog/empty":  {},                  // absent: skipped
 		}},
-		&staticModule{testModule: testModule{"shop"}, static: map[string]contractsmodule.Path{
-			"/blog/static": {FS: public, Dir: "public"}, // taken by blog: reported
+		&staticModule{testModule: testModule{"shop"}, static: map[string]contractsmodule.Files{
+			"/blog/static": public, // taken by blog: reported
 		}},
 	)
 	s.app.configureRoutes()

@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	contractsmodule "github.com/goravel/framework/contracts/module"
 	"github.com/goravel/framework/errors"
 )
 
@@ -25,7 +26,13 @@ type sourcesModule struct {
 }
 
 func (m *sourcesModule) Sources() fs.FS { return m.sources }
-func (m *sourcesModule) Views() fs.FS   { return m.views }
+func (m *sourcesModule) Views() contractsmodule.Files {
+	if m.views == nil {
+		return contractsmodule.Files{}
+	}
+
+	return contractsmodule.Files{FS: m.views, Dir: "."}
+}
 
 type locatedSourcesModule struct{ sourcesModule }
 
