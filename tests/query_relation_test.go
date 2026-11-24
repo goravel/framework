@@ -106,6 +106,12 @@ func (s *QueryTestSuite) TestRelationExistence() {
 			s.Equal([]string{"has_node_child"}, nodeNames(nodes().WhereHas("Children", func(query contractsorm.Query) contractsorm.Query {
 				return query.Where("name", "has_node_grandchild")
 			})))
+			// A relation inside a group of the callback correlates to the alias of the children.
+			s.Equal([]string{"has_node_root", "has_node_child"}, nodeNames(nodes().WhereHas("Children", func(query contractsorm.Query) contractsorm.Query {
+				return query.Where(func(query contractsorm.Query) contractsorm.Query {
+					return query.Has("Parent")
+				})
+			})))
 		})
 	}
 }

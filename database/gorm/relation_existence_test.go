@@ -316,6 +316,26 @@ func TestRelationExistence(t *testing.T) {
 			expectVars: []any{1},
 		},
 		{
+			name: "Has inside a group of a WhereHas callback on a self referencing relation",
+			query: func() contractsorm.Query {
+				return newQuery().Model(&relationNode{}).WhereHas("Children", func(query contractsorm.Query) contractsorm.Query {
+					return query.Where(func(query contractsorm.Query) contractsorm.Query {
+						return query.Has("Parent")
+					})
+				})
+			},
+			expectSql: "SELECT * FROM `relation_nodes` WHERE EXISTS (SELECT 1 FROM `relation_nodes` AS children_relation_nodes WHERE EXISTS (SELECT 1 FROM `relation_nodes` WHERE `relation_nodes`.`id` = `children_relation_nodes`.`parent_id` AND `relation_nodes`.`deleted_at` IS NULL) AND `children_relation_nodes`.`parent_id` = `relation_nodes`.`id` AND `children_relation_nodes`.`deleted_at` IS NULL) AND `relation_nodes`.`deleted_at` IS NULL",
+		},
+		{
+			name: "Has inside a group on a table alias",
+			query: func() contractsorm.Query {
+				return users().Table("relation_users AS u").Where(func(query contractsorm.Query) contractsorm.Query {
+					return query.Has("Books")
+				})
+			},
+			expectSql: "SELECT * FROM relation_users AS u WHERE EXISTS (SELECT 1 FROM `relation_books` WHERE `relation_books`.`relation_user_id` = `u`.`id`)",
+		},
+		{
 			name:       "Has with a count on a self referencing relation",
 			query:      func() contractsorm.Query { return newQuery().Model(&relationNode{}).Has("Children", ">=", 2) },
 			expectSql:  "SELECT * FROM `relation_nodes` WHERE (SELECT COUNT(*) FROM `relation_nodes` AS children_relation_nodes WHERE `children_relation_nodes`.`parent_id` = `relation_nodes`.`id` AND `children_relation_nodes`.`deleted_at` IS NULL) >= ? AND `relation_nodes`.`deleted_at` IS NULL",

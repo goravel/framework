@@ -1699,8 +1699,12 @@ func (r *Query) buildSharedLock(db *gormio.DB) *gormio.DB {
 
 // buildSubquery builds the where clauses of a group and returns the errors raised inside it, so the caller can
 // report them instead of silently dropping the group.
-func (r *Query) buildSubquery(sub func(contractsorm.Query) contractsorm.Query) (*gormio.DB, error) {
+func (r *Query) buildSubquery(parent *gormio.DB, sub func(contractsorm.Query) contractsorm.Query) (*gormio.DB, error) {
 	db := r.instance.Session(&gormio.Session{NewDB: true, Initialized: true})
+	// The group also has the table of the query, or its alias, so the relation conditions inside it correlate
+	// to the table the group is embedded in. The group only contributes its where clauses, so the table isn't
+	// rendered twice.
+	db.Statement.Table = parent.Statement.Table
 	queryImpl := NewQuery(r.ctx, r.config, r.dbConfig, db, r.grammar, r.log, r.modelToObserver, nil, r.telemetryResolver)
 	// The group has the model of the query, so the relation conditions inside it resolve their relations.
 	queryImpl.conditions.model = r.conditions.model
@@ -1753,7 +1757,7 @@ func (r *Query) buildWhere(db *gormio.DB) *gormio.DB {
 		default:
 			switch query := item.Query.(type) {
 			case func(contractsorm.Query) contractsorm.Query:
-				sub, err := r.buildSubquery(query)
+				sub, err := r.buildSubquery(db, query)
 				if err != nil {
 					r.conditions.err = errors.Join(r.conditions.err, err)
 					continue
