@@ -92,7 +92,6 @@ func (s *ModuleMakeCommandTestSuite) TestDefault() {
 		"module.go",
 		"providers/service_provider.go",
 		"routes/web.go",
-		"routes/api.go",
 		"http/controllers/blog_controller.go",
 		"resources/views/index.tmpl",
 		"lang/en/messages.json",
@@ -117,7 +116,7 @@ func (s *ModuleMakeCommandTestSuite) TestDefault() {
 		s.Contains(module, "func (m *Module) "+method)
 	}
 	s.NotContains(module, "func (m *Module) Path()")
-	s.Contains(module, "\troutes.Web()\n\troutes.Api()\n")
+	s.Contains(module, "\troutes.Web()\n")
 
 	// No app/facades here, so the controller uses the framework facades.
 	controller, err := file.GetContent("modules/blog/http/controllers/blog_controller.go")
@@ -127,7 +126,6 @@ func (s *ModuleMakeCommandTestSuite) TestDefault() {
 	s.Contains(controller, `facades.Lang(ctx).Get("blog/messages.title")`)
 
 	s.True(file.Contain("modules/blog/routes/web.go", `facades.Route().Get("/blog", controllers.NewBlogController().Index)`))
-	s.True(file.Contain("modules/blog/routes/api.go", `facades.Route().Prefix("api").Get("/blog", controllers.NewBlogController().Show)`))
 	s.True(file.Contain("modules/blog/lang/en/messages.json", `"title": "Blog"`))
 	s.False(file.Contain("modules/blog/resources/views/index.tmpl", "define"))
 	s.True(file.Contain("modules/blog/tests/feature/blog_test.go", `"github.com/goravel/framework/tests"`))
@@ -416,8 +414,8 @@ func (s *ModuleMakeCommandTestSuite) TestFailures() {
 	})
 
 	s.Run("a stale stub cannot be removed", func() {
-		// --force --plain removes routes/api.go, here a directory with content.
-		s.Require().NoError(file.PutContent("modules/blog/routes/api.go/keep", ""))
+		// --force --plain removes routes/web.go, here a directory with content.
+		s.Require().NoError(file.PutContent("modules/blog/routes/web.go/keep", ""))
 
 		failed("Blog", true, true)
 		s.False(file.Exists("modules/blog/module.go"))

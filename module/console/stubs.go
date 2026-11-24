@@ -119,7 +119,6 @@ func (m *Module) GlobalMiddleware() []http.Middleware {
 
 func (m *Module) Routes() {
 	routes.Web()
-	routes.Api()
 }
 
 // LateRoutes run after every module's Routes(), e.g. for a catch-all route.
@@ -182,22 +181,8 @@ func (r *moduleStubs) ServiceProvider() string {
 	).Replace(foundationconsole.Stubs{}.ServiceProvider())
 }
 
-func (r *moduleStubs) WebRoutes() string {
-	return r.routes(`func Web() {
-	DummyFacadesPackage.Route().Get("/DummyName", controllers.NewDummyStudlyController().Index)
-}
-`)
-}
-
-func (r *moduleStubs) ApiRoutes() string {
-	return r.routes(`func Api() {
-	DummyFacadesPackage.Route().Prefix("api").Get("/DummyName", controllers.NewDummyStudlyController().Show)
-}
-`)
-}
-
-// routes is a routes file registering with the Route facade.
-func (r *moduleStubs) routes(body string) string {
+// Routes is routes/web.go, registering with the Route facade.
+func (r *moduleStubs) Routes() string {
 	facadesImport, facadesPackage := routeFacade()
 	controllers := r.module + "/http/controllers"
 	// The framework's facades form their own import group, the app's sort with the module.
@@ -208,12 +193,17 @@ func (r *moduleStubs) routes(body string) string {
 		imports = "\t\"" + sorted[0] + "\"\n\t\"" + sorted[1] + "\"\n"
 	}
 
-	content := "package routes\n\nimport (\n" + imports + ")\n\n" + body
+	content := "package routes\n\nimport (\n" + imports + `)
+
+func Web() {
+	DummyFacadesPackage.Route().Get("/DummyName", controllers.NewDummyStudlyController().Index)
+}
+`
 
 	return r.replace(strings.ReplaceAll(content, "DummyFacadesPackage", facadesPackage))
 }
 
-// Controller has Index rendering the module view and Show for the API route.
+// Controller has Index rendering the module view.
 func (r *moduleStubs) Controller() string {
 	imports := "import (\n\t\"github.com/goravel/framework/contracts/http\"\n)\n"
 	title := `"DummyTitle"`
@@ -237,13 +227,7 @@ type DummyStudlyController struct{}
 func NewDummyStudlyController() *DummyStudlyController {
 	return &DummyStudlyController{}
 }
-` + index + `
-func (r *DummyStudlyController) Show(ctx http.Context) http.Response {
-	return ctx.Response().Success().Json(http.Json{
-		"module": "DummyName",
-	})
-}
-`)
+` + index)
 }
 
 // View has no {{ define }}: define names are global and would collide across modules.

@@ -280,13 +280,12 @@ func (r *moduleStubs) files(plain bool) map[string]string {
 	files := map[string]string{
 		"module.go":                     r.Module(true),
 		"providers/service_provider.go": r.ServiceProvider(),
-		"routes/api.go":                 r.ApiRoutes(),
 		"http/controllers/" + r.snake + "_controller.go": r.Controller(),
 		"database/migrations/.gitkeep":                   "",
 		"database/seeders/.gitkeep":                      "",
 		"models/.gitkeep":                                "",
 		"lang/en/messages.json":                          r.Lang(),
-		"routes/web.go":                                  r.WebRoutes(),
+		"routes/web.go":                                  r.Routes(),
 		"resources/views/index.tmpl":                     r.View(),
 	}
 	if file.Exists(path.Test("test_case.go")) {
