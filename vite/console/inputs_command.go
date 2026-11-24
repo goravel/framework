@@ -192,7 +192,7 @@ func (r *InputsCommand) moduleInputs() ([]ModuleInputs, error) {
 		if p, ok := module.(contractsmodule.ProvidesFrontend); ok {
 			frontend := p.Frontend()
 			_, thirdParty := frameworkmodule.DependencyOf(module, info)
-			root, embedded, err := frontendFiles(name, dir, frontend, thirdParty)
+			root, inSources, err := frontendFiles(module, dir, frontend, thirdParty)
 			if err != nil {
 				return nil, err
 			}
@@ -203,10 +203,8 @@ func (r *InputsCommand) moduleInputs() ([]ModuleInputs, error) {
 				if !inside || cleaned == "." {
 					return nil, errors.ModuleViteEntryInvalid.Args(name, entry)
 				}
-				if embedded != nil {
-					if stat, err := fs.Stat(embedded, cleaned); err != nil || stat.IsDir() {
-						return nil, errors.ModuleViteEntryMissing.Args(name, entry)
-					}
+				if inSources != nil && !inSources(cleaned) {
+					return nil, errors.ModuleViteEntryMissing.Args(name, entry)
 				}
 				input.Entries = append(input.Entries, stdpath.Join(root, cleaned))
 			}
@@ -232,25 +230,38 @@ func (r *InputsCommand) moduleInputs() ([]ModuleInputs, error) {
 	return inputs, nil
 }
 
-// frontendFiles returns the directory entries and aliases are relative to, and the
-// filesystem holding them when the module embeds one. A third-party module must.
-func frontendFiles(name, dir string, frontend contractsmodule.Frontend, thirdParty bool) (string, fs.FS, error) {
+// frontendFiles returns the directory entries and aliases are relative to, and a check
+// that an entry is a file of the sources: an embedded Files.FS, or what module:publish
+// copies of a third-party module. The check is nil for files of the project.
+func frontendFiles(module contractsmodule.Module, dir string, frontend contractsmodule.Frontend, thirdParty bool) (string, func(entry string) bool, error) {
 	files := frontend.Files
 	sub, inside := path.CleanRelative(files.Dir)
 	if !inside {
-		return "", nil, errors.ModuleFilesDirInvalid.Args(name, "Frontend()", files.Dir)
+		return "", nil, errors.ModuleFilesDirInvalid.Args(module.Name(), "Frontend()", files.Dir)
 	}
-	if files.FS == nil {
-		if thirdParty && len(frontend.Entries)+len(frontend.Aliases) > 0 {
-			return "", nil, errors.ModuleFrontendFilesRequired.Args(name)
+	root := stdpath.Join(dir, sub)
+	if files.FS == nil && !thirdParty {
+		return root, nil, nil
+	}
+
+	sources, prefix, err := frameworkmodule.FrontendSources(module, frontend)
+	if err != nil || sources == nil {
+		return root, nil, err
+	}
+
+	return root, func(entry string) bool {
+		// The sources start at prefix, which is below sub for the default directory.
+		name := stdpath.Join(sub, entry)
+		if prefix != "." {
+			var within bool
+			if name, within = strings.CutPrefix(name, prefix+"/"); !within {
+				return false
+			}
 		}
+		stat, err := fs.Stat(sources, name)
 
-		return stdpath.Join(dir, sub), nil, nil
-	}
-
-	embedded, _, err := frameworkmodule.Files(name, "Frontend()", "", "", files)
-
-	return stdpath.Join(dir, sub), embedded, err
+		return err == nil && !stat.IsDir()
+	}, nil
 }
 
 // checkPublished fails for a third-party module whose files are not in dir as

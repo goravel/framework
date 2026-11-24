@@ -19,7 +19,7 @@ func TestStaticFS(t *testing.T) {
 		"resources/secret.txt": {Data: []byte("secret")},
 	}
 
-	fsys, ok, err := StaticFS("blog", "modules/blog", contractsmodule.Files{FS: embedded, Dir: "public"})
+	fsys, ok, err := StaticFS("blog", contractsmodule.Files{FS: embedded, Dir: "public"})
 	require.NoError(t, err)
 	require.True(t, ok)
 
@@ -38,9 +38,13 @@ func TestStaticFS(t *testing.T) {
 	_, err = fsys.Open("../resources/secret.txt")
 	assert.Error(t, err)
 
-	_, ok, err = StaticFS("blog", "modules/blog", contractsmodule.Files{Dir: "../shop"})
+	_, ok, err = StaticFS("blog", contractsmodule.Files{FS: embedded, Dir: "../shop"})
 	assert.False(t, ok)
 	assert.ErrorIs(t, err, errors.ModuleFilesDirInvalid)
+
+	_, ok, err = StaticFS("blog", contractsmodule.Files{Dir: "public"})
+	assert.False(t, ok)
+	assert.ErrorIs(t, err, errors.ModuleFilesFSRequired)
 }
 
 func TestCleanPrefix(t *testing.T) {

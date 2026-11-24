@@ -150,7 +150,6 @@ func (m *Module) Schedule() []schedule.Event {
 }
 
 // Views are named "DummyName/<file>", e.g. "DummyName/index.tmpl".
-// module.Files{Dir: "resources/views"} reads them from disk instead.
 func (m *Module) Views() module.Files {
 	return module.Files{FS: views}
 }
@@ -166,7 +165,7 @@ func (m *Module) Frontend() module.Frontend {
 	return module.Frontend{}
 }
 
-// Static serves files as-is under a URL prefix, e.g. "/DummyName/assets": {Dir: "public"}.
+// Static serves files as-is under a URL prefix, e.g. "/DummyName/assets": {FS: public, Dir: "public"}.
 func (m *Module) Static() map[string]module.Files {
 	return map[string]module.Files{}
 }

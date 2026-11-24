@@ -199,7 +199,7 @@ func (m *richModule) Config() map[string]any              { return m.config }
 func (m *richModule) Translations() contractsmodule.Files { return filesOf(m.translation) }
 func (m *richModule) Views() contractsmodule.Files        { return filesOf(m.views) }
 
-// filesOf turns a test value into files: an fs.FS, a path, or nothing.
+// filesOf turns a test value into files: an fs.FS, a directory without one, or nothing.
 func filesOf(value any) contractsmodule.Files {
 	switch value := value.(type) {
 	case fs.FS:
@@ -345,23 +345,17 @@ func (s *ApplicationTestSuite) TestRegisterModuleResources() {
 		s.app.registerModuleResources()
 	})
 
-	s.Run("a views path is read from the module directory", func() {
+	s.Run("a views directory without an FS is not read from disk", func() {
 		s.SetupTest()
 		relativePath := support.RelativePath
 		defer func() { support.RelativePath = relativePath }()
 		support.RelativePath = s.T().TempDir()
 
-		mockView := mocksview.NewView(s.T())
-		mockView.EXPECT().LoadViewsFromFS(mock.MatchedBy(func(fsys fs.FS) bool {
-			_, err := fs.Stat(fsys, "blog/index.tmpl")
-
-			return err == nil
-		}), ".").Return().Once()
-		s.app.Instance(binding.View, mockView)
+		// The view mock has no expectations: nothing is registered.
+		s.app.Instance(binding.View, mocksview.NewView(s.T()))
 
 		s.withModules(NewApplicationBuilder(s.app),
 			&richModule{testModule: testModule{"blog"}, views: "resources/views"},
-			&richModule{testModule: testModule{"broken"}, views: "missing"}, // reported, not registered
 		)
 		root, _ := s.app.MakeModule().Path("blog")
 		dir := filepath.Join(support.RelativePath, root, "resources", "views")

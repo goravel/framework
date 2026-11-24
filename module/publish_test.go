@@ -37,6 +37,17 @@ func (m *sourcesModule) Views() contractsmodule.Files {
 	return contractsmodule.Files{FS: m.views, Dir: "."}
 }
 
+// diskModule declares frontend files without an FS: they are read from its package directory.
+type diskModule struct {
+	plainModule
+	dir     string
+	entries []string
+}
+
+func (m *diskModule) Frontend() contractsmodule.Frontend {
+	return contractsmodule.Frontend{Files: contractsmodule.Files{Dir: m.dir}, Entries: m.entries}
+}
+
 type locatedSourcesModule struct{ sourcesModule }
 
 func (m *locatedSourcesModule) Path() string { return "vendor/billing" }
@@ -368,4 +379,118 @@ func TestPublish_Failures(t *testing.T) {
 		assert.FileExists(t, filepath.Join(parent, "outside.txt"))
 		assert.DirExists(t, dir)
 	})
+}
+
+func TestPublish_FromDisk(t *testing.T) {
+	dependency := Dependency{Path: "github.com/acme/billing", Version: "v1.2.0", Sum: "h1:abc"}
+	packageDir := PackageDir
+	t.Cleanup(func() { PackageDir = packageDir })
+
+	source := t.TempDir()
+	for name, content := range map[string]string{
+		"resources/js/app.js":        "app",
+		"resources/views/index.tmpl": "index",
+		"web/app.css":                "css",
+		"module.go":                  "package billing",
+		"go.mod":                     "module github.com/acme/billing",
+		".gitignore":                 "node_modules",
+		".github/ci.yml":             "ci",
+		"node_modules/vue/index.js":  "vue",
+	} {
+		target := filepath.Join(source, filepath.FromSlash(name))
+		require.NoError(t, os.MkdirAll(filepath.Dir(target), 0o755))
+		require.NoError(t, os.WriteFile(target, []byte(content), 0o644))
+	}
+	PackageDir = func(pkg string) (string, error) {
+		assert.Equal(t, publishPackage, pkg)
+
+		return source, nil
+	}
+	published := func(t *testing.T, dir string) []string {
+		marker, ok := readPublishMarker(dir)
+		require.True(t, ok)
+
+		return marker.Files
+	}
+
+	t.Run("resources by default", func(t *testing.T) {
+		dir := filepath.Join(t.TempDir(), "modules", "billing")
+		module := &diskModule{plainModule: plainModule{"billing"}, entries: []string{"resources/js/app.js"}}
+
+		_, err := Publish(module, dependency, dir)
+		require.NoError(t, err)
+		assert.Equal(t, []string{PublishNotice, "resources/js/app.js", "resources/views/index.tmpl"}, published(t, dir))
+	})
+
+	t.Run("the package directory without go files, dot entries and node_modules", func(t *testing.T) {
+		dir := filepath.Join(t.TempDir(), "modules", "billing")
+		module := &diskModule{plainModule: plainModule{"billing"}, dir: ".", entries: []string{"resources/js/app.js"}}
+		assert.Equal(t, PublishMissing, PublishState(module, dependency, dir))
+
+		changed, err := Publish(module, dependency, dir)
+		require.NoError(t, err)
+		assert.True(t, changed)
+		assert.Equal(t, []string{PublishNotice, "resources/js/app.js", "resources/views/index.tmpl", "web/app.css"}, published(t, dir))
+		assert.Equal(t, PublishPublished, PublishState(module, dependency, dir))
+
+		// The source changed, e.g. a replaced module being worked on.
+		require.NoError(t, os.WriteFile(filepath.Join(source, "web", "app.css"), []byte("new"), 0o644))
+		assert.Equal(t, PublishStale, PublishState(module, dependency, dir))
+		require.NoError(t, os.WriteFile(filepath.Join(source, "web", "app.css"), []byte("css"), 0o644))
+	})
+
+	t.Run("a directory of it", func(t *testing.T) {
+		dir := filepath.Join(t.TempDir(), "modules", "billing")
+		module := &diskModule{plainModule: plainModule{"billing"}, dir: "web"}
+
+		_, err := Publish(module, dependency, dir)
+		require.NoError(t, err)
+		assert.Equal(t, []string{PublishNotice, "web/app.css"}, published(t, dir))
+	})
+
+	t.Run("an FS is used instead of the disk", func(t *testing.T) {
+		dir := filepath.Join(t.TempDir(), "modules", "billing")
+		module := &sourcesModule{plainModule: plainModule{"billing"}, sources: fstest.MapFS{"app.js": {Data: []byte("embedded")}}}
+		PackageDir = func(string) (string, error) { return "", assert.AnError }
+		t.Cleanup(func() { PackageDir = packageDir })
+
+		_, err := Publish(module, dependency, dir)
+		require.NoError(t, err)
+		assert.Equal(t, []string{PublishNotice, "app.js"}, published(t, dir))
+	})
+
+	t.Run("failures", func(t *testing.T) {
+		dir := filepath.Join(t.TempDir(), "modules", "billing")
+		PackageDir = func(string) (string, error) { return source, nil }
+
+		for _, sub := range []string{"missing", "module.go"} {
+			_, err := Publish(&diskModule{plainModule: plainModule{"billing"}, dir: sub}, dependency, dir)
+			assert.ErrorIs(t, err, errors.ModuleFilesDirUnreadable, sub)
+		}
+		_, err := Publish(&diskModule{plainModule: plainModule{"billing"}, dir: "../shop"}, dependency, dir)
+		assert.ErrorIs(t, err, errors.ModuleFilesDirInvalid)
+
+		PackageDir = func(string) (string, error) { return "", assert.AnError }
+		_, err = Publish(&diskModule{plainModule: plainModule{"billing"}, entries: []string{"app.js"}}, dependency, dir)
+		assert.ErrorIs(t, err, errors.ModuleFrontendSourcesNotFound)
+
+		// The default directory is not optional.
+		PackageDir = func(string) (string, error) { return t.TempDir(), nil }
+		_, err = Publish(&diskModule{plainModule: plainModule{"billing"}, entries: []string{"app.js"}}, dependency, dir)
+		assert.ErrorIs(t, err, errors.ModuleFilesDirUnreadable)
+
+		// Nothing declared: the disk is not asked.
+		changed, err := Publish(&diskModule{plainModule: plainModule{"billing"}}, dependency, dir)
+		assert.NoError(t, err)
+		assert.False(t, changed)
+	})
+}
+
+func TestPackageDir(t *testing.T) {
+	dir, err := PackageDir(publishPackage)
+	require.NoError(t, err)
+	assert.FileExists(t, filepath.Join(dir, "publish.go"))
+
+	_, err = PackageDir("example.com/missing/package")
+	assert.Error(t, err)
 }

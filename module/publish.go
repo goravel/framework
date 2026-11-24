@@ -3,6 +3,7 @@ package module
 import (
 	"bytes"
 	"encoding/json"
+	"go/build"
 	"io/fs"
 	"maps"
 	"os"
@@ -42,6 +43,17 @@ type Dependency struct {
 type publishMarker struct {
 	Dependency
 	Files []string `json:"files"`
+}
+
+// PackageDir locates a Go package on disk as the go command resolves it from the
+// project: the module cache, a replaced directory or a workspace module.
+var PackageDir = func(pkg string) (string, error) {
+	found, err := build.Import(pkg, path.Base(), build.FindOnly)
+	if err != nil {
+		return "", err
+	}
+
+	return found.Dir, nil
 }
 
 // DependencyOf returns the Go module of a third-party module. ok is false for a
@@ -104,8 +116,8 @@ func PublishState(module contractsmodule.Module, dependency Dependency, dir stri
 	return PublishPublished
 }
 
-// Publish copies the module's frontend files, and its views unless those hold
-// them, into dir. It reports whether anything was written or removed.
+// Publish copies the module's frontend files (see FrontendSources), and its views
+// unless those hold them, into dir. It reports whether anything was written or removed.
 func Publish(module contractsmodule.Module, dependency Dependency, dir string) (bool, error) {
 	files, err := publishFiles(module, dependency)
 	if err != nil || len(files) == 0 {
@@ -170,28 +182,24 @@ func Publish(module contractsmodule.Module, dependency Dependency, dir string) (
 func publishFiles(module contractsmodule.Module, dependency Dependency) (map[string][]byte, error) {
 	files := make(map[string][]byte)
 
-	// Frontend files on disk are in place already, like views below.
 	if p, ok := module.(contractsmodule.ProvidesFrontend); ok {
-		if frontend := p.Frontend().Files; frontend.FS != nil {
-			fsys, _, err := Files(module.Name(), "Frontend()", "", "", frontend)
-			if err != nil {
-				return nil, err
-			}
-			prefix, _ := path.CleanRelative(frontend.Dir)
-			if err := readFiles(fsys, prefix, files); err != nil {
-				return nil, err
-			}
+		frontend := p.Frontend()
+		fsys, prefix, err := FrontendSources(module, frontend)
+		if err != nil {
+			return nil, err
+		}
+		if err := readFiles(fsys, prefix, frontend.Files.FS == nil, files); err != nil {
+			return nil, err
 		}
 	}
 
-	// Views on disk are in place already, only an fs.FS is copied.
 	if p, ok := module.(contractsmodule.ProvidesViews); ok && !hasPrefix(files, ViewsDirectory+"/") {
 		if views := p.Views(); views.FS != nil {
-			fsys, _, err := Files(module.Name(), "Views()", "", ViewsDirectory, views)
+			fsys, _, err := Files(module.Name(), "Views()", ViewsDirectory, views)
 			if err != nil {
 				return nil, err
 			}
-			if err := readFiles(fsys, ViewsDirectory, files); err != nil {
+			if err := readFiles(fsys, ViewsDirectory, false, files); err != nil {
 				return nil, err
 			}
 		}
@@ -206,14 +214,71 @@ func publishFiles(module contractsmodule.Module, dependency Dependency) (map[str
 	return files, nil
 }
 
-func readFiles(fsys fs.FS, prefix string, files map[string][]byte) error {
+// FrontendSources returns the frontend files module:publish copies for a third-party
+// module, and the directory of the module they go to: Files.FS when set, else Files.Dir
+// of its package directory on disk, FrontendDirectory when empty. The files are nil
+// when the module declares no frontend.
+func FrontendSources(module contractsmodule.Module, frontend contractsmodule.Frontend) (fs.FS, string, error) {
+	name, given := module.Name(), frontend.Files
+	if given.FS != nil {
+		fsys, _, err := Files(name, "Frontend()", "", given)
+		prefix, _ := path.CleanRelative(given.Dir)
+
+		return fsys, prefix, err
+	}
+	if given.Dir == "" {
+		if len(frontend.Entries)+len(frontend.Aliases) == 0 {
+			return nil, "", nil
+		}
+		given.Dir = FrontendDirectory
+	}
+
+	sub, inside := path.CleanRelative(given.Dir)
+	if !inside {
+		return nil, "", errors.ModuleFilesDirInvalid.Args(name, "Frontend()", given.Dir)
+	}
+
+	pkg := packagePath(module)
+	dir, err := PackageDir(pkg)
+	if err != nil {
+		return nil, "", errors.ModuleFrontendSourcesNotFound.Args(name, pkg, err)
+	}
+
+	dir = filepath.Join(dir, filepath.FromSlash(sub))
+	if info, err := os.Stat(dir); err != nil {
+		return nil, "", errors.ModuleFilesDirUnreadable.Args(name, "Frontend()", given.Dir, err)
+	} else if !info.IsDir() {
+		return nil, "", errors.ModuleFilesDirUnreadable.Args(name, "Frontend()", given.Dir, fs.ErrInvalid)
+	}
+
+	return os.DirFS(dir), sub, nil
+}
+
+// readFiles adds the files of fsys under prefix. A directory on disk is a working
+// tree: dot entries, node_modules and anything but regular files are left out.
+func readFiles(fsys fs.FS, prefix string, disk bool, files map[string][]byte) error {
 	if fsys == nil {
 		return nil
 	}
 
 	return fs.WalkDir(fsys, ".", func(name string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() || isGoSource(name) {
+		if err != nil {
 			return err
+		}
+		if disk && name != "." {
+			if base := d.Name(); strings.HasPrefix(base, ".") || base == "node_modules" {
+				if d.IsDir() {
+					return fs.SkipDir
+				}
+
+				return nil
+			}
+			if !d.IsDir() && !d.Type().IsRegular() {
+				return nil
+			}
+		}
+		if d.IsDir() || isGoSource(name) {
+			return nil
 		}
 
 		content, err := fs.ReadFile(fsys, name)

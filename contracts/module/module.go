@@ -104,8 +104,9 @@ type ProvidesFrontend interface {
 
 // Frontend is a module's Vite input. Entries and Aliases are relative to Files.
 type Frontend struct {
-	// Files is the module directory when zero. A third-party module sets Files.FS, which
-	// module:publish copies into its directory; Go files (*.go, go.mod, go.sum) are skipped.
+	// Files is the module directory when zero, and Dir alone a directory of it: Vite builds
+	// from disk. module:publish copies a third-party module's from "resources" (or Dir) of
+	// its package directory, or from Files.FS when set; Go files and dot entries are skipped.
 	Files Files
 	// Entries are built even when no view references them, e.g. "resources/js/app.js".
 	Entries []string
@@ -118,8 +119,9 @@ type ProvidesStatic interface {
 	Static() map[string]Files
 }
 
-// Files is a directory of files: Dir inside FS, or on disk relative to the module
-// directory when FS is nil. Dir must stay inside the module; the zero value is no files.
+// Files is a directory of files: Dir inside FS, in practice an embed.FS. Runtime files
+// (views, translations, static) need an FS, only Frontend.Files may be on disk.
+// The zero value is no files.
 type Files struct {
 	FS fs.FS
 	// Dir "" is the capability's default directory inside FS, "." the root of FS.

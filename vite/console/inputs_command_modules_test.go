@@ -247,10 +247,40 @@ func TestInputsCommand_ModuleFrontendFiles(t *testing.T) {
 		assert.EqualError(t, run(blog, localBuild, ""), errors.ModuleFilesDirInvalid.Args("blog", "Frontend()", "../shop").Error())
 	})
 
-	t.Run("a third-party module needs an FS", func(t *testing.T) {
-		billing := &viteModule{testModule: testModule{"billing"}, entries: []string{"resources/js/app.js"}}
+	t.Run("a third-party module without an FS is published from its package directory", func(t *testing.T) {
+		const pkg = "github.com/goravel/framework/vite/console"
+		packageDir := module.PackageDir
+		t.Cleanup(func() { module.PackageDir = packageDir })
 
-		assert.EqualError(t, run(billing, thirdPartyBuild("v1.2.0"), ""), errors.ModuleFrontendFilesRequired.Args("billing").Error())
-		assert.NoError(t, run(&viteModule{testModule: testModule{"billing"}}, thirdPartyBuild("v1.2.0"), `"entries":[]`))
+		source := t.TempDir()
+		require.NoError(t, os.MkdirAll(filepath.Join(source, "resources", "js"), 0o755))
+		require.NoError(t, os.WriteFile(filepath.Join(source, "resources", "js", "app.js"), []byte("app"), 0o644))
+		require.NoError(t, os.WriteFile(filepath.Join(source, "app.js"), []byte("outside resources"), 0o644))
+		module.PackageDir = func(given string) (string, error) {
+			assert.Equal(t, pkg, given)
+
+			return source, nil
+		}
+
+		billing := &viteModule{testModule: testModule{"billing"}, entries: []string{"resources/js/app.js"}}
+		build := thirdPartyBuild("v1.2.0")
+		assert.EqualError(t, run(billing, build, ""), errors.ModuleNotPublished.Args("billing", "github.com/goravel/framework v1.2.0", "modules/billing").Error())
+
+		dependency := module.Dependency{Path: "github.com/goravel/framework", Version: "v1.2.0", Sum: "h1:abc"}
+		_, err := module.Publish(billing, dependency, filepath.Join(support.RelativePath, "modules", "billing"))
+		require.NoError(t, err)
+		assert.NoError(t, run(billing, build, `"entries":["modules/billing/resources/js/app.js"]`))
+
+		// Only resources/ is published by default.
+		for _, entry := range []string{"resources/js/missing.js", "app.js", "resources"} {
+			missing := &viteModule{testModule: testModule{"billing"}, entries: []string{"resources/js/app.js", entry}}
+			assert.EqualError(t, run(missing, build, ""), errors.ModuleViteEntryMissing.Args("billing", entry).Error())
+		}
+
+		// Without frontend nothing is located or published.
+		module.PackageDir = func(string) (string, error) { return "", assert.AnError }
+		assert.NoError(t, run(&viteModule{testModule: testModule{"plain"}}, build, `"entries":[]`))
+		assert.EqualError(t, run(&viteModule{testModule: testModule{"shop"}, entries: []string{"app.js"}}, build, ""),
+			errors.ModuleFrontendSourcesNotFound.Args("shop", pkg, assert.AnError).Error())
 	})
 }

@@ -10,8 +10,8 @@ import (
 
 // StaticFS resolves a Static() value with Files. Directories are not listable, so
 // drivers answer 404.
-func StaticFS(name, root string, files contractsmodule.Files) (fs.FS, bool, error) {
-	fsys, ok, err := Files(name, "Static()", root, "", files)
+func StaticFS(name string, files contractsmodule.Files) (fs.FS, bool, error) {
+	fsys, ok, err := Files(name, "Static()", "", files)
 	if !ok {
 		return nil, false, err
 	}

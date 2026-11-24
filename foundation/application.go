@@ -528,8 +528,7 @@ func (r *Application) configureModuleConfig() {
 			configs = append(configs, module)
 		}
 		if p, ok := module.(contractsmodule.ProvidesTranslations); ok {
-			root, _ := r.MakeModule().Path(module.Name())
-			fsys, ok, err := frameworkmodule.Files(module.Name(), "Translations()", root, frameworkmodule.TranslationsDirectory, p.Translations())
+			fsys, ok, err := frameworkmodule.Files(module.Name(), "Translations()", frameworkmodule.TranslationsDirectory, p.Translations())
 			if err != nil {
 				color.Errorln(err)
 			}
@@ -779,7 +778,6 @@ func (r *Application) configureRoutes() {
 // registerModuleStatic serves static paths in module, then prefix, order. Duplicate
 // or invalid ones are reported and skipped.
 func (r *Application) registerModuleStatic(routeFacade route.Route) {
-	registry := r.MakeModule()
 	served := make(map[string]string)
 	for _, module := range r.modules {
 		p, ok := module.(contractsmodule.ProvidesStatic)
@@ -799,8 +797,7 @@ func (r *Application) registerModuleStatic(routeFacade route.Route) {
 				continue
 			}
 
-			root, _ := registry.Path(module.Name())
-			fsys, ok, err := frameworkmodule.StaticFS(module.Name(), root, paths[prefix])
+			fsys, ok, err := frameworkmodule.StaticFS(module.Name(), paths[prefix])
 			if err != nil {
 				color.Errorln(err)
 			}
@@ -935,11 +932,9 @@ func (r *Application) registerModuleResources() {
 		return
 	}
 
-	registry := r.MakeModule()
 	for _, module := range modules {
 		name := module.(contractsmodule.Module).Name()
-		root, _ := registry.Path(name)
-		fsys, ok, err := frameworkmodule.Files(name, "Views()", root, frameworkmodule.ViewsDirectory, module.Views())
+		fsys, ok, err := frameworkmodule.Files(name, "Views()", frameworkmodule.ViewsDirectory, module.Views())
 		if err != nil {
 			color.Errorln(err)
 		}
