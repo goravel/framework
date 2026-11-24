@@ -21,6 +21,7 @@ import (
 )
 
 type Worker struct {
+	cache  cache.Cache
 	config queue.Config
 	db     db.DB
 	driver queue.Driver
@@ -57,6 +58,7 @@ func NewWorker(config queue.Config, cache cache.Cache, db db.DB, job queue.JobSt
 	shutdownCtx, shutdownCancel := context.WithCancel(context.Background())
 
 	return &Worker{
+		cache:  cache,
 		config: config,
 		db:     db,
 		driver: driver,
@@ -394,6 +396,10 @@ func (r *Worker) processReservedJob(ctx context.Context, reservedJob queue.Reser
 		return true, err
 	}
 
+	// The job succeeded or failed for good, so a unique job can be pushed
+	// again. As in Laravel, the jobs chained to it don't hold its lock.
+	releaseUniqueLock(r.cache, task)
+
 	if err != nil {
 		if !errors.Is(err, errors.QueueFailedToCallJob) {
 			r.log.Error(err)
@@ -414,7 +420,21 @@ func (r *Worker) processReservedJob(ctx context.Context, reservedJob queue.Reser
 			// so retries stay in-memory inside call. A done context still
 			// returns released=true, which stops the chain here (and keeps the
 			// final Delete below from orphaning the rest of the chain).
+			// A unique job in the chain takes its lock as if it were dispatched,
+			// as Laravel dispatches each chained job. While another copy holds
+			// it, the job is skipped with the rest of the chain, which it
+			// carries.
+			acquired, lockErr := acquireUniqueLock(r.cache, chainTask)
+			if lockErr != nil {
+				r.log.Error(lockErr)
+				break
+			}
+			if !acquired {
+				break
+			}
+
 			released, err = r.call(ctx, chainTask, nil, queueName, recordFailed)
+			releaseUniqueLock(r.cache, chainTask)
 			if released {
 				break
 			}

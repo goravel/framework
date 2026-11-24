@@ -312,6 +312,7 @@ var (
 	QueueInvalidDatabaseConnection   = New("invalid database connection: %s")
 	QueueNoRetryableJobsFound        = New("no retryable jobs found")
 	QueueJobNotFound                 = New("job not found: %s")
+	QueueUniqueJobWithoutCache       = New("job %s is unique, which needs a cache store")
 	QueueJobRegisterFailed           = New("job register failed: %v")
 	QueueJobFailed                   = New("job failed: %v")
 	QueueProcessingJobs              = New("Processing jobs from [%s] connection and [%s] queue")

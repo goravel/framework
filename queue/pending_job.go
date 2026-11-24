@@ -13,6 +13,7 @@ import (
 )
 
 type PendingJob struct {
+	cache         contractscache.Cache
 	connection    string
 	driverCreator contractsqueue.DriverCreator
 	delay         time.Time
@@ -39,6 +40,7 @@ func NewPendingJob(
 	queue := config.DefaultQueue()
 
 	return &PendingJob{
+		cache:         cache,
 		connection:    connection,
 		driverCreator: NewDriverCreator(config, cache, db, jobStorer, json, log),
 		queue:         queue,
@@ -84,6 +86,7 @@ func NewPendingChainJob(
 	queue := config.DefaultQueue()
 
 	return &PendingJob{
+		cache:         cache,
 		connection:    connection,
 		driverCreator: NewDriverCreator(config, cache, db, jobStorer, json, log),
 		queue:         queue,
@@ -116,7 +119,19 @@ func (r *PendingJob) Dispatch() error {
 
 	r.recalculateDelay()
 
-	return driver.Push(r.task, r.queue)
+	acquired, err := acquireUniqueLock(r.cache, r.task)
+	if err != nil || !acquired {
+		return err
+	}
+
+	err = driver.Push(r.task, r.queue)
+	// The sync driver has run the job already, and a job that was not pushed
+	// will not run.
+	if isUniqueJob(r.task) && (err != nil || driver.Driver() == contractsqueue.DriverSync) {
+		releaseUniqueLock(r.cache, r.task)
+	}
+
+	return err
 }
 
 // DispatchSync dispatches the task synchronously
