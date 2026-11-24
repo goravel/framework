@@ -13,9 +13,11 @@ import (
 )
 
 type PendingJob struct {
+	cache         contractscache.Cache
 	connection    string
 	driverCreator contractsqueue.DriverCreator
 	delay         time.Time
+	fake          *Fake
 	queue         string
 	task          contractsqueue.Task
 }
@@ -38,6 +40,7 @@ func NewPendingJob(
 	queue := config.DefaultQueue()
 
 	return &PendingJob{
+		cache:         cache,
 		connection:    connection,
 		driverCreator: NewDriverCreator(config, cache, db, jobStorer, json, log),
 		queue:         queue,
@@ -83,6 +86,7 @@ func NewPendingChainJob(
 	queue := config.DefaultQueue()
 
 	return &PendingJob{
+		cache:         cache,
 		connection:    connection,
 		driverCreator: NewDriverCreator(config, cache, db, jobStorer, json, log),
 		queue:         queue,
@@ -102,6 +106,12 @@ func (r *PendingJob) Delay(delay time.Time) contractsqueue.PendingJob {
 
 // Dispatch dispatches the task
 func (r *PendingJob) Dispatch() error {
+	// A faked job is recorded before the connection is resolved, so tests do
+	// not need the connection to be reachable, or even configured.
+	if r.fake.record(r.task, r.delayedUntil(), r.connection, r.queue) {
+		return nil
+	}
+
 	driver, err := r.driverCreator.Create(r.connection)
 	if err != nil {
 		return err
@@ -109,7 +119,19 @@ func (r *PendingJob) Dispatch() error {
 
 	r.recalculateDelay()
 
-	return driver.Push(r.task, r.queue)
+	acquired, err := acquireUniqueLock(r.cache, r.task)
+	if err != nil || !acquired {
+		return err
+	}
+
+	err = driver.Push(r.task, r.queue)
+	// The sync driver has run the job already, and a job that was not pushed
+	// will not run.
+	if isUniqueJob(r.task) && (err != nil || driver.Driver() == contractsqueue.DriverSync) {
+		releaseUniqueLock(r.cache, r.task)
+	}
+
+	return err
 }
 
 // DispatchSync dispatches the task synchronously
@@ -134,11 +156,18 @@ func (r *PendingJob) OnQueue(queue string) contractsqueue.PendingJob {
 }
 
 func (r *PendingJob) recalculateDelay() {
-	if !r.delay.IsZero() {
-		if !r.task.Delay.IsZero() {
-			r.task.Delay = r.task.Delay.Add(carbon.Now().DiffAbsInDuration(carbon.FromStdTime(r.delay)))
-		} else {
-			r.task.Delay = r.delay
-		}
+	r.task.Delay = r.delayedUntil()
+}
+
+// delayedUntil returns when the task becomes available, combining the delay
+// of the pending job with the one of the task.
+func (r *PendingJob) delayedUntil() time.Time {
+	if r.delay.IsZero() {
+		return r.task.Delay
 	}
+	if r.task.Delay.IsZero() {
+		return r.delay
+	}
+
+	return r.task.Delay.Add(carbon.Now().DiffAbsInDuration(carbon.FromStdTime(r.delay)))
 }

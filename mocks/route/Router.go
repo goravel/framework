@@ -122,6 +122,54 @@ func (_c *Router_Delete_Call) RunAndReturn(run func(string, http.HandlerFunc) ro
 	return _c
 }
 
+// Domain provides a mock function with given fields: domain
+func (_m *Router) Domain(domain string) route.Router {
+	ret := _m.Called(domain)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Domain")
+	}
+
+	var r0 route.Router
+	if rf, ok := ret.Get(0).(func(string) route.Router); ok {
+		r0 = rf(domain)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(route.Router)
+		}
+	}
+
+	return r0
+}
+
+// Router_Domain_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Domain'
+type Router_Domain_Call struct {
+	*mock.Call
+}
+
+// Domain is a helper method to define mock.On call
+//   - domain string
+func (_e *Router_Expecter) Domain(domain interface{}) *Router_Domain_Call {
+	return &Router_Domain_Call{Call: _e.mock.On("Domain", domain)}
+}
+
+func (_c *Router_Domain_Call) Run(run func(domain string)) *Router_Domain_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Router_Domain_Call) Return(_a0 route.Router) *Router_Domain_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Router_Domain_Call) RunAndReturn(run func(string) route.Router) *Router_Domain_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Get provides a mock function with given fields: path, handler
 func (_m *Router) Get(path string, handler http.HandlerFunc) route.Action {
 	ret := _m.Called(path, handler)

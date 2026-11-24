@@ -316,6 +316,7 @@ var (
 	QueueInvalidDatabaseConnection   = New("invalid database connection: %s")
 	QueueNoRetryableJobsFound        = New("no retryable jobs found")
 	QueueJobNotFound                 = New("job not found: %s")
+	QueueUniqueJobWithoutCache       = New("job %s is unique, which needs a cache store")
 	QueueJobRegisterFailed           = New("job register failed: %v")
 	QueueJobFailed                   = New("job failed: %v")
 	QueueProcessingJobs              = New("Processing jobs from [%s] connection and [%s] queue")
@@ -324,6 +325,7 @@ var (
 
 	RouteDefaultDriverNotSet = New("please set default driver")
 	RouteInvalidDriver       = New("init %s route driver fail: route must be implement route.Route or func() (route.Route, error)")
+	RouteInvalidDomain       = New("invalid route domain %q: use a host name such as admin.example.com, where a whole label can be a parameter such as {account}").SetModule(ModuleRoute)
 
 	SchemaConnectionNotFound   = New("connection %s not found")
 	SchemaDriverNotSupported   = New("driver %s is not supported")
@@ -339,8 +341,9 @@ var (
 	SchemaModelNotFound        = New("model %s not found in registered models")
 	SchemaTableNotFound        = New("table %s not found")
 
-	ScheduleEventFailed   = New("schedule event %s failed: %v").SetModule(ModuleSchedule)
-	ScheduleEventPanicked = New("schedule event %s panicked: %v").SetModule(ModuleSchedule)
+	ScheduleEventFailed       = New("schedule event %s failed: %v").SetModule(ModuleSchedule)
+	ScheduleEventPanicked     = New("schedule event %s panicked: %v").SetModule(ModuleSchedule)
+	ScheduleEventHookPanicked = New("schedule event %s hook panicked: %v").SetModule(ModuleSchedule)
 
 	SessionDriverAlreadyExists        = New("session driver [%s] already exists")
 	SessionDriverExtensionFailed      = New("session failed to extend session [%s] driver [%v]")

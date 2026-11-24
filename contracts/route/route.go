@@ -48,6 +48,26 @@ type Route interface {
 }
 
 type Router interface {
+	// Domain limits the routes registered with the router to requests for the
+	// given host, such as "admin.example.com", matched ignoring case, the port
+	// and a trailing dot. The domain follows support/http.ParseDomain: an
+	// invalid one, such as an empty domain, a scheme, a port, a path or a
+	// wildcard, panics with RouteInvalidDomain when the routes are registered.
+	//
+	// A whole label in braces, such as "{account}.example.com", matches one
+	// label of the host, and its value, in lower case, is read like a route
+	// parameter. A path parameter with the same name wins. Domains that differ
+	// only in their parameter names, such as "{account}.example.com" and
+	// "{tenant}.example.com", are the same domain, and each route reads its own
+	// names.
+	//
+	// A request is served by the first domain that matches its host: domains
+	// without parameters first, then domains with parameters in the order they
+	// were first registered. Routes on a domain take priority over the routes
+	// without one, which match any host, and a request the matching domain has
+	// no route for goes on to them, not to another domain. Calling Domain on a
+	// router that already has a domain replaces it.
+	Domain(domain string) Router
 	// Group creates a new router group with the specified handler.
 	Group(handler GroupFunc)
 	// Prefix adds a common prefix to the routes registered with the router.
