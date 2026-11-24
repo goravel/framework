@@ -231,16 +231,16 @@ func (r *InputsCommand) moduleInputs() ([]ModuleInputs, error) {
 }
 
 // frontendFiles returns the directory entries and aliases are relative to, and a check
-// that an entry is a file of the sources: an embedded Files.FS, or what module:publish
+// that an entry is a file of the sources: embedded Files (module.FS), or what module:publish
 // copies of a third-party module. The check is nil for files of the project.
 func frontendFiles(module contractsmodule.Module, dir string, frontend contractsmodule.Frontend, thirdParty bool) (string, func(entry string) bool, error) {
 	files := frontend.Files
-	sub, inside := path.CleanRelative(files.Dir)
+	sub, inside := path.CleanRelative(files.Directory())
 	if !inside {
-		return "", nil, errors.ModuleFilesDirInvalid.Args(module.Name(), "Frontend()", files.Dir)
+		return "", nil, errors.ModuleFilesDirInvalid.Args(module.Name(), "Frontend()", files.Directory())
 	}
 	root := stdpath.Join(dir, sub)
-	if files.FS == nil && !thirdParty {
+	if files.FS() == nil && !thirdParty {
 		return root, nil, nil
 	}
 

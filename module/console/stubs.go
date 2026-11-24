@@ -151,12 +151,12 @@ func (m *Module) Schedule() []schedule.Event {
 
 // Views are named "DummyName/<file>", e.g. "DummyName/index.tmpl".
 func (m *Module) Views() module.Files {
-	return module.Files{FS: views}
+	return module.FS(views)
 }
 
 // Translations are grouped as "DummyName/<file>", e.g. "DummyName/messages.title".
 func (m *Module) Translations() module.Files {
-	return module.Files{FS: lang}
+	return module.FS(lang)
 }
 
 // Frontend is what Vite builds: Entries like "resources/js/app.js" and Aliases like
@@ -165,7 +165,7 @@ func (m *Module) Frontend() module.Frontend {
 	return module.Frontend{}
 }
 
-// Static serves files as-is under a URL prefix, e.g. "/DummyName/assets": {FS: public, Dir: "public"}.
+// Static serves files as-is under a URL prefix, e.g. "/DummyName/assets": module.FS(public).Dir("public").
 func (m *Module) Static() map[string]module.Files {
 	return map[string]module.Files{}
 }

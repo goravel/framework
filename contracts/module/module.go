@@ -104,9 +104,9 @@ type ProvidesFrontend interface {
 
 // Frontend is a module's Vite input. Entries and Aliases are relative to Files.
 type Frontend struct {
-	// Files is the module directory when zero, and Dir alone a directory of it: Vite builds
-	// from disk. module:publish copies a third-party module's from "resources" (or Dir) of
-	// its package directory, or from Files.FS when set; Go files and dot entries are skipped.
+	// Files is the module directory when zero, and module.Path(dir) a directory of it: Vite
+	// builds from disk. module:publish copies a third-party module's from "resources" (or
+	// that directory) of its package, or from module.FS(fsys); Go files and dot entries are skipped.
 	Files Files
 	// Entries are built even when no view references them, e.g. "resources/js/app.js".
 	Entries []string
@@ -119,13 +119,42 @@ type ProvidesStatic interface {
 	Static() map[string]Files
 }
 
-// Files is a directory of files: Dir inside FS, in practice an embed.FS. Runtime files
-// (views, translations, static) need an FS, only Frontend.Files may be on disk.
+// Files is a directory of files: module.FS(views) for an fs.FS (in practice an
+// embed.FS), module.Path(dir) for a directory on disk. Runtime files (views,
+// translations, static) need an FS, only Frontend.Files may be on disk.
 // The zero value is no files.
 type Files struct {
-	FS fs.FS
-	// Dir "" is the capability's default directory inside FS, "." the root of FS.
-	Dir string
+	fsys fs.FS
+	dir  string
+}
+
+// FS is the files of fsys, starting at the capability's default directory. Chain
+// Dir to name another one: module.FS(public).Dir("public").
+func FS(fsys fs.FS) Files {
+	return Files{fsys: fsys}
+}
+
+// Path is a directory on disk, relative to the module directory. Only
+// Frontend().Files reads from disk.
+func Path(dir string) Files {
+	return Files{dir: dir}
+}
+
+// Dir names the directory: "" is the capability's default inside the FS, "." its root.
+func (r Files) Dir(dir string) Files {
+	r.dir = dir
+
+	return r
+}
+
+// FS is the filesystem holding the files, nil for a directory on disk.
+func (r Files) FS() fs.FS {
+	return r.fsys
+}
+
+// Directory is what Dir set.
+func (r Files) Directory() string {
+	return r.dir
 }
 
 // Registry holds the application's modules. The framework registers them at boot.

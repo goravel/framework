@@ -16,22 +16,22 @@ const (
 	FrontendDirectory = "resources"
 )
 
-// Files resolves what a capability (e.g. "Views()") returned: files.Dir inside files.FS.
-// ok is false for the zero value, a Dir without an FS is an error. Without a Dir the
+// Files resolves what a capability (e.g. "Views()") returned: its directory inside its FS.
+// ok is false for the zero value, a directory without an FS is an error. Without a Dir the
 // files start at defaultDir, or at the root of the FS when there is none.
 func Files(name, capability, defaultDir string, files contractsmodule.Files) (fsys fs.FS, ok bool, err error) {
-	if files.FS == nil {
-		if files.Dir == "" {
+	given := files.Directory()
+	if files.FS() == nil {
+		if given == "" {
 			return nil, false, nil
 		}
 
-		return nil, false, errors.ModuleFilesFSRequired.Args(name, capability, files.Dir)
+		return nil, false, errors.ModuleFilesFSRequired.Args(name, capability, given)
 	}
 
-	given := files.Dir
 	if given == "" {
 		if defaultDir == "" {
-			return files.FS, true, nil
+			return files.FS(), true, nil
 		}
 		given = defaultDir
 	}
@@ -41,7 +41,7 @@ func Files(name, capability, defaultDir string, files contractsmodule.Files) (fs
 		return nil, false, errors.ModuleFilesDirInvalid.Args(name, capability, given)
 	}
 
-	fsys, err = fs.Sub(files.FS, dir)
+	fsys, err = fs.Sub(files.FS(), dir)
 	if err == nil {
 		var info fs.FileInfo
 		if info, err = fs.Stat(fsys, "."); err == nil && !info.IsDir() {

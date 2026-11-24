@@ -203,9 +203,9 @@ func (m *richModule) Views() contractsmodule.Files        { return filesOf(m.vie
 func filesOf(value any) contractsmodule.Files {
 	switch value := value.(type) {
 	case fs.FS:
-		return contractsmodule.Files{FS: value, Dir: "."}
+		return contractsmodule.FS(value).Dir(".")
 	case string:
-		return contractsmodule.Files{Dir: value}
+		return contractsmodule.Path(value)
 	}
 
 	return contractsmodule.Files{}
@@ -549,7 +549,7 @@ func (m *staticModule) Static() map[string]contractsmodule.Files { return m.stat
 
 func (s *ApplicationTestSuite) TestConfigureRoutes_ModuleStatic() {
 	s.SetupTest()
-	public := contractsmodule.Files{FS: fstest.MapFS{"public/robots.txt": {Data: []byte("x")}}, Dir: "public"}
+	public := contractsmodule.FS(fstest.MapFS{"public/robots.txt": {Data: []byte("x")}}).Dir("public")
 
 	mockRoute := mocksroute.NewRoute(s.T())
 	mockRoute.EXPECT().StaticFS("/blog/static", mock.MatchedBy(func(fsys http.FileSystem) bool {
@@ -567,9 +567,9 @@ func (s *ApplicationTestSuite) TestConfigureRoutes_ModuleStatic() {
 	s.withModules(NewApplicationBuilder(s.app),
 		&staticModule{testModule: testModule{"blog"}, static: map[string]contractsmodule.Files{
 			"blog/static/": public,
-			"/":            public,              // invalid prefix: reported
-			"/blog/secret": {Dir: "../outside"}, // escapes the module: reported
-			"/blog/empty":  {},                  // absent: skipped
+			"/":            public,                             // invalid prefix: reported
+			"/blog/secret": contractsmodule.Path("../outside"), // escapes the module: reported
+			"/blog/empty":  {},                                 // absent: skipped
 		}},
 		&staticModule{testModule: testModule{"shop"}, static: map[string]contractsmodule.Files{
 			"/blog/static": public, // taken by blog: reported

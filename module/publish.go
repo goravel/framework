@@ -188,13 +188,13 @@ func publishFiles(module contractsmodule.Module, dependency Dependency) (map[str
 		if err != nil {
 			return nil, err
 		}
-		if err := readFiles(fsys, prefix, frontend.Files.FS == nil, files); err != nil {
+		if err := readFiles(fsys, prefix, frontend.Files.FS() == nil, files); err != nil {
 			return nil, err
 		}
 	}
 
 	if p, ok := module.(contractsmodule.ProvidesViews); ok && !hasPrefix(files, ViewsDirectory+"/") {
-		if views := p.Views(); views.FS != nil {
+		if views := p.Views(); views.FS() != nil {
 			fsys, _, err := Files(module.Name(), "Views()", ViewsDirectory, views)
 			if err != nil {
 				return nil, err
@@ -215,27 +215,27 @@ func publishFiles(module contractsmodule.Module, dependency Dependency) (map[str
 }
 
 // FrontendSources returns the frontend files module:publish copies for a third-party
-// module, and the directory of the module they go to: Files.FS when set, else Files.Dir
-// of its package directory on disk, FrontendDirectory when empty. The files are nil
+// module, and the directory of the module they go to: the FS of Files when set, else their
+// directory of its package on disk, FrontendDirectory when empty. The files are nil
 // when the module declares no frontend.
 func FrontendSources(module contractsmodule.Module, frontend contractsmodule.Frontend) (fs.FS, string, error) {
-	name, given := module.Name(), frontend.Files
-	if given.FS != nil {
-		fsys, _, err := Files(name, "Frontend()", "", given)
-		prefix, _ := path.CleanRelative(given.Dir)
+	name, given := module.Name(), frontend.Files.Directory()
+	if frontend.Files.FS() != nil {
+		fsys, _, err := Files(name, "Frontend()", "", frontend.Files)
+		prefix, _ := path.CleanRelative(given)
 
 		return fsys, prefix, err
 	}
-	if given.Dir == "" {
+	if given == "" {
 		if len(frontend.Entries)+len(frontend.Aliases) == 0 {
 			return nil, "", nil
 		}
-		given.Dir = FrontendDirectory
+		given = FrontendDirectory
 	}
 
-	sub, inside := path.CleanRelative(given.Dir)
+	sub, inside := path.CleanRelative(given)
 	if !inside {
-		return nil, "", errors.ModuleFilesDirInvalid.Args(name, "Frontend()", given.Dir)
+		return nil, "", errors.ModuleFilesDirInvalid.Args(name, "Frontend()", given)
 	}
 
 	pkg := packagePath(module)
@@ -246,9 +246,9 @@ func FrontendSources(module contractsmodule.Module, frontend contractsmodule.Fro
 
 	dir = filepath.Join(dir, filepath.FromSlash(sub))
 	if info, err := os.Stat(dir); err != nil {
-		return nil, "", errors.ModuleFilesDirUnreadable.Args(name, "Frontend()", given.Dir, err)
+		return nil, "", errors.ModuleFilesDirUnreadable.Args(name, "Frontend()", given, err)
 	} else if !info.IsDir() {
-		return nil, "", errors.ModuleFilesDirUnreadable.Args(name, "Frontend()", given.Dir, fs.ErrInvalid)
+		return nil, "", errors.ModuleFilesDirUnreadable.Args(name, "Frontend()", given, fs.ErrInvalid)
 	}
 
 	return os.DirFS(dir), sub, nil

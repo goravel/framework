@@ -27,14 +27,14 @@ type sourcesModule struct {
 }
 
 func (m *sourcesModule) Frontend() contractsmodule.Frontend {
-	return contractsmodule.Frontend{Files: contractsmodule.Files{FS: m.sources, Dir: m.dir}}
+	return contractsmodule.Frontend{Files: contractsmodule.FS(m.sources).Dir(m.dir)}
 }
 func (m *sourcesModule) Views() contractsmodule.Files {
 	if m.views == nil {
 		return contractsmodule.Files{}
 	}
 
-	return contractsmodule.Files{FS: m.views, Dir: "."}
+	return contractsmodule.FS(m.views).Dir(".")
 }
 
 // diskModule declares frontend files without an FS: they are read from its package directory.
@@ -45,7 +45,7 @@ type diskModule struct {
 }
 
 func (m *diskModule) Frontend() contractsmodule.Frontend {
-	return contractsmodule.Frontend{Files: contractsmodule.Files{Dir: m.dir}, Entries: m.entries}
+	return contractsmodule.Frontend{Files: contractsmodule.Path(m.dir), Entries: m.entries}
 }
 
 type locatedSourcesModule struct{ sourcesModule }

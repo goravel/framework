@@ -45,7 +45,7 @@ type sourcesModule struct {
 }
 
 func (m *sourcesModule) Frontend() contractsmodule.Frontend {
-	return contractsmodule.Frontend{Files: contractsmodule.Files{FS: m.sources, Dir: m.dir}, Entries: m.entries}
+	return contractsmodule.Frontend{Files: contractsmodule.FS(m.sources).Dir(m.dir), Entries: m.entries}
 }
 
 // localBuild makes this package's test modules part of the application.
@@ -227,7 +227,7 @@ func TestInputsCommand_ModuleFrontendFiles(t *testing.T) {
 		return cmd.Handle(ctx)
 	}
 
-	t.Run("entries and aliases are relative to Files.Dir", func(t *testing.T) {
+	t.Run("entries and aliases are relative to the Files directory", func(t *testing.T) {
 		blog := &sourcesModule{testModule: testModule{"blog"}, sources: sources, dir: "web", entries: []string{"js/app.js"}}
 
 		assert.NoError(t, run(blog, localBuild, `"entries":["modules/blog/web/js/app.js"]`))
