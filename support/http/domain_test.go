@@ -28,6 +28,7 @@ func TestParseDomain(t *testing.T) {
 		"{}.example.com",
 		"{1st}.example.com",
 		"{account}.{account}.example.com",
+		"{account}.{Account}.example.com",
 	} {
 		t.Run(domain, func(t *testing.T) {
 			_, err := ParseDomain(domain)
@@ -40,12 +41,18 @@ func TestParseDomain(t *testing.T) {
 	assert.Equal(t, "admin.example.com", domain.String())
 	assert.False(t, domain.HasParams())
 	assert.Empty(t, domain.Params())
+	assert.Equal(t, "admin.example.com", domain.Key())
 
 	domain, err = ParseDomain("{account}.{Region}.Example.com")
 	require.NoError(t, err)
 	assert.Equal(t, "{account}.{Region}.example.com", domain.String())
 	assert.True(t, domain.HasParams())
 	assert.Equal(t, []string{"account", "Region"}, domain.Params())
+	assert.Equal(t, "{}.{}.example.com", domain.Key())
+
+	other, err := ParseDomain("{tenant}.{zone}.example.com")
+	require.NoError(t, err)
+	assert.Equal(t, domain.Key(), other.Key())
 }
 
 func TestDomainMatch(t *testing.T) {
@@ -82,8 +89,18 @@ func TestDomainMatch(t *testing.T) {
 }
 
 func TestNormalizeHost(t *testing.T) {
-	assert.Equal(t, "example.com", NormalizeHost("Example.com:8080"))
-	assert.Equal(t, "example.com", NormalizeHost("example.com."))
-	assert.Equal(t, "::1", NormalizeHost("[::1]:8080"))
-	assert.Equal(t, "", NormalizeHost(""))
+	for host, expected := range map[string]string{
+		"admin.example.com":      "admin.example.com",
+		"Admin.Example.com:3000": "admin.example.com",
+		"admin.example.com.":     "admin.example.com",
+		"[::1]:3000":             "::1",
+		"[::1]":                  "[::1]",
+		"":                       "",
+	} {
+		assert.Equal(t, expected, NormalizeHost(host), host)
+	}
+
+	assert.Zero(t, testing.AllocsPerRun(10, func() {
+		NormalizeHost("admin.example.com")
+	}))
 }

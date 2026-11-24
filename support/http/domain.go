@@ -19,6 +19,7 @@ var (
 // "{account}.example.com".
 type Domain struct {
 	name    string
+	key     string
 	params  []string
 	pattern *regexp.Regexp
 }
@@ -27,8 +28,8 @@ type Domain struct {
 // trailing dot. It is a host name made of labels separated by dots, and a
 // label in braces is a parameter that matches one label of the host. An
 // empty domain, a scheme, a port, a path, a wildcard, an empty label, a
-// parameter that is not a whole label, and a parameter used twice return
-// RouteInvalidDomain.
+// parameter that is not a whole label, and a parameter used twice, ignoring
+// case, return RouteInvalidDomain.
 func ParseDomain(domain string) (*Domain, error) {
 	name := strings.TrimSuffix(strings.TrimSpace(domain), ".")
 	if name == "" {
@@ -37,14 +38,16 @@ func ParseDomain(domain string) (*Domain, error) {
 
 	parsed := &Domain{}
 	labels := strings.Split(name, ".")
+	keys := make([]string, len(labels))
 	patterns := make([]string, len(labels))
 	for i, label := range labels {
 		if match := domainParamRegex.FindStringSubmatch(label); match != nil {
-			if slices.Contains(parsed.params, match[1]) {
+			if slices.ContainsFunc(parsed.params, func(param string) bool { return strings.EqualFold(param, match[1]) }) {
 				return nil, errors.RouteInvalidDomain.Args(domain)
 			}
 
 			parsed.params = append(parsed.params, match[1])
+			keys[i] = "{}"
 			patterns[i] = "([^.]+)"
 			continue
 		}
@@ -55,10 +58,12 @@ func ParseDomain(domain string) (*Domain, error) {
 		}
 
 		labels[i] = label
+		keys[i] = label
 		patterns[i] = regexp.QuoteMeta(label)
 	}
 
 	parsed.name = strings.Join(labels, ".")
+	parsed.key = strings.Join(keys, ".")
 	if len(parsed.params) > 0 {
 		parsed.pattern = regexp.MustCompile("^" + strings.Join(patterns, `\.`) + "$")
 	}
@@ -71,8 +76,17 @@ func (r *Domain) HasParams() bool {
 	return r.pattern != nil
 }
 
+// Key returns the domain with its parameters unnamed, such as
+// "{}.example.com". Domains that match the same hosts have the same key, so
+// "{account}.example.com" and "{tenant}.example.com" share it.
+func (r *Domain) Key() string {
+	return r.key
+}
+
 // Match reports whether the host, as the request's Host header carries it,
-// belongs to the domain, with the values of the domain's parameters.
+// belongs to the domain, with the values of the domain's parameters. The host
+// is normalized first, so the values are in lower case: "ACME.example.com"
+// gives "acme" for "{account}.example.com".
 func (r *Domain) Match(host string) (map[string]string, bool) {
 	host = NormalizeHost(host)
 	if r.pattern == nil {
@@ -106,8 +120,12 @@ func (r *Domain) String() string {
 // NormalizeHost returns the host in lower case, without its port and
 // trailing dot.
 func NormalizeHost(host string) string {
-	if parsed, _, err := net.SplitHostPort(host); err == nil {
-		host = parsed
+	// Only a host with a colon can have a port, so the common case doesn't
+	// allocate the error of SplitHostPort.
+	if strings.Contains(host, ":") {
+		if parsed, _, err := net.SplitHostPort(host); err == nil {
+			host = parsed
+		}
 	}
 
 	return strings.ToLower(strings.TrimSuffix(host, "."))
