@@ -1,11 +1,8 @@
 package console
 
 import (
-	"os"
-	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/errors"
@@ -101,7 +98,6 @@ func (s *InitCommandTestSuite) TestCreatesThenReportsExisting() {
 	ctx.EXPECT().TwoColumnDetail("modules/.gitkeep", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/modules.go", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/app.go WithModules(Modules)", statusCreated).Once()
-	ctx.EXPECT().TwoColumnDetail("main.go go:generate module:publish", statusCreated).Once()
 
 	s.NoError(NewInitCommand(nil).Handle(ctx))
 
@@ -119,7 +115,6 @@ func (s *InitCommandTestSuite) TestCreatesThenReportsExisting() {
 	ctx.EXPECT().TwoColumnDetail("modules/.gitkeep", statusExists).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/modules.go", statusExists).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/app.go WithModules(Modules)", statusExists).Once()
-	ctx.EXPECT().TwoColumnDetail("main.go go:generate module:publish", statusExists).Once()
 
 	s.NoError(NewInitCommand(nil).Handle(ctx))
 
@@ -129,33 +124,7 @@ func (s *InitCommandTestSuite) TestCreatesThenReportsExisting() {
 
 	main, err := file.GetContent("main.go")
 	s.NoError(err)
-	s.Equal(strings.Replace(mainFile, "\nfunc main(", "\n"+generateDirective+"\n\nfunc main(", 1), main)
-}
-
-func (s *InitCommandTestSuite) TestGenerateDirective() {
-	s.Require().NoError(file.PutContent("bootstrap/app.go", chainedApp))
-	rows := func(status string) *mocksconsole.Context {
-		ctx := mocksconsole.NewContext(s.T())
-		ctx.EXPECT().TwoColumnDetail(mock.Anything, mock.Anything).Times(3)
-		ctx.EXPECT().TwoColumnDetail("main.go go:generate module:publish", status).Once()
-
-		return ctx
-	}
-
-	// No main.go: left to the user.
-	ctx := rows(statusManual)
-	ctx.EXPECT().Warning("Add " + generateDirective + " to the main package").Once()
-	s.NoError(NewInitCommand(nil).Handle(ctx))
-	s.False(file.Exists("main.go"))
-
-	// No func main in main.go: appended.
-	s.Require().NoError(file.PutContent("main.go", "//go:build ignore\n\npackage main\n"))
-	s.NoError(NewInitCommand(nil).Handle(rows(statusCreated)))
-	main, err := file.GetContent("main.go")
-	s.NoError(err)
-	s.Equal("//go:build ignore\n\npackage main\n\n"+generateDirective+"\n", main)
-
-	s.NoError(NewInitCommand(nil).Handle(rows(statusExists)))
+	s.Equal(mainFile, main, "main.go is left alone")
 }
 
 func (s *InitCommandTestSuite) TestConfiguredPath() {
@@ -169,7 +138,6 @@ func (s *InitCommandTestSuite) TestConfiguredPath() {
 	ctx.EXPECT().TwoColumnDetail("src/modules/.gitkeep", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/modules.go", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/app.go WithModules(Modules)", statusCreated).Once()
-	ctx.EXPECT().TwoColumnDetail("main.go go:generate module:publish", statusCreated).Once()
 
 	s.NoError(NewInitCommand(config).Handle(ctx))
 
@@ -186,7 +154,6 @@ func (s *InitCommandTestSuite) TestAssignedChainIsManual() {
 	ctx.EXPECT().TwoColumnDetail("modules/.gitkeep", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/modules.go", statusCreated).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/app.go WithModules(Modules)", statusManual).Once()
-	ctx.EXPECT().TwoColumnDetail("main.go go:generate module:publish", statusCreated).Once()
 	ctx.EXPECT().Warning(warning).Once()
 
 	s.NoError(NewInitCommand(nil).Handle(ctx))
@@ -201,7 +168,6 @@ func (s *InitCommandTestSuite) TestAssignedChainIsManual() {
 	ctx.EXPECT().TwoColumnDetail("modules/.gitkeep", statusExists).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/modules.go", statusExists).Once()
 	ctx.EXPECT().TwoColumnDetail("bootstrap/app.go WithModules(Modules)", statusManual).Once()
-	ctx.EXPECT().TwoColumnDetail("main.go go:generate module:publish", statusExists).Once()
 	ctx.EXPECT().Warning(warning).Once()
 
 	s.NoError(NewInitCommand(nil).Handle(ctx))
@@ -226,24 +192,5 @@ func (s *InitCommandTestSuite) TestWriteFailures() {
 		s.Error(NewInitCommand(nil).Handle(mocksconsole.NewContext(s.T())))
 		s.False(file.Exists("bootstrap/modules.go"))
 		removeScaffold(s.T())
-	})
-
-	s.Run("main.go is read-only", func() {
-		if os.Geteuid() == 0 {
-			s.T().Skip("root writes read-only files")
-		}
-		s.Require().NoError(file.PutContent("bootstrap/app.go", chainedApp))
-		s.Require().NoError(file.PutContent("main.go", mainFile))
-		s.Require().NoError(os.Chmod("main.go", 0o444))
-		s.T().Cleanup(func() { _ = os.Chmod("main.go", 0o644) })
-
-		ctx := mocksconsole.NewContext(s.T())
-		ctx.EXPECT().TwoColumnDetail("modules/.gitkeep", statusCreated).Once()
-		ctx.EXPECT().TwoColumnDetail("bootstrap/modules.go", statusCreated).Once()
-		ctx.EXPECT().TwoColumnDetail("bootstrap/app.go WithModules(Modules)", statusCreated).Once()
-
-		s.Error(NewInitCommand(nil).Handle(ctx))
-		s.False(file.Contain("main.go", generateDirective))
-		s.Require().NoError(os.Chmod("main.go", 0o644))
 	})
 }
