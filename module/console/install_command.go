@@ -1,6 +1,7 @@
 package console
 
 import (
+	"go/token"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
@@ -34,6 +35,13 @@ func (r *InstallCommand) Extend() command.Extend {
 	return command.Extend{
 		ArgsUsage: " <package@version>...",
 		Category:  "module",
+		Flags: []command.Flag{
+			&command.StringFlag{
+				Name:  "struct",
+				Usage: "The module struct of the package",
+				Value: defaultModuleStruct,
+			},
+		},
 	}
 }
 
@@ -48,8 +56,16 @@ func (r *InstallCommand) Handle(ctx console.Context) error {
 		return errors.ModuleInstallPackageEmpty
 	}
 
+	structName := ctx.Option("struct")
+	if structName == "" {
+		structName = defaultModuleStruct
+	}
+	if !token.IsIdentifier(structName) || !token.IsExported(structName) {
+		return errors.ModuleInstallStructInvalid.Args(structName)
+	}
+
 	for _, pkg := range packages {
-		if err := r.install(pkg); err != nil {
+		if err := r.install(pkg, structName); err != nil {
 			return err
 		}
 		ctx.Success("Module installed successfully: " + pkg)
@@ -71,8 +87,11 @@ func (r *InstallCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-// install gets pkg, the Go package holding the Module struct, and lists &<name>.Module{}.
-func (r *InstallCommand) install(pkg string) error {
+// defaultModuleStruct is the module struct make:module writes.
+const defaultModuleStruct = "Module"
+
+// install gets pkg, the Go package holding the module struct, and lists &<name>.<structName>{}.
+func (r *InstallCommand) install(pkg, structName string) error {
 	importPath, _, _ := strings.Cut(pkg, "@")
 
 	if res := r.process.WithSpinner("Getting "+pkg).Run("go", "get", pkg); res.Failed() {
@@ -85,7 +104,7 @@ func (r *InstallCommand) install(pkg string) error {
 	}
 	name := strings.TrimSpace(res.Output())
 
-	registered, err := moduleRegistered(importPath, name, importPath)
+	registered, err := moduleRegistered(importPath, name, structName, importPath)
 	if err != nil || registered {
 		return err
 	}
@@ -95,5 +114,5 @@ func (r *InstallCommand) install(pkg string) error {
 		spec = name + " " + importPath
 	}
 
-	return modify.AddModule(spec, "&"+name+".Module{}")
+	return modify.AddModule(spec, "&"+name+"."+structName+"{}")
 }

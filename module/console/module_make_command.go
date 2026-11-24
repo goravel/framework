@@ -239,11 +239,12 @@ func (r *moduleStubs) importSpec() string {
 // registered reports whether bootstrap/modules.go lists the module, and fails
 // when another import there already uses the module's package name.
 func (r *moduleStubs) registered() (bool, error) {
-	return moduleRegistered(r.module, r.pkg, r.kebab)
+	return moduleRegistered(r.module, r.pkg, defaultModuleStruct, r.kebab)
 }
 
-// moduleRegistered is registered for the package pkg at importPath; label names it in the error.
-func moduleRegistered(importPath, pkg, label string) (bool, error) {
+// moduleRegistered is registered for &pkg.structName{} of the package at importPath; label
+// names it in the error.
+func moduleRegistered(importPath, pkg, structName, label string) (bool, error) {
 	modulesFile := path.Bootstrap("modules.go")
 	source := modify.ModulesStub()
 	if file.Exists(modulesFile) {
@@ -273,7 +274,7 @@ func moduleRegistered(importPath, pkg, label string) (bool, error) {
 		}
 	}
 
-	return imported && strings.Contains(source, "&"+pkg+".Module{}"), nil
+	return imported && strings.Contains(source, "&"+pkg+"."+structName+"{}"), nil
 }
 
 // files returns the module files by slash path relative to the module directory.

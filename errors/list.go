@@ -230,6 +230,7 @@ var (
 	ModuleImportConflict         = New("module %s: package name %q is already used by the import %q in bootstrap/modules.go, choose another name").SetModule(ModuleModule)
 	ModuleInstallFailed          = New("module:install: %s failed: %v").SetModule(ModuleModule)
 	ModuleInstallPackageEmpty    = New("the package can't be empty, e.g. module:install github.com/acme/billing").SetModule(ModuleModule)
+	ModuleInstallStructInvalid   = New("module:install: --struct %q is not an exported Go type name").SetModule(ModuleModule)
 	ModuleNameEmpty              = New("the module name cannot be empty").SetModule(ModuleModule)
 	ModuleNameForbidden          = New("module name %q is reserved, Go cannot import a package named %q").SetModule(ModuleModule)
 	ModuleNameInvalid            = New("module name %q is invalid, use letters, digits and dashes, starting with a letter").SetModule(ModuleModule)

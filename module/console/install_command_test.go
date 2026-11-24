@@ -15,6 +15,8 @@ import (
 type InstallCommandTestSuite struct {
 	suite.Suite
 	process *mocksprocess.Process
+	// structName is what --struct returns, "" for its default.
+	structName string
 }
 
 func TestInstallCommandTestSuite(t *testing.T) {
@@ -24,6 +26,7 @@ func TestInstallCommandTestSuite(t *testing.T) {
 func (s *InstallCommandTestSuite) SetupTest() {
 	s.Require().NoError(file.PutContent("bootstrap/app.go", chainedApp))
 	s.process = mocksprocess.NewProcess(s.T())
+	s.structName = ""
 }
 
 func (s *InstallCommandTestSuite) TearDownTest() {
@@ -33,6 +36,9 @@ func (s *InstallCommandTestSuite) TearDownTest() {
 func (s *InstallCommandTestSuite) context(packages ...string) *mocksconsole.Context {
 	ctx := mocksconsole.NewContext(s.T())
 	ctx.EXPECT().Arguments().Return(packages).Once()
+	if len(packages) > 0 {
+		ctx.EXPECT().Option("struct").Return(s.structName).Once()
+	}
 
 	return ctx
 }
@@ -148,6 +154,17 @@ func (s *InstallCommandTestSuite) TestFailures() {
 		s.EqualError(err, errors.ModuleInstallFailed.Args("go list example.com/x", assert.AnError).Error())
 	})
 
+	s.Run("invalid --struct", func() {
+		for _, name := range []string{"module", "billing.Module", "1st"} {
+			s.structName = name
+
+			err := NewInstallCommand(s.process).Handle(s.context("example.com/x"))
+
+			s.EqualError(err, errors.ModuleInstallStructInvalid.Args(name).Error())
+		}
+		s.structName = ""
+	})
+
 	s.Run("publish", func() {
 		s.expectGet("example.com/x", "example.com/x", "x")
 		s.expectPublish("  x ... FAILED", assert.AnError)
@@ -167,4 +184,16 @@ func (s *InstallCommandTestSuite) TestRequiresBootstrapSetup() {
 	err := NewInstallCommand(s.process).Handle(mocksconsole.NewContext(s.T()))
 
 	s.EqualError(err, errors.ModuleRequiresBootstrapSetup.Args("module:install").Error())
+}
+
+func (s *InstallCommandTestSuite) TestStructOption() {
+	s.structName = "Billing"
+	s.expectGet("github.com/acme/billing", "github.com/acme/billing", "billing")
+	s.expectPublish("", nil)
+	ctx := s.context("github.com/acme/billing")
+	ctx.EXPECT().Success("Module installed successfully: github.com/acme/billing").Once()
+
+	s.NoError(NewInstallCommand(s.process).Handle(ctx))
+
+	s.True(file.Contain("bootstrap/modules.go", "&billing.Billing{}"))
 }
