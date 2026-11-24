@@ -1726,6 +1726,9 @@ func (r *Query) buildTable(db *gormio.DB) *gormio.DB {
 	}
 
 	db = db.Table(r.conditions.table.name, r.conditions.table.args...)
+	if r.conditions.table.alias != "" {
+		db.Statement.Table = r.conditions.table.alias
+	}
 	r.conditions.table = nil
 
 	return db

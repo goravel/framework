@@ -38,6 +38,9 @@ type Select struct {
 type Table struct {
 	name string
 	args []any
+	// alias is the name the query refers to the table by, set when the
+	// name can't be parsed for it, such as a quoted alias.
+	alias string
 }
 
 type With struct {

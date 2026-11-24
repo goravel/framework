@@ -139,22 +139,35 @@ func (r *Query) relationExistenceExpression(parent *schema.Schema, parentTable s
 		relatedTable = str.Of(name).Snake().String() + "_" + relatedTable
 		// The schema's table already carries the connection's prefix, so it
 		// is set as is rather than through Table, which would add it again.
+		// The alias is quoted, so a mixed case table keeps its case, and set
+		// as the statement's table, which Table can't parse from it.
 		conditions := sub.conditions
-		conditions.table = &Table{name: r.quote(clause.Table{Name: relation.FieldSchema.Table}) + " AS " + relatedTable}
+		conditions.table = &Table{
+			name:  r.quote(clause.Table{Name: relation.FieldSchema.Table}) + " AS " + r.quote(clause.Table{Name: relatedTable}),
+			alias: relatedTable,
+		}
 		sub = sub.setConditions(conditions)
 	}
 
 	operator, count := existence.operator, existence.count
 	if nested {
+		// As in Laravel, "doesn't have Books.Authors" is "doesn't have a
+		// book that has authors": the negation stays on the first relation.
+		nestedOperator, nestedCount := operator, count
+		operator, count = ">=", 1
+		if nestedOperator == "<" && nestedCount == 1 {
+			nestedOperator, nestedCount = ">=", 1
+			operator, count = "<", 1
+		}
+
 		sub = sub.addWhere(contractsdriver.Where{
 			Query: relationExistence{
 				callback: existence.callback,
 				relation: rest,
-				operator: operator,
-				count:    count,
+				operator: nestedOperator,
+				count:    nestedCount,
 			},
 		}).(*Query)
-		operator, count = ">=", 1
 	} else if existence.callback != nil {
 		query, ok := existence.callback(sub).(*Query)
 		if !ok || query == nil {
@@ -163,27 +176,83 @@ func (r *Query) relationExistenceExpression(parent *schema.Schema, parentTable s
 		sub = query
 	}
 
-	sub = r.constrainToParent(sub, relation, relatedTable, parentTable)
-
-	built := sub.addGlobalScopes().buildConditions()
-	if err := built.instance.Error; err != nil {
+	db, err := r.buildRelationConditions(sub, model)
+	if err != nil {
 		return nil, err
 	}
 
+	db = r.constrainToParent(db, relation, relatedTable, parentTable)
+
 	switch {
 	case operator == ">=" && count == 1:
-		return clause.Expr{SQL: "EXISTS (?)", Vars: []any{built.instance.Select("1")}}, nil
+		return clause.Expr{SQL: "EXISTS (?)", Vars: []any{db.Select("1")}}, nil
 	case operator == "<" && count == 1:
-		return clause.Expr{SQL: "NOT EXISTS (?)", Vars: []any{built.instance.Select("1")}}, nil
+		return clause.Expr{SQL: "NOT EXISTS (?)", Vars: []any{db.Select("1")}}, nil
 	default:
-		return clause.Expr{SQL: "(?) " + operator + " ?", Vars: []any{built.instance.Select("COUNT(*)"), count}}, nil
+		return clause.Expr{SQL: "(?) " + operator + " ?", Vars: []any{db.Select("COUNT(*)"), count}}, nil
 	}
+}
+
+// buildRelationConditions builds the conditions of the related records: the
+// callback's and the scopes', global ones included. The scopes are applied
+// now rather than when the query runs, so their conditions are grouped with
+// the callback's, and an OR among them can't escape the condition on the
+// parent row that is added next.
+func (r *Query) buildRelationConditions(sub *Query, model any) (*gormio.DB, error) {
+	sub = sub.addGlobalScopes()
+	scopes := sub.conditions.scopes
+	conditions := sub.conditions
+	conditions.scopes = nil
+	sub = sub.setConditions(conditions)
+
+	db := sub.buildConditions().instance
+	for _, scope := range scopes {
+		query := NewQuery(r.ctx, r.config, r.dbConfig, db, r.grammar, r.log, r.modelToObserver, nil, r.telemetryResolver).Model(model)
+		scoped, ok := scope(query).(*Query)
+		if !ok || scoped == nil {
+			return nil, errors.OrmQueryInvalidSubQuery
+		}
+		db = scoped.buildConditions().instance
+	}
+	if db.Error != nil {
+		return nil, db.Error
+	}
+
+	groupWhere(db)
+
+	return db, nil
+}
+
+// groupWhere puts the where conditions of the statement in parentheses when
+// one of them is joined with OR, so a condition added after them applies to
+// all of them.
+func groupWhere(db *gormio.DB) {
+	where, ok := db.Statement.Clauses["WHERE"]
+	if !ok {
+		return
+	}
+
+	expression, ok := where.Expression.(clause.Where)
+	if !ok || len(expression.Exprs) < 2 {
+		return
+	}
+
+	if !slices.ContainsFunc(expression.Exprs, func(expr clause.Expression) bool {
+		_, or := expr.(clause.OrConditions)
+		return or
+	}) {
+		return
+	}
+
+	expression.Exprs = []clause.Expression{clause.And(expression.Exprs...)}
+	where.Expression = expression
+	db.Statement.Clauses["WHERE"] = where
 }
 
 // constrainToParent limits the related records to the ones of the parent
 // row, joining the pivot table of a many to many relation. The related table
 // is the table of the related records in the subquery, or its alias.
-func (r *Query) constrainToParent(sub *Query, relation *schema.Relationship, relatedTable, parentTable string) *Query {
+func (r *Query) constrainToParent(db *gormio.DB, relation *schema.Relationship, relatedTable, parentTable string) *gormio.DB {
 	if relation.JoinTable != nil {
 		pivot := relation.JoinTable.Table
 
@@ -191,32 +260,32 @@ func (r *Query) constrainToParent(sub *Query, relation *schema.Relationship, rel
 		for _, reference := range relation.References {
 			switch {
 			case reference.OwnPrimaryKey:
-				sub = sub.addWhere(contractsdriver.Where{Query: columnsEqual(pivot, reference.ForeignKey.DBName, parentTable, reference.PrimaryKey.DBName)}).(*Query)
+				db = db.Where(columnsEqual(pivot, reference.ForeignKey.DBName, parentTable, reference.PrimaryKey.DBName))
 			case reference.PrimaryKey != nil:
 				on = append(on, r.quote(clause.Column{Table: pivot, Name: reference.ForeignKey.DBName})+" = "+r.quote(clause.Column{Table: relatedTable, Name: reference.PrimaryKey.DBName}))
 			default:
-				sub = sub.addWhere(contractsdriver.Where{Query: clause.Eq{Column: clause.Column{Table: pivot, Name: reference.ForeignKey.DBName}, Value: reference.PrimaryValue}}).(*Query)
+				db = db.Where(clause.Eq{Column: clause.Column{Table: pivot, Name: reference.ForeignKey.DBName}, Value: reference.PrimaryValue})
 			}
 		}
 
-		return sub.Join("INNER JOIN " + r.quote(clause.Table{Name: pivot}) + " ON " + strings.Join(on, " AND ")).(*Query)
+		return db.Joins("INNER JOIN " + r.quote(clause.Table{Name: pivot}) + " ON " + strings.Join(on, " AND "))
 	}
 
 	for _, reference := range relation.References {
 		switch {
 		case reference.PrimaryKey == nil:
 			// The type column of a polymorphic relation.
-			sub = sub.addWhere(contractsdriver.Where{Query: clause.Eq{Column: clause.Column{Table: relatedTable, Name: reference.ForeignKey.DBName}, Value: reference.PrimaryValue}}).(*Query)
+			db = db.Where(clause.Eq{Column: clause.Column{Table: relatedTable, Name: reference.ForeignKey.DBName}, Value: reference.PrimaryValue})
 		case reference.OwnPrimaryKey:
 			// Has one and has many: the related records point to the parent.
-			sub = sub.addWhere(contractsdriver.Where{Query: columnsEqual(relatedTable, reference.ForeignKey.DBName, parentTable, reference.PrimaryKey.DBName)}).(*Query)
+			db = db.Where(columnsEqual(relatedTable, reference.ForeignKey.DBName, parentTable, reference.PrimaryKey.DBName))
 		default:
 			// Belongs to: the parent points to the related record.
-			sub = sub.addWhere(contractsdriver.Where{Query: columnsEqual(relatedTable, reference.PrimaryKey.DBName, parentTable, reference.ForeignKey.DBName)}).(*Query)
+			db = db.Where(columnsEqual(relatedTable, reference.PrimaryKey.DBName, parentTable, reference.ForeignKey.DBName))
 		}
 	}
 
-	return sub
+	return db
 }
 
 // checkRelationConnection returns an error when the related model uses

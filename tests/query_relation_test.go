@@ -61,10 +61,33 @@ func (s *QueryTestSuite) TestRelationExistence() {
 			s.Equal([]string{"has_user_books"}, names(users().Has("Roles")))
 			s.Equal([]string{"has_user_books"}, names(users().Has("Phones")))
 			s.Equal([]string{"has_user_without_books"}, names(users().DoesntHave("Phones")))
+			s.Equal([]string{"has_user_books"}, names(users().WhereHas("Roles", func(query contractsorm.Query) contractsorm.Query {
+				return query.Where("name", "has_role")
+			})))
+			s.Equal([]string{"has_user_books"}, names(users().WhereHas("Phones", func(query contractsorm.Query) contractsorm.Query {
+				return query.Where("name", "has_phone")
+			})))
+
+			// An OR in the callback stays inside the condition on the parent row.
+			s.Equal([]string{"has_user_books"}, names(users().WhereHas("Books", func(query contractsorm.Query) contractsorm.Query {
+				return query.Where("name", "has_book_draft").OrWhere("name", "has_book_missing")
+			})))
+
+			// A nested "doesn't have" negates the first relation: no book with an author.
+			s.Equal([]string{"has_user_without_books"}, names(users().DoesntHave("Books.Author")))
 
 			// Or conditions keep their place among the other conditions.
 			s.Equal([]string{"has_user_books", "has_user_without_books"}, names(users().Where(func(query contractsorm.Query) contractsorm.Query {
 				return query.Has("Roles").OrDoesntHave("Books")
+			})))
+			s.Equal([]string{"has_user_books", "has_user_without_books"}, names(users().Where(func(query contractsorm.Query) contractsorm.Query {
+				return query.DoesntHave("Books").OrHas("Roles")
+			})))
+			s.Equal([]string{"has_user_books", "has_user_without_books"}, names(users().Where(func(query contractsorm.Query) contractsorm.Query {
+				return query.DoesntHave("Books").OrWhereHas("Books", bookNamed("has_book_draft"))
+			})))
+			s.Equal([]string{"has_user_books", "has_user_without_books"}, names(users().Where(func(query contractsorm.Query) contractsorm.Query {
+				return query.Has("Roles").OrWhereDoesntHave("Books", bookNamed("has_book_draft"))
 			})))
 
 			// Belongs to.
