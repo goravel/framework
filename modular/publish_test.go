@@ -23,9 +23,12 @@ type sourcesModule struct {
 	plainModule
 	sources fs.FS
 	views   fs.FS
+	dir     string
 }
 
-func (m *sourcesModule) Sources() fs.FS { return m.sources }
+func (m *sourcesModule) Frontend() contractsmodule.Frontend {
+	return contractsmodule.Frontend{Files: contractsmodule.Files{FS: m.sources, Dir: m.dir}}
+}
 func (m *sourcesModule) Views() contractsmodule.Files {
 	if m.views == nil {
 		return contractsmodule.Files{}
@@ -92,6 +95,24 @@ func TestPublish(t *testing.T) {
 
 		return string(content)
 	}
+
+	t.Run("frontend files of a directory keep it", func(t *testing.T) {
+		dir := filepath.Join(t.TempDir(), "modules", "billing")
+		module := &sourcesModule{
+			plainModule: plainModule{"billing"},
+			sources:     fstest.MapFS{"web/js/app.js": {Data: []byte("app")}, "other/x.js": {Data: []byte("x")}},
+			dir:         "web",
+		}
+
+		_, err := Publish(module, dependency, dir)
+		require.NoError(t, err)
+		assert.Equal(t, "app", read(t, dir, "web/js/app.js"))
+		assert.NoDirExists(t, filepath.Join(dir, "other"))
+
+		module.dir = "../outside"
+		_, err = Publish(module, dependency, dir)
+		assert.ErrorIs(t, err, errors.ModularFilesDirInvalid)
+	})
 
 	t.Run("writes sources, views, notice and marker", func(t *testing.T) {
 		dir := filepath.Join(t.TempDir(), "modules", "billing")

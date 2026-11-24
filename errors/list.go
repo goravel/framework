@@ -240,11 +240,13 @@ var (
 	ModularRegistryNotSet         = New("the module registry is not set, build the application with foundation.Setup()").SetModule(ModuleModular)
 	ModularRequiresBootstrapSetup = New("%s needs bootstrap/app.go to build the application with foundation.Setup()").SetModule(ModuleModular)
 	ModularFilesDirInvalid        = New("module %s: %s directory %q must be a relative path inside the module").SetModule(ModuleModular)
+	ModularFrontendFilesRequired  = New("module %s: Frontend() of a third-party module needs Files.FS, its entries and aliases are published from it").SetModule(ModuleModular)
 	ModularFilesDirUnreadable     = New("module %s: %s directory %q is not a readable directory: %v").SetModule(ModuleModular)
 	ModularStaticDuplicate        = New("static path %s of module %s is already served by module %s").SetModule(ModuleModular)
 	ModularStaticPrefixInvalid    = New("module %s: static prefix %q is invalid, use a path below /").SetModule(ModuleModular)
 	ModularViteAliasDuplicate     = New("vite alias %s of module %s is already used by module %s").SetModule(ModuleModular)
 	ModularViteAliasInvalid       = New("module %s: vite alias %q -> %q is invalid, use a key like @name and a relative directory inside the module").SetModule(ModuleModular)
+	ModularViteEntryMissing       = New("module %s: vite entry %q is not a file in Frontend().Files").SetModule(ModuleModular)
 	ModularViteEntryInvalid       = New("module %s: vite entry %q is invalid, use a relative file path inside the module").SetModule(ModuleModular)
 
 	NotificationChannelNotFound               = New("notification channel not found: %s").SetModule(ModuleNotification)

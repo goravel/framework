@@ -125,11 +125,10 @@ func (r *ListCommand) describe(module contractsmodule.Module, info *debug.BuildI
 	if p, ok := module.(contractsmodule.Dependent); ok {
 		described.Dependencies = append(described.Dependencies, p.Dependencies()...)
 	}
-	if p, ok := module.(contractsmodule.ProvidesViteEntries); ok {
-		described.ViteEntries = append(described.ViteEntries, p.ViteEntries()...)
-	}
-	if p, ok := module.(contractsmodule.ProvidesViteAlias); ok {
-		maps.Copy(described.ViteAliases, p.ViteAliases())
+	if p, ok := module.(contractsmodule.ProvidesFrontend); ok {
+		frontend := p.Frontend()
+		described.ViteEntries = append(described.ViteEntries, frontend.Entries...)
+		maps.Copy(described.ViteAliases, frontend.Aliases)
 	}
 	if p, ok := module.(contractsmodule.ProvidesStatic); ok {
 		described.Static = slices.Sorted(maps.Keys(p.Static()))

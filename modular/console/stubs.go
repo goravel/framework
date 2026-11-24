@@ -50,7 +50,7 @@ func (r *moduleStubs) replace(content string) string {
 }
 
 // Module is module.go: full implements every capability of an application module
-// (not Located or ProvidesSources), the unused ones empty.
+// (not Located), the unused ones empty.
 func (r *moduleStubs) Module(full bool) string {
 	if !full {
 		return r.replace(`package DummyPackage
@@ -160,14 +160,10 @@ func (m *Module) Translations() module.Files {
 	return module.Files{FS: lang}
 }
 
-// ViteEntries are relative to the module directory, e.g. "resources/js/app.js".
-func (m *Module) ViteEntries() []string {
-	return []string{}
-}
-
-// ViteAliases map an alias to a directory of the module, e.g. "@DummyName-assets": "resources/assets".
-func (m *Module) ViteAliases() map[string]string {
-	return map[string]string{}
+// Frontend is what Vite builds: Entries like "resources/js/app.js" and Aliases like
+// "@DummyName-assets": "resources/assets", both relative to the module directory.
+func (m *Module) Frontend() module.Frontend {
+	return module.Frontend{}
 }
 
 // Static serves files as-is under a URL prefix, e.g. "/DummyName/assets": {Dir: "public"}.

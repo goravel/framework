@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/debug"
+	"strings"
 	"testing"
 	"testing/fstest"
 
@@ -32,15 +33,20 @@ type viteModule struct {
 	aliases map[string]string
 }
 
-func (m *viteModule) ViteEntries() []string          { return m.entries }
-func (m *viteModule) ViteAliases() map[string]string { return m.aliases }
+func (m *viteModule) Frontend() contractsmodule.Frontend {
+	return contractsmodule.Frontend{Entries: m.entries, Aliases: m.aliases}
+}
 
 type sourcesModule struct {
 	testModule
 	sources fs.FS
+	entries []string
+	dir     string
 }
 
-func (m *sourcesModule) Sources() fs.FS { return m.sources }
+func (m *sourcesModule) Frontend() contractsmodule.Frontend {
+	return contractsmodule.Frontend{Files: contractsmodule.Files{FS: m.sources, Dir: m.dir}, Entries: m.entries}
+}
 
 // localBuild makes this package's test modules part of the application.
 func localBuild() (*debug.BuildInfo, bool) {
@@ -168,7 +174,7 @@ func TestInputsCommand_ModuleEntryErrors(t *testing.T) {
 func TestInputsCommand_ModulePublished(t *testing.T) {
 	setupAppViews(t, nil)
 
-	billing := &sourcesModule{testModule{"billing"}, fstest.MapFS{"resources/js/app.js": {Data: []byte("app")}}}
+	billing := &sourcesModule{testModule: testModule{"billing"}, sources: fstest.MapFS{"resources/js/app.js": {Data: []byte("app")}}}
 	plain := &testModule{"plain"}
 	dir := filepath.Join(support.RelativePath, "modules", "billing")
 	dependency := func(version string) modular.Dependency {
@@ -204,4 +210,47 @@ func TestInputsCommand_ModulePublished(t *testing.T) {
 	ctx := mocksconsole.NewContext(t)
 	ctx.EXPECT().Line(mock.Anything).Once()
 	assert.NoError(t, moduleCommand(t, moduleRegistry(t, billing), nil, true).Handle(ctx))
+}
+
+func TestInputsCommand_ModuleFrontendFiles(t *testing.T) {
+	setupAppViews(t, nil)
+
+	sources := fstest.MapFS{"web/js/app.js": {Data: []byte("app")}}
+	run := func(module contractsmodule.Module, build func() (*debug.BuildInfo, bool), line string) error {
+		ctx := mocksconsole.NewContext(t)
+		if line != "" {
+			ctx.EXPECT().Line(mock.MatchedBy(func(output string) bool { return strings.Contains(output, line) })).Once()
+		}
+		cmd := moduleCommand(t, moduleRegistry(t, module), nil, line != "")
+		cmd.buildInfo = build
+
+		return cmd.Handle(ctx)
+	}
+
+	t.Run("entries and aliases are relative to Files.Dir", func(t *testing.T) {
+		blog := &sourcesModule{testModule: testModule{"blog"}, sources: sources, dir: "web", entries: []string{"js/app.js"}}
+
+		assert.NoError(t, run(blog, localBuild, `"entries":["modules/blog/web/js/app.js"]`))
+	})
+
+	t.Run("an entry must be a file of an embedded Files", func(t *testing.T) {
+		for _, entry := range []string{"js/missing.js", "js"} {
+			blog := &sourcesModule{testModule: testModule{"blog"}, sources: sources, dir: "web", entries: []string{entry}}
+
+			assert.EqualError(t, run(blog, localBuild, ""), errors.ModularViteEntryMissing.Args("blog", entry).Error())
+		}
+	})
+
+	t.Run("a directory outside the module", func(t *testing.T) {
+		blog := &sourcesModule{testModule: testModule{"blog"}, dir: "../shop"}
+
+		assert.EqualError(t, run(blog, localBuild, ""), errors.ModularFilesDirInvalid.Args("blog", "Frontend()", "../shop").Error())
+	})
+
+	t.Run("a third-party module needs an FS", func(t *testing.T) {
+		billing := &viteModule{testModule: testModule{"billing"}, entries: []string{"resources/js/app.js"}}
+
+		assert.EqualError(t, run(billing, thirdPartyBuild("v1.2.0"), ""), errors.ModularFrontendFilesRequired.Args("billing").Error())
+		assert.NoError(t, run(&viteModule{testModule: testModule{"billing"}}, thirdPartyBuild("v1.2.0"), `"entries":[]`))
+	})
 }

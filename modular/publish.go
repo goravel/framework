@@ -14,6 +14,7 @@ import (
 
 	contractsmodule "github.com/goravel/framework/contracts/module"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/path"
 )
 
 const (
@@ -24,7 +25,7 @@ const (
 
 	// Publish states of a module, as shown by module:list.
 	PublishLocal     = "local"     // in the project, nothing is copied
-	PublishNone      = "none"      // third-party without sources or views
+	PublishNone      = "none"      // third-party without frontend files or views
 	PublishPublished = "published" // copied from the linked version
 	PublishStale     = "stale"     // differs from the linked version
 	PublishMissing   = "missing"   // not copied yet
@@ -103,7 +104,7 @@ func PublishState(module contractsmodule.Module, dependency Dependency, dir stri
 	return PublishPublished
 }
 
-// Publish copies the module's sources, and its views unless the sources hold
+// Publish copies the module's frontend files, and its views unless those hold
 // them, into dir. It reports whether anything was written or removed.
 func Publish(module contractsmodule.Module, dependency Dependency, dir string) (bool, error) {
 	files, err := publishFiles(module, dependency)
@@ -169,9 +170,17 @@ func Publish(module contractsmodule.Module, dependency Dependency, dir string) (
 func publishFiles(module contractsmodule.Module, dependency Dependency) (map[string][]byte, error) {
 	files := make(map[string][]byte)
 
-	if p, ok := module.(contractsmodule.ProvidesSources); ok {
-		if err := readFiles(p.Sources(), "", files); err != nil {
-			return nil, err
+	// Frontend files on disk are in place already, like views below.
+	if p, ok := module.(contractsmodule.ProvidesFrontend); ok {
+		if frontend := p.Frontend().Files; frontend.FS != nil {
+			fsys, _, err := Files(module.Name(), "Frontend()", "", "", frontend)
+			if err != nil {
+				return nil, err
+			}
+			prefix, _ := path.CleanRelative(frontend.Dir)
+			if err := readFiles(fsys, prefix, files); err != nil {
+				return nil, err
+			}
 		}
 	}
 

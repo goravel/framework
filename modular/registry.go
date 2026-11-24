@@ -165,10 +165,8 @@ func (r *Registry) Capabilities(module contractsmodule.Module) map[string]bool {
 		"schedule":     implements[contractsmodule.ProvidesSchedule](module),
 		"views":        implements[contractsmodule.ProvidesViews](module),
 		"translations": implements[contractsmodule.ProvidesTranslations](module),
-		"vite-entries": implements[contractsmodule.ProvidesViteEntries](module),
-		"vite-aliases": implements[contractsmodule.ProvidesViteAlias](module),
+		"frontend":     implements[contractsmodule.ProvidesFrontend](module),
 		"static":       implements[contractsmodule.ProvidesStatic](module),
-		"sources":      implements[contractsmodule.ProvidesSources](module),
 	}
 }
 

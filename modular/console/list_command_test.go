@@ -18,9 +18,11 @@ import (
 type richModule struct{ testModule }
 
 func (m *richModule) Dependencies() []string { return []string{"billing"} }
-func (m *richModule) ViteEntries() []string  { return []string{"resources/js/app.js"} }
-func (m *richModule) ViteAliases() map[string]string {
-	return map[string]string{"@blog-assets": "resources/assets"}
+func (m *richModule) Frontend() contractsmodule.Frontend {
+	return contractsmodule.Frontend{
+		Entries: []string{"resources/js/app.js"},
+		Aliases: map[string]string{"@blog-assets": "resources/assets"},
+	}
 }
 func (m *richModule) Static() map[string]contractsmodule.Files {
 	return map[string]contractsmodule.Files{"/blog/static": {Dir: "public"}, "/blog/docs": {Dir: "docs"}}
@@ -77,20 +79,20 @@ func (s *ListCommandTestSuite) TestList() {
 	registry.EXPECT().All().Return([]contractsmodule.Module{blog, billing})
 	registry.EXPECT().Path("blog").Return("modules/blog", true)
 	registry.EXPECT().Path("billing").Return("modules/billing", true)
-	registry.EXPECT().Capabilities(blog).Return(map[string]bool{"vite-entries": true, "static": true, "views": false})
-	registry.EXPECT().Capabilities(billing).Return(map[string]bool{"sources": true})
+	registry.EXPECT().Capabilities(blog).Return(map[string]bool{"frontend": true, "static": true, "views": false})
+	registry.EXPECT().Capabilities(billing).Return(map[string]bool{"frontend": true})
 
 	// Both are modules of this application: nothing is published.
 	ctx := mocksconsole.NewContext(s.T())
 	ctx.EXPECT().OptionBool("json").Return(false).Once()
 	ctx.EXPECT().TwoColumnDetail("<fg=green;op=bold>blog</> modules/blog", "local").Once()
-	ctx.EXPECT().Line("    <fg=gray>static, vite-entries</>").Once()
+	ctx.EXPECT().Line("    <fg=gray>frontend, static</>").Once()
 	ctx.EXPECT().Line("    <fg=gray>depends on: billing</>").Once()
 	ctx.EXPECT().Line("    <fg=gray>vite entries: resources/js/app.js</>").Once()
 	ctx.EXPECT().Line("    <fg=gray>vite aliases: @blog-assets -> resources/assets</>").Once()
 	ctx.EXPECT().Line("    <fg=gray>static: /blog/docs, /blog/static</>").Once()
 	ctx.EXPECT().TwoColumnDetail("<fg=green;op=bold>billing</> modules/billing", "local").Once()
-	ctx.EXPECT().Line("    <fg=gray>sources</>").Once()
+	ctx.EXPECT().Line("    <fg=gray>frontend</>").Once()
 
 	s.NoError(NewListCommand(registry).Handle(ctx))
 
@@ -106,14 +108,14 @@ func (s *ListCommandTestSuite) TestList() {
 	s.JSONEq(`[
 		{
 			"name": "blog", "path": "modules/blog", "dependencies": ["billing"], "publish": "none",
-			"capabilities": {"vite-entries": true, "static": true, "views": false},
+			"capabilities": {"frontend": true, "static": true, "views": false},
 			"vite_entries": ["resources/js/app.js"],
 			"vite_aliases": {"@blog-assets": "resources/assets"},
 			"static": ["/blog/docs", "/blog/static"]
 		},
 		{
 			"name": "billing", "path": "modules/billing", "dependencies": [], "publish": "missing",
-			"capabilities": {"sources": true},
+			"capabilities": {"frontend": true},
 			"vite_entries": [], "vite_aliases": {}, "static": []
 		}
 	]`, output.String())

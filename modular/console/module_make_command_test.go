@@ -112,12 +112,11 @@ func (s *ModuleMakeCommandTestSuite) TestDefault() {
 	for _, method := range []string{
 		"Dependencies()", "ServiceProviders()", "Config()", "GlobalMiddleware()", "Routes()", "LateRoutes()",
 		"Migrations()", "Seeders()", "Commands()", "Jobs()", "Events()", "Schedule()",
-		"Views()", "Translations()", "ViteEntries()", "ViteAliases()", "Static()",
+		"Views()", "Translations()", "Frontend()", "Static()",
 	} {
 		s.Contains(module, "func (m *Module) "+method)
 	}
 	s.NotContains(module, "func (m *Module) Path()")
-	s.NotContains(module, "func (m *Module) Sources()")
 	s.Contains(module, "\troutes.Web()\n\troutes.Api()\n")
 
 	// No app/facades here, so the controller uses the framework facades.

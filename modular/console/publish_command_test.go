@@ -27,7 +27,9 @@ type sourcesModule struct {
 	sources fs.FS
 }
 
-func (m *sourcesModule) Sources() fs.FS { return m.sources }
+func (m *sourcesModule) Frontend() contractsmodule.Frontend {
+	return contractsmodule.Frontend{Files: contractsmodule.Files{FS: m.sources}}
+}
 
 type locatedModule struct{ sourcesModule }
 

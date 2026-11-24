@@ -2,6 +2,7 @@ package console
 
 import (
 	"encoding/json"
+	"io/fs"
 	"maps"
 	stdpath "path"
 	"path/filepath"
@@ -188,18 +189,29 @@ func (r *InputsCommand) moduleInputs() ([]ModuleInputs, error) {
 		}
 
 		input := ModuleInputs{Name: name, Path: dir, Entries: []string{}, Aliases: map[string]string{}}
-		if p, ok := module.(contractsmodule.ProvidesViteEntries); ok {
-			for _, entry := range p.ViteEntries() {
+		if p, ok := module.(contractsmodule.ProvidesFrontend); ok {
+			frontend := p.Frontend()
+			_, thirdParty := modular.DependencyOf(module, info)
+			root, embedded, err := frontendFiles(name, dir, frontend, thirdParty)
+			if err != nil {
+				return nil, err
+			}
+
+			for _, entry := range frontend.Entries {
 				// Checked like aliases: Vite would build a file outside the module otherwise.
 				cleaned, inside := path.CleanRelative(entry)
 				if !inside || cleaned == "." {
 					return nil, errors.ModularViteEntryInvalid.Args(name, entry)
 				}
-				input.Entries = append(input.Entries, stdpath.Join(dir, cleaned))
+				if embedded != nil {
+					if stat, err := fs.Stat(embedded, cleaned); err != nil || stat.IsDir() {
+						return nil, errors.ModularViteEntryMissing.Args(name, entry)
+					}
+				}
+				input.Entries = append(input.Entries, stdpath.Join(root, cleaned))
 			}
-		}
-		if p, ok := module.(contractsmodule.ProvidesViteAlias); ok {
-			aliases := p.ViteAliases()
+
+			aliases := frontend.Aliases
 			for _, key := range slices.Sorted(maps.Keys(aliases)) {
 				target, inside := path.CleanRelative(aliases[key])
 				if !aliasKey.MatchString(key) || !inside {
@@ -210,7 +222,7 @@ func (r *InputsCommand) moduleInputs() ([]ModuleInputs, error) {
 				}
 
 				owners[key] = name
-				input.Aliases[key] = stdpath.Join(dir, target)
+				input.Aliases[key] = stdpath.Join(root, target)
 			}
 		}
 
@@ -218,6 +230,27 @@ func (r *InputsCommand) moduleInputs() ([]ModuleInputs, error) {
 	}
 
 	return inputs, nil
+}
+
+// frontendFiles returns the directory entries and aliases are relative to, and the
+// filesystem holding them when the module embeds one. A third-party module must.
+func frontendFiles(name, dir string, frontend contractsmodule.Frontend, thirdParty bool) (string, fs.FS, error) {
+	files := frontend.Files
+	sub, inside := path.CleanRelative(files.Dir)
+	if !inside {
+		return "", nil, errors.ModularFilesDirInvalid.Args(name, "Frontend()", files.Dir)
+	}
+	if files.FS == nil {
+		if thirdParty && len(frontend.Entries)+len(frontend.Aliases) > 0 {
+			return "", nil, errors.ModularFrontendFilesRequired.Args(name)
+		}
+
+		return stdpath.Join(dir, sub), nil, nil
+	}
+
+	embedded, _, err := modular.Files(name, "Frontend()", "", "", files)
+
+	return stdpath.Join(dir, sub), embedded, err
 }
 
 // checkPublished fails for a third-party module whose files are not in dir as

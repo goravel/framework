@@ -97,23 +97,20 @@ type ProvidesTranslations interface {
 	Translations() Files
 }
 
-// ProvidesViteEntries lists Vite entries relative to the module directory, built
-// even when no view references them.
-type ProvidesViteEntries interface {
-	ViteEntries() []string
+// ProvidesFrontend contributes the files Vite and Tailwind read.
+type ProvidesFrontend interface {
+	Frontend() Frontend
 }
 
-// ProvidesViteAlias contributes Vite aliases, e.g. "@blog-assets" -> "resources/assets"
-// (relative to the module directory). Its own "@<name>" key replaces the default.
-type ProvidesViteAlias interface {
-	ViteAliases() map[string]string
-}
-
-// ProvidesSources ships files of a third-party module that module:publish copies
-// into its directory for Vite and Tailwind, e.g. "resources/js/app.js". Go files
-// (*.go, go.mod, go.sum) are skipped.
-type ProvidesSources interface {
-	Sources() fs.FS
+// Frontend is a module's Vite input. Entries and Aliases are relative to Files.
+type Frontend struct {
+	// Files is the module directory when zero. A third-party module sets Files.FS, which
+	// module:publish copies into its directory; Go files (*.go, go.mod, go.sum) are skipped.
+	Files Files
+	// Entries are built even when no view references them, e.g. "resources/js/app.js".
+	Entries []string
+	// Aliases map e.g. "@blog-assets" to "resources/assets". "@<name>" replaces the default.
+	Aliases map[string]string
 }
 
 // ProvidesStatic serves files as-is: URL prefix -> files. There is no default directory.
