@@ -14,7 +14,7 @@ import (
 
 // Module is an application feature in one Go package. Its capabilities are the
 // optional interfaces below it implements; providers come from
-// foundation.ProvidesServices.
+// foundation.ProvidesServiceProviders.
 type Module interface {
 	// Name is unique and kebab-case, e.g. "blog": views "blog/...", translation
 	// groups "blog/...", config "modules.blog", Vite alias "@blog".

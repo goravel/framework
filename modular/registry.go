@@ -152,21 +152,21 @@ func (r *Registry) Path(name string) (string, bool) {
 
 func (r *Registry) Capabilities(module contractsmodule.Module) map[string]bool {
 	return map[string]bool{
-		"services":     implements[foundation.ProvidesServices](module),
-		"config":       implements[contractsmodule.ProvidesConfig](module),
-		"middleware":   implements[contractsmodule.ProvidesGlobalMiddleware](module),
-		"routes":       implements[contractsmodule.ProvidesRoutes](module),
-		"late-routes":  implements[contractsmodule.ProvidesLateRoutes](module),
-		"migrations":   implements[contractsmodule.ProvidesMigrations](module),
-		"seeders":      implements[contractsmodule.ProvidesSeeders](module),
-		"commands":     implements[contractsmodule.ProvidesCommands](module),
-		"jobs":         implements[contractsmodule.ProvidesJobs](module),
-		"events":       implements[contractsmodule.ProvidesEvents](module),
-		"schedule":     implements[contractsmodule.ProvidesSchedule](module),
-		"views":        implements[contractsmodule.ProvidesViews](module),
-		"translations": implements[contractsmodule.ProvidesTranslations](module),
-		"frontend":     implements[contractsmodule.ProvidesFrontend](module),
-		"static":       implements[contractsmodule.ProvidesStatic](module),
+		"service-providers": implements[foundation.ProvidesServiceProviders](module),
+		"config":            implements[contractsmodule.ProvidesConfig](module),
+		"middleware":        implements[contractsmodule.ProvidesGlobalMiddleware](module),
+		"routes":            implements[contractsmodule.ProvidesRoutes](module),
+		"late-routes":       implements[contractsmodule.ProvidesLateRoutes](module),
+		"migrations":        implements[contractsmodule.ProvidesMigrations](module),
+		"seeders":           implements[contractsmodule.ProvidesSeeders](module),
+		"commands":          implements[contractsmodule.ProvidesCommands](module),
+		"jobs":              implements[contractsmodule.ProvidesJobs](module),
+		"events":            implements[contractsmodule.ProvidesEvents](module),
+		"schedule":          implements[contractsmodule.ProvidesSchedule](module),
+		"views":             implements[contractsmodule.ProvidesViews](module),
+		"translations":      implements[contractsmodule.ProvidesTranslations](module),
+		"frontend":          implements[contractsmodule.ProvidesFrontend](module),
+		"static":            implements[contractsmodule.ProvidesStatic](module),
 	}
 }
 

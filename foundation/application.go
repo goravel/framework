@@ -912,7 +912,7 @@ func (r *Application) configureServiceProviders() {
 	if r.builder.configuredServiceProviders != nil {
 		providers = r.builder.configuredServiceProviders()
 	}
-	for _, module := range modular.Providing[foundation.ProvidesServices](r.modules) {
+	for _, module := range modular.Providing[foundation.ProvidesServiceProviders](r.modules) {
 		providers = append(providers, module.ServiceProviders()...)
 	}
 

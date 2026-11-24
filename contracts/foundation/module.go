@@ -1,7 +1,7 @@
 package foundation
 
-// ProvidesServices is a module capability, declared here to keep contracts/module
+// ProvidesServiceProviders is a module capability, declared here to keep contracts/module
 // free of this package.
-type ProvidesServices interface {
+type ProvidesServiceProviders interface {
 	ServiceProviders() []ServiceProvider
 }
