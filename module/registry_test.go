@@ -1,4 +1,4 @@
-package modular
+package module
 
 import (
 	"runtime/debug"
@@ -73,7 +73,7 @@ func TestRegistry_Resolve(t *testing.T) {
 				&dependentModule{plainModule{"comments"}, []string{"blog"}},
 				&plainModule{"shop"},
 			},
-			err: "[modular] module comments depends on module blog, which is not registered",
+			err: "[module] module comments depends on module blog, which is not registered",
 		},
 		{
 			name: "cycle",
@@ -83,14 +83,14 @@ func TestRegistry_Resolve(t *testing.T) {
 				&dependentModule{plainModule{"comments"}, []string{"tags"}},
 				&dependentModule{plainModule{"tags"}, []string{"blog"}},
 			},
-			err: "[modular] modules depend on each other: blog -> comments -> tags -> blog",
+			err: "[module] modules depend on each other: blog -> comments -> tags -> blog",
 		},
 		{
 			name: "self dependency",
 			modules: []contractsmodule.Module{
 				&dependentModule{plainModule{"blog"}, []string{"blog"}},
 			},
-			err: "[modular] modules depend on each other: blog -> blog",
+			err: "[module] modules depend on each other: blog -> blog",
 		},
 	}
 
@@ -111,8 +111,8 @@ func TestRegistry_Register(t *testing.T) {
 	require.NoError(t, registry.Register(&plainModule{"blog"}, nil))
 
 	err := registry.Register(&plainModule{"shop"}, &plainModule{"blog"}, &plainModule{"forum"})
-	assert.ErrorIs(t, err, errors.ModularModuleDuplicate)
-	assert.EqualError(t, err, `[modular] module "blog" is registered more than once`)
+	assert.ErrorIs(t, err, errors.ModuleDuplicate)
+	assert.EqualError(t, err, `[module] module "blog" is registered more than once`)
 
 	assert.Equal(t, []string{"blog", "shop"}, names(registry.All()))
 }
@@ -120,10 +120,10 @@ func TestRegistry_Register(t *testing.T) {
 func TestRegistry_RegisterInvalidName(t *testing.T) {
 	for _, name := range []string{"", "Blog", "blog.admin", "blog_posts", "-blog", "blog--posts", "1blog"} {
 		err := NewRegistry("").Register(&plainModule{name})
-		assert.ErrorIs(t, err, errors.ModularModuleNameNotKebab, name)
+		assert.ErrorIs(t, err, errors.ModuleNameNotKebab, name)
 	}
 	assert.EqualError(t, NewRegistry("").Register(&plainModule{"Blog"}),
-		`[modular] module *modular.plainModule is named "Blog", a module name is kebab case like blog or blog-posts`)
+		`[module] module *module.plainModule is named "Blog", a module name is kebab case like blog or blog-posts`)
 	assert.NoError(t, NewRegistry("").Register(&plainModule{"blog-posts2"}))
 }
 
@@ -134,7 +134,7 @@ func TestRegistry_Path(t *testing.T) {
 	// Under go test the main module is the framework.
 	dir, ok := registry.Path("blog")
 	assert.True(t, ok)
-	assert.Equal(t, "modular", dir)
+	assert.Equal(t, "module", dir)
 
 	dir, ok = registry.Path("shop")
 	assert.True(t, ok)
@@ -144,7 +144,7 @@ func TestRegistry_Path(t *testing.T) {
 	assert.False(t, ok)
 
 	err := registry.Register(&locatedModule{plainModule{"forum"}, "../forum"}, &plainModule{"news"})
-	assert.ErrorIs(t, err, errors.ModularModulePathInvalid)
+	assert.ErrorIs(t, err, errors.ModulePathInvalid)
 	assert.False(t, registry.Has("forum"))
 	assert.False(t, registry.Has("news"))
 }

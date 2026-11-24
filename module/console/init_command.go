@@ -43,7 +43,7 @@ func (r *InitCommand) Extend() command.Extend {
 // Handle Execute the console command. Running it again only reports what exists.
 func (r *InitCommand) Handle(ctx console.Context) error {
 	if !env.IsBootstrapSetup() {
-		return errors.ModularRequiresBootstrapSetup.Args(r.Signature())
+		return errors.ModuleRequiresBootstrapSetup.Args(r.Signature())
 	}
 
 	directory := modulesDirectory(r.config)

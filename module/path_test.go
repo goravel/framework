@@ -1,4 +1,4 @@
-package modular
+package module
 
 import (
 	"testing"
@@ -13,7 +13,7 @@ func TestResolvePath(t *testing.T) {
 	t.Run("a package inside the application is its directory", func(t *testing.T) {
 		dir, err := ResolvePath(&plainModule{"blog"}, "github.com/goravel/framework", DefaultDirectory)
 		require.NoError(t, err)
-		assert.Equal(t, "modular", dir)
+		assert.Equal(t, "module", dir)
 	})
 
 	t.Run("a package of another Go module goes under the module directory", func(t *testing.T) {
@@ -38,7 +38,7 @@ func TestResolvePath(t *testing.T) {
 	t.Run("Located outside the project is refused", func(t *testing.T) {
 		for _, given := range []string{"", " ", "..", "../shop", "modules/../../shop", "/srv/shop"} {
 			_, err := ResolvePath(&locatedModule{plainModule{"shop"}, given}, "example.com/app", DefaultDirectory)
-			assert.ErrorIs(t, err, errors.ModularModulePathInvalid, given)
+			assert.ErrorIs(t, err, errors.ModulePathInvalid, given)
 		}
 	})
 }
@@ -57,13 +57,13 @@ func TestDerivePath(t *testing.T) {
 		{"billing", "github.com/acme/billing/module", main, "app/modules/", "app/modules/billing", nil},
 		// A prefix match must end at a path separator.
 		{"billing", "example.com/application/billing", main, "modules", "modules/billing", nil},
-		{"blog", "main", main, "modules", "", errors.ModularModulePathUnknown},
-		{"blog", "", main, "modules", "", errors.ModularModulePathUnknown},
-		{"blog", "example.com/app/blog", "", "modules", "", errors.ModularModulePathUnknown},
-		{"a/b", "github.com/acme/billing", main, "modules", "", errors.ModularModulePathInvalid},
-		{"..", "github.com/acme/billing", main, "modules", "", errors.ModularModulePathInvalid},
-		{"", "github.com/acme/billing", main, "modules", "", errors.ModularModulePathInvalid},
-		{"billing", "github.com/acme/billing", main, "../modules", "", errors.ModularModulePathInvalid},
+		{"blog", "main", main, "modules", "", errors.ModulePathUnknown},
+		{"blog", "", main, "modules", "", errors.ModulePathUnknown},
+		{"blog", "example.com/app/blog", "", "modules", "", errors.ModulePathUnknown},
+		{"a/b", "github.com/acme/billing", main, "modules", "", errors.ModulePathInvalid},
+		{"..", "github.com/acme/billing", main, "modules", "", errors.ModulePathInvalid},
+		{"", "github.com/acme/billing", main, "modules", "", errors.ModulePathInvalid},
+		{"billing", "github.com/acme/billing", main, "../modules", "", errors.ModulePathInvalid},
 	}
 	for _, tt := range tests {
 		dir, err := derivePath(tt.name, tt.pkg, tt.mainModule, tt.directory)
@@ -77,5 +77,5 @@ func TestDerivePath(t *testing.T) {
 	}
 
 	_, err := derivePath("blog", "main", main, "modules")
-	assert.EqualError(t, err, `[modular] module blog: cannot derive its directory from package "main", implement Path() to set it`)
+	assert.EqualError(t, err, `[module] module blog: cannot derive its directory from package "main", implement Path() to set it`)
 }

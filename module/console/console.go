@@ -4,7 +4,7 @@ package console
 import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
-	"github.com/goravel/framework/modular"
+	"github.com/goravel/framework/module"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -23,10 +23,10 @@ const (
 // modulesDirectory is module.path, or the default when config/module.go does not set it.
 func modulesDirectory(config config.Config) string {
 	if config == nil {
-		return modular.DefaultDirectory
+		return module.DefaultDirectory
 	}
 
-	return config.GetString("module.path", modular.DefaultDirectory)
+	return config.GetString("module.path", module.DefaultDirectory)
 }
 
 // putIfMissing writes content to file unless it exists and prints a row named label.

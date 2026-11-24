@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	mocksconsole "github.com/goravel/framework/mocks/console"
-	"github.com/goravel/framework/modular"
+	"github.com/goravel/framework/module"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -124,10 +124,10 @@ func (r *blogModule) Name() string { return "blog" }
 func (r *blogModule) Path() string { return "modules/blog" }
 
 func TestControllerMakeCommand_Module(t *testing.T) {
-	registry := modular.NewRegistry("")
+	registry := module.NewRegistry("")
 	assert.NoError(t, registry.Register(&blogModule{}))
-	modular.SetDefault(registry)
-	defer modular.SetDefault(nil)
+	module.SetDefault(registry)
+	defer module.SetDefault(nil)
 	defer func() { assert.Nil(t, file.Remove("modules")) }()
 
 	controllerMakeCommand := &ControllerMakeCommand{}
@@ -144,6 +144,6 @@ func TestControllerMakeCommand_Module(t *testing.T) {
 
 	mockContext.EXPECT().Arguments().Return([]string{"PostController"}).Once()
 	mockContext.EXPECT().Option("module").Return("news").Once()
-	mockContext.EXPECT().Error("[modular] module news is not registered").Once()
+	mockContext.EXPECT().Error("[module] module news is not registered").Once()
 	assert.Nil(t, controllerMakeCommand.Handle(mockContext))
 }

@@ -11,7 +11,7 @@ import (
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksmigration "github.com/goravel/framework/mocks/database/migration"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
-	"github.com/goravel/framework/modular"
+	"github.com/goravel/framework/module"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
@@ -256,10 +256,10 @@ func (r *blogModule) Name() string { return "blog" }
 func (r *blogModule) Path() string { return "modules/blog" }
 
 func TestMigrateMakeCommand_Module(t *testing.T) {
-	registry := modular.NewRegistry("")
+	registry := module.NewRegistry("")
 	assert.NoError(t, registry.Register(&blogModule{}))
-	modular.SetDefault(registry)
-	defer modular.SetDefault(nil)
+	module.SetDefault(registry)
+	defer module.SetDefault(nil)
 	defer func() {
 		assert.NoError(t, file.Remove("modules"))
 	}()

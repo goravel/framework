@@ -15,7 +15,7 @@ import (
 	"github.com/goravel/framework/contracts/console/command"
 	contractsmodule "github.com/goravel/framework/contracts/module"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/modular"
+	frameworkmodule "github.com/goravel/framework/module"
 	"github.com/goravel/framework/support/path"
 )
 
@@ -68,7 +68,7 @@ func (r *ListCommand) Extend() command.Extend {
 // Handle Execute the console command.
 func (r *ListCommand) Handle(ctx console.Context) error {
 	if r.registry == nil {
-		return errors.ModularRegistryNotSet
+		return errors.ModuleRegistryNotSet
 	}
 
 	info, _ := r.buildInfo()
@@ -112,15 +112,15 @@ func (r *ListCommand) describe(module contractsmodule.Module, info *debug.BuildI
 		Name:         module.Name(),
 		Path:         dir,
 		Dependencies: []string{},
-		Publish:      modular.PublishLocal,
+		Publish:      frameworkmodule.PublishLocal,
 		Capabilities: r.registry.Capabilities(module),
 		ViteEntries:  []string{},
 		ViteAliases:  map[string]string{},
 		Static:       []string{},
 	}
 
-	if dependency, ok := modular.DependencyOf(module, info); ok {
-		described.Publish = modular.PublishState(module, dependency, path.Base(filepath.FromSlash(dir)))
+	if dependency, ok := frameworkmodule.DependencyOf(module, info); ok {
+		described.Publish = frameworkmodule.PublishState(module, dependency, path.Base(filepath.FromSlash(dir)))
 	}
 	if p, ok := module.(contractsmodule.Dependent); ok {
 		described.Dependencies = append(described.Dependencies, p.Dependencies()...)

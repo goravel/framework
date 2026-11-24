@@ -9,7 +9,7 @@ import (
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
-	"github.com/goravel/framework/modular"
+	"github.com/goravel/framework/module"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -141,11 +141,11 @@ func (r *blogModule) Name() string { return "blog" }
 func (r *blogModule) Path() string { return "modules/blog" }
 
 func (s *ViewMakeCommandTestSuite) TestModule() {
-	registry := modular.NewRegistry("")
+	registry := module.NewRegistry("")
 	s.NoError(registry.Register(&blogModule{}))
-	modular.SetDefault(registry)
+	module.SetDefault(registry)
 	s.T().Cleanup(func() {
-		modular.SetDefault(nil)
+		module.SetDefault(nil)
 		_ = file.Remove("modules")
 	})
 
@@ -160,13 +160,13 @@ func (s *ViewMakeCommandTestSuite) TestModule() {
 }
 
 func (s *ViewMakeCommandTestSuite) TestModuleNotFound() {
-	modular.SetDefault(modular.NewRegistry(""))
-	s.T().Cleanup(func() { modular.SetDefault(nil) })
+	module.SetDefault(module.NewRegistry(""))
+	s.T().Cleanup(func() { module.SetDefault(nil) })
 
 	mockContext := mocksconsole.NewContext(s.T())
 	mockContext.EXPECT().Arguments().Return([]string{"posts/index"}).Once()
 	mockContext.EXPECT().Option("module").Return("shop").Once()
-	mockContext.EXPECT().Error(errors.ModularModuleNotFound.Args("shop").Error()).Once()
+	mockContext.EXPECT().Error(errors.ModuleNotFound.Args("shop").Error()).Once()
 
 	s.Nil((&ViewMakeCommand{}).Handle(mockContext))
 	s.NoDirExists("resources")

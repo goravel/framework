@@ -1,4 +1,4 @@
-package modular
+package module
 
 import (
 	"io/fs"
@@ -33,7 +33,7 @@ func Files(name, capability, root, defaultDir string, files contractsmodule.File
 
 	dir, inside := path.CleanRelative(given)
 	if !inside {
-		return nil, false, errors.ModularFilesDirInvalid.Args(name, capability, given)
+		return nil, false, errors.ModuleFilesDirInvalid.Args(name, capability, given)
 	}
 
 	if files.FS != nil {
@@ -41,7 +41,7 @@ func Files(name, capability, root, defaultDir string, files contractsmodule.File
 	} else {
 		base, rooted := path.CleanRelative(root)
 		if !rooted {
-			return nil, false, errors.ModularFilesDirInvalid.Args(name, capability, given)
+			return nil, false, errors.ModuleFilesDirInvalid.Args(name, capability, given)
 		}
 		fsys = os.DirFS(path.Base(base, dir))
 	}
@@ -53,7 +53,7 @@ func Files(name, capability, root, defaultDir string, files contractsmodule.File
 		}
 	}
 	if err != nil {
-		return nil, false, errors.ModularFilesDirUnreadable.Args(name, capability, given, err)
+		return nil, false, errors.ModuleFilesDirUnreadable.Args(name, capability, given, err)
 	}
 
 	return fsys, true, nil

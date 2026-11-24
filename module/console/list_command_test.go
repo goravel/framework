@@ -11,7 +11,7 @@ import (
 	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksmodule "github.com/goravel/framework/mocks/module"
-	"github.com/goravel/framework/modular"
+	"github.com/goravel/framework/module"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -50,7 +50,7 @@ func (s *ListCommandTestSuite) TestSignature() {
 }
 
 func (s *ListCommandTestSuite) TestRegistryNotSet() {
-	s.Equal(errors.ModularRegistryNotSet, NewListCommand(nil).Handle(mocksconsole.NewContext(s.T())))
+	s.Equal(errors.ModuleRegistryNotSet, NewListCommand(nil).Handle(mocksconsole.NewContext(s.T())))
 }
 
 func (s *ListCommandTestSuite) TestEmpty() {
@@ -137,7 +137,7 @@ func (s *ListCommandTestSuite) TestList() {
 	s.Contains(output.String(), `"name":"billing","path":"modules/billing","dependencies":[],"publish":"published"`)
 
 	// Something else in the directory of a third-party module is a conflict.
-	s.Require().NoError(file.Remove("modules/billing/" + modular.PublishMarker))
+	s.Require().NoError(file.Remove("modules/billing/" + module.PublishMarker))
 	ctx = mocksconsole.NewContext(s.T())
 	ctx.EXPECT().OptionBool("json").Return(true).Once()
 	output.Reset()

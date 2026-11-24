@@ -76,7 +76,7 @@ func (s *InitCommandTestSuite) TestSignature() {
 func (s *InitCommandTestSuite) TestRequiresBootstrapSetup() {
 	err := NewInitCommand(nil).Handle(mocksconsole.NewContext(s.T()))
 
-	s.Equal(errors.ModularRequiresBootstrapSetup.Args("module:init"), err)
+	s.Equal(errors.ModuleRequiresBootstrapSetup.Args("module:init"), err)
 	s.False(file.Exists("modules"))
 }
 

@@ -19,7 +19,7 @@ import (
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksmodule "github.com/goravel/framework/mocks/module"
 	mocksview "github.com/goravel/framework/mocks/view"
-	"github.com/goravel/framework/modular"
+	"github.com/goravel/framework/module"
 	"github.com/goravel/framework/support"
 )
 
@@ -132,20 +132,20 @@ func TestInputsCommand_ModuleAliasErrors(t *testing.T) {
 		modules []contractsmodule.Module
 		err     error
 	}{
-		{"escaping target", []contractsmodule.Module{module("blog", map[string]string{"@x": "../shop"})}, errors.ModularViteAliasInvalid.Args("blog", "@x", "../shop")},
-		{"absolute target", []contractsmodule.Module{module("blog", map[string]string{"@x": "/etc"})}, errors.ModularViteAliasInvalid.Args("blog", "@x", "/etc")},
-		{"bare @", []contractsmodule.Module{module("blog", map[string]string{"@": "."})}, errors.ModularViteAliasInvalid.Args("blog", "@", ".")},
-		{"no @", []contractsmodule.Module{module("blog", map[string]string{"bad": "."})}, errors.ModularViteAliasInvalid.Args("blog", "bad", ".")},
-		{"slash in key", []contractsmodule.Module{module("blog", map[string]string{"@a/b": "."})}, errors.ModularViteAliasInvalid.Args("blog", "@a/b", ".")},
+		{"escaping target", []contractsmodule.Module{module("blog", map[string]string{"@x": "../shop"})}, errors.ModuleViteAliasInvalid.Args("blog", "@x", "../shop")},
+		{"absolute target", []contractsmodule.Module{module("blog", map[string]string{"@x": "/etc"})}, errors.ModuleViteAliasInvalid.Args("blog", "@x", "/etc")},
+		{"bare @", []contractsmodule.Module{module("blog", map[string]string{"@": "."})}, errors.ModuleViteAliasInvalid.Args("blog", "@", ".")},
+		{"no @", []contractsmodule.Module{module("blog", map[string]string{"bad": "."})}, errors.ModuleViteAliasInvalid.Args("blog", "bad", ".")},
+		{"slash in key", []contractsmodule.Module{module("blog", map[string]string{"@a/b": "."})}, errors.ModuleViteAliasInvalid.Args("blog", "@a/b", ".")},
 		{
 			"two modules, one key",
 			[]contractsmodule.Module{module("blog", map[string]string{"@ui": "ui"}), module("shop", map[string]string{"@ui": "ui"})},
-			errors.ModularViteAliasDuplicate.Args("@ui", "shop", "blog"),
+			errors.ModuleViteAliasDuplicate.Args("@ui", "shop", "blog"),
 		},
 		{
 			"another module's implicit alias",
 			[]contractsmodule.Module{module("blog", map[string]string{"@shop": "resources"}), module("shop", nil)},
-			errors.ModularViteAliasDuplicate.Args("@shop", "blog", "shop"),
+			errors.ModuleViteAliasDuplicate.Args("@shop", "blog", "shop"),
 		},
 	}
 
@@ -166,7 +166,7 @@ func TestInputsCommand_ModuleEntryErrors(t *testing.T) {
 			blog := &viteModule{testModule: testModule{"blog"}, entries: []string{"resources/js/app.js", entry}}
 			cmd := moduleCommand(t, moduleRegistry(t, blog), nil, false)
 
-			assert.EqualError(t, cmd.Handle(mocksconsole.NewContext(t)), errors.ModularViteEntryInvalid.Args("blog", entry).Error())
+			assert.EqualError(t, cmd.Handle(mocksconsole.NewContext(t)), errors.ModuleViteEntryInvalid.Args("blog", entry).Error())
 		})
 	}
 }
@@ -177,8 +177,8 @@ func TestInputsCommand_ModulePublished(t *testing.T) {
 	billing := &sourcesModule{testModule: testModule{"billing"}, sources: fstest.MapFS{"resources/js/app.js": {Data: []byte("app")}}}
 	plain := &testModule{"plain"}
 	dir := filepath.Join(support.RelativePath, "modules", "billing")
-	dependency := func(version string) modular.Dependency {
-		return modular.Dependency{Path: "github.com/goravel/framework", Version: version, Sum: "h1:abc"}
+	dependency := func(version string) module.Dependency {
+		return module.Dependency{Path: "github.com/goravel/framework", Version: version, Sum: "h1:abc"}
 	}
 	run := func(version string, compiled bool) error {
 		ctx := mocksconsole.NewContext(t)
@@ -193,18 +193,18 @@ func TestInputsCommand_ModulePublished(t *testing.T) {
 	}
 
 	// Not published yet; a module without sources is never checked.
-	assert.EqualError(t, run("v1.2.0", false), errors.ModularModuleNotPublished.Args("billing", "github.com/goravel/framework v1.2.0", "modules/billing").Error())
+	assert.EqualError(t, run("v1.2.0", false), errors.ModuleNotPublished.Args("billing", "github.com/goravel/framework v1.2.0", "modules/billing").Error())
 
-	_, err := modular.Publish(billing, dependency("v1.2.0"), dir)
+	_, err := module.Publish(billing, dependency("v1.2.0"), dir)
 	require.NoError(t, err)
 	assert.NoError(t, run("v1.2.0", true))
 
 	// Another version is linked than the one published.
-	assert.EqualError(t, run("v1.3.0", false), errors.ModularModulePublishStale.Args("billing", "modules/billing", "github.com/goravel/framework v1.3.0").Error())
+	assert.EqualError(t, run("v1.3.0", false), errors.ModulePublishStale.Args("billing", "modules/billing", "github.com/goravel/framework v1.3.0").Error())
 
 	// The directory holds something module:publish did not write.
-	require.NoError(t, os.Remove(filepath.Join(dir, modular.PublishMarker)))
-	assert.EqualError(t, run("v1.2.0", false), errors.ModularPublishTargetNotOwned.Args("billing", "modules/billing", "github.com/goravel/framework").Error())
+	require.NoError(t, os.Remove(filepath.Join(dir, module.PublishMarker)))
+	assert.EqualError(t, run("v1.2.0", false), errors.ModulePublishTargetNotOwned.Args("billing", "modules/billing", "github.com/goravel/framework").Error())
 
 	// In the application itself nothing is published.
 	ctx := mocksconsole.NewContext(t)
@@ -237,20 +237,20 @@ func TestInputsCommand_ModuleFrontendFiles(t *testing.T) {
 		for _, entry := range []string{"js/missing.js", "js"} {
 			blog := &sourcesModule{testModule: testModule{"blog"}, sources: sources, dir: "web", entries: []string{entry}}
 
-			assert.EqualError(t, run(blog, localBuild, ""), errors.ModularViteEntryMissing.Args("blog", entry).Error())
+			assert.EqualError(t, run(blog, localBuild, ""), errors.ModuleViteEntryMissing.Args("blog", entry).Error())
 		}
 	})
 
 	t.Run("a directory outside the module", func(t *testing.T) {
 		blog := &sourcesModule{testModule: testModule{"blog"}, dir: "../shop"}
 
-		assert.EqualError(t, run(blog, localBuild, ""), errors.ModularFilesDirInvalid.Args("blog", "Frontend()", "../shop").Error())
+		assert.EqualError(t, run(blog, localBuild, ""), errors.ModuleFilesDirInvalid.Args("blog", "Frontend()", "../shop").Error())
 	})
 
 	t.Run("a third-party module needs an FS", func(t *testing.T) {
 		billing := &viteModule{testModule: testModule{"billing"}, entries: []string{"resources/js/app.js"}}
 
-		assert.EqualError(t, run(billing, thirdPartyBuild("v1.2.0"), ""), errors.ModularFrontendFilesRequired.Args("billing").Error())
+		assert.EqualError(t, run(billing, thirdPartyBuild("v1.2.0"), ""), errors.ModuleFrontendFilesRequired.Args("billing").Error())
 		assert.NoError(t, run(&viteModule{testModule: testModule{"billing"}}, thirdPartyBuild("v1.2.0"), `"entries":[]`))
 	})
 }

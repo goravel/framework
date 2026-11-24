@@ -1,4 +1,4 @@
-package modular
+package module
 
 import (
 	"errors"

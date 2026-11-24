@@ -1,4 +1,4 @@
-package modular
+package module
 
 import (
 	stdpath "path"
@@ -21,7 +21,7 @@ func ResolvePath(module contractsmodule.Module, mainModule, directory string) (s
 	if located, ok := module.(contractsmodule.Located); ok {
 		dir, ok := path.CleanRelative(located.Path())
 		if !ok || strings.TrimSpace(located.Path()) == "" {
-			return "", errors.ModularModulePathInvalid.Args(name, located.Path())
+			return "", errors.ModulePathInvalid.Args(name, located.Path())
 		}
 
 		return dir, nil
@@ -32,7 +32,7 @@ func ResolvePath(module contractsmodule.Module, mainModule, directory string) (s
 
 func derivePath(name, pkg, mainModule, directory string) (string, error) {
 	if pkg == "" || pkg == "main" || mainModule == "" {
-		return "", errors.ModularModulePathUnknown.Args(name, pkg)
+		return "", errors.ModulePathUnknown.Args(name, pkg)
 	}
 
 	if pkg == mainModule {
@@ -45,11 +45,11 @@ func derivePath(name, pkg, mainModule, directory string) (string, error) {
 	// Another Go module: one element under directory.
 	base, ok := path.CleanRelative(directory)
 	if !ok {
-		return "", errors.ModularModulePathInvalid.Args(name, directory)
+		return "", errors.ModulePathInvalid.Args(name, directory)
 	}
 	dir := stdpath.Join(base, name)
 	if stdpath.Dir(dir) != base || stdpath.Base(dir) != name {
-		return "", errors.ModularModulePathInvalid.Args(name, dir)
+		return "", errors.ModulePathInvalid.Args(name, dir)
 	}
 
 	return dir, nil

@@ -40,8 +40,8 @@ import (
 	"github.com/goravel/framework/foundation/configuration"
 	"github.com/goravel/framework/foundation/console"
 	"github.com/goravel/framework/foundation/json"
-	"github.com/goravel/framework/modular"
-	modularconsole "github.com/goravel/framework/modular/console"
+	frameworkmodule "github.com/goravel/framework/module"
+	moduleconsole "github.com/goravel/framework/module/console"
 	"github.com/goravel/framework/process"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/carbon"
@@ -503,7 +503,7 @@ func (r *Application) configureCommands() {
 	if r.builder.commands != nil {
 		commands = r.builder.commands()
 	}
-	for _, module := range modular.Providing[contractsmodule.ProvidesCommands](r.modules) {
+	for _, module := range frameworkmodule.Providing[contractsmodule.ProvidesCommands](r.modules) {
 		commands = append(commands, module.Commands()...)
 	}
 
@@ -529,7 +529,7 @@ func (r *Application) configureModuleConfig() {
 		}
 		if p, ok := module.(contractsmodule.ProvidesTranslations); ok {
 			root, _ := r.MakeModule().Path(module.Name())
-			fsys, ok, err := modular.Files(module.Name(), "Translations()", root, modular.TranslationsDirectory, p.Translations())
+			fsys, ok, err := frameworkmodule.Files(module.Name(), "Translations()", root, frameworkmodule.TranslationsDirectory, p.Translations())
 			if err != nil {
 				color.Errorln(err)
 			}
@@ -544,7 +544,7 @@ func (r *Application) configureModuleConfig() {
 
 	configFacade := r.MakeConfig()
 	if configFacade == nil {
-		color.Errorln(errors.ConfigFacadeNotSet.SetModule(errors.ModuleModular))
+		color.Errorln(errors.ConfigFacadeNotSet.SetModule(errors.ModuleModule))
 		return
 	}
 
@@ -554,7 +554,7 @@ func (r *Application) configureModuleConfig() {
 
 	if len(translations) > 0 {
 		fallback, _ := configFacade.Get("app.lang_fs").(fs.FS)
-		configFacade.Add("app.lang_fs", modular.NewLangFS(translations, fallback))
+		configFacade.Add("app.lang_fs", frameworkmodule.NewLangFS(translations, fallback))
 	}
 }
 
@@ -564,7 +564,7 @@ func (r *Application) configureEventListeners() {
 	if r.builder.eventToListeners != nil {
 		maps.Copy(eventToListeners, r.builder.eventToListeners())
 	}
-	for _, module := range modular.Providing[contractsmodule.ProvidesEvents](r.modules) {
+	for _, module := range frameworkmodule.Providing[contractsmodule.ProvidesEvents](r.modules) {
 		// Concat keeps every listener of a shared event and never writes into the app's slice.
 		for e, listeners := range module.Events() {
 			eventToListeners[e] = slices.Concat(eventToListeners[e], listeners)
@@ -652,7 +652,7 @@ func (r *Application) configureJobs() {
 	if r.builder.jobs != nil {
 		jobs = r.builder.jobs()
 	}
-	for _, module := range modular.Providing[contractsmodule.ProvidesJobs](r.modules) {
+	for _, module := range frameworkmodule.Providing[contractsmodule.ProvidesJobs](r.modules) {
 		jobs = append(jobs, module.Jobs()...)
 	}
 
@@ -668,7 +668,7 @@ func (r *Application) configureJobs() {
 
 // configureMiddleware: driver defaults, then modules, then WithMiddleware (final say).
 func (r *Application) configureMiddleware() {
-	modules := modular.Providing[contractsmodule.ProvidesGlobalMiddleware](r.modules)
+	modules := frameworkmodule.Providing[contractsmodule.ProvidesGlobalMiddleware](r.modules)
 	if r.builder.middleware != nil || len(modules) > 0 {
 		routeFacade := r.MakeRoute()
 		if routeFacade == nil {
@@ -696,7 +696,7 @@ func (r *Application) configureMigrations() {
 	if r.builder.migrations != nil {
 		migrations = r.builder.migrations()
 	}
-	for _, module := range modular.Providing[contractsmodule.ProvidesMigrations](r.modules) {
+	for _, module := range frameworkmodule.Providing[contractsmodule.ProvidesMigrations](r.modules) {
 		migrations = append(migrations, module.Migrations()...)
 	}
 
@@ -713,18 +713,18 @@ func (r *Application) configureMigrations() {
 // configureModules binds a fresh registry and keeps the modules in dependency order. It runs
 // after WithConfig (module.path) and before providers. A bad module or an unsortable dependency panics.
 func (r *Application) configureModules() {
-	directory := modular.DefaultDirectory
+	directory := frameworkmodule.DefaultDirectory
 	var modules []contractsmodule.Module
 	if r.builder.modules != nil {
 		modules = r.builder.modules()
 	}
 	if len(modules) > 0 {
 		if config := r.MakeConfig(); config != nil {
-			directory = config.GetString("module.path", modular.DefaultDirectory)
+			directory = config.GetString("module.path", frameworkmodule.DefaultDirectory)
 		}
 	}
 
-	registry := modular.NewRegistry(directory)
+	registry := frameworkmodule.NewRegistry(directory)
 	if err := registry.Register(modules...); err != nil {
 		panic(err)
 	}
@@ -735,7 +735,7 @@ func (r *Application) configureModules() {
 	// Make caches instances; drop the previous registry on a rebuild.
 	r.Fresh(binding.Module)
 	r.Instance(binding.Module, registry)
-	modular.SetDefault(registry)
+	frameworkmodule.SetDefault(registry)
 	r.modules = registry.All()
 }
 
@@ -753,9 +753,9 @@ func (r *Application) configureRoutes() {
 		r.builder.routes()
 	}
 
-	statics := modular.Providing[contractsmodule.ProvidesStatic](r.modules)
-	web := modular.Providing[contractsmodule.ProvidesRoutes](r.modules)
-	late := modular.Providing[contractsmodule.ProvidesLateRoutes](r.modules)
+	statics := frameworkmodule.Providing[contractsmodule.ProvidesStatic](r.modules)
+	web := frameworkmodule.Providing[contractsmodule.ProvidesRoutes](r.modules)
+	late := frameworkmodule.Providing[contractsmodule.ProvidesLateRoutes](r.modules)
 	if len(statics) == 0 && len(web) == 0 && len(late) == 0 {
 		return
 	}
@@ -789,18 +789,18 @@ func (r *Application) registerModuleStatic(routeFacade route.Route) {
 
 		paths := p.Static()
 		for _, prefix := range slices.Sorted(maps.Keys(paths)) {
-			cleaned, ok := modular.CleanPrefix(prefix)
+			cleaned, ok := frameworkmodule.CleanPrefix(prefix)
 			if !ok {
-				color.Errorln(errors.ModularStaticPrefixInvalid.Args(module.Name(), prefix))
+				color.Errorln(errors.ModuleStaticPrefixInvalid.Args(module.Name(), prefix))
 				continue
 			}
 			if owner, ok := served[cleaned]; ok {
-				color.Errorln(errors.ModularStaticDuplicate.Args(cleaned, module.Name(), owner))
+				color.Errorln(errors.ModuleStaticDuplicate.Args(cleaned, module.Name(), owner))
 				continue
 			}
 
 			root, _ := registry.Path(module.Name())
-			fsys, ok, err := modular.StaticFS(module.Name(), root, paths[prefix])
+			fsys, ok, err := frameworkmodule.StaticFS(module.Name(), root, paths[prefix])
 			if err != nil {
 				color.Errorln(err)
 			}
@@ -874,7 +874,7 @@ func (r *Application) configureSchedule() {
 	if r.builder.schedule != nil {
 		events = r.builder.schedule()
 	}
-	for _, module := range modular.Providing[contractsmodule.ProvidesSchedule](r.modules) {
+	for _, module := range frameworkmodule.Providing[contractsmodule.ProvidesSchedule](r.modules) {
 		events = append(events, module.Schedule()...)
 	}
 
@@ -893,7 +893,7 @@ func (r *Application) configureSeeders() {
 	if r.builder.seeders != nil {
 		seeders = r.builder.seeders()
 	}
-	for _, module := range modular.Providing[contractsmodule.ProvidesSeeders](r.modules) {
+	for _, module := range frameworkmodule.Providing[contractsmodule.ProvidesSeeders](r.modules) {
 		seeders = append(seeders, module.Seeders()...)
 	}
 
@@ -912,7 +912,7 @@ func (r *Application) configureServiceProviders() {
 	if r.builder.configuredServiceProviders != nil {
 		providers = r.builder.configuredServiceProviders()
 	}
-	for _, module := range modular.Providing[foundation.ProvidesServiceProviders](r.modules) {
+	for _, module := range frameworkmodule.Providing[foundation.ProvidesServiceProviders](r.modules) {
 		providers = append(providers, module.ServiceProviders()...)
 	}
 
@@ -924,7 +924,7 @@ func (r *Application) configureServiceProviders() {
 // registerModuleResources registers module views under "<name>/", after providers
 // boot and before configureViews compiles them.
 func (r *Application) registerModuleResources() {
-	modules := modular.Providing[contractsmodule.ProvidesViews](r.modules)
+	modules := frameworkmodule.Providing[contractsmodule.ProvidesViews](r.modules)
 	if len(modules) == 0 {
 		return
 	}
@@ -939,7 +939,7 @@ func (r *Application) registerModuleResources() {
 	for _, module := range modules {
 		name := module.(contractsmodule.Module).Name()
 		root, _ := registry.Path(name)
-		fsys, ok, err := modular.Files(name, "Views()", root, modular.ViewsDirectory, module.Views())
+		fsys, ok, err := frameworkmodule.Files(name, "Views()", root, frameworkmodule.ViewsDirectory, module.Views())
 		if err != nil {
 			color.Errorln(err)
 		}
@@ -947,7 +947,7 @@ func (r *Application) registerModuleResources() {
 			continue
 		}
 
-		viewFacade.LoadViewsFromFS(modular.NewPrefixFS(name, fsys), ".")
+		viewFacade.LoadViewsFromFS(frameworkmodule.NewPrefixFS(name, fsys), ".")
 	}
 }
 
@@ -1026,10 +1026,10 @@ func (r *Application) defaultCommands() []contractsconsole.Command {
 		console.NewPackageInstallCommand(binding.Bindings, r.MakeProcess(), r.Json()),
 		console.NewPackageUninstallCommand(binding.Bindings, r.MakeProcess(), r.Json()),
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
-		modularconsole.NewInitCommand(r.MakeConfig()),
-		modularconsole.NewListCommand(r.MakeModule()),
-		modularconsole.NewModuleMakeCommand(r.MakeConfig()),
-		modularconsole.NewPublishCommand(r.MakeModule()),
+		moduleconsole.NewInitCommand(r.MakeConfig()),
+		moduleconsole.NewListCommand(r.MakeModule()),
+		moduleconsole.NewModuleMakeCommand(r.MakeConfig()),
+		moduleconsole.NewPublishCommand(r.MakeModule()),
 	}
 
 	if r.MakeRoute() != nil {

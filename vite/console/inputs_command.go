@@ -18,7 +18,7 @@ import (
 	contractsview "github.com/goravel/framework/contracts/view"
 	contractsvite "github.com/goravel/framework/contracts/vite"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/modular"
+	frameworkmodule "github.com/goravel/framework/module"
 	"github.com/goravel/framework/packages/paths"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/path"
@@ -191,7 +191,7 @@ func (r *InputsCommand) moduleInputs() ([]ModuleInputs, error) {
 		input := ModuleInputs{Name: name, Path: dir, Entries: []string{}, Aliases: map[string]string{}}
 		if p, ok := module.(contractsmodule.ProvidesFrontend); ok {
 			frontend := p.Frontend()
-			_, thirdParty := modular.DependencyOf(module, info)
+			_, thirdParty := frameworkmodule.DependencyOf(module, info)
 			root, embedded, err := frontendFiles(name, dir, frontend, thirdParty)
 			if err != nil {
 				return nil, err
@@ -201,11 +201,11 @@ func (r *InputsCommand) moduleInputs() ([]ModuleInputs, error) {
 				// Checked like aliases: Vite would build a file outside the module otherwise.
 				cleaned, inside := path.CleanRelative(entry)
 				if !inside || cleaned == "." {
-					return nil, errors.ModularViteEntryInvalid.Args(name, entry)
+					return nil, errors.ModuleViteEntryInvalid.Args(name, entry)
 				}
 				if embedded != nil {
 					if stat, err := fs.Stat(embedded, cleaned); err != nil || stat.IsDir() {
-						return nil, errors.ModularViteEntryMissing.Args(name, entry)
+						return nil, errors.ModuleViteEntryMissing.Args(name, entry)
 					}
 				}
 				input.Entries = append(input.Entries, stdpath.Join(root, cleaned))
@@ -215,10 +215,10 @@ func (r *InputsCommand) moduleInputs() ([]ModuleInputs, error) {
 			for _, key := range slices.Sorted(maps.Keys(aliases)) {
 				target, inside := path.CleanRelative(aliases[key])
 				if !aliasKey.MatchString(key) || !inside {
-					return nil, errors.ModularViteAliasInvalid.Args(name, key, aliases[key])
+					return nil, errors.ModuleViteAliasInvalid.Args(name, key, aliases[key])
 				}
 				if owner, taken := owners[key]; taken && owner != name {
-					return nil, errors.ModularViteAliasDuplicate.Args(key, name, owner)
+					return nil, errors.ModuleViteAliasDuplicate.Args(key, name, owner)
 				}
 
 				owners[key] = name
@@ -238,17 +238,17 @@ func frontendFiles(name, dir string, frontend contractsmodule.Frontend, thirdPar
 	files := frontend.Files
 	sub, inside := path.CleanRelative(files.Dir)
 	if !inside {
-		return "", nil, errors.ModularFilesDirInvalid.Args(name, "Frontend()", files.Dir)
+		return "", nil, errors.ModuleFilesDirInvalid.Args(name, "Frontend()", files.Dir)
 	}
 	if files.FS == nil {
 		if thirdParty && len(frontend.Entries)+len(frontend.Aliases) > 0 {
-			return "", nil, errors.ModularFrontendFilesRequired.Args(name)
+			return "", nil, errors.ModuleFrontendFilesRequired.Args(name)
 		}
 
 		return stdpath.Join(dir, sub), nil, nil
 	}
 
-	embedded, _, err := modular.Files(name, "Frontend()", "", "", files)
+	embedded, _, err := frameworkmodule.Files(name, "Frontend()", "", "", files)
 
 	return stdpath.Join(dir, sub), embedded, err
 }
@@ -256,7 +256,7 @@ func frontendFiles(name, dir string, frontend contractsmodule.Frontend, thirdPar
 // checkPublished fails for a third-party module whose files are not in dir as
 // module:publish writes them: Vite would build without them, or with old ones.
 func checkPublished(module contractsmodule.Module, info *debug.BuildInfo, dir string) error {
-	dependency, ok := modular.DependencyOf(module, info)
+	dependency, ok := frameworkmodule.DependencyOf(module, info)
 	if !ok {
 		return nil
 	}
@@ -266,13 +266,13 @@ func checkPublished(module contractsmodule.Module, info *debug.BuildInfo, dir st
 		source += " " + dependency.Version
 	}
 
-	switch modular.PublishState(module, dependency, path.Base(filepath.FromSlash(dir))) {
-	case modular.PublishMissing:
-		return errors.ModularModuleNotPublished.Args(module.Name(), source, dir)
-	case modular.PublishStale:
-		return errors.ModularModulePublishStale.Args(module.Name(), dir, source)
-	case modular.PublishConflict:
-		return errors.ModularPublishTargetNotOwned.Args(module.Name(), dir, dependency.Path)
+	switch frameworkmodule.PublishState(module, dependency, path.Base(filepath.FromSlash(dir))) {
+	case frameworkmodule.PublishMissing:
+		return errors.ModuleNotPublished.Args(module.Name(), source, dir)
+	case frameworkmodule.PublishStale:
+		return errors.ModulePublishStale.Args(module.Name(), dir, source)
+	case frameworkmodule.PublishConflict:
+		return errors.ModulePublishTargetNotOwned.Args(module.Name(), dir, dependency.Path)
 	}
 
 	return nil

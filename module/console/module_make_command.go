@@ -14,7 +14,7 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/modular"
+	"github.com/goravel/framework/module"
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/packages/modify"
 	"github.com/goravel/framework/support"
@@ -26,7 +26,7 @@ import (
 )
 
 var (
-	// moduleInputPattern is what make:module accepts; the kebab name it derives must pass modular.ValidName.
+	// moduleInputPattern is what make:module accepts; the kebab name it derives must pass module.ValidName.
 	moduleInputPattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9 _-]*$`)
 
 	// reservedModulePackages are packages Go refuses to import.
@@ -79,7 +79,7 @@ func (r *ModuleMakeCommand) Handle(ctx console.Context) error {
 
 func (r *ModuleMakeCommand) makeOne(ctx console.Context, name string) error {
 	if !env.IsBootstrapSetup() {
-		return errors.ModularRequiresBootstrapSetup.Args(r.Signature())
+		return errors.ModuleRequiresBootstrapSetup.Args(r.Signature())
 	}
 
 	if name == "" {
@@ -87,7 +87,7 @@ func (r *ModuleMakeCommand) makeOne(ctx console.Context, name string) error {
 		name, err = ctx.Ask("Enter the module name", console.AskOption{
 			Validate: func(s string) error {
 				if s == "" {
-					return errors.ModularModuleNameEmpty
+					return errors.ModuleNameEmpty
 				}
 
 				return nil
@@ -105,7 +105,7 @@ func (r *ModuleMakeCommand) makeOne(ctx console.Context, name string) error {
 
 	root := path.Base(filepath.FromSlash(stubs.dir))
 	if file.Exists(root) && !ctx.OptionBool("force") {
-		return errors.ModularModuleExists.Args(stubs.kebab, stubs.dir)
+		return errors.ModuleExists.Args(stubs.kebab, stubs.dir)
 	}
 
 	registered, err := stubs.registered()
@@ -202,16 +202,16 @@ type moduleStubs struct {
 func newModuleStubs(name, directory string) (*moduleStubs, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
-		return nil, errors.ModularModuleNameEmpty
+		return nil, errors.ModuleNameEmpty
 	}
 
 	kebab := str.Of(name).Kebab().String()
 	pkg := strings.ReplaceAll(kebab, "-", "")
-	if !moduleInputPattern.MatchString(name) || !modular.ValidName(kebab) {
-		return nil, errors.ModularModuleNameInvalid.Args(name)
+	if !moduleInputPattern.MatchString(name) || !module.ValidName(kebab) {
+		return nil, errors.ModuleNameInvalid.Args(name)
 	}
 	if token.IsKeyword(pkg) || reservedModulePackages[pkg] {
-		return nil, errors.ModularModuleNameForbidden.Args(name, pkg)
+		return nil, errors.ModuleNameForbidden.Args(name, pkg)
 	}
 
 	dir := filepath.ToSlash(filepath.Join(directory, kebab))
@@ -264,7 +264,7 @@ func (r *moduleStubs) registered() (bool, error) {
 		if importPath == r.module {
 			imported = true
 		} else if name == r.pkg {
-			return false, errors.ModularModuleImportConflict.Args(r.kebab, r.pkg, importPath)
+			return false, errors.ModuleImportConflict.Args(r.kebab, r.pkg, importPath)
 		}
 	}
 

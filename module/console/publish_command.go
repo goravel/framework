@@ -8,7 +8,7 @@ import (
 	"github.com/goravel/framework/contracts/console/command"
 	contractsmodule "github.com/goravel/framework/contracts/module"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/modular"
+	frameworkmodule "github.com/goravel/framework/module"
 	"github.com/goravel/framework/support/path"
 	"github.com/goravel/framework/support/str"
 )
@@ -49,7 +49,7 @@ func (r *PublishCommand) Extend() command.Extend {
 // Handle Execute the console command. It publishes every module and fails when one could not be.
 func (r *PublishCommand) Handle(ctx console.Context) error {
 	if r.registry == nil {
-		return errors.ModularRegistryNotSet
+		return errors.ModuleRegistryNotSet
 	}
 
 	modules := r.registry.All()
@@ -60,7 +60,7 @@ func (r *PublishCommand) Handle(ctx console.Context) error {
 			module, ok = r.registry.Find(str.Of(name).Kebab().String())
 		}
 		if !ok {
-			return errors.ModularModuleNotFound.Args(name)
+			return errors.ModuleNotFound.Args(name)
 		}
 		modules = []contractsmodule.Module{module}
 	}
@@ -78,29 +78,29 @@ func (r *PublishCommand) Handle(ctx console.Context) error {
 		ctx.TwoColumnDetail(module.Name(), status)
 	}
 	if failed > 0 {
-		return errors.ModularPublishFailed.Args(failed, len(modules))
+		return errors.ModulePublishFailed.Args(failed, len(modules))
 	}
 
 	return nil
 }
 
 func (r *PublishCommand) publish(module contractsmodule.Module, info *debug.BuildInfo) (string, error) {
-	dependency, ok := modular.DependencyOf(module, info)
+	dependency, ok := frameworkmodule.DependencyOf(module, info)
 	if !ok {
 		return statusSkippedLocal, nil
 	}
 
 	dir, _ := r.registry.Path(module.Name())
-	changed, err := modular.Publish(module, dependency, path.Base(filepath.FromSlash(dir)))
+	changed, err := frameworkmodule.Publish(module, dependency, path.Base(filepath.FromSlash(dir)))
 	switch {
-	case errors.Is(err, errors.ModularPublishTargetNotOwned):
+	case errors.Is(err, errors.ModulePublishTargetNotOwned):
 		// Name the directory as the other messages do, relative to the project.
-		return "", errors.ModularPublishTargetNotOwned.Args(module.Name(), dir, dependency.Path)
+		return "", errors.ModulePublishTargetNotOwned.Args(module.Name(), dir, dependency.Path)
 	case err != nil:
 		return "", err
 	case changed:
 		return statusPublished, nil
-	case modular.PublishState(module, dependency, path.Base(filepath.FromSlash(dir))) == modular.PublishNone:
+	case frameworkmodule.PublishState(module, dependency, path.Base(filepath.FromSlash(dir))) == frameworkmodule.PublishNone:
 		return statusSkippedNone, nil
 	default:
 		return statusUnchanged, nil

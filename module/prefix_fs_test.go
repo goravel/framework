@@ -1,4 +1,4 @@
-package modular_test
+package module_test
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/goravel/framework/modular"
+	"github.com/goravel/framework/module"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/view"
 )
@@ -23,11 +23,11 @@ func blogViews() fstest.MapFS {
 }
 
 func TestPrefixFS_TestFS(t *testing.T) {
-	assert.NoError(t, fstest.TestFS(modular.NewPrefixFS("blog", blogViews()), "blog/index.tmpl", "blog/layouts/base.tmpl"))
+	assert.NoError(t, fstest.TestFS(module.NewPrefixFS("blog", blogViews()), "blog/index.tmpl", "blog/layouts/base.tmpl"))
 }
 
 func TestPrefixFS_Paths(t *testing.T) {
-	fsys := modular.NewPrefixFS("blog", blogViews())
+	fsys := module.NewPrefixFS("blog", blogViews())
 
 	entries, err := fs.ReadDir(fsys, ".")
 	require.NoError(t, err)
@@ -59,7 +59,7 @@ func TestPrefixFS_Views(t *testing.T) {
 	t.Cleanup(func() { support.RelativePath = relativePath })
 	support.RelativePath = t.TempDir()
 
-	fsys := modular.NewPrefixFS("blog", blogViews())
+	fsys := module.NewPrefixFS("blog", blogViews())
 
 	registry := view.NewView()
 	assert.NotPanics(t, func() { registry.LoadViewsFromFS(fsys, ".") })
@@ -91,7 +91,7 @@ func (r stubFile) Read([]byte) (int, error)   { return 0, io.EOF }
 func (r stubFile) Close() error               { return nil }
 
 func TestPrefixFS_Root(t *testing.T) {
-	fsys := modular.NewPrefixFS("blog", blogViews())
+	fsys := module.NewPrefixFS("blog", blogViews())
 
 	root, err := fsys.Open(".")
 	require.NoError(t, err)
@@ -124,7 +124,7 @@ func TestPrefixFS_Root(t *testing.T) {
 }
 
 func TestPrefixFS_InvalidPaths(t *testing.T) {
-	fsys := modular.NewPrefixFS("blog", blogViews())
+	fsys := module.NewPrefixFS("blog", blogViews())
 
 	_, err := fs.ReadDir(fsys, "../blog")
 	assert.ErrorIs(t, err, fs.ErrInvalid)
@@ -140,7 +140,7 @@ func TestPrefixFS_InvalidPaths(t *testing.T) {
 }
 
 func TestPrefixFS_UnreadableInner(t *testing.T) {
-	fsys := modular.NewPrefixFS("blog", stubFS{err: fs.ErrPermission})
+	fsys := module.NewPrefixFS("blog", stubFS{err: fs.ErrPermission})
 
 	_, err := fsys.Open(".")
 	assert.ErrorIs(t, err, fs.ErrPermission)
@@ -156,7 +156,7 @@ func TestPrefixFS_UnreadableInner(t *testing.T) {
 
 func TestPrefixFS_MountFile(t *testing.T) {
 	// The inner root cannot be described or listed.
-	fsys := modular.NewPrefixFS("blog", stubFS{file: stubFile{err: fs.ErrPermission}})
+	fsys := module.NewPrefixFS("blog", stubFS{file: stubFile{err: fs.ErrPermission}})
 
 	mount, err := fsys.Open("blog")
 	require.NoError(t, err)

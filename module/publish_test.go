@@ -1,4 +1,4 @@
-package modular
+package module
 
 import (
 	"encoding/json"
@@ -17,7 +17,7 @@ import (
 )
 
 // Test modules live in this package, so an app with another main module sees them as third-party.
-const publishPackage = "github.com/goravel/framework/modular"
+const publishPackage = "github.com/goravel/framework/module"
 
 type sourcesModule struct {
 	plainModule
@@ -111,7 +111,7 @@ func TestPublish(t *testing.T) {
 
 		module.dir = "../outside"
 		_, err = Publish(module, dependency, dir)
-		assert.ErrorIs(t, err, errors.ModularFilesDirInvalid)
+		assert.ErrorIs(t, err, errors.ModuleFilesDirInvalid)
 	})
 
 	t.Run("writes sources, views, notice and marker", func(t *testing.T) {
@@ -194,7 +194,7 @@ func TestPublish(t *testing.T) {
 		dir := t.TempDir()
 		require.NoError(t, os.WriteFile(filepath.Join(dir, "module.go"), []byte("package billing"), 0o644))
 		_, err := Publish(module, dependency, dir)
-		assert.Equal(t, errors.ModularPublishTargetNotOwned.Args("billing", dir, dependency.Path), err)
+		assert.Equal(t, errors.ModulePublishTargetNotOwned.Args("billing", dir, dependency.Path), err)
 		assert.NoFileExists(t, filepath.Join(dir, "app.js"))
 
 		// Published from another Go module.
@@ -202,7 +202,7 @@ func TestPublish(t *testing.T) {
 		_, err = Publish(module, Dependency{Path: "github.com/other/billing"}, dir)
 		require.NoError(t, err)
 		_, err = Publish(module, dependency, dir)
-		assert.Equal(t, errors.ModularPublishTargetNotOwned.Args("billing", dir, dependency.Path), err)
+		assert.Equal(t, errors.ModulePublishTargetNotOwned.Args("billing", dir, dependency.Path), err)
 		assert.Equal(t, PublishConflict, PublishState(module, dependency, dir))
 	})
 

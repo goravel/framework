@@ -118,7 +118,7 @@ func (s *ApplicationTestSuite) TestConfigureModules() {
 		}
 		s.app.builder = builder
 
-		s.PanicsWithError(`[modular] module "blog" is registered more than once`, func() {
+		s.PanicsWithError(`[module] module "blog" is registered more than once`, func() {
 			s.app.configureModules()
 		})
 	})
@@ -134,7 +134,7 @@ func (s *ApplicationTestSuite) TestConfigureModules() {
 		}
 		s.app.builder = builder
 
-		s.PanicsWithError("[modular] module comments depends on module blog, which is not registered", func() {
+		s.PanicsWithError("[module] module comments depends on module blog, which is not registered", func() {
 			s.app.configureModules()
 		})
 	})
@@ -150,7 +150,7 @@ func (s *ApplicationTestSuite) TestConfigureModules() {
 		}
 		s.app.builder = builder
 
-		s.PanicsWithError("[modular] modules depend on each other: blog -> comments -> blog", func() {
+		s.PanicsWithError("[module] modules depend on each other: blog -> comments -> blog", func() {
 			s.app.configureModules()
 		})
 	})
@@ -614,7 +614,7 @@ func (s *ApplicationTestSuite) TestModules_FacadesNotInstalled() {
 		s.app.registerModuleResources()
 	})
 
-	s.Contains(output, errors.ConfigFacadeNotSet.SetModule(errors.ModuleModular).Error())
+	s.Contains(output, errors.ConfigFacadeNotSet.SetModule(errors.ModuleModule).Error())
 	for _, facade := range []string{"Event", "Queue", "Schema", "Route", "Schedule", "Seeder", "View"} {
 		s.Contains(output, facade+" facade not found")
 	}

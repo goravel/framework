@@ -1,4 +1,4 @@
-package modular
+package module
 
 import (
 	"io/fs"
@@ -40,7 +40,7 @@ func TestStaticFS(t *testing.T) {
 
 	_, ok, err = StaticFS("blog", "modules/blog", contractsmodule.Files{Dir: "../shop"})
 	assert.False(t, ok)
-	assert.ErrorIs(t, err, errors.ModularFilesDirInvalid)
+	assert.ErrorIs(t, err, errors.ModuleFilesDirInvalid)
 }
 
 func TestCleanPrefix(t *testing.T) {

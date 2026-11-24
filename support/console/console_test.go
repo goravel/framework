@@ -17,7 +17,7 @@ import (
 	contractsmodule "github.com/goravel/framework/contracts/module"
 	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
-	"github.com/goravel/framework/modular"
+	"github.com/goravel/framework/module"
 	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
@@ -199,7 +199,7 @@ func (r *testModule) Name() string { return r.name }
 func (r *testModule) Path() string { return r.path }
 
 func TestNewMakeInModule(t *testing.T) {
-	registry := modular.NewRegistry("")
+	registry := module.NewRegistry("")
 	// *flag.FlagSet has Name() and lives outside the application: a third-party module.
 	assert.NoError(t, registry.Register(
 		&testModule{name: "blog-posts", path: "modules/blog-posts"},
@@ -217,15 +217,15 @@ func TestNewMakeInModule(t *testing.T) {
 		{name: "app directory is dropped", module: "blog-posts", registry: registry, root: "app/http/controllers", expectRoot: "modules/blog-posts/http/controllers"},
 		{name: "name is converted to kebab case", module: "BlogPosts", registry: registry, root: "app/models", expectRoot: "modules/blog-posts/models"},
 		{name: "other directories keep their shape", module: "blog-posts", registry: registry, root: "database/migrations", expectRoot: "modules/blog-posts/database/migrations"},
-		{name: "unknown module", module: "news", registry: registry, root: "app/models", expectError: errors.ModularModuleNotFound.Args("news")},
-		{name: "third-party module", module: "shop", registry: registry, root: "app/models", expectError: errors.ModularModuleNotLocal.Args("shop")},
-		{name: "no registry", module: "blog-posts", root: "app/models", expectError: errors.ModularRegistryNotSet},
+		{name: "unknown module", module: "news", registry: registry, root: "app/models", expectError: errors.ModuleNotFound.Args("news")},
+		{name: "third-party module", module: "shop", registry: registry, root: "app/models", expectError: errors.ModuleNotLocal.Args("shop")},
+		{name: "no registry", module: "blog-posts", root: "app/models", expectError: errors.ModuleRegistryNotSet},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			modular.SetDefault(test.registry)
-			defer modular.SetDefault(nil)
+			module.SetDefault(test.registry)
+			defer module.SetDefault(nil)
 
 			mockCtx := mocksconsole.NewContext(t)
 			mockCtx.EXPECT().Option("module").Return(test.module).Once()

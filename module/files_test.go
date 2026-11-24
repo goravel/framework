@@ -1,4 +1,4 @@
-package modular
+package module
 
 import (
 	"io/fs"
@@ -49,7 +49,7 @@ func TestFiles(t *testing.T) {
 
 		_, ok, err := resolve("modules/blog", contractsmodule.Files{FS: fstest.MapFS{"index.tmpl": {Data: []byte("root")}}})
 		assert.False(t, ok)
-		assert.ErrorIs(t, err, errors.ModularFilesDirUnreadable, "the default directory is not optional")
+		assert.ErrorIs(t, err, errors.ModuleFilesDirUnreadable, "the default directory is not optional")
 	})
 
 	t.Run("filesystem without a default directory is its root", func(t *testing.T) {
@@ -76,12 +76,12 @@ func TestFiles(t *testing.T) {
 			for _, files := range []contractsmodule.Files{{Dir: dir}, {FS: embedded, Dir: dir}} {
 				_, ok, err := resolve("modules/blog", files)
 				assert.False(t, ok)
-				assert.ErrorIs(t, err, errors.ModularFilesDirInvalid, dir)
+				assert.ErrorIs(t, err, errors.ModuleFilesDirInvalid, dir)
 			}
 		}
 
 		_, _, err := resolve("../blog", contractsmodule.Files{Dir: "resources/views"})
-		assert.ErrorIs(t, err, errors.ModularFilesDirInvalid, "the module directory must stay inside the project")
+		assert.ErrorIs(t, err, errors.ModuleFilesDirInvalid, "the module directory must stay inside the project")
 	})
 
 	t.Run("missing directory or a file", func(t *testing.T) {
@@ -89,7 +89,7 @@ func TestFiles(t *testing.T) {
 			for _, files := range []contractsmodule.Files{{Dir: dir}, {FS: embedded, Dir: dir}} {
 				_, ok, err := resolve("modules/blog", files)
 				assert.False(t, ok)
-				assert.ErrorIs(t, err, errors.ModularFilesDirUnreadable, dir)
+				assert.ErrorIs(t, err, errors.ModuleFilesDirUnreadable, dir)
 			}
 		}
 	})

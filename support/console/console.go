@@ -13,7 +13,7 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/modular"
+	"github.com/goravel/framework/module"
 	"github.com/goravel/framework/packages/paths"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/color"
@@ -51,25 +51,25 @@ func Module(ctx console.Context) (name, dir string, err error) {
 		return "", "", nil
 	}
 
-	registry := modular.Default()
+	registry := module.Default()
 	if registry == nil {
-		return "", "", errors.ModularRegistryNotSet
+		return "", "", errors.ModuleRegistryNotSet
 	}
 
-	module, ok := registry.Find(name)
+	found, ok := registry.Find(name)
 	if !ok {
-		module, ok = registry.Find(str.Of(name).Kebab().String())
+		found, ok = registry.Find(str.Of(name).Kebab().String())
 	}
 	if !ok {
-		return "", "", errors.ModularModuleNotFound.Args(name)
+		return "", "", errors.ModuleNotFound.Args(name)
 	}
-	if !modular.Local(module) {
-		return "", "", errors.ModularModuleNotLocal.Args(module.Name())
+	if !module.Local(found) {
+		return "", "", errors.ModuleNotLocal.Args(found.Name())
 	}
 
-	dir, _ = registry.Path(module.Name())
+	dir, _ = registry.Path(found.Name())
 
-	return module.Name(), dir, nil
+	return found.Name(), dir, nil
 }
 
 // ModuleRoot moves root into the module directory, dropping the application

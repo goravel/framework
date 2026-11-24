@@ -13,7 +13,7 @@ import (
 	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksmodule "github.com/goravel/framework/mocks/module"
-	"github.com/goravel/framework/modular"
+	"github.com/goravel/framework/module"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/path"
 )
@@ -72,7 +72,7 @@ func (s *PublishCommandTestSuite) TestSignature() {
 }
 
 func (s *PublishCommandTestSuite) TestRegistryNotSet() {
-	s.Equal(errors.ModularRegistryNotSet, NewPublishCommand(nil).Handle(mocksconsole.NewContext(s.T())))
+	s.Equal(errors.ModuleRegistryNotSet, NewPublishCommand(nil).Handle(mocksconsole.NewContext(s.T())))
 }
 
 func (s *PublishCommandTestSuite) TestPublishesThirdPartyModules() {
@@ -94,10 +94,10 @@ func (s *PublishCommandTestSuite) TestPublishesThirdPartyModules() {
 	s.NoError(s.command(registry).Handle(ctx))
 
 	s.True(file.Exists("modules/billing/resources/js/app.js"))
-	s.True(file.Contain("modules/billing/"+modular.PublishMarker, `"version": "v1.3.0"`))
+	s.True(file.Contain("modules/billing/"+module.PublishMarker, `"version": "v1.3.0"`))
 	s.False(file.Exists("modules/plain"))
 	s.False(file.Exists("modules/local"))
-	s.Equal(modular.PublishPublished, modular.PublishState(billing, modular.Dependency{Path: "github.com/goravel/framework", Version: "v1.3.0", Sum: "h1:abc"}, path.Base("modules", "billing")))
+	s.Equal(module.PublishPublished, module.PublishState(billing, module.Dependency{Path: "github.com/goravel/framework", Version: "v1.3.0", Sum: "h1:abc"}, path.Base("modules", "billing")))
 
 	ctx = mocksconsole.NewContext(s.T())
 	ctx.EXPECT().Option("module").Return("").Once()
@@ -135,7 +135,7 @@ func (s *PublishCommandTestSuite) TestModuleOption() {
 	ctx = mocksconsole.NewContext(s.T())
 	ctx.EXPECT().Option("module").Return("shop").Once()
 
-	s.Equal(errors.ModularModuleNotFound.Args("shop"), s.command(registry).Handle(ctx))
+	s.Equal(errors.ModuleNotFound.Args("shop"), s.command(registry).Handle(ctx))
 }
 
 func (s *PublishCommandTestSuite) TestFailureDoesNotStopOtherModules() {
@@ -148,14 +148,14 @@ func (s *PublishCommandTestSuite) TestFailureDoesNotStopOtherModules() {
 	registry.EXPECT().Path("billing").Return("modules/billing", true)
 	registry.EXPECT().Path("shop").Return("modules/shop", true)
 
-	notOwned := errors.ModularPublishTargetNotOwned.Args("billing", "modules/billing", "github.com/goravel/framework")
+	notOwned := errors.ModulePublishTargetNotOwned.Args("billing", "modules/billing", "github.com/goravel/framework")
 	ctx := mocksconsole.NewContext(s.T())
 	ctx.EXPECT().Option("module").Return("").Once()
 	ctx.EXPECT().Error(notOwned.Error()).Once()
 	ctx.EXPECT().TwoColumnDetail("billing", statusFailed).Once()
 	ctx.EXPECT().TwoColumnDetail("shop", statusPublished).Once()
 
-	s.Equal(errors.ModularPublishFailed.Args(1, 2), s.command(registry).Handle(ctx))
+	s.Equal(errors.ModulePublishFailed.Args(1, 2), s.command(registry).Handle(ctx))
 	s.False(file.Exists("modules/billing/app.js"))
 	s.True(file.Exists("modules/shop/app.js"))
 }
@@ -163,7 +163,7 @@ func (s *PublishCommandTestSuite) TestFailureDoesNotStopOtherModules() {
 func (s *PublishCommandTestSuite) TestWriteFailure() {
 	billing := &sourcesModule{testModule{"billing"}, fstest.MapFS{"resources/js/app.js": {Data: []byte("app")}}}
 	// An earlier publish owns the directory, but a file is where resources/ goes.
-	s.Require().NoError(file.PutContent("modules/billing/"+modular.PublishMarker, `{"module": "github.com/goravel/framework"}`))
+	s.Require().NoError(file.PutContent("modules/billing/"+module.PublishMarker, `{"module": "github.com/goravel/framework"}`))
 	s.Require().NoError(file.PutContent("modules/billing/resources", "file"))
 
 	registry := mocksmodule.NewRegistry(s.T())
@@ -175,5 +175,5 @@ func (s *PublishCommandTestSuite) TestWriteFailure() {
 	ctx.EXPECT().Error(mock.Anything).Once()
 	ctx.EXPECT().TwoColumnDetail("billing", statusFailed).Once()
 
-	s.Equal(errors.ModularPublishFailed.Args(1, 1), s.command(registry).Handle(ctx))
+	s.Equal(errors.ModulePublishFailed.Args(1, 1), s.command(registry).Handle(ctx))
 }

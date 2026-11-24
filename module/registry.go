@@ -1,6 +1,6 @@
-// Package modular implements the module registry and module filesystems. It
+// Package module implements the module registry and module filesystems. It
 // imports no framework implementation, so foundation can import it.
-package modular
+package module
 
 import (
 	"regexp"
@@ -93,10 +93,10 @@ func (r *Registry) Register(modules ...contractsmodule.Module) error {
 
 		name := module.Name()
 		if !ValidName(name) {
-			return errors.ModularModuleNameNotKebab.Args(module, name)
+			return errors.ModuleNameNotKebab.Args(module, name)
 		}
 		if _, ok := r.byName[name]; ok {
-			return errors.ModularModuleDuplicate.Args(name)
+			return errors.ModuleDuplicate.Args(name)
 		}
 
 		dir, err := ResolvePath(module, r.mainModule, r.directory)
@@ -211,7 +211,7 @@ func (r *Registry) sort() ([]contractsmodule.Module, error) {
 		if state[name] == visiting {
 			cycle := stack[slices.Index(stack, name):]
 
-			return errors.ModularDependencyCycle.Args(strings.Join(cycle, " -> "))
+			return errors.ModuleDependencyCycle.Args(strings.Join(cycle, " -> "))
 		}
 		state[name] = visiting
 
@@ -219,7 +219,7 @@ func (r *Registry) sort() ([]contractsmodule.Module, error) {
 			for _, dependency := range dependent.Dependencies() {
 				required, ok := r.byName[dependency]
 				if !ok {
-					return errors.ModularDependencyMissing.Args(name, dependency)
+					return errors.ModuleDependencyMissing.Args(name, dependency)
 				}
 				if err := visit(required); err != nil {
 					return err

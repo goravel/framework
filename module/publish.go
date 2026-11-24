@@ -1,4 +1,4 @@
-package modular
+package module
 
 import (
 	"bytes"
@@ -117,7 +117,7 @@ func Publish(module contractsmodule.Module, dependency Dependency, dir string) (
 		owned = false
 	}
 	if !owned && !emptyDir(dir) {
-		return false, errors.ModularPublishTargetNotOwned.Args(module.Name(), dir, dependency.Path)
+		return false, errors.ModulePublishTargetNotOwned.Args(module.Name(), dir, dependency.Path)
 	}
 
 	names := slices.Sorted(maps.Keys(files))

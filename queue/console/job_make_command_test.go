@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	mocksconsole "github.com/goravel/framework/mocks/console"
-	"github.com/goravel/framework/modular"
+	"github.com/goravel/framework/module"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
@@ -385,9 +385,9 @@ func (r *blogModule) Path() string { return "modules/blog" }
 
 // useBlogModule registers blogModule with a module.go on disk for the test.
 func useBlogModule(t *testing.T) {
-	registry := modular.NewRegistry("")
+	registry := module.NewRegistry("")
 	assert.NoError(t, registry.Register(&blogModule{}))
-	modular.SetDefault(registry)
+	module.SetDefault(registry)
 	assert.NoError(t, file.PutContent("modules/blog/module.go", `package blog
 
 type Module struct{}
@@ -398,7 +398,7 @@ func (m *Module) Name() string {
 `))
 
 	t.Cleanup(func() {
-		modular.SetDefault(nil)
+		module.SetDefault(nil)
 		assert.NoError(t, file.Remove("modules"))
 	})
 }
