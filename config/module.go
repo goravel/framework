@@ -7,15 +7,15 @@ import (
 	"github.com/goravel/framework/contracts/config"
 )
 
-var _ config.ModuleConfig = &Module{}
+var _ config.Repository = &Module{}
 
 // Module is the config of one module: every path is read under "modules.<name>".
 type Module struct {
-	config config.Config
+	config config.Repository
 	name   string
 }
 
-func NewModule(config config.Config, name string) *Module {
+func NewModule(config config.Repository, name string) *Module {
 	return &Module{config: config, name: name}
 }
 

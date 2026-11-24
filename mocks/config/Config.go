@@ -1102,19 +1102,19 @@ func (_c *Config_Has_Call) RunAndReturn(run func(string) bool) *Config_Has_Call 
 }
 
 // Module provides a mock function with given fields: name
-func (_m *Config) Module(name string) config.ModuleConfig {
+func (_m *Config) Module(name string) config.Repository {
 	ret := _m.Called(name)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Module")
 	}
 
-	var r0 config.ModuleConfig
-	if rf, ok := ret.Get(0).(func(string) config.ModuleConfig); ok {
+	var r0 config.Repository
+	if rf, ok := ret.Get(0).(func(string) config.Repository); ok {
 		r0 = rf(name)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(config.ModuleConfig)
+			r0 = ret.Get(0).(config.Repository)
 		}
 	}
 
@@ -1139,12 +1139,12 @@ func (_c *Config_Module_Call) Run(run func(name string)) *Config_Module_Call {
 	return _c
 }
 
-func (_c *Config_Module_Call) Return(_a0 config.ModuleConfig) *Config_Module_Call {
+func (_c *Config_Module_Call) Return(_a0 config.Repository) *Config_Module_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Config_Module_Call) RunAndReturn(run func(string) config.ModuleConfig) *Config_Module_Call {
+func (_c *Config_Module_Call) RunAndReturn(run func(string) config.Repository) *Config_Module_Call {
 	_c.Call.Return(run)
 	return _c
 }

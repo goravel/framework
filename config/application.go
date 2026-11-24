@@ -279,7 +279,7 @@ func (app *Application) UnmarshalKey(key string, rawVal any) error {
 }
 
 // Module returns the config of the given module, its paths are read under "modules.<name>".
-func (app *Application) Module(name string) config.ModuleConfig {
+func (app *Application) Module(name string) config.Repository {
 	return NewModule(app, name)
 }
 
