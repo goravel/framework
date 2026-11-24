@@ -228,6 +228,8 @@ var (
 	ModuleFilesDirUnreadable     = New("module %s: %s directory %q is not a readable directory: %v").SetModule(ModuleModule)
 	ModuleFrontendFilesRequired  = New("module %s: Frontend() of a third-party module needs Files.FS, its entries and aliases are published from it").SetModule(ModuleModule)
 	ModuleImportConflict         = New("module %s: package name %q is already used by the import %q in bootstrap/modules.go, choose another name").SetModule(ModuleModule)
+	ModuleInstallFailed          = New("module:install: %s failed: %v").SetModule(ModuleModule)
+	ModuleInstallPackageEmpty    = New("the package can't be empty, e.g. module:install github.com/acme/billing").SetModule(ModuleModule)
 	ModuleNameEmpty              = New("the module name cannot be empty").SetModule(ModuleModule)
 	ModuleNameForbidden          = New("module name %q is reserved, Go cannot import a package named %q").SetModule(ModuleModule)
 	ModuleNameInvalid            = New("module name %q is invalid, use letters, digits and dashes, starting with a letter").SetModule(ModuleModule)

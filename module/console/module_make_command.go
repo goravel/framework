@@ -239,6 +239,11 @@ func (r *moduleStubs) importSpec() string {
 // registered reports whether bootstrap/modules.go lists the module, and fails
 // when another import there already uses the module's package name.
 func (r *moduleStubs) registered() (bool, error) {
+	return moduleRegistered(r.module, r.pkg, r.kebab)
+}
+
+// moduleRegistered is registered for the package pkg at importPath; label names it in the error.
+func moduleRegistered(importPath, pkg, label string) (bool, error) {
 	modulesFile := path.Bootstrap("modules.go")
 	source := modify.ModulesStub()
 	if file.Exists(modulesFile) {
@@ -256,19 +261,19 @@ func (r *moduleStubs) registered() (bool, error) {
 
 	imported := false
 	for _, spec := range parsed.Imports {
-		importPath := strings.Trim(spec.Path.Value, "`\"")
-		name := importPath[strings.LastIndex(importPath, "/")+1:]
+		current := strings.Trim(spec.Path.Value, "`\"")
+		name := current[strings.LastIndex(current, "/")+1:]
 		if spec.Name != nil {
 			name = spec.Name.Name
 		}
-		if importPath == r.module {
+		if current == importPath {
 			imported = true
-		} else if name == r.pkg {
-			return false, errors.ModuleImportConflict.Args(r.kebab, r.pkg, importPath)
+		} else if name == pkg {
+			return false, errors.ModuleImportConflict.Args(label, pkg, current)
 		}
 	}
 
-	return imported && strings.Contains(source, "&"+r.pkg+".Module{}"), nil
+	return imported && strings.Contains(source, "&"+pkg+".Module{}"), nil
 }
 
 // files returns the module files by slash path relative to the module directory.
