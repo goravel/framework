@@ -4,6 +4,7 @@ import (
 	"sort"
 	"strings"
 
+	foundationconsole "github.com/goravel/framework/foundation/console"
 	"github.com/goravel/framework/packages"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/path"
@@ -173,23 +174,12 @@ func (m *Module) Static() map[string]module.Files {
 `)
 }
 
+// ServiceProvider is the make:provider stub, as providers.ServiceProvider.
 func (r *moduleStubs) ServiceProvider() string {
-	return `package providers
-
-import (
-	"github.com/goravel/framework/contracts/foundation"
-)
-
-type ServiceProvider struct{}
-
-// Register service bindings here.
-func (r *ServiceProvider) Register(app foundation.Application) {
-}
-
-// Boot runs after all service providers have been registered.
-func (r *ServiceProvider) Boot(app foundation.Application) {
-}
-`
+	return strings.NewReplacer(
+		"DummyServiceProvider", "ServiceProvider",
+		"DummyPackage", "providers",
+	).Replace(foundationconsole.Stubs{}.ServiceProvider())
 }
 
 func (r *moduleStubs) WebRoutes() string {
