@@ -695,6 +695,7 @@ func (r *Application) configureMigrations() {
 	if r.builder.migrations != nil {
 		migrations = r.builder.migrations()
 	}
+	appMigrations := len(migrations)
 	for _, module := range frameworkmodule.Providing[contractsmodule.ProvidesMigrations](r.modules) {
 		migrations = append(migrations, module.Migrations()...)
 	}
@@ -704,6 +705,14 @@ func (r *Application) configureMigrations() {
 		if schemaFacade == nil {
 			color.Errorln("Schema facade not found, please install it first: ./artisan package:install Schema")
 		} else {
+			// The migrator runs in registration order: with module migrations, order the
+			// merged list by signature (timestamp). Equal signatures keep module order.
+			if len(migrations) > appMigrations {
+				migrations = slices.Clone(migrations)
+				slices.SortStableFunc(migrations, func(a, b schema.Migration) int {
+					return strings.Compare(a.Signature(), b.Signature())
+				})
+			}
 			schemaFacade.Register(migrations)
 		}
 	}

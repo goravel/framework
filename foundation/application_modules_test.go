@@ -227,6 +227,13 @@ func (s *ApplicationTestSuite) withModules(builder *ApplicationBuilder, modules 
 	s.app.configureModules()
 }
 
+type fakeMigration struct {
+	schema.Migration
+	signature string
+}
+
+func (f *fakeMigration) Signature() string { return f.signature }
+
 type fakeMiddleware struct{ signature string }
 
 func (m *fakeMiddleware) Handle(contractshttp.Context) {}
@@ -374,7 +381,7 @@ func (s *ApplicationTestSuite) TestRegisterModuleResources() {
 func (s *ApplicationTestSuite) TestConfigureRegistrations_Modules() {
 	s.SetupTest()
 	appCommand, moduleCommand := &fakeCommand{signature: "app:run"}, &fakeCommand{signature: "blog:run"}
-	appMigration, moduleMigration := mocksschema.NewMigration(s.T()), mocksschema.NewMigration(s.T())
+	appMigration, moduleMigration := &fakeMigration{signature: "20240101000000_app"}, &fakeMigration{signature: "20240102000000_blog"}
 	appSeeder, moduleSeeder := mocksseeder.NewSeeder(s.T()), mocksseeder.NewSeeder(s.T())
 	appJob, moduleJob := mocksqueue.NewJob(s.T()), mocksqueue.NewJob(s.T())
 	appEvent, moduleEvent := mocksschedule.NewEvent(s.T()), mocksschedule.NewEvent(s.T())
@@ -415,6 +422,65 @@ func (s *ApplicationTestSuite) TestConfigureRegistrations_Modules() {
 	s.app.configureSeeders()
 	s.app.configureJobs()
 	s.app.configureSchedule()
+}
+
+func (s *ApplicationTestSuite) TestConfigureMigrations_ModulesSortedBySignature() {
+	register := func(app []schema.Migration, modules ...contractsmodule.Module) []schema.Migration {
+		s.SetupTest()
+		var registered []schema.Migration
+		mockSchema := mocksschema.NewSchema(s.T())
+		mockSchema.EXPECT().Register(mock.Anything).Run(func(migrations []schema.Migration) {
+			registered = migrations
+		}).Return().Once()
+		s.app.Instance(binding.Schema, mockSchema)
+
+		builder := NewApplicationBuilder(s.app)
+		if app != nil {
+			builder.migrations = func() []schema.Migration { return app }
+		}
+		s.withModules(builder, modules...)
+		s.app.configureMigrations()
+
+		return registered
+	}
+	migration := func(signature string) *fakeMigration { return &fakeMigration{signature: signature} }
+
+	s.Run("merged with the application's by signature", func() {
+		appOld, appNew := migration("20240101000000_create_users_table"), migration("20240301000000_add_author_to_posts_table")
+		blog, shop := migration("20240201000000_create_posts_table"), migration("20240115000000_create_products_table")
+		app := make([]schema.Migration, 0, 8)
+		app = append(app, appNew, appOld)
+
+		registered := register(app,
+			&richModule{testModule: testModule{"blog"}, migrations: []schema.Migration{blog}},
+			&richModule{testModule: testModule{"shop"}, migrations: []schema.Migration{shop}},
+		)
+
+		s.Equal([]schema.Migration{appOld, shop, blog, appNew}, registered)
+		s.Equal([]schema.Migration{appNew, appOld}, app, "the application's slice is not reordered")
+	})
+
+	s.Run("equal signatures keep the application first, then module order", func() {
+		app, blog, shop := migration("20240101000000_a"), migration("20240101000000_a"), migration("20240101000000_a")
+
+		registered := register([]schema.Migration{app},
+			&richModule{testModule: testModule{"blog"}, migrations: []schema.Migration{blog}},
+			&richModule{testModule: testModule{"shop"}, migrations: []schema.Migration{shop}},
+		)
+
+		s.Require().Len(registered, 3)
+		s.Same(app, registered[0])
+		s.Same(blog, registered[1])
+		s.Same(shop, registered[2])
+	})
+
+	s.Run("without module migrations the application's order is kept", func() {
+		appNew, appOld := migration("20240301000000_b"), migration("20240101000000_a")
+
+		registered := register([]schema.Migration{appNew, appOld}, &testModule{"plain"})
+
+		s.Equal([]schema.Migration{appNew, appOld}, registered)
+	})
 }
 
 func (s *ApplicationTestSuite) TestConfigureRegistrations_ModulesOnly() {
