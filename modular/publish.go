@@ -19,7 +19,7 @@ import (
 
 const (
 	// PublishMarker records what module:publish wrote into a module directory.
-	PublishMarker = ".modular-publish.json"
+	PublishMarker = ".publish.json"
 	// PublishNotice tells readers the directory is generated.
 	PublishNotice = "DO-NOT-EDIT.md"
 
