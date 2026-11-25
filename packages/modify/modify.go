@@ -30,20 +30,198 @@ func Env(file, key, value string) modify.Apply {
 			return err
 		}
 
-		lines := strings.Split(string(content), "\n")
+		document := parseEnvFile(string(content))
 		updated := false
-		for i, line := range lines {
-			if strings.HasPrefix(line, key+"=") {
-				lines[i] = key + "=" + value
-				updated = true
+		for i := len(document.keys) - 1; i >= 0; i-- {
+			entry := document.keys[i]
+			if entry.key != key {
+				continue
 			}
+
+			document.lines[entry.line] = entry.prefix + key + "=" + value
+			if entry.end != entry.line {
+				document.lines = append(document.lines[:entry.line+1], document.lines[entry.end+1:]...)
+			}
+			updated = true
 		}
 		if !updated {
-			lines = append(lines, key+"="+value)
+			document.lines = append(document.lines, key+"="+value)
 		}
 
-		return os.WriteFile(file, []byte(strings.Join(lines, "\n")), 0o644)
+		return os.WriteFile(file, []byte(document.String()), 0o644)
 	})
+}
+
+func EnvWhenMissing(file, key, value string) modify.Apply {
+	return Call(func(_ []modify.Option) error {
+		content, err := os.ReadFile(file)
+		if err != nil {
+			return err
+		}
+
+		document := parseEnvFile(string(content))
+		for _, entry := range document.keys {
+			if entry.key == key {
+				return nil
+			}
+		}
+
+		document.lines = append(document.lines, key+"="+value)
+
+		return os.WriteFile(file, []byte(document.String()), 0o644)
+	})
+}
+
+// envKey is an assignment found in an environment file: the lines it spans,
+// its key, and the "export " prefix to keep when the line is rewritten. A
+// quoted value may span several lines.
+type envKey struct {
+	line   int
+	end    int
+	key    string
+	prefix string
+}
+
+// envLine parses one line of an environment file with the grammar the dotenv
+// parser accepts: an optional "export" prefix, a key, then "=" or ": " and the
+// value. Commented and empty lines are not assignments.
+func envLine(line string) (key, prefix, value string, ok bool) {
+	line = strings.TrimSpace(line)
+	if line == "" || strings.HasPrefix(line, "#") {
+		return "", "", "", false
+	}
+
+	if rest, found := strings.CutPrefix(line, "export"); found && rest != "" && isEnvSpace(rest[0]) {
+		line = strings.TrimLeft(rest, " \t")
+		prefix = "export "
+	}
+
+	index := strings.IndexAny(line, "=:")
+	if index == -1 {
+		return "", "", "", false
+	}
+	if line[index] == ':' && (index+1 == len(line) || !isEnvSpace(line[index+1])) {
+		// The dotenv parser requires whitespace after a colon.
+		return "", "", "", false
+	}
+
+	return strings.TrimSpace(line[:index]), prefix, line[index+1:], true
+}
+
+func isEnvSpace(char byte) bool {
+	return char == ' ' || char == '\t'
+}
+
+// envFile is an environment file split into lines, with the byte order mark,
+// the line ending and the final newline it uses, so a write keeps the shape of
+// the file.
+type envFile struct {
+	bom      bool
+	lines    []string
+	keys     []envKey
+	eol      string
+	trailing bool
+}
+
+// parseEnvFile splits content into lines and records the assignments outside
+// quoted values, so a rewrite touches only real assignments.
+func parseEnvFile(content string) envFile {
+	document := envFile{eol: "\n"}
+	if strings.HasPrefix(content, "\ufeff") {
+		document.bom = true
+		content = strings.TrimPrefix(content, "\ufeff")
+	}
+	if strings.Contains(content, "\r\n") {
+		document.eol = "\r\n"
+	}
+
+	if content == "" {
+		document.trailing = true
+
+		return document
+	}
+
+	if strings.HasSuffix(content, "\n") {
+		document.trailing = true
+		content = strings.TrimSuffix(content, "\n")
+	}
+
+	document.lines = strings.Split(content, "\n")
+	for i, line := range document.lines {
+		document.lines[i] = strings.TrimSuffix(line, "\r")
+	}
+	document.keys = envKeys(document.lines)
+
+	return document
+}
+
+// envKeys returns the assignments of an environment file. A quoted value may
+// span several lines, and a line that looks like an assignment inside it is not
+// one.
+func envKeys(lines []string) []envKey {
+	var keys []envKey
+	var quote byte
+
+	for i, line := range lines {
+		if quote != 0 {
+			if closesEnvQuote(line, quote) {
+				quote = 0
+				keys[len(keys)-1].end = i
+			}
+
+			continue
+		}
+
+		key, prefix, value, ok := envLine(line)
+		if !ok {
+			continue
+		}
+
+		keys = append(keys, envKey{line: i, end: i, key: key, prefix: prefix})
+
+		if next, open := opensEnvQuote(value); open {
+			quote = next
+		}
+	}
+
+	return keys
+}
+
+// opensEnvQuote reports whether value starts a quoted value that does not close
+// on the same line.
+func opensEnvQuote(value string) (byte, bool) {
+	value = strings.TrimSpace(value)
+	if value == "" || (value[0] != '"' && value[0] != '\'') {
+		return 0, false
+	}
+
+	return value[0], !closesEnvQuote(value[1:], value[0])
+}
+
+// closesEnvQuote reports whether line holds the closing quote, ignoring an
+// escaped one.
+func closesEnvQuote(line string, quote byte) bool {
+	for i := 0; i < len(line); i++ {
+		if line[i] == quote && (i == 0 || line[i-1] != '\\') {
+			return true
+		}
+	}
+
+	return false
+}
+
+// String rebuilds the file with the byte order mark, line ending and final
+// newline it had.
+func (f envFile) String() string {
+	content := strings.Join(f.lines, f.eol)
+	if f.trailing {
+		content += f.eol
+	}
+	if f.bom {
+		content = "\ufeff" + content
+	}
+
+	return content
 }
 
 func RegisterMigration(pkg, migration string) modify.Apply {
@@ -109,6 +287,26 @@ func WhenDriver(driver string, applies ...modify.Apply) modify.Apply {
 	}, applies...)
 }
 
+func WhenFileExists(file string, applies ...modify.Apply) modify.Apply {
+	return Call(func(options []modify.Option) error {
+		if _, err := os.Stat(file); err != nil {
+			if os.IsNotExist(err) {
+				return nil
+			}
+
+			return err
+		}
+
+		for _, apply := range applies {
+			if err := apply.Apply(options...); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+}
+
 func WhenFacade(facade string, applies ...modify.Apply) modify.Apply {
 	return When(func(options map[string]any) bool {
 		return facade == options["facade"]
@@ -118,12 +316,6 @@ func WhenFacade(facade string, applies ...modify.Apply) modify.Apply {
 func WhenFileContains(file, content string, applies ...modify.Apply) modify.Apply {
 	return When(func(_ map[string]any) bool {
 		return supportfile.Contains(file, content)
-	}, applies...)
-}
-
-func WhenFileExists(file string, applies ...modify.Apply) modify.Apply {
-	return When(func(_ map[string]any) bool {
-		return supportfile.Exists(file)
 	}, applies...)
 }
 

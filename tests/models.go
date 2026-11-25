@@ -437,6 +437,15 @@ type Book struct {
 	Author *Author
 }
 
+// Node is a tree whose relations are on its own table.
+type Node struct {
+	Model
+	ParentID *uint   `db:"parent_id"`
+	Name     string  `db:"name"`
+	Parent   *Node   `gorm:"foreignKey:ParentID"`
+	Children []*Node `gorm:"foreignKey:ParentID"`
+}
+
 type Author struct {
 	Model
 	BookID uint   `db:"book_id"`

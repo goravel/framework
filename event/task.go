@@ -7,6 +7,7 @@ import (
 
 type Task struct {
 	event     event.Event
+	fake      *Fake
 	queue     contractsqueue.Queue
 	err       error
 	args      []event.Arg
@@ -52,7 +53,7 @@ func (receiver *Task) Dispatch() error {
 		return err
 	}
 
-	errs := dispatch(receiver.queue, receiver.event, name, receiver.listeners, receiver.args, dispatchModeTask)
+	errs := dispatch(receiver.queue, receiver.fake, receiver.event, name, receiver.listeners, receiver.args, dispatchModeTask)
 	if len(errs) > 0 {
 		return errs[0]
 	}

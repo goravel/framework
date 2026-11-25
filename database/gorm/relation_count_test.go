@@ -58,6 +58,28 @@ func TestWithCount(t *testing.T) {
 			expectSql: "SELECT id, name, (SELECT COUNT(*) FROM `relation_books` WHERE `relation_books`.`relation_user_id` = `relation_users`.`id`) AS `books_count` FROM `relation_users`",
 		},
 		{
+			name:      "WithCount on a table alias",
+			query:     func() contractsorm.Query { return users().Table("relation_users AS u").WithCount("Books") },
+			expectSql: "SELECT `u`.*, (SELECT COUNT(*) FROM `relation_books` WHERE `relation_books`.`relation_user_id` = `u`.`id`) AS `books_count` FROM relation_users AS u",
+		},
+		{
+			name: "WithCount keeps an OR of the callback with the parent condition",
+			query: func() contractsorm.Query {
+				return users().WithCount("Books as published_count", func(query contractsorm.Query) contractsorm.Query {
+					return query.Where("published", true).OrWhere("featured", true)
+				})
+			},
+			expectSql:  "SELECT `relation_users`.*, (SELECT COUNT(*) FROM `relation_books` WHERE (`published` = ? OR `featured` = ?) AND `relation_books`.`relation_user_id` = `relation_users`.`id`) AS `published_count` FROM `relation_users`",
+			expectVars: []any{true, true},
+		},
+		{
+			name: "WithCount with a self referencing relation",
+			query: func() contractsorm.Query {
+				return NewQuery(context.Background(), nil, contractsdatabase.Config{}, db, nil, nil, nil, nil, nil).Model(&relationMixedNode{}).WithCount("Children")
+			},
+			expectSql: "SELECT `Nodes`.*, (SELECT COUNT(*) FROM `Nodes` AS `children_Nodes` WHERE `children_Nodes`.`parent_id` = `Nodes`.`id`) AS `children_count` FROM `Nodes`",
+		},
+		{
 			name:       "WithCount keeps the raw select",
 			query:      func() contractsorm.Query { return users().SelectRaw("id, ? AS kind", "user").WithCount("Books") },
 			expectSql:  "SELECT id, ? AS kind, (SELECT COUNT(*) FROM `relation_books` WHERE `relation_books`.`relation_user_id` = `relation_users`.`id`) AS `books_count` FROM `relation_users`",
@@ -120,11 +142,8 @@ func TestWithCount(t *testing.T) {
 			statement := query.instance.Find(dest).Statement
 			assert.NoError(t, statement.Error)
 			assert.Equal(t, test.expectSql, statement.SQL.String())
-			if len(test.expectVars) == 0 {
-				assert.Empty(t, statement.Vars)
-			} else {
-				assert.Equal(t, test.expectVars, statement.Vars)
-			}
+			// Copied so a statement without bindings compares as nil.
+			assert.Equal(t, test.expectVars, append([]any(nil), statement.Vars...))
 		})
 	}
 }

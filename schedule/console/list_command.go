@@ -7,17 +7,14 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/robfig/cron/v3"
-
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/schedule"
+	"github.com/goravel/framework/schedule/utils"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/debug"
 	"github.com/goravel/framework/support/str"
 )
-
-var cronParser = cron.NewParser(cron.SecondOptional | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
 
 type List struct {
 	schedule schedule.Schedule
@@ -60,7 +57,7 @@ func (r *List) Handle(ctx console.Context) error {
 		expression := event.GetCron()
 		ctx.TwoColumnDetail(
 			fmt.Sprintf("<fg=yellow>%s</>  %s", r.formatCronExpression(expression, spacing), r.getCommand(event)),
-			fmt.Sprintf("<fg=7472a3>Next Due: %s</>", r.getNextDueDate(expression)),
+			fmt.Sprintf("<fg=7472a3>Next Due: %s</>", r.getNextDueDate(utils.CronSpec(event))),
 		)
 	}
 	return nil
@@ -128,7 +125,7 @@ func (r *List) getCronExpressionSpacing(events []schedule.Event) []int {
 }
 
 func (r *List) getNextDueDate(cronSpec string) string {
-	if sch, err := cronParser.Parse(cronSpec); err == nil {
+	if sch, err := utils.CronParser.Parse(cronSpec); err == nil {
 		now := carbon.Now()
 		if next := sch.Next(now.StdTime()); !next.IsZero() {
 			return carbon.FromStdTime(next).DiffForHumans(now)

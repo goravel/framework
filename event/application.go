@@ -13,6 +13,7 @@ var _ event.Instance = (*Application)(nil)
 
 type Application struct {
 	events     map[event.Event][]event.Listener
+	fake       *Fake
 	listeners  map[string][]*listener
 	queue      contractsqueue.Queue
 	registered map[string]any
@@ -21,11 +22,21 @@ type Application struct {
 }
 
 func NewApplication(queue contractsqueue.Queue) *Application {
-	return &Application{
+	app := &Application{
 		listeners:  make(map[string][]*listener),
 		queue:      queue,
 		registered: make(map[string]any),
 	}
+	app.fake = newFake(app)
+
+	return app
+}
+
+// Fake starts faking the events, see event.Instance for the accepted forms.
+func (app *Application) Fake(events ...any) event.Fake {
+	app.fake.enable(events)
+
+	return app.fake
 }
 
 // GetEvents returns a copy of the events registered through Register.
@@ -61,7 +72,11 @@ func (app *Application) Job(e event.Event, args []event.Arg) event.Task {
 		return newFailedTask(err)
 	}
 
-	return newTask(app.queue, args, e, app.prepareListeners(name))
+	// The fake is consulted when the task is dispatched, like Dispatch does.
+	task := newTask(app.queue, args, e, app.prepareListeners(name))
+	task.fake = app.fake
+
+	return task
 }
 
 // Register registers events and their listeners, the listeners are also

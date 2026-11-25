@@ -13,12 +13,8 @@ import (
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/schedule"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/schedule/utils"
 	"github.com/goravel/framework/support/carbon"
-)
-
-// cronParser parses the cron expressions of the events, with optional seconds.
-var cronParser = cron.NewParser(
-	cron.SecondOptional | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor,
 )
 
 // maxDelayIfStillRunning bounds how long Run waits for a previous run of
@@ -42,7 +38,7 @@ func NewApplication(artisan console.Artisan, cache cache.Cache, log log.Log, deb
 	return &Application{
 		artisan:  artisan,
 		cache:    cache,
-		cron:     cron.New(cron.WithParser(cronParser), cron.WithLogger(NewLogger(log, debug)), cron.WithLocation(location)),
+		cron:     cron.New(cron.WithParser(utils.CronParser), cron.WithLogger(NewLogger(log, debug)), cron.WithLocation(location)),
 		location: location,
 		log:      log,
 		debug:    debug,
@@ -141,7 +137,7 @@ func (app *Application) addEvents(events []schedule.Event) {
 		} else if event.GetSkipIfStillRunning() {
 			chain = cron.NewChain(cron.SkipIfStillRunning(NewLogger(app.log, app.debug)), cron.Recover(NewLogger(app.log, app.debug)))
 		}
-		_, err := app.cron.AddJob(event.GetCron(), chain.Then(app.getJob(event)))
+		_, err := app.cron.AddJob(utils.CronSpec(event), chain.Then(app.getJob(event)))
 
 		if err != nil {
 			app.log.Errorf("add schedule error: %v", err)
@@ -181,9 +177,33 @@ func (app *Application) runJob(event schedule.Event) {
 	}
 }
 
-// execute runs the command or the callback of the event. Work and Run each
-// report its failure their own way.
-func (app *Application) execute(event schedule.Event) error {
+// execute runs the command or the callback of the event between its hooks:
+// the Before callbacks, then the event, then the After, OnSuccess and
+// OnFailure callbacks in the order they were registered, as Laravel does.
+// Work and Run each report its failure their own way, so a panic of the
+// event is passed on once the hooks ran.
+func (app *Application) execute(event schedule.Event) (err error) {
+	for _, callback := range event.GetBeforeCallbacks() {
+		callback()
+	}
+
+	defer func() {
+		recovered := recover()
+
+		failure := err
+		if recovered != nil {
+			failure = errors.ScheduleEventPanicked.Args(eventName(event), recovered)
+		}
+
+		for _, callback := range event.GetAfterCallbacks() {
+			app.runAfterCallback(event, callback, failure)
+		}
+
+		if recovered != nil {
+			panic(recovered)
+		}
+	}()
+
 	if event.GetCommand() != "" {
 		return app.artisan.Call(event.GetCommand())
 	}
@@ -195,9 +215,9 @@ func (app *Application) execute(event schedule.Event) error {
 
 // isDue reports whether the event fires within the minute starting at tick.
 func (app *Application) isDue(event schedule.Event, tick time.Time) bool {
-	spec, err := cronParser.Parse(event.GetCron())
+	spec, err := utils.CronParser.Parse(utils.CronSpec(event))
 	if err != nil {
-		// Register only keeps events with a valid expression.
+		// Register only keeps events with a valid expression and timezone.
 		return false
 	}
 
@@ -245,10 +265,7 @@ func (app *Application) acquireOverlapLock(ctx context.Context, event schedule.E
 
 // runEvent runs the event and logs its failure, with the stack for a panic.
 func (app *Application) runEvent(event schedule.Event) (err error) {
-	name := event.GetName()
-	if name == "" {
-		name = event.GetCron()
-	}
+	name := eventName(event)
 
 	defer func() {
 		if recovered := recover(); recovered != nil {
@@ -263,4 +280,27 @@ func (app *Application) runEvent(event schedule.Event) (err error) {
 	}
 
 	return err
+}
+
+// runAfterCallback runs a callback registered with After, OnSuccess or
+// OnFailure. A callback that panics is logged, so the others still run and
+// the event keeps its own result.
+func (app *Application) runAfterCallback(event schedule.Event, callback func(err error), failure error) {
+	defer func() {
+		if recovered := recover(); recovered != nil && app.log != nil {
+			app.log.Error(errors.ScheduleEventHookPanicked.Args(eventName(event), recovered))
+		}
+	}()
+
+	callback(failure)
+}
+
+// eventName returns the name of the event, or its cron expression when it
+// has none.
+func eventName(event schedule.Event) string {
+	if name := event.GetName(); name != "" {
+		return name
+	}
+
+	return event.GetCron()
 }
