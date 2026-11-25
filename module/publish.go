@@ -219,7 +219,7 @@ func publishFiles(module contractsmodule.Module, dependency Dependency) (map[str
 // directory of its package on disk, FrontendDirectory when empty. The files are nil
 // when the module declares no frontend.
 func FrontendSources(module contractsmodule.Module, frontend contractsmodule.Frontend) (fs.FS, string, error) {
-	name, given := module.Name(), frontend.Files.Directory()
+	name, given := module.Name(), frontend.Files.Subdirectory()
 	if frontend.Files.FS() != nil {
 		fsys, _, err := Files(name, "Frontend()", "", frontend.Files)
 		prefix, _ := path.CleanRelative(given)

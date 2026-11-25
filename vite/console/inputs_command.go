@@ -235,9 +235,9 @@ func (r *InputsCommand) moduleInputs() ([]ModuleInputs, error) {
 // copies of a third-party module. The check is nil for files of the project.
 func frontendFiles(module contractsmodule.Module, dir string, frontend contractsmodule.Frontend, thirdParty bool) (string, func(entry string) bool, error) {
 	files := frontend.Files
-	sub, inside := path.CleanRelative(files.Directory())
+	sub, inside := path.CleanRelative(files.Subdirectory())
 	if !inside {
-		return "", nil, errors.ModuleFilesDirInvalid.Args(module.Name(), "Frontend()", files.Directory())
+		return "", nil, errors.ModuleFilesDirInvalid.Args(module.Name(), "Frontend()", files.Subdirectory())
 	}
 	root := stdpath.Join(dir, sub)
 	if files.FS() == nil && !thirdParty {

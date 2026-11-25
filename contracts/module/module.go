@@ -150,8 +150,8 @@ func (r Files) FS() fs.FS {
 	return r.fsys
 }
 
-// Directory is what Sub set.
-func (r Files) Directory() string {
+// Subdirectory is what Sub set.
+func (r Files) Subdirectory() string {
 	return r.sub
 }
 

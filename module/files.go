@@ -20,7 +20,7 @@ const (
 // ok is false for the zero value, a directory without an FS is an error. Without a Dir the
 // files start at defaultDir, or at the root of the FS when there is none.
 func Files(name, capability, defaultDir string, files contractsmodule.Files) (fsys fs.FS, ok bool, err error) {
-	given := files.Directory()
+	given := files.Subdirectory()
 	if files.FS() == nil {
 		if given == "" {
 			return nil, false, nil
