@@ -27,9 +27,9 @@ type Located interface {
 	Path() string
 }
 
-// Dependent names the modules that come before this one. Other modules keep
+// Dependencies names the modules that come before this one. Other modules keep
 // the order they are registered in.
-type Dependent interface {
+type Dependencies interface {
 	Dependencies() []string
 }
 

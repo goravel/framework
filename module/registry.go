@@ -215,7 +215,7 @@ func (r *Registry) sort() ([]contractsmodule.Module, error) {
 		}
 		state[name] = visiting
 
-		if dependent, ok := module.(contractsmodule.Dependent); ok {
+		if dependent, ok := module.(contractsmodule.Dependencies); ok {
 			for _, dependency := range dependent.Dependencies() {
 				required, ok := r.byName[dependency]
 				if !ok {

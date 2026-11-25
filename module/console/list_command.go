@@ -122,7 +122,7 @@ func (r *ListCommand) describe(module contractsmodule.Module, info *debug.BuildI
 	if dependency, ok := frameworkmodule.DependencyOf(module, info); ok {
 		described.Publish = frameworkmodule.PublishState(module, dependency, path.Base(filepath.FromSlash(dir)))
 	}
-	if p, ok := module.(contractsmodule.Dependent); ok {
+	if p, ok := module.(contractsmodule.Dependencies); ok {
 		described.Dependencies = append(described.Dependencies, p.Dependencies()...)
 	}
 	if p, ok := module.(contractsmodule.ProvidesFrontend); ok {
