@@ -131,6 +131,20 @@ func (r *relationConnectionBook) Connection() string {
 	return "other"
 }
 
+type relationSameConnectionBook struct {
+	ID             uint
+	RelationUserID uint
+}
+
+func (r *relationSameConnectionBook) Connection() string {
+	return "main"
+}
+
+type relationSameConnectionUser struct {
+	ID    uint
+	Books []*relationSameConnectionBook `gorm:"foreignKey:RelationUserID"`
+}
+
 type relationConnectionUser struct {
 	ID    uint
 	Books []*relationConnectionBook `gorm:"foreignKey:RelationUserID"`
@@ -372,6 +386,16 @@ func TestRelationExistence(t *testing.T) {
 			expectVars: []any{int64(2)},
 		},
 		{
+			name: "WhereHas keeps an OR that is the only condition of the callback",
+			query: func() contractsorm.Query {
+				return users().WhereHas("Books", func(query contractsorm.Query) contractsorm.Query {
+					return query.OrWhere("published", true)
+				})
+			},
+			expectSql:  "SELECT * FROM `relation_users` WHERE EXISTS (SELECT 1 FROM `relation_books` WHERE `published` = ? AND `relation_books`.`relation_user_id` = `relation_users`.`id`)",
+			expectVars: []any{true},
+		},
+		{
 			name: "WhereHas groups an OR of the callback",
 			query: func() contractsorm.Query {
 				return users().WhereHas("Books", func(query contractsorm.Query) contractsorm.Query {
@@ -451,6 +475,14 @@ func TestRelationExistence(t *testing.T) {
 			expectError: errors.OrmQueryInvalidRelationCount,
 		},
 		{
+			name: "Has with a related model on the same connection",
+			query: func() contractsorm.Query {
+				return NewQuery(context.Background(), nil, contractsdatabase.Config{Connection: "main"}, db, nil, nil, nil, nil, nil).
+					Model(&relationSameConnectionUser{}).Has("Books")
+			},
+			expectSql: "SELECT * FROM `relation_same_connection_users` WHERE EXISTS (SELECT 1 FROM `relation_same_connection_books` WHERE `relation_same_connection_books`.`relation_user_id` = `relation_same_connection_users`.`id`)",
+		},
+		{
 			name:        "Has with a related model on another connection",
 			query:       func() contractsorm.Query { return newQuery().Model(&relationConnectionUser{}).Has("Books") },
 			expectError: errors.OrmQueryRelationDifferentConnection.Args("Books", "other", ""),
@@ -479,6 +511,11 @@ func TestRelationExistence(t *testing.T) {
 			name:        "Has without a model",
 			query:       func() contractsorm.Query { return newQuery().Table("users").Has("Books") },
 			dest:        &[]map[string]any{},
+			expectError: errors.OrmQueryRelationWithoutModel.Args("Books"),
+		},
+		{
+			name:        "Has without a model or destination",
+			query:       func() contractsorm.Query { return newQuery().Has("Books") },
 			expectError: errors.OrmQueryRelationWithoutModel.Args("Books"),
 		},
 		{
@@ -534,11 +571,8 @@ func TestRelationExistence(t *testing.T) {
 			statement := query.instance.Find(dest).Statement
 			assert.NoError(t, statement.Error)
 			assert.Equal(t, test.expectSql, statement.SQL.String())
-			if len(test.expectVars) == 0 {
-				assert.Empty(t, statement.Vars)
-			} else {
-				assert.Equal(t, test.expectVars, statement.Vars)
-			}
+			// Copied so a statement without bindings compares as nil.
+			assert.Equal(t, test.expectVars, append([]any(nil), statement.Vars...))
 		})
 	}
 }

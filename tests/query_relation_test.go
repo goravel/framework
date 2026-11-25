@@ -72,6 +72,9 @@ func (s *QueryTestSuite) TestRelationExistence() {
 			s.Equal([]string{"has_user_books"}, names(users().WhereHas("Books", func(query contractsorm.Query) contractsorm.Query {
 				return query.Where("name", "has_book_draft").OrWhere("name", "has_book_missing")
 			})))
+			s.Equal([]string{"has_user_books"}, names(users().WhereHas("Books", func(query contractsorm.Query) contractsorm.Query {
+				return query.OrWhere("name", "has_book_draft")
+			})))
 
 			// A nested "doesn't have" negates the first relation: no book with an author.
 			s.Equal([]string{"has_user_without_books"}, names(users().DoesntHave("Books.Author")))

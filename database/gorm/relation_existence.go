@@ -139,8 +139,9 @@ func (r *Query) relationExistenceExpression(parent *schema.Schema, parentTable s
 		relatedTable = str.Of(name).Snake().String() + "_" + relatedTable
 		// The schema's table already carries the connection's prefix, so it
 		// is set as is rather than through Table, which would add it again.
-		// The alias is quoted, so a mixed case table keeps its case, and set
-		// as the statement's table, which Table can't parse from it.
+		// The alias is quoted so a mixed case table keeps its case. Table
+		// can't parse an alias from this expression, so the alias is set as
+		// the statement's table instead.
 		conditions := sub.conditions
 		conditions.table = &Table{
 			name:  r.quote(clause.Table{Name: relation.FieldSchema.Table}) + " AS " + r.quote(clause.Table{Name: relatedTable}),
@@ -225,7 +226,8 @@ func (r *Query) buildRelationConditions(sub *Query, model any) (*gormio.DB, erro
 
 // groupWhere puts the where conditions of the statement in parentheses when
 // one of them is joined with OR, so a condition added after them applies to
-// all of them.
+// all of them. A single OR condition is grouped too: GORM would otherwise
+// move it after the next condition.
 func groupWhere(db *gormio.DB) {
 	where, ok := db.Statement.Clauses["WHERE"]
 	if !ok {
@@ -233,7 +235,7 @@ func groupWhere(db *gormio.DB) {
 	}
 
 	expression, ok := where.Expression.(clause.Where)
-	if !ok || len(expression.Exprs) < 2 {
+	if !ok || len(expression.Exprs) == 0 {
 		return
 	}
 
@@ -260,7 +262,7 @@ func (r *Query) constrainToParent(db *gormio.DB, relation *schema.Relationship, 
 		for _, reference := range relation.References {
 			switch {
 			case reference.OwnPrimaryKey:
-				db = db.Where(columnsEqual(pivot, reference.ForeignKey.DBName, parentTable, reference.PrimaryKey.DBName))
+				db = db.Where(columnsEqualCondition(pivot, reference.ForeignKey.DBName, parentTable, reference.PrimaryKey.DBName))
 			case reference.PrimaryKey != nil:
 				on = append(on, r.quote(clause.Column{Table: pivot, Name: reference.ForeignKey.DBName})+" = "+r.quote(clause.Column{Table: relatedTable, Name: reference.PrimaryKey.DBName}))
 			default:
@@ -278,10 +280,10 @@ func (r *Query) constrainToParent(db *gormio.DB, relation *schema.Relationship, 
 			db = db.Where(clause.Eq{Column: clause.Column{Table: relatedTable, Name: reference.ForeignKey.DBName}, Value: reference.PrimaryValue})
 		case reference.OwnPrimaryKey:
 			// Has one and has many: the related records point to the parent.
-			db = db.Where(columnsEqual(relatedTable, reference.ForeignKey.DBName, parentTable, reference.PrimaryKey.DBName))
+			db = db.Where(columnsEqualCondition(relatedTable, reference.ForeignKey.DBName, parentTable, reference.PrimaryKey.DBName))
 		default:
 			// Belongs to: the parent points to the related record.
-			db = db.Where(columnsEqual(relatedTable, reference.PrimaryKey.DBName, parentTable, reference.ForeignKey.DBName))
+			db = db.Where(columnsEqualCondition(relatedTable, reference.PrimaryKey.DBName, parentTable, reference.ForeignKey.DBName))
 		}
 	}
 
@@ -316,7 +318,7 @@ func (r *Query) quote(field any) string {
 	return r.instance.Statement.Quote(field)
 }
 
-func columnsEqual(table, column, otherTable, otherColumn string) clause.Eq {
+func columnsEqualCondition(table, column, otherTable, otherColumn string) clause.Eq {
 	return clause.Eq{
 		Column: clause.Column{Table: table, Name: column},
 		Value:  clause.Column{Table: otherTable, Name: otherColumn},
