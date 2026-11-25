@@ -70,6 +70,9 @@ type Query interface {
 	Distinct(columns ...string) Query
 	// DoesntExist determines if no rows exist for the current query.
 	DoesntExist() (bool, error)
+	// DoesntHave adds a condition that the model has no related records through the relation.
+	// See Has for the relation names.
+	DoesntHave(relation string) Query
 	// Driver gets the driver for the query.
 	Driver() string
 	// Exec executes raw sql
@@ -104,6 +107,11 @@ type Query interface {
 	Group(column string) Query
 	// GroupBy specifies the group method on the query.
 	GroupBy(column ...string) Query
+	// Has adds a condition that the model has related records through the relation: the Go field name of a
+	// relationship, as in With, e.g. "Books", or a nested path such as "Books.Author". By default at least one
+	// related record is required; an operator and a count compare their number instead, e.g. Has("Books", ">=", 3).
+	// The model of the query, from Model or the destination of Find, First or similar, must be set.
+	Has(relation string, args ...any) Query
 	// Having specifying HAVING conditions for the query.
 	Having(query any, args ...any) Query
 	// Increment increments the given column's value by the given amount (default 1).
@@ -150,12 +158,20 @@ type Query interface {
 	OrderByDesc(column string) Query
 	// OrderByRaw specifies the order should be raw. It is put into the SQL as is, so never pass user input to it.
 	OrderByRaw(raw string) Query
+	// OrDoesntHave adds an "or" condition that the model has no related records through the relation.
+	OrDoesntHave(relation string) Query
+	// OrHas adds an "or" condition that the model has related records through the relation, like Has.
+	OrHas(relation string, args ...any) Query
 	// OrWhere add an "or where" clause to the query.
 	OrWhere(query any, args ...any) Query
 	// OrWhereBetween adds an "or where column between x and y" clause to the query.
 	OrWhereBetween(column string, x, y any) Query
 	// OrWhereColumn adds an "or where" clause comparing two columns to the query.
 	OrWhereColumn(column1 string, column2 ...string) Query
+	// OrWhereDoesntHave adds an "or" condition that the model has no related records matching the callback.
+	OrWhereDoesntHave(relation string, callback func(Query) Query) Query
+	// OrWhereHas adds an "or" condition that the model has related records matching the callback, like WhereHas.
+	OrWhereHas(relation string, callback func(Query) Query, args ...any) Query
 	// OrWhereIn adds an "or where column in" clause to the query.
 	OrWhereIn(column string, values []any) Query
 	// OrWhereJsonContains adds an "or where JSON contains" clause to the query.
@@ -244,8 +260,15 @@ type Query interface {
 	WhereBetween(column string, x, y any) Query
 	// WhereColumn adds a "where" clause comparing two columns to the query.
 	WhereColumn(column1 string, column2 ...string) Query
+	// WhereDoesntHave adds a condition that the model has no related records through the relation matching the
+	// callback, which receives a query on the related model.
+	WhereDoesntHave(relation string, callback func(Query) Query) Query
 	// WhereExists adds an exists clause to the query.
 	WhereExists(query func() Query) Query
+	// WhereHas adds a condition that the model has related records through the relation matching the callback,
+	// which receives a query on the related model. See Has for the relation names and the optional operator and
+	// count, e.g. WhereHas("Books", func(q Query) Query { return q.Where("published", true) }, ">=", 2).
+	WhereHas(relation string, callback func(Query) Query, args ...any) Query
 	// WhereIn adds a "where column in" clause to the query.
 	WhereIn(column string, values []any) Query
 	// WhereJsonContains add a "where JSON contains" clause to the query.
