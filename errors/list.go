@@ -226,7 +226,7 @@ var (
 	ModuleExists                  = New("module %s already exists at %s, use --force to overwrite it").SetModule(ModuleModule)
 	ModuleFilesDirInvalid         = New("module %s: %s directory %q must be a relative path inside the module").SetModule(ModuleModule)
 	ModuleFilesDirUnreadable      = New("module %s: %s directory %q is not a readable directory: %v").SetModule(ModuleModule)
-	ModuleFilesFSRequired         = New("module %s: %s directory %q needs an FS, e.g. module.FS(embedded).Dir(dir): files are not read from disk").SetModule(ModuleModule)
+	ModuleFilesFSRequired         = New("module %s: %s directory %q needs an FS, e.g. module.FS(embedded).Sub(dir): files are not read from disk").SetModule(ModuleModule)
 	ModuleFrontendSourcesNotFound = New("module %s: the frontend files of %s were not found on disk: %v; the module can embed them with module.FS in Frontend().Files").SetModule(ModuleModule)
 	ModuleImportConflict          = New("module %s: package name %q is already used by the import %q in bootstrap/modules.go, choose another name").SetModule(ModuleModule)
 	ModuleInstallFailed           = New("module:install: %s failed: %v").SetModule(ModuleModule)

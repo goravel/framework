@@ -36,8 +36,8 @@ func TestFiles(t *testing.T) {
 
 	t.Run("filesystem", func(t *testing.T) {
 		assert.Equal(t, "default", index(t, contractsmodule.FS(embedded)), "the default directory")
-		assert.Equal(t, "sub", index(t, contractsmodule.FS(embedded).Dir("templates")))
-		assert.Equal(t, "root", index(t, contractsmodule.FS(embedded).Dir(".")))
+		assert.Equal(t, "sub", index(t, contractsmodule.FS(embedded).Sub("templates")))
+		assert.Equal(t, "root", index(t, contractsmodule.FS(embedded).Sub(".")))
 
 		_, ok, err := resolve(contractsmodule.FS(fstest.MapFS{"index.tmpl": {Data: []byte("root")}}))
 		assert.False(t, ok)
@@ -78,7 +78,7 @@ func TestFiles(t *testing.T) {
 
 	t.Run("directory outside", func(t *testing.T) {
 		for _, dir := range []string{"..", "../shop", "resources/../../x", "/etc"} {
-			_, ok, err := resolve(contractsmodule.FS(embedded).Dir(dir))
+			_, ok, err := resolve(contractsmodule.FS(embedded).Sub(dir))
 			assert.False(t, ok)
 			assert.ErrorIs(t, err, errors.ModuleFilesDirInvalid, dir)
 		}
@@ -86,7 +86,7 @@ func TestFiles(t *testing.T) {
 
 	t.Run("missing directory or a file", func(t *testing.T) {
 		for _, dir := range []string{"missing", "resources/views/index.tmpl"} {
-			_, ok, err := resolve(contractsmodule.FS(embedded).Dir(dir))
+			_, ok, err := resolve(contractsmodule.FS(embedded).Sub(dir))
 			assert.False(t, ok)
 			assert.ErrorIs(t, err, errors.ModuleFilesDirUnreadable, dir)
 		}

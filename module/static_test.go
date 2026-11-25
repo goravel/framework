@@ -19,7 +19,7 @@ func TestStaticFS(t *testing.T) {
 		"resources/secret.txt": {Data: []byte("secret")},
 	}
 
-	fsys, ok, err := StaticFS("blog", contractsmodule.FS(embedded).Dir("public"))
+	fsys, ok, err := StaticFS("blog", contractsmodule.FS(embedded).Sub("public"))
 	require.NoError(t, err)
 	require.True(t, ok)
 
@@ -38,7 +38,7 @@ func TestStaticFS(t *testing.T) {
 	_, err = fsys.Open("../resources/secret.txt")
 	assert.Error(t, err)
 
-	_, ok, err = StaticFS("blog", contractsmodule.FS(embedded).Dir("../shop"))
+	_, ok, err = StaticFS("blog", contractsmodule.FS(embedded).Sub("../shop"))
 	assert.False(t, ok)
 	assert.ErrorIs(t, err, errors.ModuleFilesDirInvalid)
 

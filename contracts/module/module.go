@@ -123,11 +123,11 @@ type ProvidesStatic interface {
 // Views, translations and static files must be embedded; only Frontend.Files can be on disk.
 type Files struct {
 	fsys fs.FS
-	dir  string
+	sub  string
 }
 
 // FS is the files of fsys, starting at the capability's default directory. Chain
-// Dir to name another one: module.FS(public).Dir("public").
+// Sub to name another one: module.FS(public).Sub("public").
 func FS(fsys fs.FS) Files {
 	return Files{fsys: fsys}
 }
@@ -135,12 +135,12 @@ func FS(fsys fs.FS) Files {
 // Path is a directory on disk, relative to the module directory. Only
 // Frontend().Files reads from disk.
 func Path(dir string) Files {
-	return Files{dir: dir}
+	return Files{sub: dir}
 }
 
-// Dir names the directory: "" is the capability's default inside the FS, "." its root.
-func (r Files) Dir(dir string) Files {
-	r.dir = dir
+// Sub names the directory: "" is the capability's default inside the FS, "." its root.
+func (r Files) Sub(dir string) Files {
+	r.sub = dir
 
 	return r
 }
@@ -150,9 +150,9 @@ func (r Files) FS() fs.FS {
 	return r.fsys
 }
 
-// Directory is what Dir set.
+// Directory is what Sub set.
 func (r Files) Directory() string {
-	return r.dir
+	return r.sub
 }
 
 // Registry holds the application's modules. The framework registers them at boot.

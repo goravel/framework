@@ -203,7 +203,7 @@ func (m *richModule) Views() contractsmodule.Files        { return filesOf(m.vie
 func filesOf(value any) contractsmodule.Files {
 	switch value := value.(type) {
 	case fs.FS:
-		return contractsmodule.FS(value).Dir(".")
+		return contractsmodule.FS(value).Sub(".")
 	case string:
 		return contractsmodule.Path(value)
 	}
@@ -615,7 +615,7 @@ func (m *staticModule) Static() map[string]contractsmodule.Files { return m.stat
 
 func (s *ApplicationTestSuite) TestConfigureRoutes_ModuleStatic() {
 	s.SetupTest()
-	public := contractsmodule.FS(fstest.MapFS{"public/robots.txt": {Data: []byte("x")}}).Dir("public")
+	public := contractsmodule.FS(fstest.MapFS{"public/robots.txt": {Data: []byte("x")}}).Sub("public")
 
 	mockRoute := mocksroute.NewRoute(s.T())
 	mockRoute.EXPECT().StaticFS("/blog/static", mock.MatchedBy(func(fsys http.FileSystem) bool {

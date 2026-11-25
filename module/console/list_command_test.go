@@ -25,7 +25,7 @@ func (m *richModule) Frontend() contractsmodule.Frontend {
 	}
 }
 func (m *richModule) Static() map[string]contractsmodule.Files {
-	return map[string]contractsmodule.Files{"/blog/static": contractsmodule.FS(fstest.MapFS{}).Dir("public"), "/blog/docs": contractsmodule.FS(fstest.MapFS{}).Dir("docs")}
+	return map[string]contractsmodule.Files{"/blog/static": contractsmodule.FS(fstest.MapFS{}).Sub("public"), "/blog/docs": contractsmodule.FS(fstest.MapFS{}).Sub("docs")}
 }
 
 type ListCommandTestSuite struct {

@@ -165,7 +165,7 @@ func (m *Module) Frontend() module.Frontend {
 	return module.Frontend{}
 }
 
-// Static serves files as-is under a URL prefix, e.g. "/DummyName/assets": module.FS(public).Dir("public").
+// Static serves files as-is under a URL prefix, e.g. "/DummyName/assets": module.FS(public).Sub("public").
 func (m *Module) Static() map[string]module.Files {
 	return map[string]module.Files{}
 }

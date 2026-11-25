@@ -45,7 +45,7 @@ type sourcesModule struct {
 }
 
 func (m *sourcesModule) Frontend() contractsmodule.Frontend {
-	return contractsmodule.Frontend{Files: contractsmodule.FS(m.sources).Dir(m.dir), Entries: m.entries}
+	return contractsmodule.Frontend{Files: contractsmodule.FS(m.sources).Sub(m.dir), Entries: m.entries}
 }
 
 // localBuild makes this package's test modules part of the application.
