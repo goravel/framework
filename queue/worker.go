@@ -21,6 +21,7 @@ import (
 )
 
 type Worker struct {
+	cache  cache.Cache
 	config queue.Config
 	db     db.DB
 	driver queue.Driver
@@ -57,6 +58,7 @@ func NewWorker(config queue.Config, cache cache.Cache, db db.DB, job queue.JobSt
 	shutdownCtx, shutdownCancel := context.WithCancel(context.Background())
 
 	return &Worker{
+		cache:  cache,
 		config: config,
 		db:     db,
 		driver: driver,
@@ -105,13 +107,22 @@ func (r *Worker) Shutdown() error {
 	return nil
 }
 
-func (r *Worker) call(task queue.Task, reservedJob queue.ReservedJob, queueName string) (released bool, err error) {
+// call runs the task, retrying it in memory or releasing it as needed. When
+// ctx is done before an attempt starts, it returns released=true and the
+// context error without running the attempt: the job did not finish and must
+// stay in the queue.
+func (r *Worker) call(ctx context.Context, task queue.Task, reservedJob queue.ReservedJob, queueName string, recordFailed func(models.FailedJob)) (released bool, err error) {
 	attempt := 1
 	r.printRunningLog(task)
 
 	for {
 		if !task.Delay.IsZero() {
-			time.Sleep(carbon.FromStdTime(task.Delay).DiffAbsInDuration())
+			if err := sleepContext(ctx, carbon.FromStdTime(task.Delay).DiffAbsInDuration()); err != nil {
+				return true, err
+			}
+		}
+		if err := ctx.Err(); err != nil {
+			return true, err
 		}
 
 		now := carbon.Now()
@@ -121,6 +132,12 @@ func (r *Worker) call(task queue.Task, reservedJob queue.ReservedJob, queueName 
 		if callErr == nil {
 			r.printSuccessLog(task, duration)
 			return false, nil
+		}
+
+		// The attempt may have failed because ctx was done while it ran; keep
+		// the job instead of retrying or failing it for good.
+		if err := ctx.Err(); err != nil {
+			return true, err
 		}
 
 		// The attempt count comes from the persisted reservation so the
@@ -141,8 +158,8 @@ func (r *Worker) call(task queue.Task, reservedJob queue.ReservedJob, queueName 
 		if shouldRetry {
 			if reservedJob == nil {
 				// Chain jobs have no queue entry to release; retry in-memory.
-				if delay > 0 {
-					time.Sleep(delay)
+				if err := sleepContext(ctx, delay); err != nil {
+					return true, err
 				}
 				attempt++
 				continue
@@ -162,18 +179,18 @@ func (r *Worker) call(task queue.Task, reservedJob queue.ReservedJob, queueName 
 			return false, errors.QueueFailedToConvertTaskToJson.Args(jsonErr, task)
 		}
 
-		r.failedJobChan <- models.FailedJob{
+		recordFailed(models.FailedJob{
 			UUID:       task.UUID,
 			Connection: r.connection,
 			Queue:      queueName,
 			Payload:    payload,
 			Exception:  callErr.Error(),
 			FailedAt:   carbon.NewDateTime(carbon.Now()),
-		}
+		})
 
 		r.printFailedLog(task, duration)
 
-		return false, errors.QueueFailedToCallJob
+		return false, errors.Join(errors.QueueFailedToCallJob, callErr)
 	}
 }
 
@@ -286,7 +303,7 @@ func (r *Worker) runWithPop(queueNames []string) error {
 				}
 
 				currentDelay = 1 * time.Second
-				r.processReservedJob(reservedJob, queueName)
+				_, _ = r.processReservedJob(context.Background(), reservedJob, queueName, r.sendFailedJob)
 			}
 		})
 	}
@@ -348,34 +365,47 @@ func (r *Worker) runWithReceive(receiver queue.DriverWithReceive, queueName stri
 		var wg sync.WaitGroup
 		for _, reservedJob := range jobs {
 			wg.Go(func() {
-				r.processReservedJob(reservedJob, queueName)
+				_, _ = r.processReservedJob(context.Background(), reservedJob, queueName, r.sendFailedJob)
 			})
 		}
 		wg.Wait()
 	}
 }
 
-func (r *Worker) processReservedJob(reservedJob queue.ReservedJob, queueName string) {
+// Process implements queue.Worker.Process. Unlike the worker loop, it records
+// a failed job synchronously, before returning, under the first queue name of
+// the worker's queue list.
+func (r *Worker) Process(ctx context.Context, reservedJob queue.ReservedJob) (released bool, err error) {
+	return r.processReservedJob(ctx, reservedJob, splitQueueNames(r.queue)[0], r.logFailedJob)
+}
+
+// sendFailedJob hands a failed job to the recorder goroutine, which only
+// drains the channel while Run is active.
+func (r *Worker) sendFailedJob(job models.FailedJob) {
+	r.failedJobChan <- job
+}
+
+func (r *Worker) processReservedJob(ctx context.Context, reservedJob queue.ReservedJob, queueName string, recordFailed func(models.FailedJob)) (released bool, err error) {
 	task := reservedJob.Task()
 
-	released, err := r.call(task, reservedJob, queueName)
+	released, err = r.call(ctx, task, reservedJob, queueName, recordFailed)
 	if released {
 		// The job is back in the queue for a later retry (or was left
-		// reserved for retry_after expiry recovery); its row must remain
-		// and no failed job is recorded.
-		return
+		// reserved for retry_after expiry recovery, or ctx was done before
+		// it ran); its row must remain and no failed job is recorded.
+		return true, err
 	}
+
+	// The job succeeded or failed for good, so a unique job can be pushed
+	// again. As in Laravel, the jobs chained to it don't hold its lock.
+	releaseUniqueLock(r.cache, task)
 
 	if err != nil {
 		if !errors.Is(err, errors.QueueFailedToCallJob) {
 			r.log.Error(err)
 		}
 
-		if err = reservedJob.Delete(); err != nil {
-			r.log.Error(errors.QueueFailedToDeleteReservedJob.Args(reservedJob, err))
-		}
-
-		return
+		return false, r.deleteReservedJob(reservedJob, err)
 	}
 
 	if len(task.Chain) > 0 {
@@ -386,12 +416,25 @@ func (r *Worker) processReservedJob(reservedJob queue.ReservedJob, queueName str
 				Chain:    task.Chain[i+1:],
 			}
 
-			// Chain jobs never release: reservedJob is nil, so retries stay
-			// in-memory inside call. If a future change ever breaks that
-			// invariant, stop the chain rather than silently continuing to
-			// the next job — hence the explicit released check (which also
-			// prevents the final Delete below from orphaning chain jobs).
-			released, err = r.call(chainTask, nil, queueName)
+			// Chain jobs never release through the queue: reservedJob is nil,
+			// so retries stay in-memory inside call. A done context still
+			// returns released=true, which stops the chain here (and keeps the
+			// final Delete below from orphaning the rest of the chain).
+			// A unique job in the chain takes its lock as if it were dispatched,
+			// as Laravel dispatches each chained job. While another copy holds
+			// it, the job is skipped with the rest of the chain, which it
+			// carries.
+			acquired, lockErr := acquireUniqueLock(r.cache, chainTask)
+			if lockErr != nil {
+				r.log.Error(lockErr)
+				break
+			}
+			if !acquired {
+				break
+			}
+
+			released, err = r.call(ctx, chainTask, nil, queueName, recordFailed)
+			releaseUniqueLock(r.cache, chainTask)
 			if released {
 				break
 			}
@@ -405,14 +448,45 @@ func (r *Worker) processReservedJob(reservedJob queue.ReservedJob, queueName str
 	}
 
 	// If a chain job was released (defensive path only — chain jobs never
-	// release today), its row is still pending in the queue, so the main
-	// job row must remain too. Deleting it here would orphan the chain job.
+	// release through the queue), or ctx was done before the chain finished,
+	// the main job row must remain so the job is delivered again. Deleting it
+	// here would lose the rest of the chain.
 	if released {
-		return
+		return true, err
 	}
 
+	return false, r.deleteReservedJob(reservedJob, err)
+}
+
+// deleteReservedJob deletes the finished reserved job and returns jobErr,
+// joined with the delete failure (which is also logged) so Process callers
+// can tell that the job is still in the queue.
+func (r *Worker) deleteReservedJob(reservedJob queue.ReservedJob, jobErr error) error {
 	if err := reservedJob.Delete(); err != nil {
-		r.log.Error(errors.QueueFailedToDeleteReservedJob.Args(reservedJob, err))
+		deleteErr := errors.QueueFailedToDeleteReservedJob.Args(reservedJob, err)
+		r.log.Error(deleteErr)
+
+		return errors.Join(jobErr, deleteErr)
+	}
+
+	return jobErr
+}
+
+// sleepContext waits for d, returning early with the context error when ctx
+// is done first.
+func sleepContext(ctx context.Context, d time.Duration) error {
+	if d <= 0 {
+		return ctx.Err()
+	}
+
+	timer := time.NewTimer(d)
+	defer timer.Stop()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
 	}
 }
 

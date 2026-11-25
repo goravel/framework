@@ -222,6 +222,53 @@ func (provider *ServiceProvider) Boot(app foundation.Application) {}
 			},
 		},
 		{
+			name: "add config (exist keeps decorations)",
+			content: `package config
+
+import (
+	"github.com/goravel/framework/facades"
+)
+
+func init() {
+	config := facades.Config()
+	config.Add("session", map[string]any{
+		// Default Session Driver
+		"default": "file",
+	})
+}`,
+			matchers: match.Config("session"),
+			actions: []modify.Action{
+				AddConfig("default", `config.Env("SESSION_DRIVER", "file")`),
+			},
+			assert: func(content string) {
+				s.Contains(content, "// Default Session Driver\n\t\t\"default\": config.Env(\"SESSION_DRIVER\", \"file\"),")
+			},
+		},
+		{
+			name: "add config (annotation replaces decorations)",
+			content: `package config
+
+import (
+	"github.com/goravel/framework/facades"
+)
+
+func init() {
+	config := facades.Config()
+	config.Add("session", map[string]any{
+		// Default Session Driver
+		"default": "file",
+	})
+}`,
+			matchers: match.Config("session"),
+			actions: []modify.Action{
+				AddConfig("default", `config.Env("SESSION_DRIVER", "file")`, "New annotation"),
+			},
+			assert: func(content string) {
+				s.Contains(content, "// New annotation\n\t\t\"default\": config.Env(\"SESSION_DRIVER\", \"file\"),")
+				s.NotContains(content, "// Default Session Driver")
+			},
+		},
+		{
 			name:     "add config (to map)",
 			content:  s.config,
 			matchers: match.Config("app.exist"),

@@ -83,6 +83,63 @@ func (_c *Instance_Dispatch_Call) RunAndReturn(run func(interface{}, ...[]event.
 	return _c
 }
 
+// Fake provides a mock function with given fields: events
+func (_m *Instance) Fake(events ...interface{}) event.Fake {
+	var _ca []interface{}
+	_ca = append(_ca, events...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Fake")
+	}
+
+	var r0 event.Fake
+	if rf, ok := ret.Get(0).(func(...interface{}) event.Fake); ok {
+		r0 = rf(events...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(event.Fake)
+		}
+	}
+
+	return r0
+}
+
+// Instance_Fake_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Fake'
+type Instance_Fake_Call struct {
+	*mock.Call
+}
+
+// Fake is a helper method to define mock.On call
+//   - events ...interface{}
+func (_e *Instance_Expecter) Fake(events ...interface{}) *Instance_Fake_Call {
+	return &Instance_Fake_Call{Call: _e.mock.On("Fake",
+		append([]interface{}{}, events...)...)}
+}
+
+func (_c *Instance_Fake_Call) Run(run func(events ...interface{})) *Instance_Fake_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Instance_Fake_Call) Return(_a0 event.Fake) *Instance_Fake_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Instance_Fake_Call) RunAndReturn(run func(...interface{}) event.Fake) *Instance_Fake_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetEvents provides a mock function with no fields
 func (_m *Instance) GetEvents() map[event.Event][]event.Listener {
 	ret := _m.Called()

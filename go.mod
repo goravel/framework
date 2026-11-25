@@ -6,7 +6,7 @@ toolchain go1.27.0
 
 require (
 	github.com/Masterminds/squirrel v1.5.4
-	github.com/brianvoe/gofakeit/v7 v7.18.1
+	github.com/brianvoe/gofakeit/v7 v7.18.11
 	github.com/charmbracelet/huh v0.8.0
 	github.com/charmbracelet/huh/spinner v0.0.0-20260223110133-9dc45e34a40b
 	github.com/charmbracelet/lipgloss v1.1.0
@@ -48,9 +48,9 @@ require (
 	go.opentelemetry.io/otel/sdk/log v1.47.0
 	go.opentelemetry.io/otel/sdk/metric v1.47.0
 	go.opentelemetry.io/otel/trace v1.47.0
-	golang.org/x/crypto v0.58.0
-	golang.org/x/exp v0.0.0-20261106192419-47ce03d25ef0
-	google.golang.org/grpc v1.86.0-dev.0.20261104142343-cbf30c413099
+	golang.org/x/crypto v0.59.0
+	golang.org/x/exp v0.0.0-20261121134650-e1094eeca1b5
+	google.golang.org/grpc v1.86.0-dev.0.20261122155159-341c59808a9a
 	google.golang.org/protobuf v1.36.12
 	gorm.io/gorm v1.31.2
 	gorm.io/plugin/dbresolver v1.6.2
@@ -128,20 +128,20 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/xrash/smetrics v0.0.0-20261013231157-39c47d93efba
-	golang.org/x/mod v0.42.0 // indirect
-	golang.org/x/net v0.61.0 // indirect
-	golang.org/x/sync v0.24.0 // indirect
-	golang.org/x/sys v0.49.0
-	golang.org/x/term v0.47.0 // indirect
-	golang.org/x/text v0.43.0
-	golang.org/x/tools v0.52.1-0.20261106210606-4f7264d11672
+	golang.org/x/mod v0.43.0 // indirect
+	golang.org/x/net v0.63.0 // indirect
+	golang.org/x/sync v0.25.0 // indirect
+	golang.org/x/sys v0.50.0
+	golang.org/x/term v0.48.0 // indirect
+	golang.org/x/text v0.44.0
+	golang.org/x/tools v0.53.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260928230214-8a89bd6388cc // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 replace (
-	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20261104224025-d1e00e9f33ab
-	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20261104224025-d1e00e9f33ab
+	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20261118221215-c8830f628b3f
+	google.golang.org/genproto/googleapis/rpc => google.golang.org/genproto/googleapis/rpc v0.0.0-20261118221215-c8830f628b3f
 )
 
 tool github.com/vektra/mockery/v2

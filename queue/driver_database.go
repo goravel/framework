@@ -2,9 +2,7 @@ package queue
 
 import (
 	"fmt"
-	"time"
 
-	contractscache "github.com/goravel/framework/contracts/cache"
 	contractsdb "github.com/goravel/framework/contracts/database/db"
 	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	contractsqueue "github.com/goravel/framework/contracts/queue"
@@ -19,7 +17,6 @@ var (
 )
 
 type Database struct {
-	cache     contractscache.Cache
 	db        contractsdb.DB
 	jobStorer contractsqueue.JobStorer
 	json      contractsfoundation.Json
@@ -30,22 +27,16 @@ type Database struct {
 
 func NewDatabase(
 	config contractsqueue.Config,
-	cache contractscache.Cache,
 	db contractsdb.DB,
 	jobStorer contractsqueue.JobStorer,
 	json contractsfoundation.Json,
 	connection string) (*Database, error) {
-	if cache == nil {
-		return nil, errors.CacheFacadeNotSet.SetModule(errors.ModuleQueue)
-	}
-
 	dbConnection := config.GetString(fmt.Sprintf("queue.connections.%s.connection", connection))
 	if dbConnection == "" {
 		return nil, errors.QueueInvalidDatabaseConnection.Args(connection)
 	}
 
 	return &Database{
-		cache:     cache,
 		db:        db.Connection(dbConnection),
 		jobStorer: jobStorer,
 		json:      json,
@@ -59,16 +50,11 @@ func (r *Database) Driver() string {
 	return contractsqueue.DriverDatabase
 }
 
+// Pop reserves the next available job of the queue. Workers are serialized
+// by the row lock (FOR UPDATE) taken inside the transaction, so no cache lock
+// is needed.
 func (r *Database) Pop(queue string) (contractsqueue.ReservedJob, error) {
 	var job models.Job
-
-	cacheLock := fmt.Sprintf("goravel:queue-database-%s:lock", queue)
-	lock := r.cache.Lock(cacheLock, 1*time.Minute)
-	if !lock.Block(1 * time.Minute) {
-		return nil, errors.QueuePopIsLocked.Args(queue, cacheLock)
-	}
-
-	defer lock.Release()
 
 	if err := r.db.Transaction(func(tx contractsdb.Tx) error {
 		if err := tx.Table(r.jobsTable).LockForUpdate().Where("queue", queue).Where(func(q contractsdb.Query) contractsdb.Query {

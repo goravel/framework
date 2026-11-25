@@ -40,11 +40,12 @@ type ContextRequest interface {
 	Bind(obj any) error
 	// BindQuery bind query parameters to obj
 	BindQuery(obj any) error
-	// Route retrieves a route parameter from the request path (e.g., /users/{id}).
+	// Route retrieves a route parameter from the request path (e.g., /users/{id}) or the route's domain
+	// (e.g., {account}.example.com). A path parameter wins over a domain parameter with the same name.
 	Route(key string) string
-	// RouteInt retrieves a route parameter from the request path and attempts to parse it as an integer.
+	// RouteInt retrieves a route parameter, as Route does, and attempts to parse it as an integer.
 	RouteInt(key string) int
-	// RouteInt64 retrieves a route parameter from the request path and attempts to parse it as a 64-bit integer.
+	// RouteInt64 retrieves a route parameter, as Route does, and attempts to parse it as a 64-bit integer.
 	RouteInt64(key string) int64
 	// Query retrieves a query string parameter from the request (e.g., /users?id=1).
 	Query(key string, defaultValue ...string) string
@@ -129,9 +130,11 @@ type FormRequestWithPrepareForValidation interface {
 }
 
 type Info struct {
-	Handler            string      `json:"handler"`
-	Method             string      `json:"method"`
-	Name               string      `json:"name"`
-	Path               string      `json:"path"`
+	// Domain is the host the route is limited to, empty for any host.
+	Domain             string       `json:"domain,omitempty"`
+	Handler            string       `json:"handler"`
+	Method             string       `json:"method"`
+	Name               string       `json:"name"`
+	Path               string       `json:"path"`
 	ExcludedMiddleware []Middleware `json:"excluded_middleware,omitempty"`
 }

@@ -35,6 +35,10 @@ import (
 
 const Associations = clause.Associations
 
+// cursorBufferSize is the number of rows Cursor keeps buffered. Buffering lets the producer read the next
+// rows while the consumer scans the current one, instead of handing over one row at a time.
+const cursorBufferSize = 64
+
 type Query struct {
 	config            config.Config
 	ctx               context.Context
@@ -175,10 +179,10 @@ func (r *Query) Cursor() chan contractsdb.Row {
 		ctx = context.Background()
 	}
 
-	cursorChan := make(chan contractsdb.Row, 1)
-	// send blocks until the consumer receives the row or the query context is done. It allows the goroutine
-	// to exit (and release the rows and the connection) when the consumer stops ranging over the channel
-	// early (e.g. break) and cancels the context passed to WithContext.
+	cursorChan := make(chan contractsdb.Row, cursorBufferSize)
+	// send buffers the row and blocks only while the buffer is full, or until the query context is
+	// done. Filling the buffer without the consumer reading it stops the goroutine, releasing rows
+	// and connection when the context is canceled.
 	send := func(row contractsdb.Row) bool {
 		select {
 		case cursorChan <- row:
@@ -195,7 +199,8 @@ func (r *Query) Cursor() chan contractsdb.Row {
 		)
 		defer func() {
 			// The buffer keeps the error for a consumer that is still reading after the context is done,
-			// replacing a row that it has not received yet.
+			// replacing a row that it has not received yet. When the buffer is full, the send fails and
+			// one buffered row is dropped to make room.
 			if err != nil && !send(&Row{query: r, err: err}) {
 				select {
 				case <-cursorChan:
@@ -1694,9 +1699,16 @@ func (r *Query) buildSharedLock(db *gormio.DB) *gormio.DB {
 
 // buildSubquery builds the where clauses of a group and returns the errors raised inside it, so the caller can
 // report them instead of silently dropping the group.
-func (r *Query) buildSubquery(sub func(contractsorm.Query) contractsorm.Query) (*gormio.DB, error) {
+func (r *Query) buildSubquery(parent *gormio.DB, sub func(contractsorm.Query) contractsorm.Query) (*gormio.DB, error) {
 	db := r.instance.Session(&gormio.Session{NewDB: true, Initialized: true})
+	// The group also has the table of the query, or its alias, so the relation conditions inside it correlate
+	// to the table the group is embedded in. The group only contributes its where clauses, so the table isn't
+	// rendered twice.
+	db.Statement.Table = parent.Statement.Table
 	queryImpl := NewQuery(r.ctx, r.config, r.dbConfig, db, r.grammar, r.log, r.modelToObserver, nil, r.telemetryResolver)
+	// The group has the model of the query, so the relation conditions inside it resolve their relations.
+	queryImpl.conditions.model = r.conditions.model
+	queryImpl.conditions.dest = r.conditions.dest
 	query := sub(queryImpl)
 	var ok bool
 	if queryImpl, ok = query.(*Query); ok {
@@ -1714,6 +1726,9 @@ func (r *Query) buildTable(db *gormio.DB) *gormio.DB {
 	}
 
 	db = db.Table(r.conditions.table.name, r.conditions.table.args...)
+	if r.conditions.table.alias != "" {
+		db.Statement.Table = r.conditions.table.alias
+	}
 	r.conditions.table = nil
 
 	return db
@@ -1745,13 +1760,22 @@ func (r *Query) buildWhere(db *gormio.DB) *gormio.DB {
 		default:
 			switch query := item.Query.(type) {
 			case func(contractsorm.Query) contractsorm.Query:
-				sub, err := r.buildSubquery(query)
+				sub, err := r.buildSubquery(db, query)
 				if err != nil {
 					r.conditions.err = errors.Join(r.conditions.err, err)
 					continue
 				}
 
 				item.Query = sub
+				item.Args = nil
+			case relationExistence:
+				expression, err := r.buildRelationExistence(db, query)
+				if err != nil {
+					r.conditions.err = errors.Join(r.conditions.err, err)
+					continue
+				}
+
+				item.Query = expression
 				item.Args = nil
 			case string:
 				if strings.Contains(query, "->") {

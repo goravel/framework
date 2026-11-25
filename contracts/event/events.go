@@ -3,6 +3,12 @@ package event
 type Instance interface {
 	// Dispatch fires an event and calls all the listeners registered for it.
 	Dispatch(event any, args ...[]Arg) Result
+	// Fake records the dispatched events instead of calling their listeners,
+	// until Reset is called on the returned Fake. With no events every event
+	// is faked; otherwise only the given ones are, as names, instances or
+	// wildcard patterns, and the others still reach their listeners. Calling
+	// it again replaces the faked events and keeps the records.
+	Fake(events ...any) Fake
 	// Listen registers one or more listeners for one or more events.
 	// events can be a string, []string, Event, []Event or []any, and a wildcard
 	// pattern such as "user.*" matches every event sharing the prefix.

@@ -605,6 +605,126 @@ func TestEnv(t *testing.T) {
 			expected:  "APP_NAME=New\nAPP_ENV=local\nAPP_NAME=New",
 		},
 		{
+			name:      "update assignment with spaces around equals",
+			setupFile: true,
+			initial:   "APP_NAME = Old\nAPP_ENV=local",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_NAME=New\nAPP_ENV=local",
+		},
+		{
+			name:      "update export assignment and keep the prefix",
+			setupFile: true,
+			initial:   "export APP_NAME=Old\nAPP_ENV=local",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "export APP_NAME=New\nAPP_ENV=local",
+		},
+		{
+			name:      "update colon assignment",
+			setupFile: true,
+			initial:   "APP_NAME: Old\nAPP_ENV=local",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_NAME=New\nAPP_ENV=local",
+		},
+		{
+			name:      "keep the trailing newline",
+			setupFile: true,
+			initial:   "APP_NAME=Old\nAPP_ENV=local\n",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_NAME=New\nAPP_ENV=local\n",
+		},
+		{
+			name:      "replace in a CRLF file",
+			setupFile: true,
+			initial:   "APP_NAME=Old\r\nAPP_ENV=local\r\n",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_NAME=New\r\nAPP_ENV=local\r\n",
+		},
+		{
+			name:      "append to a CRLF file",
+			setupFile: true,
+			initial:   "APP_ENV=local\r\n",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_ENV=local\r\nAPP_NAME=New\r\n",
+		},
+		{
+			name:      "replace a quoted value",
+			setupFile: true,
+			initial:   "APP_NAME=\"Old\"\nAPP_ENV=local",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_NAME=New\nAPP_ENV=local",
+		},
+		{
+			name:      "replace an empty quoted value",
+			setupFile: true,
+			initial:   "APP_NAME=\"\"\nAPP_ENV=local",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_NAME=New\nAPP_ENV=local",
+		},
+		{
+			name:      "append when the key is inside a quoted value",
+			setupFile: true,
+			initial:   "OTHER=\"first\nAPP_NAME=Old\nlast\"\nAPP_ENV=local",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "OTHER=\"first\nAPP_NAME=Old\nlast\"\nAPP_ENV=local\nAPP_NAME=New",
+		},
+		{
+			name:      "replace a double-quoted value over several lines",
+			setupFile: true,
+			initial:   "APP_ENV=local\nAPP_NAME=\"old\ncontinued\"\nAPP_DEBUG=true\n",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_ENV=local\nAPP_NAME=New\nAPP_DEBUG=true\n",
+		},
+		{
+			name:      "replace a single-quoted value over several lines",
+			setupFile: true,
+			initial:   "APP_NAME='old\ncontinued'\n",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_NAME=New\n",
+		},
+		{
+			name:      "replace duplicate multiline assignments",
+			setupFile: true,
+			initial:   "APP_NAME=\"a\nb\"\nAPP_DEBUG=true\nAPP_NAME=\"c\nd\"\n",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_NAME=New\nAPP_DEBUG=true\nAPP_NAME=New\n",
+		},
+		{
+			name:      "keep the byte order mark",
+			setupFile: true,
+			initial:   "\ufeffAPP_NAME=Old\nAPP_ENV=local\n",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "\ufeffAPP_NAME=New\nAPP_ENV=local\n",
+		},
+		{
+			name:      "append to an empty file",
+			setupFile: true,
+			initial:   "",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_NAME=New\n",
+		},
+		{
+			name:      "ignore commented key and append",
+			setupFile: true,
+			initial:   "# APP_NAME=Old\n#APP_NAME=Legacy\nAPP_ENV=local",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "# APP_NAME=Old\n#APP_NAME=Legacy\nAPP_ENV=local\nAPP_NAME=New",
+		},
+		{
 			name:    "return error when env file not exists",
 			key:     "APP_NAME",
 			value:   "New",
@@ -632,6 +752,214 @@ func TestEnv(t *testing.T) {
 			assert.Equal(t, tt.expected, string(content))
 		})
 	}
+}
+
+func TestEnvWhenMissing(t *testing.T) {
+	tests := []struct {
+		name      string
+		setupFile bool
+		initial   string
+		key       string
+		value     string
+		expected  string
+		wantErr   bool
+	}{
+		{
+			name:      "append key when not exists",
+			setupFile: true,
+			initial:   "APP_ENV=local",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_ENV=local\nAPP_NAME=New",
+		},
+		{
+			name:      "keep existing assignment",
+			setupFile: true,
+			initial:   "APP_NAME=Old\nAPP_ENV=local",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_NAME=Old\nAPP_ENV=local",
+		},
+		{
+			name:      "keep existing assignment with spaces around equals",
+			setupFile: true,
+			initial:   "APP_NAME = Old\nAPP_ENV=local",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_NAME = Old\nAPP_ENV=local",
+		},
+		{
+			name:      "keep existing export assignment",
+			setupFile: true,
+			initial:   "export APP_NAME=Old\nAPP_ENV=local",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "export APP_NAME=Old\nAPP_ENV=local",
+		},
+		{
+			name:      "keep existing colon assignment",
+			setupFile: true,
+			initial:   "APP_NAME: Old\nAPP_ENV=local",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_NAME: Old\nAPP_ENV=local",
+		},
+		{
+			name:      "append after a trailing newline",
+			setupFile: true,
+			initial:   "APP_ENV=local\n",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_ENV=local\nAPP_NAME=New\n",
+		},
+		{
+			name:      "keep a CRLF file unchanged",
+			setupFile: true,
+			initial:   "APP_NAME=Old\r\nAPP_ENV=local\r\n",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_NAME=Old\r\nAPP_ENV=local\r\n",
+		},
+		{
+			name:      "append to a CRLF file",
+			setupFile: true,
+			initial:   "APP_ENV=local\r\n",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_ENV=local\r\nAPP_NAME=New\r\n",
+		},
+		{
+			name:      "keep an empty assignment",
+			setupFile: true,
+			initial:   "APP_NAME=\nAPP_ENV=local",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_NAME=\nAPP_ENV=local",
+		},
+		{
+			name:      "keep an empty quoted assignment",
+			setupFile: true,
+			initial:   "APP_NAME=\"\"\nAPP_ENV=local",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_NAME=\"\"\nAPP_ENV=local",
+		},
+		{
+			name:      "append when the key is inside a quoted value",
+			setupFile: true,
+			initial:   "OTHER=\"first\nAPP_NAME=Old\nlast\"\nAPP_ENV=local",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "OTHER=\"first\nAPP_NAME=Old\nlast\"\nAPP_ENV=local\nAPP_NAME=New",
+		},
+		{
+			name:      "keep an assignment after a quoted value",
+			setupFile: true,
+			initial:   "OTHER=\"first\nlast\"\nAPP_NAME=Old\n",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "OTHER=\"first\nlast\"\nAPP_NAME=Old\n",
+		},
+		{
+			name:      "keep a file with a byte order mark",
+			setupFile: true,
+			initial:   "\ufeffAPP_NAME=Old\n",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "\ufeffAPP_NAME=Old\n",
+		},
+		{
+			name:      "append to an empty file",
+			setupFile: true,
+			initial:   "",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_NAME=New\n",
+		},
+		{
+			name:      "append when a colon has no space after it",
+			setupFile: true,
+			initial:   "APP_NAME:Old\nAPP_ENV=local",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_NAME:Old\nAPP_ENV=local\nAPP_NAME=New",
+		},
+		{
+			name:      "append when a colon ends the line",
+			setupFile: true,
+			initial:   "APP_NAME:\nAPP_ENV=local",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_NAME:\nAPP_ENV=local\nAPP_NAME=New",
+		},
+		{
+			name:      "ignore commented key and append",
+			setupFile: true,
+			initial:   "# APP_NAME=Old\nAPP_ENV=local",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "# APP_NAME=Old\nAPP_ENV=local\nAPP_NAME=New",
+		},
+		{
+			name:      "append when a line has no assignment",
+			setupFile: true,
+			initial:   "APP_ENV=local\nINVALID LINE",
+			key:       "APP_NAME",
+			value:     "New",
+			expected:  "APP_ENV=local\nINVALID LINE\nAPP_NAME=New",
+		},
+		{
+			name:    "return error when env file not exists",
+			key:     "APP_NAME",
+			value:   "New",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			envPath := filepath.Join(t.TempDir(), ".env")
+			if tt.setupFile {
+				assert.NoError(t, os.WriteFile(envPath, []byte(tt.initial), 0o644))
+			}
+
+			err := EnvWhenMissing(envPath, tt.key, tt.value).Apply()
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.ErrorIs(t, err, os.ErrNotExist)
+				return
+			}
+
+			assert.NoError(t, err)
+			content, readErr := os.ReadFile(envPath)
+			assert.NoError(t, readErr)
+			assert.Equal(t, tt.expected, string(content))
+		})
+	}
+
+	t.Run("append once when applied twice", func(t *testing.T) {
+		envPath := filepath.Join(t.TempDir(), ".env")
+		assert.NoError(t, os.WriteFile(envPath, []byte("APP_ENV=local"), 0o644))
+
+		assert.NoError(t, EnvWhenMissing(envPath, "APP_NAME", "New").Apply())
+		assert.NoError(t, EnvWhenMissing(envPath, "APP_NAME", "New").Apply())
+
+		content, err := os.ReadFile(envPath)
+		assert.NoError(t, err)
+		assert.Equal(t, "APP_ENV=local\nAPP_NAME=New", string(content))
+	})
+
+	t.Run("keep CRLF when applied twice", func(t *testing.T) {
+		envPath := filepath.Join(t.TempDir(), ".env")
+		assert.NoError(t, os.WriteFile(envPath, []byte("APP_ENV=local\r\n"), 0o644))
+
+		assert.NoError(t, EnvWhenMissing(envPath, "APP_NAME", "New").Apply())
+		assert.NoError(t, EnvWhenMissing(envPath, "APP_NAME", "New").Apply())
+
+		content, err := os.ReadFile(envPath)
+		assert.NoError(t, err)
+		assert.Equal(t, "APP_ENV=local\r\nAPP_NAME=New\r\n", string(content))
+	})
 }
 
 func TestWhen(t *testing.T) {
@@ -797,6 +1125,19 @@ func TestWhenFileExists(t *testing.T) {
 		err := modifier.Apply()
 		assert.Equal(t, assert.AnError, err)
 		assert.True(t, called)
+	})
+
+	t.Run("return stat error", func(t *testing.T) {
+		called := false
+		apply := &dummyApply{called: &called}
+		// A NUL byte makes os.Stat fail on every platform with an error that
+		// does not mean the file is missing.
+		modifier := WhenFileExists("invalid\x00path", apply)
+
+		err := modifier.Apply()
+		assert.Error(t, err)
+		assert.False(t, os.IsNotExist(err))
+		assert.False(t, called)
 	})
 }
 

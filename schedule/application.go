@@ -2,6 +2,7 @@ package schedule
 
 import (
 	"context"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -11,27 +12,36 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/schedule"
+	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/schedule/utils"
 	"github.com/goravel/framework/support/carbon"
 )
 
+// maxDelayIfStillRunning bounds how long Run waits for a previous run of
+// a DelayIfStillRunning event when the context has no deadline. It is well
+// inside a minute, so the events behind it still run in the same tick.
+const maxDelayIfStillRunning = 10 * time.Second
+
 type Application struct {
-	artisan console.Artisan
-	cache   cache.Cache
-	log     log.Log
-	cron    *cron.Cron
-	events  []schedule.Event
-	debug   bool
+	artisan  console.Artisan
+	cache    cache.Cache
+	log      log.Log
+	cron     *cron.Cron
+	location *time.Location
+	events   []schedule.Event
+	debug    bool
 }
 
 func NewApplication(artisan console.Artisan, cache cache.Cache, log log.Log, debug bool) *Application {
+	location := carbon.Now().StdTime().Location()
+
 	return &Application{
-		artisan: artisan,
-		cache:   cache,
-		cron: cron.New(cron.WithParser(cron.NewParser(
-			cron.SecondOptional|cron.Minute|cron.Hour|cron.Dom|cron.Month|cron.Dow|cron.Descriptor,
-		)), cron.WithLogger(NewLogger(log, debug)), cron.WithLocation(carbon.Now().StdTime().Location())),
-		log:   log,
-		debug: debug,
+		artisan:  artisan,
+		cache:    cache,
+		cron:     cron.New(cron.WithParser(utils.CronParser), cron.WithLogger(NewLogger(log, debug)), cron.WithLocation(location)),
+		location: location,
+		log:      log,
+		debug:    debug,
 	}
 }
 
@@ -51,8 +61,55 @@ func (app *Application) Register(events []schedule.Event) {
 	app.addEvents(events)
 }
 
-func (app *Application) Run() {
+// Work runs the schedules in a long-lived process, blocking until Shutdown.
+func (app *Application) Work() {
 	app.cron.Run()
+}
+
+// Run runs the events due in the current minute, in the schedule's
+// location. Events that fire more than once a minute run once. OnOneServer
+// uses the same cache lock as Work; SkipIfStillRunning and
+// DelayIfStillRunning use a cache lock held while the event runs, since the
+// previous run may be in another process. Once ctx is done, no further event
+// starts and its error is returned with the errors of the events.
+func (app *Application) Run(ctx context.Context) error {
+	return app.runDue(ctx, carbon.Now().StdTime())
+}
+
+func (app *Application) runDue(ctx context.Context, at time.Time) error {
+	tick := at.In(app.location).Truncate(time.Minute)
+
+	var errs []error
+	for _, event := range app.events {
+		if err := ctx.Err(); err != nil {
+			return errors.Join(append(errs, err)...)
+		}
+
+		if !app.isDue(event, tick) {
+			continue
+		}
+
+		if event.GetName() == "" && (event.IsOnOneServer() || event.GetSkipIfStillRunning() || event.GetDelayIfStillRunning()) {
+			app.log.Warningf("schedule event %s has no name, so OnOneServer, SkipIfStillRunning and DelayIfStillRunning are not applied", event.GetCron())
+		}
+
+		if event.IsOnOneServer() && event.GetName() != "" &&
+			!app.cache.Lock(app.onOneServerKey(event, tick), 1*time.Hour).Get() {
+			continue
+		}
+
+		release, ok := app.acquireOverlapLock(ctx, event)
+		if !ok {
+			continue
+		}
+
+		if err := app.runEvent(event); err != nil {
+			errs = append(errs, err)
+		}
+		release()
+	}
+
+	return errors.Join(errs...)
 }
 
 func (app *Application) Shutdown(ctx ...context.Context) error {
@@ -80,7 +137,7 @@ func (app *Application) addEvents(events []schedule.Event) {
 		} else if event.GetSkipIfStillRunning() {
 			chain = cron.NewChain(cron.SkipIfStillRunning(NewLogger(app.log, app.debug)), cron.Recover(NewLogger(app.log, app.debug)))
 		}
-		_, err := app.cron.AddJob(event.GetCron(), chain.Then(app.getJob(event)))
+		_, err := app.cron.AddJob(utils.CronSpec(event), chain.Then(app.getJob(event)))
 
 		if err != nil {
 			app.log.Errorf("add schedule error: %v", err)
@@ -93,11 +150,7 @@ func (app *Application) addEvents(events []schedule.Event) {
 func (app *Application) getJob(event schedule.Event) cron.Job {
 	return cron.FuncJob(func() {
 		if event.IsOnOneServer() && event.GetName() != "" {
-			keySuffix := carbon.Now().Format("Hi")
-			if segments := strings.Split(event.GetCron(), " "); len(segments) == 6 {
-				keySuffix = carbon.Now().Format("His")
-			}
-			if app.cache.Lock(event.GetName()+keySuffix, 1*time.Hour).Get() {
+			if app.cache.Lock(app.onOneServerKey(event, carbon.Now().StdTime()), 1*time.Hour).Get() {
 				app.runJob(event)
 			}
 		} else {
@@ -106,12 +159,148 @@ func (app *Application) getJob(event schedule.Event) cron.Job {
 	})
 }
 
-func (app *Application) runJob(event schedule.Event) {
-	if event.GetCommand() != "" {
-		if err := app.artisan.Call(event.GetCommand()); err != nil {
-			app.log.Errorf("run %s command error: %v", event.GetCommand(), err)
-		}
-	} else {
-		event.GetCallback()()
+// onOneServerKey is the cache lock key that makes an OnOneServer event run
+// once per minute (or per second for cron expressions with seconds).
+func (app *Application) onOneServerKey(event schedule.Event, at time.Time) string {
+	moment := carbon.FromStdTime(at)
+	keySuffix := moment.Format("Hi")
+	if segments := strings.Split(event.GetCron(), " "); len(segments) == 6 {
+		keySuffix = moment.Format("His")
 	}
+
+	return event.GetName() + keySuffix
+}
+
+func (app *Application) runJob(event schedule.Event) {
+	if err := app.execute(event); err != nil {
+		app.log.Errorf("run %s command error: %v", event.GetCommand(), err)
+	}
+}
+
+// execute runs the command or the callback of the event between its hooks:
+// the Before callbacks, then the event, then the After, OnSuccess and
+// OnFailure callbacks in the order they were registered, as Laravel does.
+// Work and Run each report its failure their own way, so a panic of the
+// event is passed on once the hooks ran.
+func (app *Application) execute(event schedule.Event) (err error) {
+	for _, callback := range event.GetBeforeCallbacks() {
+		callback()
+	}
+
+	defer func() {
+		recovered := recover()
+
+		failure := err
+		if recovered != nil {
+			failure = errors.ScheduleEventPanicked.Args(eventName(event), recovered)
+		}
+
+		for _, callback := range event.GetAfterCallbacks() {
+			app.runAfterCallback(event, callback, failure)
+		}
+
+		if recovered != nil {
+			panic(recovered)
+		}
+	}()
+
+	if event.GetCommand() != "" {
+		return app.artisan.Call(event.GetCommand())
+	}
+
+	event.GetCallback()()
+
+	return nil
+}
+
+// isDue reports whether the event fires within the minute starting at tick.
+func (app *Application) isDue(event schedule.Event, tick time.Time) bool {
+	spec, err := utils.CronParser.Parse(utils.CronSpec(event))
+	if err != nil {
+		// Register only keeps events with a valid expression and timezone.
+		return false
+	}
+
+	// An @every expression has no fixed point in time, so only the long-lived
+	// worker can follow it once its delay is longer than a minute.
+	if delay, ok := spec.(cron.ConstantDelaySchedule); ok && delay.Delay > time.Minute {
+		app.log.Warningf("schedule event %s uses %s, which only schedule:work supports", event.GetName(), event.GetCron())
+		return false
+	}
+
+	// An expression that can never match, like February 30, has no next time.
+	next := spec.Next(tick.Add(-time.Nanosecond))
+
+	return !next.IsZero() && next.Before(tick.Add(time.Minute))
+}
+
+// acquireOverlapLock prevents a SkipIfStillRunning or DelayIfStillRunning
+// event from overlapping a run started by another process. It returns false
+// when the event has to be skipped.
+func (app *Application) acquireOverlapLock(ctx context.Context, event schedule.Event) (func(), bool) {
+	noop := func() {}
+	if app.cache == nil || event.GetName() == "" || (!event.GetSkipIfStillRunning() && !event.GetDelayIfStillRunning()) {
+		return noop, true
+	}
+
+	lock := app.cache.Lock(event.GetName()+":running", 24*time.Hour)
+
+	var acquired bool
+	if event.GetDelayIfStillRunning() {
+		wait := maxDelayIfStillRunning
+		if deadline, ok := ctx.Deadline(); ok {
+			wait = min(wait, time.Until(deadline))
+		}
+		acquired = lock.Block(wait)
+	} else {
+		acquired = lock.Get()
+	}
+
+	if !acquired {
+		return noop, false
+	}
+
+	return func() { lock.Release() }, true
+}
+
+// runEvent runs the event and logs its failure, with the stack for a panic.
+func (app *Application) runEvent(event schedule.Event) (err error) {
+	name := eventName(event)
+
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			err = errors.ScheduleEventPanicked.Args(name, recovered)
+			app.log.Errorf("%v\n%s", err, debug.Stack())
+		}
+	}()
+
+	if execErr := app.execute(event); execErr != nil {
+		err = errors.ScheduleEventFailed.Args(name, execErr)
+		app.log.Error(err)
+	}
+
+	return err
+}
+
+// runAfterCallback runs a callback registered with After, OnSuccess or
+// OnFailure. A callback that panics is logged, so the others still run and
+// the event keeps its own result.
+func (app *Application) runAfterCallback(event schedule.Event, callback func(err error), failure error) {
+	defer func() {
+		if recovered := recover(); recovered != nil && app.log != nil {
+			app.log.Error(errors.ScheduleEventHookPanicked.Args(eventName(event), recovered))
+		}
+	}()
+
+	callback(failure)
+}
+
+// eventName returns the name of the event, or its cron expression when it
+// has none.
+func eventName(event schedule.Event) string {
+	if name := event.GetName(); name != "" {
+		return name
+	}
+
+	return event.GetCron()
 }

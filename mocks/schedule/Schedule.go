@@ -198,9 +198,22 @@ func (_c *Schedule_Register_Call) RunAndReturn(run func([]schedule.Event)) *Sche
 	return _c
 }
 
-// Run provides a mock function with no fields
-func (_m *Schedule) Run() {
-	_m.Called()
+// Run provides a mock function with given fields: ctx
+func (_m *Schedule) Run(ctx context.Context) error {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Run")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // Schedule_Run_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Run'
@@ -209,24 +222,25 @@ type Schedule_Run_Call struct {
 }
 
 // Run is a helper method to define mock.On call
-func (_e *Schedule_Expecter) Run() *Schedule_Run_Call {
-	return &Schedule_Run_Call{Call: _e.mock.On("Run")}
+//   - ctx context.Context
+func (_e *Schedule_Expecter) Run(ctx interface{}) *Schedule_Run_Call {
+	return &Schedule_Run_Call{Call: _e.mock.On("Run", ctx)}
 }
 
-func (_c *Schedule_Run_Call) Run(run func()) *Schedule_Run_Call {
+func (_c *Schedule_Run_Call) Run(run func(ctx context.Context)) *Schedule_Run_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(context.Context))
 	})
 	return _c
 }
 
-func (_c *Schedule_Run_Call) Return() *Schedule_Run_Call {
-	_c.Call.Return()
+func (_c *Schedule_Run_Call) Return(_a0 error) *Schedule_Run_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Schedule_Run_Call) RunAndReturn(run func()) *Schedule_Run_Call {
-	_c.Run(run)
+func (_c *Schedule_Run_Call) RunAndReturn(run func(context.Context) error) *Schedule_Run_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
@@ -286,6 +300,38 @@ func (_c *Schedule_Shutdown_Call) Return(_a0 error) *Schedule_Shutdown_Call {
 
 func (_c *Schedule_Shutdown_Call) RunAndReturn(run func(...context.Context) error) *Schedule_Shutdown_Call {
 	_c.Call.Return(run)
+	return _c
+}
+
+// Work provides a mock function with no fields
+func (_m *Schedule) Work() {
+	_m.Called()
+}
+
+// Schedule_Work_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Work'
+type Schedule_Work_Call struct {
+	*mock.Call
+}
+
+// Work is a helper method to define mock.On call
+func (_e *Schedule_Expecter) Work() *Schedule_Work_Call {
+	return &Schedule_Work_Call{Call: _e.mock.On("Work")}
+}
+
+func (_c *Schedule_Work_Call) Run(run func()) *Schedule_Work_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Schedule_Work_Call) Return() *Schedule_Work_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Schedule_Work_Call) RunAndReturn(run func()) *Schedule_Work_Call {
+	_c.Run(run)
 	return _c
 }
 

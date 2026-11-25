@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -235,4 +236,39 @@ func (s *EventTestSuite) TestSimplifyRanges() {
 		})
 	}
 
+}
+
+func (s *EventTestSuite) TestHooks() {
+	var calls []string
+	event := s.event.Before(func() {}).Before(nil).
+		OnFailure(func(err error) { calls = append(calls, "failure:"+err.Error()) }).OnFailure(nil).
+		After(func() { calls = append(calls, "after") }).After(nil).
+		OnSuccess(func() { calls = append(calls, "success") }).OnSuccess(nil)
+
+	// Nil callbacks are ignored.
+	s.Len(event.GetBeforeCallbacks(), 1)
+	afterCallbacks := event.GetAfterCallbacks()
+	s.Len(afterCallbacks, 3)
+
+	// The After, OnSuccess and OnFailure callbacks keep their registration
+	// order, and each one checks the result of the event.
+	for _, callback := range afterCallbacks {
+		callback(nil)
+	}
+	s.Equal([]string{"after", "success"}, calls)
+
+	calls = nil
+	for _, callback := range afterCallbacks {
+		callback(assert.AnError)
+	}
+	s.Equal([]string{"failure:" + assert.AnError.Error(), "after"}, calls)
+
+	// The getters return copies.
+	event.GetBeforeCallbacks()[0] = nil
+	s.NotNil(event.GetBeforeCallbacks()[0])
+}
+
+func (s *EventTestSuite) TestTimezone() {
+	s.Equal("", s.event.GetTimezone())
+	s.Equal("America/Santiago", s.event.Timezone("America/Santiago").GetTimezone())
 }

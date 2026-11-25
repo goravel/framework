@@ -61,6 +61,14 @@ func AddConfig(name, expression string, annotations ...string) modify.Action {
 		existExprIndex := KeyIndex(value.Elts, key)
 
 		if existExprIndex >= 0 {
+			// Keep the decorations of the replaced key, so its comment block survives.
+			// A supplied annotation replaces them.
+			if len(annotations) == 0 {
+				if existExpr, ok := value.Elts[existExprIndex].(*dst.KeyValueExpr); ok {
+					newExpr.Decs = existExpr.Decs
+				}
+			}
+
 			value.Elts[existExprIndex] = newExpr
 		} else {
 			// add config

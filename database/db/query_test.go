@@ -211,16 +211,61 @@ func (s *QueryTestSuite) TestCursor() {
 		s.Equal([]error{assert.AnError}, errs)
 	})
 
-	// The consumer receives one row and cancels the context. When it is canceled, the producer is blocked
-	// sending the third row, and the second one is in the buffer: the producer replaces it with the error.
+	s.Run("trace reports the number of rows the query produced", func() {
+		rows, _, closeDB := newEachRows(s.T(), 3)
+		defer closeDB()
+
+		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+		s.mockReadBuilder.EXPECT().QueryxContext(s.ctx, sql).Return(rows, nil).Once()
+		s.mockReadBuilder.EXPECT().Explain(sql).Return(sql).Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, sql, int64(3), nil).Return().Once()
+
+		var received int
+		for row := range s.query.Cursor() {
+			s.NoError(row.Err())
+			received++
+		}
+
+		s.Equal(3, received)
+	})
+
+	s.Run("reads ahead of the consumer", func() {
+		synctest.Test(s.T(), func(t *testing.T) {
+			rows, fake, closeDB := newEachRows(t, cursorBufferSize+1)
+			defer closeDB()
+
+			s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
+			s.mockReadBuilder.EXPECT().QueryxContext(s.ctx, sql).Return(rows, nil).Once()
+			s.mockReadBuilder.EXPECT().Explain(sql).Return(sql).Once()
+			s.mockLogger.EXPECT().Trace(s.ctx, s.now, sql, mock.Anything, nil).Return().Once()
+
+			ch := s.query.Cursor()
+			s.NoError((<-ch).Err())
+
+			// The consumer read one row and did not read again: the producer filled the whole buffer and
+			// reached the last row.
+			synctest.Wait()
+			s.EqualValues(cursorBufferSize+1, fake.produced.Load())
+
+			for row := range ch {
+				s.NoError(row.Err())
+			}
+		})
+	})
+
+	// The consumer receives one row and cancels the context. The producer has filled the buffer and is
+	// blocked on the next send when the context is canceled: it exits, closes the rows, and replaces a
+	// buffered row with the error.
 	cancelAfterFirstRow := func(t *testing.T) (chan db.Row, *eachDriver, func()) {
-		rows, fake, closeDB := newEachRows(t, 3)
+		rows, fake, closeDB := newEachRows(t, 2*cursorBufferSize)
 		ctx, cancel := context.WithCancel(context.Background())
 
 		s.mockGrammar.EXPECT().CompilePlaceholderFormat().Return(nil).Once()
 		s.mockReadBuilder.EXPECT().QueryxContext(ctx, sql).Return(rows, nil).Once()
 		s.mockReadBuilder.EXPECT().Explain(sql).Return(sql).Once()
-		s.mockLogger.EXPECT().Trace(ctx, s.now, sql, int64(1), context.Canceled).Return().Once()
+		// mock.Anything for the context: testify deep-equals the arguments of every expectation, and
+		// comparing a canceled context races with cancel() itself.
+		s.mockLogger.EXPECT().Trace(mock.Anything, s.now, sql, mock.Anything, context.Canceled).Return().Once()
 
 		ch := NewQuery(ctx, s.mockReadBuilder, s.mockWriteBuilder, s.mockGrammar, s.mockLogger, "users", nil).Cursor()
 		first := <-ch
@@ -253,7 +298,9 @@ func (s *QueryTestSuite) TestCursor() {
 				errs = append(errs, row.Err())
 			}
 
-			s.Equal([]error{context.Canceled}, errs)
+			// The row read outside the loop, then the buffered rows with one replaced by the error.
+			s.Len(errs, cursorBufferSize)
+			s.Equal(context.Canceled, errs[len(errs)-1])
 			s.True(fake.closed.Load())
 		})
 	})

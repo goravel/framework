@@ -1,5 +1,7 @@
 package queue
 
+import "context"
+
 type Queue interface {
 	// Connection gets a driver instance by connection name
 	Connection(name string) (Driver, error)
@@ -7,6 +9,14 @@ type Queue interface {
 	Chain(jobs []ChainJob) PendingJob
 	// Failer gets failed jobs
 	Failer() Failer
+	// Fake records the dispatched jobs instead of pushing them, until Reset
+	// is called on the returned Fake. With no jobs every job is faked;
+	// otherwise only the given ones are, as instances, signatures or wildcard
+	// patterns such as "emails.*", and the others are still pushed. A chain
+	// is faked when its first job is. DispatchSync is not faked: it runs the
+	// job right away, like Laravel's dispatchSync. Calling it again replaces
+	// the faked jobs and keeps the records.
+	Fake(jobs ...any) Fake
 	// GetJob gets job by signature
 	GetJob(signature string) (Job, error)
 	// GetJobs gets all jobs
@@ -22,6 +32,22 @@ type Queue interface {
 }
 
 type Worker interface {
+	// Process runs a reserved job received outside of the worker loop (e.g.
+	// pushed by Lambda SQS event source mappings or Pub/Sub push
+	// subscriptions) with the same semantics as Run: retries through Release,
+	// chains, failed jobs and Delete. A failed job is recorded under the first
+	// queue name of the worker's queue list.
+	//
+	// released reports that the job did not finish and must stay in the
+	// queue: it was released for a retry (err is nil), or ctx was done before
+	// the job or its chain finished, including an attempt that failed while
+	// ctx was done (err is the context error; a partly run chain is run again
+	// on redelivery). Otherwise the job is done: err is nil on success, or
+	// matches errors.QueueFailedToCallJob joined with the job's error when it
+	// failed for good. When deleting the job
+	// fails, err also matches errors.QueueFailedToDeleteReservedJob and the
+	// job is still in the queue.
+	Process(ctx context.Context, reservedJob ReservedJob) (released bool, err error)
 	Run() error
 	Shutdown() error
 }
