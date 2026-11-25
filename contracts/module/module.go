@@ -119,10 +119,8 @@ type ProvidesStatic interface {
 	Static() map[string]Files
 }
 
-// Files is a directory of files: module.FS(views) for an fs.FS (in practice an
-// embed.FS), module.Path(dir) for a directory on disk. Runtime files (views,
-// translations, static) need an FS, only Frontend.Files may be on disk.
-// The zero value is no files.
+// Files points to a directory of files. Use FS for embedded files or Path for a directory on disk.
+// Views, translations and static files must be embedded; only Frontend.Files can be on disk.
 type Files struct {
 	fsys fs.FS
 	dir  string
