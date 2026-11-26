@@ -278,6 +278,11 @@ func (app *Application) UnmarshalKey(key string, rawVal any) error {
 	})
 }
 
+// Module returns the config of the given module, its paths are read under "modules.<name>".
+func (app *Application) Module(name string) config.Repository {
+	return NewModule(app, name)
+}
+
 // has reports whether path holds a value and has not been forgotten.
 func (app *Application) has(path string) bool {
 	return !app.isForgotten(path) && app.vip.IsSet(path)

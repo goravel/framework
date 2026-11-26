@@ -40,6 +40,7 @@ func (r *RuleMakeCommand) Extend() command.Extend {
 				Aliases: []string{"f"},
 				Usage:   "Create the rule even if it already exists",
 			},
+			supportconsole.ModuleFlag(),
 		},
 	}
 }

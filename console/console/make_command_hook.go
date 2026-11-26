@@ -48,6 +48,7 @@ func (r *MakeCommandHook) Extend() command.Extend {
 				Aliases: []string{"c"},
 				Usage:   "The command signature or '*' pattern the hook runs for, default is '*'",
 			},
+			supportconsole.ModuleFlag(),
 		},
 	}
 }

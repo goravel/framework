@@ -1,0 +1,171 @@
+package console
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"maps"
+	"os"
+	"path/filepath"
+	"runtime/debug"
+	"slices"
+	"strings"
+
+	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/console/command"
+	contractsmodule "github.com/goravel/framework/contracts/module"
+	"github.com/goravel/framework/errors"
+	frameworkmodule "github.com/goravel/framework/module"
+	"github.com/goravel/framework/support/path"
+)
+
+type ListCommand struct {
+	registry  contractsmodule.Registry
+	buildInfo func() (*debug.BuildInfo, bool)
+	// out receives --json as is: ctx.Line would wrap it in colour codes.
+	out io.Writer
+}
+
+func NewListCommand(registry contractsmodule.Registry) *ListCommand {
+	return &ListCommand{registry: registry, buildInfo: debug.ReadBuildInfo, out: os.Stdout}
+}
+
+// moduleInfo is one module in the --json output.
+type moduleInfo struct {
+	Name         string            `json:"name"`
+	Path         string            `json:"path"`
+	Dependencies []string          `json:"dependencies"`
+	Publish      string            `json:"publish"`
+	Capabilities map[string]bool   `json:"capabilities"`
+	ViteEntries  []string          `json:"vite_entries"`
+	ViteAliases  map[string]string `json:"vite_aliases"`
+	Static       []string          `json:"static"`
+}
+
+// Signature The name and signature of the console command.
+func (r *ListCommand) Signature() string {
+	return "module:list"
+}
+
+// Description The console command description.
+func (r *ListCommand) Description() string {
+	return "List the registered modules"
+}
+
+// Extend The console command extend.
+func (r *ListCommand) Extend() command.Extend {
+	return command.Extend{
+		Category: "module",
+		Flags: []command.Flag{
+			&command.BoolFlag{
+				Name:  "json",
+				Usage: "Output the modules as JSON",
+			},
+		},
+	}
+}
+
+// Handle Execute the console command.
+func (r *ListCommand) Handle(ctx console.Context) error {
+	if r.registry == nil {
+		return errors.ModuleRegistryNotSet
+	}
+
+	info, _ := r.buildInfo()
+	modules := make([]moduleInfo, 0)
+	for _, module := range r.registry.All() {
+		modules = append(modules, r.describe(module, info))
+	}
+
+	if ctx.OptionBool("json") {
+		content, err := json.Marshal(modules)
+		if err != nil {
+			return err
+		}
+		_, err = fmt.Fprintln(r.out, string(content))
+
+		return err
+	}
+
+	if len(modules) == 0 {
+		ctx.Warning("No modules are registered. List them in bootstrap/modules.go.")
+
+		return nil
+	}
+
+	for _, module := range modules {
+		ctx.TwoColumnDetail(
+			fmt.Sprintf("<fg=green;op=bold>%s</> %s", module.Name, module.Path),
+			module.Publish,
+		)
+		for _, detail := range module.details() {
+			ctx.Line("    <fg=gray>" + detail + "</>")
+		}
+	}
+
+	return nil
+}
+
+func (r *ListCommand) describe(module contractsmodule.Module, info *debug.BuildInfo) moduleInfo {
+	dir, _ := r.registry.Path(module.Name())
+	described := moduleInfo{
+		Name:         module.Name(),
+		Path:         dir,
+		Dependencies: []string{},
+		Publish:      frameworkmodule.PublishLocal,
+		Capabilities: r.registry.Capabilities(module),
+		ViteEntries:  []string{},
+		ViteAliases:  map[string]string{},
+		Static:       []string{},
+	}
+
+	if dependency, ok := frameworkmodule.DependencyOf(module, info); ok {
+		described.Publish = frameworkmodule.PublishState(module, dependency, path.Base(filepath.FromSlash(dir)))
+	}
+	if p, ok := module.(contractsmodule.Dependencies); ok {
+		described.Dependencies = append(described.Dependencies, p.Dependencies()...)
+	}
+	if p, ok := module.(contractsmodule.ProvidesFrontend); ok {
+		frontend := p.Frontend()
+		described.ViteEntries = append(described.ViteEntries, frontend.Entries...)
+		maps.Copy(described.ViteAliases, frontend.Aliases)
+	}
+	if p, ok := module.(contractsmodule.ProvidesStatic); ok {
+		described.Static = slices.Sorted(maps.Keys(p.Static()))
+	}
+
+	return described
+}
+
+// details are the lines under a module row: its capabilities and what they declare.
+func (r moduleInfo) details() []string {
+	var capabilities []string
+	for _, label := range slices.Sorted(maps.Keys(r.Capabilities)) {
+		if r.Capabilities[label] {
+			capabilities = append(capabilities, label)
+		}
+	}
+
+	var details []string
+	if len(capabilities) > 0 {
+		details = append(details, strings.Join(capabilities, ", "))
+	}
+	if len(r.Dependencies) > 0 {
+		details = append(details, "depends on: "+strings.Join(r.Dependencies, ", "))
+	}
+	if len(r.ViteEntries) > 0 {
+		details = append(details, "vite entries: "+strings.Join(r.ViteEntries, ", "))
+	}
+	if len(r.ViteAliases) > 0 {
+		var aliases []string
+		for _, alias := range slices.Sorted(maps.Keys(r.ViteAliases)) {
+			aliases = append(aliases, alias+" -> "+r.ViteAliases[alias])
+		}
+		details = append(details, "vite aliases: "+strings.Join(aliases, ", "))
+	}
+	if len(r.Static) > 0 {
+		details = append(details, "static: "+strings.Join(r.Static, ", "))
+	}
+
+	return details
+}

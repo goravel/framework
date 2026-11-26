@@ -40,6 +40,7 @@ func (r *TestMakeCommand) Extend() command.Extend {
 				Aliases: []string{"f"},
 				Usage:   "Create the test even if it already exists",
 			},
+			supportconsole.ModuleFlag(),
 		},
 	}
 }
@@ -60,7 +61,8 @@ func (r *TestMakeCommand) makeOne(ctx console.Context, filePath string) error {
 	stub := r.getStub()
 
 	var testCase, testsImport string
-	if str.Of(filePath).Contains("/", "\\") {
+	// A module has no TestCase of its own, it uses the application's.
+	if m.GetModuleDir() != "" || str.Of(filePath).Contains("/", "\\") {
 		testCase = fmt.Sprintf("%s.TestCase", packages.Paths().Tests().Package())
 		testsImport = fmt.Sprintf(`"%s"`, packages.Paths().Tests().Import())
 	} else {

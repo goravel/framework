@@ -35,9 +35,38 @@ func (s *ProviderRepositoryTestSuite) TestAdd() {
 
 	s.Equal(providers, s.repository.providers)
 	s.Len(s.repository.states, 2)
-	s.Contains(s.repository.states, s.repository.getProviderName(providerA))
-	s.Contains(s.repository.states, s.repository.getProviderName(providerB))
+	s.Contains(s.repository.states, s.repository.providerKey(providerA))
+	s.Contains(s.repository.states, s.repository.providerKey(providerB))
 	s.False(s.repository.sortedValid)
+}
+
+// ServiceProvider shares its short type name, *foundation.ServiceProvider, with the
+// generated mock in mocks/foundation.
+type ServiceProvider struct{}
+
+func (r *ServiceProvider) Register(foundation.Application) {}
+func (r *ServiceProvider) Boot(foundation.Application)     {}
+
+func (s *ProviderRepositoryTestSuite) TestAdd_SameTypeNameInDifferentPackages() {
+	// Both are *foundation.ServiceProvider by %T; each must keep its own state.
+	localProvider := &ServiceProvider{}
+	mockProvider := mocksfoundation.NewServiceProvider(s.T())
+	s.Require().Equal(s.repository.getProviderName(localProvider), s.repository.getProviderName(mockProvider))
+
+	s.repository.Add([]foundation.ServiceProvider{localProvider, mockProvider})
+
+	s.Len(s.repository.providers, 2)
+	s.Len(s.repository.states, 2)
+	s.Equal("*github.com/goravel/framework/foundation.ServiceProvider", s.repository.providerKey(localProvider))
+	s.Equal("*github.com/goravel/framework/mocks/foundation.ServiceProvider", s.repository.providerKey(mockProvider))
+}
+
+// A type without a name of its own is keyed by its %T form.
+func (s *ProviderRepositoryTestSuite) TestProviderKey_UnnamedType() {
+	provider := struct{ foundation.ServiceProvider }{}
+
+	s.Equal("struct { foundation.ServiceProvider }", s.repository.providerKey(provider))
+	s.Equal("*struct { foundation.ServiceProvider }", s.repository.providerKey(&provider))
 }
 
 func (s *ProviderRepositoryTestSuite) TestAdd_Duplicates() {
@@ -63,7 +92,7 @@ func (s *ProviderRepositoryTestSuite) TestBoot() {
 	mockProvider.EXPECT().Boot(s.mockApp).Return().Once()
 	s.repository.Boot(s.mockApp)
 
-	s.True(s.repository.states[s.repository.getProviderName(mockProvider)].booted)
+	s.True(s.repository.states[s.repository.providerKey(mockProvider)].booted)
 }
 
 func (s *ProviderRepositoryTestSuite) TestBoot_Idempotency() {
@@ -78,7 +107,7 @@ func (s *ProviderRepositoryTestSuite) TestBoot_Idempotency() {
 	s.repository.Boot(s.mockApp)
 	s.repository.Boot(s.mockApp)
 
-	s.True(s.repository.states[s.repository.getProviderName(mockProvider)].booted)
+	s.True(s.repository.states[s.repository.providerKey(mockProvider)].booted)
 	mockProvider.AssertExpectations(s.T())
 }
 
@@ -88,8 +117,8 @@ func (s *ProviderRepositoryTestSuite) TestGetBooted() {
 
 	s.repository.Add([]foundation.ServiceProvider{providerA, providerB})
 
-	keyA := s.repository.getProviderName(providerA)
-	keyB := s.repository.getProviderName(providerB)
+	keyA := s.repository.providerKey(providerA)
+	keyB := s.repository.providerKey(providerB)
 
 	s.NotEqual(keyA, keyB)
 
@@ -162,8 +191,8 @@ func (s *ProviderRepositoryTestSuite) TestRegister() {
 	processed := s.repository.Register(s.mockApp)
 
 	s.Equal([]foundation.ServiceProvider{mockProvider}, processed)
-	s.True(s.repository.states[s.repository.getProviderName(mockProvider)].registered)
-	s.False(s.repository.states[s.repository.getProviderName(mockProvider)].booted)
+	s.True(s.repository.states[s.repository.providerKey(mockProvider)].registered)
+	s.False(s.repository.states[s.repository.providerKey(mockProvider)].booted)
 }
 
 func (s *ProviderRepositoryTestSuite) TestRegister_Idempotency() {
@@ -175,7 +204,7 @@ func (s *ProviderRepositoryTestSuite) TestRegister_Idempotency() {
 	s.repository.Register(s.mockApp)
 	s.repository.Register(s.mockApp)
 
-	s.True(s.repository.states[s.repository.getProviderName(mockProvider)].registered)
+	s.True(s.repository.states[s.repository.providerKey(mockProvider)].registered)
 	mockProvider.AssertExpectations(s.T())
 }
 

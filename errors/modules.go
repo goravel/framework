@@ -17,6 +17,7 @@ var (
 	ModuleLog          = "log"
 	ModuleMail         = "mail"
 	ModuleMigration    = "migration"
+	ModuleModule       = "module"
 	ModuleNotification = "notification"
 	ModuleOrm          = "orm"
 	ModulePackages     = "packages"

@@ -46,6 +46,7 @@ func (r *SeederMakeCommand) Extend() command.Extend {
 				Aliases: []string{"f"},
 				Usage:   "Create the seeder even if it already exists",
 			},
+			supportconsole.ModuleFlag(),
 		},
 	}
 }
@@ -69,7 +70,9 @@ func (r *SeederMakeCommand) makeOne(ctx console.Context, name string) error {
 
 	ctx.Success("Seeder created successfully")
 
-	if env.IsBootstrapSetup() {
+	if dir := make.GetModuleDir(); dir != "" {
+		err = modify.AddToModule(dir, "Seeders", make.GetPackageImportPath(), fmt.Sprintf("&%s.%s{}", make.GetPackageName(), make.GetStructName()))
+	} else if env.IsBootstrapSetup() {
 		err = modify.AddSeeder(make.GetPackageImportPath(), fmt.Sprintf("&%s.%s{}", make.GetPackageName(), make.GetStructName()))
 	} else {
 		err = r.registerInKernel(make)

@@ -33,6 +33,7 @@ func (r *MiddlewareMakeCommand) Extend() command.Extend {
 				Aliases: []string{"f"},
 				Usage:   "Create the middleware even if it already exists",
 			},
+			supportconsole.ModuleFlag(),
 		},
 	}
 }

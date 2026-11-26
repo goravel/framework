@@ -1,0 +1,302 @@
+package console
+
+import (
+	"go/parser"
+	"go/token"
+	"maps"
+	"os"
+	"path/filepath"
+	"regexp"
+	"slices"
+	"strings"
+
+	"github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/module"
+	"github.com/goravel/framework/packages"
+	"github.com/goravel/framework/packages/modify"
+	"github.com/goravel/framework/support"
+	supportconsole "github.com/goravel/framework/support/console"
+	"github.com/goravel/framework/support/env"
+	"github.com/goravel/framework/support/file"
+	"github.com/goravel/framework/support/path"
+	"github.com/goravel/framework/support/str"
+)
+
+var (
+	// moduleInputPattern is what make:module accepts; the kebab name it derives must pass module.ValidName.
+	moduleInputPattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9 _-]*$`)
+
+	// reservedModulePackages are packages Go refuses to import.
+	reservedModulePackages = map[string]bool{"main": true, "init": true, "internal": true, "vendor": true}
+)
+
+type ModuleMakeCommand struct {
+	config config.Config
+}
+
+func NewModuleMakeCommand(config config.Config) *ModuleMakeCommand {
+	return &ModuleMakeCommand{config: config}
+}
+
+// Signature The name and signature of the console command.
+func (r *ModuleMakeCommand) Signature() string {
+	return "make:module"
+}
+
+// Description The console command description.
+func (r *ModuleMakeCommand) Description() string {
+	return "Create a new module"
+}
+
+// Extend The console command extend.
+func (r *ModuleMakeCommand) Extend() command.Extend {
+	return command.Extend{
+		ArgsUsage: " <name>...",
+		Category:  "make",
+		Flags: []command.Flag{
+			&command.BoolFlag{
+				Name:  "plain",
+				Usage: "Create only module.go",
+			},
+			&command.BoolFlag{
+				Name:    "force",
+				Aliases: []string{"f"},
+				Usage:   "Create the module even if it already exists",
+			},
+		},
+	}
+}
+
+// Handle Execute the console command.
+func (r *ModuleMakeCommand) Handle(ctx console.Context) error {
+	supportconsole.HandleEach(ctx, r.makeOne)
+
+	return nil
+}
+
+func (r *ModuleMakeCommand) makeOne(ctx console.Context, name string) error {
+	if !env.IsBootstrapSetup() {
+		return errors.ModuleRequiresBootstrapSetup.Args(r.Signature())
+	}
+
+	if name == "" {
+		var err error
+		name, err = ctx.Ask("Enter the module name", console.AskOption{
+			Validate: func(s string) error {
+				if s == "" {
+					return errors.ModuleNameEmpty
+				}
+
+				return nil
+			},
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	stubs, err := newModuleStubs(name, modulesDirectory(r.config))
+	if err != nil {
+		return err
+	}
+
+	root := path.Base(filepath.FromSlash(stubs.dir))
+	if file.Exists(root) && !ctx.OptionBool("force") {
+		return errors.ModuleExists.Args(stubs.kebab, stubs.dir)
+	}
+
+	registered, err := stubs.registered()
+	if err != nil {
+		return err
+	}
+
+	files := stubs.files(ctx.OptionBool("plain"))
+	kept, err := removeStaleStubs(
+		root,
+		[]map[string]string{
+			stubs.files(false),
+			stubs.files(true),
+		},
+		files,
+	)
+	if err != nil {
+		return err
+	}
+	for name, content := range files {
+		if err := file.PutContent(filepath.Join(root, filepath.FromSlash(name)), content); err != nil {
+			return err
+		}
+	}
+
+	if !registered {
+		if err := modify.AddModule(stubs.importSpec(), "&"+stubs.pkg+".Module{}"); err != nil {
+			return err
+		}
+	}
+
+	ctx.Success("Module created successfully: " + stubs.dir)
+	for _, file := range kept {
+		ctx.Warning("Kept " + stubs.dir + "/" + file + ": it was edited, remove it if the module no longer needs it")
+	}
+
+	// An assigned chain (builder := foundation.Setup()...) cannot be edited: the user wires it.
+	if !file.Contain(path.Bootstrap("app.go"), "WithModules") {
+		ctx.Warning("Add .WithModules(Modules) to foundation.Setup() in " + filepath.ToSlash(filepath.Join(support.Config.Paths.Bootstrap, "app.go")))
+	}
+
+	return nil
+}
+
+// removeStaleStubs deletes the stubs of an earlier --force run that this one no longer writes,
+// unless they were edited; it returns the names of the edited ones it kept.
+func removeStaleStubs(root string, variants []map[string]string, current map[string]string) ([]string, error) {
+	stubs := make(map[string][]string)
+	for _, variant := range variants {
+		for name, content := range variant {
+			if _, ok := current[name]; !ok {
+				stubs[name] = append(stubs[name], content)
+			}
+		}
+	}
+
+	var kept []string
+	for _, name := range slices.Sorted(maps.Keys(stubs)) {
+		stale := filepath.Join(root, filepath.FromSlash(name))
+		content, err := os.ReadFile(stale)
+		if os.IsNotExist(err) {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		if !slices.Contains(stubs[name], string(content)) {
+			kept = append(kept, name)
+			continue
+		}
+
+		if err := os.Remove(stale); err != nil {
+			return nil, err
+		}
+		// Remove the directories the stub leaves empty; os.Remove refuses the others.
+		for dir := filepath.Dir(stale); dir != root && os.Remove(dir) == nil; dir = filepath.Dir(dir) {
+		}
+	}
+
+	return kept, nil
+}
+
+// moduleStubs holds the names derived from a module name, e.g. "BlogPosts".
+type moduleStubs struct {
+	kebab  string // blog-posts: module name and directory
+	pkg    string // blogposts: Go package
+	studly string // BlogPosts
+	snake  string // blog_posts
+	title  string // Blog Posts
+	dir    string // modules/blog-posts
+	module string // <main>/modules/blog-posts
+}
+
+func newModuleStubs(name, directory string) (*moduleStubs, error) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return nil, errors.ModuleNameEmpty
+	}
+
+	kebab := str.Of(name).Kebab().String()
+	pkg := strings.ReplaceAll(kebab, "-", "")
+	if !moduleInputPattern.MatchString(name) || !module.ValidName(kebab) {
+		return nil, errors.ModuleNameInvalid.Args(name)
+	}
+	if token.IsKeyword(pkg) || reservedModulePackages[pkg] {
+		return nil, errors.ModuleNameForbidden.Args(name, pkg)
+	}
+
+	dir := filepath.ToSlash(filepath.Join(directory, kebab))
+
+	return &moduleStubs{
+		kebab:  kebab,
+		pkg:    pkg,
+		studly: str.Of(kebab).Studly().String(),
+		snake:  strings.ReplaceAll(kebab, "-", "_"),
+		title:  str.Of(kebab).Headline().String(),
+		dir:    dir,
+		module: packages.Paths().Main().Import() + "/" + dir,
+	}, nil
+}
+
+// importSpec is the import of the module package, aliased when the directory is not the package name.
+func (r *moduleStubs) importSpec() string {
+	if r.pkg == r.kebab {
+		return r.module
+	}
+
+	return r.pkg + " " + r.module
+}
+
+// registered reports whether bootstrap/modules.go lists the module, and fails
+// when another import there already uses the module's package name.
+func (r *moduleStubs) registered() (bool, error) {
+	return moduleRegistered(r.module, r.pkg, defaultModuleStruct, r.kebab)
+}
+
+// moduleRegistered is registered for &pkg.structName{} of the package at importPath; label
+// names it in the error.
+func moduleRegistered(importPath, pkg, structName, label string) (bool, error) {
+	modulesFile := path.Bootstrap("modules.go")
+	source := modify.ModulesStub()
+	if file.Exists(modulesFile) {
+		content, err := file.GetContent(modulesFile)
+		if err != nil {
+			return false, err
+		}
+		source = content
+	}
+
+	parsed, err := parser.ParseFile(token.NewFileSet(), modulesFile, source, parser.ImportsOnly)
+	if err != nil {
+		return false, err
+	}
+
+	imported := false
+	for _, spec := range parsed.Imports {
+		current := strings.Trim(spec.Path.Value, "`\"")
+		name := current[strings.LastIndex(current, "/")+1:]
+		if spec.Name != nil {
+			name = spec.Name.Name
+		}
+		if current == importPath {
+			imported = true
+		} else if name == pkg {
+			return false, errors.ModuleImportConflict.Args(label, pkg, current)
+		}
+	}
+
+	return imported && strings.Contains(source, "&"+pkg+"."+structName+"{}"), nil
+}
+
+// files returns the module files by slash path relative to the module directory.
+func (r *moduleStubs) files(plain bool) map[string]string {
+	if plain {
+		return map[string]string{"module.go": r.Module(false)}
+	}
+
+	files := map[string]string{
+		"module.go":                     r.Module(true),
+		"providers/service_provider.go": r.ServiceProvider(),
+		"http/controllers/" + r.snake + "_controller.go": r.Controller(),
+		"database/migrations/.gitkeep":                   "",
+		"database/seeders/.gitkeep":                      "",
+		"models/.gitkeep":                                "",
+		"lang/en/messages.json":                          r.Lang(),
+		"routes/web.go":                                  r.Routes(),
+		"resources/views/index.tmpl":                     r.View(),
+	}
+	if file.Exists(path.Test("test_case.go")) {
+		files["tests/feature/"+r.snake+"_test.go"] = r.Test()
+	}
+
+	return files
+}

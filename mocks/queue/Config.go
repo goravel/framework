@@ -3,6 +3,7 @@
 package queue
 
 import (
+	config "github.com/goravel/framework/contracts/config"
 	mock "github.com/stretchr/testify/mock"
 
 	time "time"
@@ -1412,6 +1413,54 @@ func (_c *Config_Has_Call) Return(_a0 bool) *Config_Has_Call {
 }
 
 func (_c *Config_Has_Call) RunAndReturn(run func(string) bool) *Config_Has_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Module provides a mock function with given fields: name
+func (_m *Config) Module(name string) config.Repository {
+	ret := _m.Called(name)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Module")
+	}
+
+	var r0 config.Repository
+	if rf, ok := ret.Get(0).(func(string) config.Repository); ok {
+		r0 = rf(name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(config.Repository)
+		}
+	}
+
+	return r0
+}
+
+// Config_Module_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Module'
+type Config_Module_Call struct {
+	*mock.Call
+}
+
+// Module is a helper method to define mock.On call
+//   - name string
+func (_e *Config_Expecter) Module(name interface{}) *Config_Module_Call {
+	return &Config_Module_Call{Call: _e.mock.On("Module", name)}
+}
+
+func (_c *Config_Module_Call) Run(run func(name string)) *Config_Module_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Config_Module_Call) Return(_a0 config.Repository) *Config_Module_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Config_Module_Call) RunAndReturn(run func(string) config.Repository) *Config_Module_Call {
 	_c.Call.Return(run)
 	return _c
 }

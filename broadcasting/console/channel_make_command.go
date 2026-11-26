@@ -33,6 +33,7 @@ func (r *ChannelMakeCommand) Extend() command.Extend {
 				Aliases: []string{"f"},
 				Usage:   "Create the channel even if it already exists",
 			},
+			supportconsole.ModuleFlag(),
 		},
 	}
 }

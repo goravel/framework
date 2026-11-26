@@ -40,6 +40,7 @@ func (r *JobMakeCommand) Extend() command.Extend {
 				Aliases: []string{"f"},
 				Usage:   "Create the job even if it already exists",
 			},
+			supportconsole.ModuleFlag(),
 		},
 	}
 }
@@ -63,7 +64,9 @@ func (r *JobMakeCommand) makeOne(ctx console.Context, name string) error {
 
 	ctx.Success("Job created successfully")
 
-	if env.IsBootstrapSetup() {
+	if dir := make.GetModuleDir(); dir != "" {
+		err = modify.AddToModule(dir, "Jobs", make.GetPackageImportPath(), fmt.Sprintf("&%s.%s{}", make.GetPackageName(), make.GetStructName()))
+	} else if env.IsBootstrapSetup() {
 		err = modify.AddJob(make.GetPackageImportPath(), fmt.Sprintf("&%s.%s{}", make.GetPackageName(), make.GetStructName()))
 	} else {
 		err = r.registerInKernel(make)

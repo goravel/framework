@@ -37,6 +37,7 @@ func (r *NotificationMakeCommand) Extend() command.Extend {
 				Name:  "database",
 				Usage: "Generate a notification template for the database channel instead of mail",
 			},
+			supportconsole.ModuleFlag(),
 		},
 	}
 }

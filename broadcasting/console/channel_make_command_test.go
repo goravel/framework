@@ -30,6 +30,7 @@ func TestChannelMakeCommand(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockContext := mocksconsole.NewContext(t)
 		mockContext.EXPECT().Arguments().Return([]string{"TestChannel"}).Once()
+		mockContext.EXPECT().Option("module").Return("").Once()
 		mockContext.EXPECT().OptionBool("force").Return(false).Once()
 		mockContext.EXPECT().Success("Channel created successfully").Once()
 		assert.Nil(t, cmd.Handle(mockContext))
@@ -51,6 +52,7 @@ func TestChannelMakeCommand_MultipleNames(t *testing.T) {
 	mockContext := mocksconsole.NewContext(t)
 
 	mockContext.EXPECT().Arguments().Return([]string{"OrderChannel", "UserChannel"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Times(2)
 	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
 	mockContext.EXPECT().Success("Channel created successfully").Times(2)
 	assert.Nil(t, cmd.Handle(mockContext))

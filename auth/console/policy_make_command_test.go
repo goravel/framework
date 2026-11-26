@@ -20,17 +20,20 @@ func TestPolicyMakeCommand(t *testing.T) {
 	assert.Nil(t, policyMakeCommand.Handle(mockContext))
 
 	mockContext.EXPECT().Arguments().Return([]string{"UserPolicy"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Policy created successfully").Once()
 	assert.Nil(t, policyMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/policies/user_policy.go"))
 
 	mockContext.EXPECT().Arguments().Return([]string{"UserPolicy"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Error("the policy already exists. Use the --force or -f flag to overwrite").Once()
 	assert.Nil(t, policyMakeCommand.Handle(mockContext))
 
 	mockContext.EXPECT().Arguments().Return([]string{"User/AuthPolicy"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Policy created successfully").Once()
 	assert.Nil(t, policyMakeCommand.Handle(mockContext))
@@ -50,6 +53,7 @@ func TestPolicyMakeCommand_MultipleNames(t *testing.T) {
 	mockContext := mocksconsole.NewContext(t)
 
 	mockContext.EXPECT().Arguments().Return([]string{"PostPolicy", "CommentPolicy"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Times(2)
 	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
 	mockContext.EXPECT().Success("Policy created successfully").Times(2)
 	assert.Nil(t, policyMakeCommand.Handle(mockContext))

@@ -19,6 +19,7 @@ const (
 	Lang         = "Lang"
 	Log          = "Log"
 	Mail         = "Mail"
+	Module       = "Module"
 	Notification = "Notification"
 	Process      = "Process"
 	Orm          = "Orm"
@@ -54,6 +55,7 @@ var FacadeToBinding = map[string]string{
 	Lang:         binding.Lang,
 	Log:          binding.Log,
 	Mail:         binding.Mail,
+	Module:       binding.Module,
 	Notification: binding.Notification,
 	Orm:          binding.Orm,
 	Process:      binding.Process,

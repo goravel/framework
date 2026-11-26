@@ -41,6 +41,7 @@ func (r *EventMakeCommand) Extend() command.Extend {
 				Name:  "now",
 				Usage: "Generate an event that also implements broadcasting.ShouldBroadcastNow",
 			},
+			supportconsole.ModuleFlag(),
 		},
 	}
 }
