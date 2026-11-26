@@ -32,8 +32,8 @@ jobs:
         run: go test ./mail/... -skip '^TestApplicationTestSuite$'
       - name: Send one mail to verify delivery
         if: github.event_name == 'push'
-        run: go test ./mail/... -run '^TestApplicationTestSuite$/^TestSendMail$' -v
-      # Mail code changed: run everything, including all live mail tests.
+        run: go test ./mail/... -run '^TestApplicationTestSuite$/^TestSendMail$' -count=1 -v
+      # Pull request: run everything, including all live mail tests.
       - name: Run tests
         if: github.event_name != 'push'
         run: go test ./mail/...
