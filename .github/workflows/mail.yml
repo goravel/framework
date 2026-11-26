@@ -6,6 +6,7 @@ on:
   pull_request:
     paths:
       - 'mail/**'
+      - '.github/workflows/mail.yml'
 env:
   MAIL_HOST: ${{ secrets.MAIL_HOST }}
   MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
@@ -25,5 +26,14 @@ jobs:
           go-version: 'stable'
       - name: Install dependencies
         run: go mod tidy
+      # Master merge: run the cheap unit tests, then send exactly one mail.
+      - name: Run mail unit tests
+        if: github.event_name == 'push'
+        run: go test ./mail/... -skip '^TestApplicationTestSuite$'
+      - name: Send one mail to verify delivery
+        if: github.event_name == 'push'
+        run: go test ./mail/... -run '^TestApplicationTestSuite$/^TestSendMail$' -count=1 -v
+      # Pull request: run everything, including all live mail tests.
       - name: Run tests
+        if: github.event_name != 'push'
         run: go test ./mail/...
