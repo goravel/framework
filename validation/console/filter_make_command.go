@@ -40,6 +40,7 @@ func (r *FilterMakeCommand) Extend() command.Extend {
 				Aliases: []string{"f"},
 				Usage:   "Create the filter even if it already exists",
 			},
+			supportconsole.ModuleFlag(),
 		},
 	}
 }

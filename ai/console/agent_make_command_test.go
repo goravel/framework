@@ -28,7 +28,7 @@ func TestAgentMakeCommand(t *testing.T) {
 
 	extend := agentMakeCommand.Extend()
 	assert.Equal(t, "make", extend.Category)
-	if assert.Len(t, extend.Flags, 1) {
+	if assert.Len(t, extend.Flags, 2) {
 		flag, ok := extend.Flags[0].(*command.BoolFlag)
 		assert.True(t, ok)
 		if ok {
@@ -44,17 +44,20 @@ func TestAgentMakeCommand(t *testing.T) {
 	assert.NoError(t, agentMakeCommand.Handle(mockContext))
 
 	mockContext.EXPECT().Arguments().Return([]string{"UserAgent"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Agent created successfully").Once()
 	assert.NoError(t, agentMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/ai/agents/user_agent.go"))
 
 	mockContext.EXPECT().Arguments().Return([]string{"UserAgent"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Error("the agent already exists. Use the --force or -f flag to overwrite").Once()
 	assert.NoError(t, agentMakeCommand.Handle(mockContext))
 
 	mockContext.EXPECT().Arguments().Return([]string{"user/SupportAgent"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Agent created successfully").Once()
 	assert.NoError(t, agentMakeCommand.Handle(mockContext))
@@ -67,6 +70,7 @@ func TestAgentMakeCommand(t *testing.T) {
 
 	support.Config.Paths.Agents = "custom/agents"
 	mockContext.EXPECT().Arguments().Return([]string{"BillingAgent"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Agent created successfully").Once()
 	assert.NoError(t, agentMakeCommand.Handle(mockContext))
@@ -81,6 +85,7 @@ func TestAgentMakeCommand_MultipleNames(t *testing.T) {
 	}()
 
 	mockContext.EXPECT().Arguments().Return([]string{"SupportAgent", "BillingAgent"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Times(2)
 	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
 	mockContext.EXPECT().Success("Agent created successfully").Times(2)
 	assert.NoError(t, agentMakeCommand.Handle(mockContext))

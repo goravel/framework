@@ -21,17 +21,20 @@ func TestObserverMakeCommand(t *testing.T) {
 	assert.False(t, file.Exists("app/observers/user_observer.go"))
 
 	mockContext.EXPECT().Arguments().Return([]string{"UserObserver"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Observer created successfully").Once()
 	assert.Nil(t, observerMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/observers/user_observer.go"))
 
 	mockContext.EXPECT().Arguments().Return([]string{"UserObserver"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Error("the observer already exists. Use the --force or -f flag to overwrite").Once()
 	assert.Nil(t, observerMakeCommand.Handle(mockContext))
 
 	mockContext.EXPECT().Arguments().Return([]string{"User/PhoneObserver"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Observer created successfully").Once()
 	assert.Nil(t, observerMakeCommand.Handle(mockContext))
@@ -51,6 +54,7 @@ func TestObserverMakeCommand_MultipleNames(t *testing.T) {
 	mockContext := mocksconsole.NewContext(t)
 
 	mockContext.EXPECT().Arguments().Return([]string{"UserObserver", "PostObserver"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Times(2)
 	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
 	mockContext.EXPECT().Success("Observer created successfully").Times(2)
 	assert.NoError(t, observerMakeCommand.Handle(mockContext))

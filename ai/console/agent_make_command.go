@@ -33,6 +33,7 @@ func (r *AgentMakeCommand) Extend() command.Extend {
 				Aliases: []string{"f"},
 				Usage:   "Create the agent even if it already exists",
 			},
+			supportconsole.ModuleFlag(),
 		},
 	}
 }

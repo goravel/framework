@@ -46,6 +46,19 @@ func Migrations() []schema.Migration {
 	return replaceDummyPackage(content)
 }
 
+func modules() string {
+	content := `package DummyPackage
+
+import "github.com/goravel/framework/contracts/module"
+
+func Modules() []module.Module {
+	return []module.Module{}
+}
+`
+
+	return replaceDummyPackage(content)
+}
+
 func providers() string {
 	content := `package DummyPackage
 

@@ -20,17 +20,20 @@ func TestMiddlewareMakeCommand(t *testing.T) {
 	assert.NoError(t, middlewareMakeCommand.Handle(mockContext))
 
 	mockContext.EXPECT().Arguments().Return([]string{"VerifyCsrfToken"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Middleware created successfully").Once()
 	assert.NoError(t, middlewareMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/http/middleware/verify_csrf_token.go"))
 
 	mockContext.EXPECT().Arguments().Return([]string{"VerifyCsrfToken"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Error("the middleware already exists. Use the --force or -f flag to overwrite").Once()
 	assert.NoError(t, middlewareMakeCommand.Handle(mockContext))
 
 	mockContext.EXPECT().Arguments().Return([]string{"User/Auth"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Middleware created successfully").Once()
 	assert.NoError(t, middlewareMakeCommand.Handle(mockContext))
@@ -45,6 +48,7 @@ func TestMiddlewareMakeCommand_MultipleNames(t *testing.T) {
 	mockContext := mocksconsole.NewContext(t)
 
 	mockContext.EXPECT().Arguments().Return([]string{"Authenticate", "Throttle"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Times(2)
 	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
 	mockContext.EXPECT().Success("Middleware created successfully").Times(2)
 

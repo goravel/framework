@@ -4,7 +4,9 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io/fs"
 	"maps"
+	"net/http"
 	"os"
 	"os/signal"
 	stdpath "path"
@@ -24,13 +26,22 @@ import (
 	frameworkconsole "github.com/goravel/framework/console"
 	"github.com/goravel/framework/contracts/binding"
 	contractsconsole "github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/contracts/database/seeder"
+	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/foundation"
+	contractsmodule "github.com/goravel/framework/contracts/module"
+	"github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/contracts/route"
+	"github.com/goravel/framework/contracts/schedule"
 	"github.com/goravel/framework/contracts/validation"
 	contractsview "github.com/goravel/framework/contracts/view"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation/configuration"
 	"github.com/goravel/framework/foundation/console"
 	"github.com/goravel/framework/foundation/json"
+	frameworkmodule "github.com/goravel/framework/module"
+	moduleconsole "github.com/goravel/framework/module/console"
 	"github.com/goravel/framework/process"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/carbon"
@@ -79,6 +90,7 @@ type Application struct {
 	bootedRunners      []string
 	commandsFilter     []string
 	commandHooks       map[string][]contractsconsole.CommandHook
+	modules            []contractsmodule.Module
 	runnerWg           sync.WaitGroup
 	runnersToRun       []*RunnerWithInfo
 }
@@ -116,6 +128,8 @@ func (r *Application) Build() foundation.Application {
 	r.setTimezone()
 	r.configurePaths()
 	r.configureCustomConfig()
+	r.configureModules()
+	r.configureModuleConfig()
 	if r.builder.commandsFilter != nil {
 		r.commandsFilter = r.builder.commandsFilter()
 	}
@@ -126,6 +140,7 @@ func (r *Application) Build() foundation.Application {
 	r.providerRepository.Register(r)
 	r.configureMiddleware()
 	r.providerRepository.Boot(r)
+	r.registerModuleResources()
 	r.configureViews()
 	r.configureEventListeners()
 	r.configureCommands()
@@ -484,10 +499,16 @@ func (r *Application) configureCallback() {
 }
 
 func (r *Application) configureCommands() {
+	var commands []contractsconsole.Command
 	if r.builder.commands != nil {
-		if commands := r.builder.commands(); len(commands) > 0 {
-			r.registerCommands(commands)
-		}
+		commands = r.builder.commands()
+	}
+	for _, module := range frameworkmodule.Providing[contractsmodule.ProvidesCommands](r.modules) {
+		commands = append(commands, module.Commands()...)
+	}
+
+	if len(commands) > 0 {
+		r.registerCommands(commands)
 	}
 }
 
@@ -497,18 +518,67 @@ func (r *Application) configureCustomConfig() {
 	}
 }
 
-func (r *Application) configureEventListeners() {
-	if r.builder.eventToListeners != nil {
-		if eventToListeners := r.builder.eventToListeners(); len(eventToListeners) > 0 {
-			eventFacade := r.MakeEvent()
-			if eventFacade == nil {
-				color.Errorln("Event facade not found, please install it first: ./artisan package:install Event")
-			} else {
-				// WithEvents carries the deprecated event.Listener, Register is
-				// the only entry accepting it.
-				//nolint:staticcheck
-				eventFacade.Register(eventToListeners)
+// configureModuleConfig sets "modules.<name>" (replacing WithConfig's) and wraps
+// app.lang_fs with module translations.
+func (r *Application) configureModuleConfig() {
+	translations := make(map[string]fs.FS)
+	var configs []contractsmodule.Module
+	for _, module := range r.modules {
+		if _, ok := module.(contractsmodule.ProvidesConfig); ok {
+			configs = append(configs, module)
+		}
+		if p, ok := module.(contractsmodule.ProvidesTranslations); ok {
+			fsys, ok, err := frameworkmodule.Files(module.Name(), "Translations()", frameworkmodule.TranslationsDirectory, p.Translations())
+			if err != nil {
+				color.Errorln(err)
 			}
+			if ok {
+				translations[module.Name()] = fsys
+			}
+		}
+	}
+	if len(configs) == 0 && len(translations) == 0 {
+		return
+	}
+
+	configFacade := r.MakeConfig()
+	if configFacade == nil {
+		color.Errorln(errors.ConfigFacadeNotSet.SetModule(errors.ModuleModule))
+		return
+	}
+
+	for _, module := range configs {
+		configFacade.Add("modules."+module.Name(), module.(contractsmodule.ProvidesConfig).Config())
+	}
+
+	if len(translations) > 0 {
+		fallback, _ := configFacade.Get("app.lang_fs").(fs.FS)
+		configFacade.Add("app.lang_fs", frameworkmodule.NewLangFS(translations, fallback))
+	}
+}
+
+func (r *Application) configureEventListeners() {
+	// A copy: WithEvents may return the same map on every build.
+	eventToListeners := make(map[event.Event][]event.Listener)
+	if r.builder.eventToListeners != nil {
+		maps.Copy(eventToListeners, r.builder.eventToListeners())
+	}
+	for _, module := range frameworkmodule.Providing[contractsmodule.ProvidesEvents](r.modules) {
+		// Concat keeps every listener of a shared event and never writes into the app's slice.
+		for e, listeners := range module.Events() {
+			eventToListeners[e] = slices.Concat(eventToListeners[e], listeners)
+		}
+	}
+
+	if len(eventToListeners) > 0 {
+		eventFacade := r.MakeEvent()
+		if eventFacade == nil {
+			color.Errorln("Event facade not found, please install it first: ./artisan package:install Event")
+		} else {
+			// WithEvents carries the deprecated event.Listener, Register is
+			// the only entry accepting it.
+			//nolint:staticcheck
+			eventFacade.Register(eventToListeners)
 		}
 	}
 }
@@ -577,29 +647,40 @@ func (r *Application) configureGrpc() {
 }
 
 func (r *Application) configureJobs() {
+	var jobs []queue.Job
 	if r.builder.jobs != nil {
-		jobs := r.builder.jobs()
+		jobs = r.builder.jobs()
+	}
+	for _, module := range frameworkmodule.Providing[contractsmodule.ProvidesJobs](r.modules) {
+		jobs = append(jobs, module.Jobs()...)
+	}
 
-		if len(jobs) > 0 {
-			queueFacade := r.MakeQueue()
-			if queueFacade == nil {
-				color.Errorln("Queue facade not found, please install it first: ./artisan package:install Queue")
-			} else {
-				queueFacade.Register(jobs)
-			}
+	if len(jobs) > 0 {
+		queueFacade := r.MakeQueue()
+		if queueFacade == nil {
+			color.Errorln("Queue facade not found, please install it first: ./artisan package:install Queue")
+		} else {
+			queueFacade.Register(jobs)
 		}
 	}
 }
 
+// configureMiddleware: driver defaults, then modules, then WithMiddleware (final say).
 func (r *Application) configureMiddleware() {
-	if r.builder.middleware != nil {
+	modules := frameworkmodule.Providing[contractsmodule.ProvidesGlobalMiddleware](r.modules)
+	if r.builder.middleware != nil || len(modules) > 0 {
 		routeFacade := r.MakeRoute()
 		if routeFacade == nil {
 			color.Errorln("Route facade not found, please install it first: ./artisan package:install Route")
 		} else {
 			defaultGlobalMiddleware := routeFacade.GetGlobalMiddleware()
 			middleware := configuration.NewMiddleware(defaultGlobalMiddleware)
-			r.builder.middleware(middleware)
+			for _, module := range modules {
+				middleware.Append(module.GlobalMiddleware()...)
+			}
+			if r.builder.middleware != nil {
+				r.builder.middleware(middleware)
+			}
 			routeFacade.SetGlobalMiddleware(middleware.GetGlobalMiddleware())
 
 			if recoveryHandler := middleware.GetRecover(); recoveryHandler != nil {
@@ -610,16 +691,60 @@ func (r *Application) configureMiddleware() {
 }
 
 func (r *Application) configureMigrations() {
+	var migrations []schema.Migration
 	if r.builder.migrations != nil {
-		if migrations := r.builder.migrations(); len(migrations) > 0 {
-			schemaFacade := r.MakeSchema()
-			if schemaFacade == nil {
-				color.Errorln("Schema facade not found, please install it first: ./artisan package:install Schema")
-			} else {
-				schemaFacade.Register(migrations)
+		migrations = r.builder.migrations()
+	}
+	appMigrations := len(migrations)
+	for _, module := range frameworkmodule.Providing[contractsmodule.ProvidesMigrations](r.modules) {
+		migrations = append(migrations, module.Migrations()...)
+	}
+
+	if len(migrations) > 0 {
+		schemaFacade := r.MakeSchema()
+		if schemaFacade == nil {
+			color.Errorln("Schema facade not found, please install it first: ./artisan package:install Schema")
+		} else {
+			// The migrator runs in registration order: with module migrations, order the
+			// merged list by signature (timestamp). Equal signatures keep module order.
+			if len(migrations) > appMigrations {
+				migrations = slices.Clone(migrations)
+				slices.SortStableFunc(migrations, func(a, b schema.Migration) int {
+					return strings.Compare(a.Signature(), b.Signature())
+				})
 			}
+			schemaFacade.Register(migrations)
 		}
 	}
+}
+
+// configureModules binds a fresh registry and keeps the modules in dependency order. It runs
+// after WithConfig (module.path) and before providers. A bad module or an unsortable dependency panics.
+func (r *Application) configureModules() {
+	directory := frameworkmodule.DefaultDirectory
+	var modules []contractsmodule.Module
+	if r.builder.modules != nil {
+		modules = r.builder.modules()
+	}
+	if len(modules) > 0 {
+		if config := r.MakeConfig(); config != nil {
+			directory = config.GetString("module.path", frameworkmodule.DefaultDirectory)
+		}
+	}
+
+	registry := frameworkmodule.NewRegistry(directory)
+	if err := registry.Register(modules...); err != nil {
+		panic(err)
+	}
+	if err := registry.Resolve(); err != nil {
+		panic(err)
+	}
+
+	// Make caches instances; drop the previous registry on a rebuild.
+	r.Fresh(binding.Module)
+	r.Instance(binding.Module, registry)
+	frameworkmodule.SetDefault(registry)
+	r.modules = registry.All()
 }
 
 func (r *Application) configurePaths() {
@@ -629,9 +754,69 @@ func (r *Application) configurePaths() {
 	}
 }
 
+// configureRoutes runs WithRouting, then module static files on the root router
+// (no group middleware), then module routes, then late module routes in reverse order.
 func (r *Application) configureRoutes() {
 	if r.builder.routes != nil {
 		r.builder.routes()
+	}
+
+	statics := frameworkmodule.Providing[contractsmodule.ProvidesStatic](r.modules)
+	web := frameworkmodule.Providing[contractsmodule.ProvidesRoutes](r.modules)
+	late := frameworkmodule.Providing[contractsmodule.ProvidesLateRoutes](r.modules)
+	if len(statics) == 0 && len(web) == 0 && len(late) == 0 {
+		return
+	}
+
+	routeFacade := r.MakeRoute()
+	if routeFacade == nil {
+		color.Errorln("Route facade not found, please install it first: ./artisan package:install Route")
+		return
+	}
+
+	r.registerModuleStatic(routeFacade)
+
+	for _, module := range web {
+		module.Routes()
+	}
+	for _, module := range slices.Backward(late) {
+		module.LateRoutes()
+	}
+}
+
+// registerModuleStatic serves static paths in module, then prefix, order. Duplicate
+// or invalid ones are reported and skipped.
+func (r *Application) registerModuleStatic(routeFacade route.Route) {
+	served := make(map[string]string)
+	for _, module := range r.modules {
+		p, ok := module.(contractsmodule.ProvidesStatic)
+		if !ok {
+			continue
+		}
+
+		paths := p.Static()
+		for _, prefix := range slices.Sorted(maps.Keys(paths)) {
+			cleaned, ok := frameworkmodule.CleanPrefix(prefix)
+			if !ok {
+				color.Errorln(errors.ModuleStaticPrefixInvalid.Args(module.Name(), prefix))
+				continue
+			}
+			if owner, ok := served[cleaned]; ok {
+				color.Errorln(errors.ModuleStaticDuplicate.Args(cleaned, module.Name(), owner))
+				continue
+			}
+
+			fsys, ok, err := frameworkmodule.StaticFS(module.Name(), paths[prefix])
+			if err != nil {
+				color.Errorln(err)
+			}
+			if !ok {
+				continue
+			}
+
+			served[cleaned] = module.Name()
+			routeFacade.StaticFS(cleaned, http.FS(fsys))
+		}
 	}
 }
 
@@ -691,37 +876,82 @@ func (r *Application) isRunnerDisabled(signature string, disabledRunners []strin
 }
 
 func (r *Application) configureSchedule() {
+	var events []schedule.Event
 	if r.builder.schedule != nil {
-		if events := r.builder.schedule(); len(events) > 0 {
-			scheduleFacade := r.MakeSchedule()
-			if scheduleFacade == nil {
-				color.Errorln("Schedule facade not found, please install it first: ./artisan package:install Schedule")
-			} else {
-				scheduleFacade.Register(events)
-			}
+		events = r.builder.schedule()
+	}
+	for _, module := range frameworkmodule.Providing[contractsmodule.ProvidesSchedule](r.modules) {
+		events = append(events, module.Schedule()...)
+	}
+
+	if len(events) > 0 {
+		scheduleFacade := r.MakeSchedule()
+		if scheduleFacade == nil {
+			color.Errorln("Schedule facade not found, please install it first: ./artisan package:install Schedule")
+		} else {
+			scheduleFacade.Register(events)
 		}
 	}
 }
 
 func (r *Application) configureSeeders() {
+	var seeders []seeder.Seeder
 	if r.builder.seeders != nil {
-		if seeders := r.builder.seeders(); len(seeders) > 0 {
-			seederFacade := r.MakeSeeder()
-			if seederFacade == nil {
-				color.Errorln("Seeder facade not found, please install it first: ./artisan package:install Seeder")
-			} else {
-				seederFacade.Register(seeders)
-			}
+		seeders = r.builder.seeders()
+	}
+	for _, module := range frameworkmodule.Providing[contractsmodule.ProvidesSeeders](r.modules) {
+		seeders = append(seeders, module.Seeders()...)
+	}
+
+	if len(seeders) > 0 {
+		seederFacade := r.MakeSeeder()
+		if seederFacade == nil {
+			color.Errorln("Seeder facade not found, please install it first: ./artisan package:install Seeder")
+		} else {
+			seederFacade.Register(seeders)
 		}
 	}
 }
 
 func (r *Application) configureServiceProviders() {
+	var providers []foundation.ServiceProvider
 	if r.builder.configuredServiceProviders != nil {
-		configuredServiceProviders := r.builder.configuredServiceProviders()
-		if len(configuredServiceProviders) > 0 {
-			r.providerRepository.Add(configuredServiceProviders)
+		providers = r.builder.configuredServiceProviders()
+	}
+	for _, module := range frameworkmodule.Providing[foundation.ProvidesServiceProviders](r.modules) {
+		providers = append(providers, module.ServiceProviders()...)
+	}
+
+	if len(providers) > 0 {
+		r.providerRepository.Add(providers)
+	}
+}
+
+// registerModuleResources registers module views under "<name>/", after providers
+// boot and before configureViews compiles them.
+func (r *Application) registerModuleResources() {
+	modules := frameworkmodule.Providing[contractsmodule.ProvidesViews](r.modules)
+	if len(modules) == 0 {
+		return
+	}
+
+	viewFacade := r.MakeView()
+	if viewFacade == nil {
+		color.Errorln("View facade not found, please install it first: ./artisan package:install View")
+		return
+	}
+
+	for _, module := range modules {
+		name := module.(contractsmodule.Module).Name()
+		fsys, ok, err := frameworkmodule.Files(name, "Views()", frameworkmodule.ViewsDirectory, module.Views())
+		if err != nil {
+			color.Errorln(err)
 		}
+		if !ok {
+			continue
+		}
+
+		viewFacade.LoadViewsFromFS(frameworkmodule.NewPrefixFS(name, fsys), ".")
 	}
 }
 
@@ -800,6 +1030,11 @@ func (r *Application) defaultCommands() []contractsconsole.Command {
 		console.NewPackageInstallCommand(binding.Bindings, r.MakeProcess(), r.Json()),
 		console.NewPackageUninstallCommand(binding.Bindings, r.MakeProcess(), r.Json()),
 		console.NewVendorPublishCommand(r.publishes, r.publishGroups),
+		moduleconsole.NewInitCommand(r.MakeConfig()),
+		moduleconsole.NewInstallCommand(r.MakeProcess()),
+		moduleconsole.NewListCommand(r.MakeModule()),
+		moduleconsole.NewModuleMakeCommand(r.MakeConfig()),
+		moduleconsole.NewPublishCommand(r.MakeModule()),
 	}
 
 	if r.MakeRoute() != nil {

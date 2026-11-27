@@ -33,6 +33,7 @@ func (r *RequestMakeCommand) Extend() command.Extend {
 				Aliases: []string{"f"},
 				Usage:   "Create the request even if it already exists",
 			},
+			supportconsole.ModuleFlag(),
 		},
 	}
 }

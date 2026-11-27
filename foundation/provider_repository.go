@@ -3,6 +3,7 @@ package foundation
 import (
 	"fmt"
 	"maps"
+	"reflect"
 	"slices"
 	"strings"
 
@@ -41,7 +42,7 @@ func (r *ProviderRepository) Add(providers []foundation.ServiceProvider) {
 	}
 
 	for _, provider := range providers {
-		key := r.getProviderName(provider)
+		key := r.providerKey(provider)
 
 		if _, exists := r.states[key]; exists {
 			continue
@@ -60,7 +61,7 @@ func (r *ProviderRepository) Boot(app foundation.Application) {
 	providers := r.getProviders()
 
 	for _, provider := range providers {
-		key := r.getProviderName(provider)
+		key := r.providerKey(provider)
 		state, exists := r.states[key]
 
 		if !exists || !state.registered || state.booted {
@@ -107,7 +108,7 @@ func (r *ProviderRepository) Register(app foundation.Application) []foundation.S
 	processed := make([]foundation.ServiceProvider, 0, len(providers))
 
 	for _, provider := range providers {
-		key := r.getProviderName(provider)
+		key := r.providerKey(provider)
 		state, exists := r.states[key]
 		if !exists {
 			state = &ProviderState{provider: provider}
@@ -152,8 +153,28 @@ func (r *ProviderRepository) getRelationship(provider foundation.ServiceProvider
 	return binding.Relationship{}
 }
 
+// getProviderName is the short type name of a provider, e.g. "*console.ServiceProvider",
+// used in messages. It is not unique: providers are keyed by providerKey.
 func (r *ProviderRepository) getProviderName(provider foundation.ServiceProvider) string {
 	return fmt.Sprintf("%T", provider)
+}
+
+// providerKey identifies a provider by its full type path, e.g.
+// "*github.com/goravel/framework/console.ServiceProvider", so two packages that
+// both name their provider ServiceProvider do not collide and drop one another.
+// Unnamed types (no package path) fall back to the %T form.
+func (r *ProviderRepository) providerKey(provider foundation.ServiceProvider) string {
+	t := reflect.TypeOf(provider)
+	prefix := ""
+	for t.Kind() == reflect.Pointer {
+		prefix += "*"
+		t = t.Elem()
+	}
+	if t.PkgPath() == "" || t.Name() == "" {
+		return fmt.Sprintf("%T", provider)
+	}
+
+	return prefix + t.PkgPath() + "." + t.Name()
 }
 
 // sort performs a topological sort on a list of providers to ensure

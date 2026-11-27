@@ -17,6 +17,7 @@ const (
 	Lang         = "goravel.lang"
 	Log          = "goravel.log"
 	Mail         = "goravel.mail"
+	Module       = "goravel.module"
 	Notification = "goravel.notification"
 	Orm          = "goravel.orm"
 	Process      = "goravel.process"

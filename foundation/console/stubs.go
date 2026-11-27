@@ -63,6 +63,7 @@ func (r *DummyServiceProvider) Relationship() binding.Relationship {
 		ProvideFor:   []string{},
 	}
 }
+
 // Register service bindings here
 func (r *DummyServiceProvider) Register(app foundation.Application) {
 	// Example:

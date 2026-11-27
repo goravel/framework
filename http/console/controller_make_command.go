@@ -38,6 +38,7 @@ func (r *ControllerMakeCommand) Extend() command.Extend {
 				Aliases: []string{"f"},
 				Usage:   "Create the controller even if it already exists",
 			},
+			supportconsole.ModuleFlag(),
 		},
 	}
 }

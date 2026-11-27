@@ -16,6 +16,8 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
+	module "github.com/goravel/framework/contracts/module"
+
 	queue "github.com/goravel/framework/contracts/queue"
 
 	schedule "github.com/goravel/framework/contracts/schedule"
@@ -855,6 +857,54 @@ func (_c *ApplicationBuilder_WithMigrations_Call) Return(_a0 foundation.Applicat
 }
 
 func (_c *ApplicationBuilder_WithMigrations_Call) RunAndReturn(run func(func() []schema.Migration) foundation.ApplicationBuilder) *ApplicationBuilder_WithMigrations_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithModules provides a mock function with given fields: _a0
+func (_m *ApplicationBuilder) WithModules(_a0 func() []module.Module) foundation.ApplicationBuilder {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithModules")
+	}
+
+	var r0 foundation.ApplicationBuilder
+	if rf, ok := ret.Get(0).(func(func() []module.Module) foundation.ApplicationBuilder); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(foundation.ApplicationBuilder)
+		}
+	}
+
+	return r0
+}
+
+// ApplicationBuilder_WithModules_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithModules'
+type ApplicationBuilder_WithModules_Call struct {
+	*mock.Call
+}
+
+// WithModules is a helper method to define mock.On call
+//   - _a0 func() []module.Module
+func (_e *ApplicationBuilder_Expecter) WithModules(_a0 interface{}) *ApplicationBuilder_WithModules_Call {
+	return &ApplicationBuilder_WithModules_Call{Call: _e.mock.On("WithModules", _a0)}
+}
+
+func (_c *ApplicationBuilder_WithModules_Call) Run(run func(_a0 func() []module.Module)) *ApplicationBuilder_WithModules_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func() []module.Module))
+	})
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithModules_Call) Return(_a0 foundation.ApplicationBuilder) *ApplicationBuilder_WithModules_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ApplicationBuilder_WithModules_Call) RunAndReturn(run func(func() []module.Module) foundation.ApplicationBuilder) *ApplicationBuilder_WithModules_Call {
 	_c.Call.Return(run)
 	return _c
 }

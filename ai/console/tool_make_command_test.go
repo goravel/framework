@@ -28,7 +28,7 @@ func TestToolMakeCommand(t *testing.T) {
 
 	extend := toolMakeCommand.Extend()
 	assert.Equal(t, "make", extend.Category)
-	if assert.Len(t, extend.Flags, 1) {
+	if assert.Len(t, extend.Flags, 2) {
 		flag, ok := extend.Flags[0].(*command.BoolFlag)
 		assert.True(t, ok)
 		if ok {
@@ -44,17 +44,20 @@ func TestToolMakeCommand(t *testing.T) {
 	assert.NoError(t, toolMakeCommand.Handle(mockContext))
 
 	mockContext.EXPECT().Arguments().Return([]string{"WeatherTool"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Tool created successfully").Once()
 	assert.NoError(t, toolMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/ai/tools/weather_tool.go"))
 
 	mockContext.EXPECT().Arguments().Return([]string{"WeatherTool"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Error("the tool already exists. Use the --force or -f flag to overwrite").Once()
 	assert.NoError(t, toolMakeCommand.Handle(mockContext))
 
 	mockContext.EXPECT().Arguments().Return([]string{"user/WeatherTool"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Tool created successfully").Once()
 	assert.NoError(t, toolMakeCommand.Handle(mockContext))
@@ -71,6 +74,7 @@ func TestToolMakeCommand(t *testing.T) {
 
 	support.Config.Paths.Tools = "custom/tools"
 	mockContext.EXPECT().Arguments().Return([]string{"CurrencyTool"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().Success("Tool created successfully").Once()
 	assert.NoError(t, toolMakeCommand.Handle(mockContext))
@@ -85,6 +89,7 @@ func TestToolMakeCommand_MultipleNames(t *testing.T) {
 	}()
 
 	mockContext.EXPECT().Arguments().Return([]string{"WeatherTool", "CurrencyTool"}).Once()
+	mockContext.EXPECT().Option("module").Return("").Times(2)
 	mockContext.EXPECT().OptionBool("force").Return(false).Times(2)
 	mockContext.EXPECT().Success("Tool created successfully").Times(2)
 	assert.NoError(t, toolMakeCommand.Handle(mockContext))

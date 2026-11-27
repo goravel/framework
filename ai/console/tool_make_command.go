@@ -34,6 +34,7 @@ func (r *ToolMakeCommand) Extend() command.Extend {
 				Aliases: []string{"f"},
 				Usage:   "Create the tool even if it already exists",
 			},
+			supportconsole.ModuleFlag(),
 		},
 	}
 }

@@ -1,0 +1,357 @@
+package module
+
+import (
+	"bytes"
+	"encoding/json"
+	"go/build"
+	"io/fs"
+	"maps"
+	"os"
+	stdpath "path"
+	"path/filepath"
+	"runtime/debug"
+	"slices"
+	"strings"
+
+	contractsmodule "github.com/goravel/framework/contracts/module"
+	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/path"
+)
+
+const (
+	// PublishMarker records what module:publish wrote into a module directory.
+	PublishMarker = ".publish.json"
+	// PublishNotice tells readers the directory is generated.
+	PublishNotice = "DO-NOT-EDIT.md"
+
+	// Publish states of a module, as shown by module:list.
+	PublishLocal     = "local"     // in the project, nothing is copied
+	PublishNone      = "none"      // third-party without frontend files or views
+	PublishPublished = "published" // copied from the linked version
+	PublishStale     = "stale"     // differs from the linked version
+	PublishMissing   = "missing"   // not copied yet
+	PublishConflict  = "conflict"  // the directory holds something else
+)
+
+// Dependency is the Go module a third-party module is linked from.
+type Dependency struct {
+	Path    string `json:"module"`
+	Version string `json:"version"`
+	Sum     string `json:"sum"`
+}
+
+type publishMarker struct {
+	Dependency
+	Files []string `json:"files"`
+}
+
+// PackageDir locates a Go package on disk as the go command resolves it from the
+// project: the module cache, a replaced directory or a workspace module.
+var PackageDir = func(pkg string) (string, error) {
+	found, err := build.Import(pkg, path.Base(), build.FindOnly)
+	if err != nil {
+		return "", err
+	}
+
+	return found.Dir, nil
+}
+
+// DependencyOf returns the Go module of a third-party module. ok is false for a
+// module of the application and for one that sets its own Path().
+func DependencyOf(module contractsmodule.Module, info *debug.BuildInfo) (Dependency, bool) {
+	if _, located := module.(contractsmodule.Located); located || info == nil {
+		return Dependency{}, false
+	}
+
+	pkg := packagePath(module)
+	if pkg == "" || pkg == "main" || within(pkg, info.Main.Path) {
+		return Dependency{}, false
+	}
+
+	// Without a matching dependency (workspace builds) the package stands in for it.
+	dependency := Dependency{Path: pkg}
+	found := ""
+	for _, dep := range info.Deps {
+		if dep == nil || !within(pkg, dep.Path) || len(dep.Path) <= len(found) {
+			continue
+		}
+
+		found = dep.Path
+		linked := dep
+		if dep.Replace != nil {
+			linked = dep.Replace
+		}
+		dependency = Dependency{Path: dep.Path, Version: linked.Version, Sum: linked.Sum}
+	}
+
+	return dependency, true
+}
+
+// PublishState reports whether dir holds the copy of module published from dependency.
+func PublishState(module contractsmodule.Module, dependency Dependency, dir string) string {
+	files, err := publishFiles(module, dependency)
+	if err != nil || len(files) == 0 {
+		return PublishNone
+	}
+
+	marker, owned := readPublishMarker(dir)
+	if !owned || marker.Path != dependency.Path {
+		if emptyDir(dir) {
+			return PublishMissing
+		}
+
+		return PublishConflict
+	}
+	if marker.Dependency != dependency || !slices.Equal(marker.Files, slices.Sorted(maps.Keys(files))) {
+		return PublishStale
+	}
+	// The version alone misses a replaced module and edited copies: compare the files too.
+	for name, content := range files {
+		current, err := os.ReadFile(filepath.Join(dir, filepath.FromSlash(name)))
+		if err != nil || !bytes.Equal(current, content) {
+			return PublishStale
+		}
+	}
+
+	return PublishPublished
+}
+
+// Publish copies the module's frontend files (see FrontendSources), and its views
+// unless those hold them, into dir. It reports whether anything was written or removed.
+func Publish(module contractsmodule.Module, dependency Dependency, dir string) (bool, error) {
+	files, err := publishFiles(module, dependency)
+	if err != nil || len(files) == 0 {
+		return false, err
+	}
+
+	marker, owned := readPublishMarker(dir)
+	if owned && marker.Path != dependency.Path {
+		owned = false
+	}
+	if !owned && !emptyDir(dir) {
+		return false, errors.ModulePublishTargetNotOwned.Args(module.Name(), dir, dependency.Path)
+	}
+
+	names := slices.Sorted(maps.Keys(files))
+
+	changed := marker.Dependency != dependency || !slices.Equal(marker.Files, names)
+	for _, name := range names {
+		target := filepath.Join(dir, filepath.FromSlash(name))
+		if current, err := os.ReadFile(target); err == nil && bytes.Equal(current, files[name]) {
+			continue
+		}
+
+		changed = true
+		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+			return false, err
+		}
+		if err := os.WriteFile(target, files[name], 0o644); err != nil {
+			return false, err
+		}
+	}
+
+	// Remove what an earlier publish wrote and the module no longer ships.
+	for _, name := range marker.Files {
+		if _, ok := files[name]; ok {
+			continue
+		}
+		if clean := stdpath.Clean(name); !fs.ValidPath(clean) || clean == "." {
+			continue
+		}
+
+		target := filepath.Join(dir, filepath.FromSlash(name))
+		if err := os.Remove(target); err != nil && !os.IsNotExist(err) {
+			return false, err
+		}
+		removeEmptyDirs(filepath.Dir(target), dir)
+	}
+
+	if !changed {
+		return false, nil
+	}
+
+	content, err := json.MarshalIndent(publishMarker{Dependency: dependency, Files: names}, "", "  ")
+	if err != nil {
+		return false, err
+	}
+
+	return true, os.WriteFile(filepath.Join(dir, PublishMarker), append(content, '\n'), 0o644)
+}
+
+// publishFiles returns the files to write by slash path, empty when the module ships none.
+func publishFiles(module contractsmodule.Module, dependency Dependency) (map[string][]byte, error) {
+	files := make(map[string][]byte)
+
+	if p, ok := module.(contractsmodule.ProvidesFrontend); ok {
+		frontend := p.Frontend()
+		fsys, prefix, err := FrontendSources(module, frontend)
+		if err != nil {
+			return nil, err
+		}
+		if err := readFiles(fsys, prefix, frontend.Files.FS() == nil, files); err != nil {
+			return nil, err
+		}
+	}
+
+	if p, ok := module.(contractsmodule.ProvidesViews); ok && !hasPrefix(files, ViewsDirectory+"/") {
+		if views := p.Views(); views.FS() != nil {
+			fsys, _, err := Files(module.Name(), "Views()", ViewsDirectory, views)
+			if err != nil {
+				return nil, err
+			}
+			if err := readFiles(fsys, ViewsDirectory, false, files); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if len(files) == 0 {
+		return files, nil
+	}
+	delete(files, PublishMarker)
+	files[PublishNotice] = []byte(publishNotice(module.Name(), dependency))
+
+	return files, nil
+}
+
+// FrontendSources returns the frontend files module:publish copies for a third-party
+// module, and the directory of the module they go to: the FS of Files when set, else their
+// directory of its package on disk, FrontendDirectory when empty. The files are nil
+// when the module declares no frontend.
+func FrontendSources(module contractsmodule.Module, frontend contractsmodule.Frontend) (fs.FS, string, error) {
+	name, given := module.Name(), frontend.Files.Subdirectory()
+	if frontend.Files.FS() != nil {
+		fsys, _, err := Files(name, "Frontend()", "", frontend.Files)
+		prefix, _ := path.CleanRelative(given)
+
+		return fsys, prefix, err
+	}
+	if given == "" {
+		if len(frontend.Entries)+len(frontend.Aliases) == 0 {
+			return nil, "", nil
+		}
+		given = FrontendDirectory
+	}
+
+	sub, inside := path.CleanRelative(given)
+	if !inside {
+		return nil, "", errors.ModuleFilesDirInvalid.Args(name, "Frontend()", given)
+	}
+
+	pkg := packagePath(module)
+	dir, err := PackageDir(pkg)
+	if err != nil {
+		return nil, "", errors.ModuleFrontendSourcesNotFound.Args(name, pkg, err)
+	}
+
+	dir = filepath.Join(dir, filepath.FromSlash(sub))
+	if info, err := os.Stat(dir); err != nil {
+		return nil, "", errors.ModuleFilesDirUnreadable.Args(name, "Frontend()", given, err)
+	} else if !info.IsDir() {
+		return nil, "", errors.ModuleFilesDirUnreadable.Args(name, "Frontend()", given, fs.ErrInvalid)
+	}
+
+	return os.DirFS(dir), sub, nil
+}
+
+// readFiles adds the files of fsys under prefix. A directory on disk is a working
+// tree: dot entries, node_modules and anything but regular files are left out.
+func readFiles(fsys fs.FS, prefix string, disk bool, files map[string][]byte) error {
+	if fsys == nil {
+		return nil
+	}
+
+	return fs.WalkDir(fsys, ".", func(name string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if disk && name != "." {
+			if base := d.Name(); strings.HasPrefix(base, ".") || base == "node_modules" {
+				if d.IsDir() {
+					return fs.SkipDir
+				}
+
+				return nil
+			}
+			if !d.IsDir() && !d.Type().IsRegular() {
+				return nil
+			}
+		}
+		if d.IsDir() || isGoSource(name) {
+			return nil
+		}
+
+		content, err := fs.ReadFile(fsys, name)
+		if err != nil {
+			return err
+		}
+		files[stdpath.Join(prefix, name)] = content
+
+		return nil
+	})
+}
+
+// isGoSource reports files that would be compiled into the application, or cut the
+// directory out of it: they are never published.
+func isGoSource(name string) bool {
+	base := stdpath.Base(name)
+
+	return strings.HasSuffix(base, ".go") || base == "go.mod" || base == "go.sum"
+}
+
+func readPublishMarker(dir string) (publishMarker, bool) {
+	var marker publishMarker
+	content, err := os.ReadFile(filepath.Join(dir, PublishMarker))
+	if err != nil || json.Unmarshal(content, &marker) != nil {
+		return publishMarker{}, false
+	}
+
+	return marker, true
+}
+
+func publishNotice(name string, dependency Dependency) string {
+	source := dependency.Path
+	if dependency.Version != "" {
+		source += " " + dependency.Version
+	}
+
+	return "# Do not edit\n\n" +
+		"This directory is generated by `artisan module:publish` from the module `" + name + "` (" + source + ").\n" +
+		"Changes are overwritten by the next publish; run it again after upgrading the module.\n" +
+		"The files are here for tools that read sources (Vite, Tailwind); views are rendered from the copy embedded in the module.\n"
+}
+
+// within reports whether pkg is the Go module root or a package inside it.
+func within(pkg, root string) bool {
+	return root != "" && (pkg == root || strings.HasPrefix(pkg, root+"/"))
+}
+
+func hasPrefix(files map[string][]byte, prefix string) bool {
+	for name := range files {
+		if strings.HasPrefix(name, prefix) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// emptyDir reports whether dir is missing or has no entries.
+func emptyDir(dir string) bool {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return os.IsNotExist(err)
+	}
+
+	return len(entries) == 0
+}
+
+// removeEmptyDirs removes dir and its empty parents, stopping at root.
+func removeEmptyDirs(dir, root string) {
+	for dir != root && strings.HasPrefix(dir, root) {
+		if os.Remove(dir) != nil {
+			return
+		}
+		dir = filepath.Dir(dir)
+	}
+}
