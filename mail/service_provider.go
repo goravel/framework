@@ -7,6 +7,7 @@ import (
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/mail/console"
+	"github.com/goravel/framework/mail/template"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -74,4 +75,9 @@ func (r *ServiceProvider) registerJobs(app foundation.Application) {
 	queueFacade.Register([]contractsqueue.Job{
 		NewSendMailJob(configFacade),
 	})
+}
+
+// FlushState forgets the cached mail template engines.
+func (r *ServiceProvider) FlushState(foundation.Application) {
+	template.FlushEngines()
 }

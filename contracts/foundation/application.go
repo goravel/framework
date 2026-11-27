@@ -87,6 +87,10 @@ type Application interface {
 	// Publishes register the given paths to be published by the "vendor:publish" command.
 	Publishes(packageName string, paths map[string]string, groups ...string)
 	// Refresh reboots facades after changing config, if you want to restart the runners as well, please use the Restart method.
+	// It drops the container instances, calls FlushState on every booted provider that implements
+	// ServiceProviderWithFlushState, and then builds the application again.
+	// Refresh must run in a single goroutine, while no runner, request handler, or other goroutine
+	// uses the state that is flushed, because flushing can close resources such as connections.
 	Refresh()
 	// Restart restarts the application.
 	Restart() error

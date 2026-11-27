@@ -65,3 +65,10 @@ func createEngine(config config.Config, engineName string) (contractsmail.Templa
 		return nil, errors.MailTemplateEngineNotSupported.Args(driver)
 	}
 }
+
+// FlushEngines forgets the cached mail template engines, so the next Get builds
+// an engine from the current configuration. It adds no lock because Refresh runs
+// while no goroutine calls Get.
+func FlushEngines() {
+	engines.Clear()
+}

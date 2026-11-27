@@ -24,6 +24,7 @@ var _ foundation.ProviderRepository = (*ProviderRepository)(nil)
 type ProviderRepository struct {
 	states      map[string]*ProviderState
 	providers   []foundation.ServiceProvider
+	booted      []foundation.ServiceProvider
 	sorted      []foundation.ServiceProvider
 	sortedValid bool
 	loaded      bool
@@ -70,17 +71,12 @@ func (r *ProviderRepository) Boot(app foundation.Application) {
 
 		state.provider.Boot(app)
 		state.booted = true
+		r.booted = append(r.booted, state.provider)
 	}
 }
 
 func (r *ProviderRepository) GetBooted() []foundation.ServiceProvider {
-	booted := make([]foundation.ServiceProvider, 0, len(r.states))
-	for _, state := range r.states {
-		if state.booted {
-			booted = append(booted, state.provider)
-		}
-	}
-	return booted
+	return slices.Clone(r.booted)
 }
 
 func (r *ProviderRepository) LoadFromConfig(config config.Config) []foundation.ServiceProvider {
@@ -131,6 +127,7 @@ func (r *ProviderRepository) Register(app foundation.Application) []foundation.S
 func (r *ProviderRepository) Reset() {
 	r.providers = make([]foundation.ServiceProvider, 0)
 	r.states = make(map[string]*ProviderState)
+	r.booted = nil
 	r.sorted = make([]foundation.ServiceProvider, 0)
 	r.sortedValid = false
 	r.loaded = false
