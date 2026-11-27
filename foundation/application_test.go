@@ -2,38 +2,63 @@ package foundation
 
 import (
 	"context"
+	"database/sql"
+	sqldriver "database/sql/driver"
 	"errors"
+	"fmt"
 	"html/template"
+	"io"
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/stats"
+	"gorm.io/gorm"
+	gormtests "gorm.io/gorm/utils/tests"
 
+	"github.com/goravel/framework/auth"
+	frameworkconfig "github.com/goravel/framework/config"
+	contractsauth "github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/binding"
+	contractsconfig "github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
+	contractsdatabase "github.com/goravel/framework/contracts/database"
+	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/contracts/database/seeder"
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/foundation"
+	contractshttp "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/schedule"
 	"github.com/goravel/framework/contracts/validation"
+	"github.com/goravel/framework/database"
+	databasedb "github.com/goravel/framework/database/db"
+	databaseschema "github.com/goravel/framework/database/schema"
+	consolepkg "github.com/goravel/framework/foundation/console"
 	foundationjson "github.com/goravel/framework/foundation/json"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
+	mocksdriver "github.com/goravel/framework/mocks/database/driver"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
+	mockslog "github.com/goravel/framework/mocks/log"
 	mocksroute "github.com/goravel/framework/mocks/route"
 	mocksview "github.com/goravel/framework/mocks/view"
 	"github.com/goravel/framework/support"
+	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/support/pluralizer"
+	"github.com/goravel/framework/telemetry"
 )
 
 type ApplicationTestSuite struct {
@@ -1735,4 +1760,444 @@ func (s *ApplicationTestSuite) TestConfigureViews() {
 			tt.setup()
 		})
 	}
+}
+
+const refreshProbeBinding = "refresh.probe"
+
+// lifecycleRecorder collects the lifecycle calls of the fake providers in order.
+type lifecycleRecorder struct {
+	app    *Application
+	events []string
+}
+
+func (r *lifecycleRecorder) record(event string) {
+	r.events = append(r.events, event)
+}
+
+// names returns the provider names of the events that start with the given prefix.
+func (r *lifecycleRecorder) names(prefix string) []string {
+	var names []string
+	for _, event := range r.events {
+		if name, ok := strings.CutPrefix(event, prefix); ok {
+			names = append(names, name)
+		}
+	}
+
+	return names
+}
+
+type recordingProvider struct {
+	name     string
+	recorder *lifecycleRecorder
+}
+
+func (r *recordingProvider) Register(foundation.Application) {
+	r.recorder.record("register:" + r.name)
+}
+
+func (r *recordingProvider) Boot(foundation.Application) {
+	r.recorder.record("boot:" + r.name)
+}
+
+// flushingProvider implements the flush hook. It records whether the probe singleton
+// is still cached when the hook runs.
+type flushingProvider struct {
+	recordingProvider
+	panicValue any
+}
+
+func (r *flushingProvider) FlushState(foundation.Application) {
+	_, cached := r.recorder.app.instances.Load(refreshProbeBinding)
+	r.recorder.record(fmt.Sprintf("cached:%s=%t", r.name, cached))
+	r.recorder.record("flush:" + r.name)
+
+	if r.panicValue != nil {
+		panic(r.panicValue)
+	}
+}
+
+// The provider repository keys providers by their type, so each fake needs its own type.
+type flushingProviderA struct{ flushingProvider }
+type flushingProviderB struct{ flushingProvider }
+type flushingProviderC struct{ flushingProvider }
+type unbootedFlushingProvider struct{ flushingProvider }
+type plainProvider struct{ recordingProvider }
+
+var (
+	_ foundation.ServiceProviderWithFlushState = (*flushingProviderA)(nil)
+	_ foundation.ServiceProvider               = (*plainProvider)(nil)
+)
+
+// newRefreshApp builds the test application with the real base providers and a real provider
+// repository. The fake providers are added through the application builder.
+func (s *ApplicationTestSuite) newRefreshApp(providers func(recorder *lifecycleRecorder) []foundation.ServiceProvider) *lifecycleRecorder {
+	previousApp := App
+	previousArgs := os.Args
+	s.T().Cleanup(func() {
+		App = previousApp
+		os.Args = previousArgs
+	})
+	os.Args = []string{"test"}
+	s.T().Setenv("APP_KEY", strings.Repeat("a", 32))
+
+	s.SetupTest()
+	s.T().Cleanup(s.cancel)
+
+	recorder := &lifecycleRecorder{app: s.app}
+
+	// Fresh keeps the config instance only when it is already cached.
+	s.app.Instance(binding.Config, frameworkconfig.NewApplication(filepath.Join(s.T().TempDir(), ".env")))
+	s.NotNil(s.app.MakeConfig())
+
+	s.app.providerRepository = NewProviderRepository()
+	s.app.SetJson(foundationjson.New())
+	s.app.RegisterBaseServiceProviders()
+
+	builder := NewApplicationBuilder(s.app)
+	builder.WithProviders(func() []foundation.ServiceProvider {
+		if providers == nil {
+			return nil
+		}
+
+		return providers(recorder)
+	})
+	s.app.builder = builder
+
+	s.app.Singleton(refreshProbeBinding, func(foundation.Application) (any, error) {
+		return new(int), nil
+	})
+	_, err := s.app.Make(refreshProbeBinding)
+	s.NoError(err)
+
+	s.app.Build()
+
+	return recorder
+}
+
+func (s *ApplicationTestSuite) fakeProviders(recorder *lifecycleRecorder) []foundation.ServiceProvider {
+	return []foundation.ServiceProvider{
+		&flushingProviderA{flushingProvider{recordingProvider: recordingProvider{name: "a", recorder: recorder}}},
+		&plainProvider{recordingProvider{name: "plain", recorder: recorder}},
+		&flushingProviderB{flushingProvider{recordingProvider: recordingProvider{name: "b", recorder: recorder}}},
+		&flushingProviderC{flushingProvider{recordingProvider: recordingProvider{name: "c", recorder: recorder}}},
+	}
+}
+
+func (s *ApplicationTestSuite) TestRefresh() {
+	s.Run("flushes booted providers in reverse boot order after the instances are dropped and before registration", func() {
+		recorder := s.newRefreshApp(s.fakeProviders)
+
+		bootOrder := recorder.names("boot:")
+		s.ElementsMatch([]string{"a", "plain", "b", "c"}, bootOrder)
+
+		start := len(recorder.events)
+		s.app.Refresh()
+		events := recorder.events[start:]
+
+		expectedFlushOrder := slices.Clone(bootOrder)
+		slices.Reverse(expectedFlushOrder)
+		expectedFlushOrder = slices.DeleteFunc(expectedFlushOrder, func(name string) bool { return name == "plain" })
+
+		var flushed, cached []string
+		lastFlush, firstRegister := -1, -1
+		for i, event := range events {
+			if name, ok := strings.CutPrefix(event, "flush:"); ok {
+				flushed = append(flushed, name)
+				lastFlush = i
+			}
+			if event, ok := strings.CutPrefix(event, "cached:"); ok {
+				cached = append(cached, event)
+			}
+			if strings.HasPrefix(event, "register:") && firstRegister == -1 {
+				firstRegister = i
+			}
+		}
+
+		s.Equal(expectedFlushOrder, flushed)
+		s.Len(cached, 3)
+		for _, entry := range cached {
+			s.True(strings.HasSuffix(entry, "=false"), "the probe instance must be dropped before the hooks run: %s", entry)
+		}
+		s.NotEqual(-1, firstRegister)
+		s.Less(lastFlush, firstRegister, "no provider may register before every hook has run")
+		s.ElementsMatch([]string{"a", "plain", "b", "c"}, recorder.names("boot:")[len(bootOrder):], "the rebuild boots every provider again")
+	})
+
+	s.Run("calls no hook when no fake provider is booted", func() {
+		recorder := s.newRefreshApp(nil)
+
+		s.NotPanics(s.app.Refresh)
+		s.Empty(recorder.events)
+	})
+
+	s.Run("does not flush a provider that registered but did not boot", func() {
+		recorder := s.newRefreshApp(s.fakeProviders)
+
+		unbooted := &unbootedFlushingProvider{flushingProvider{recordingProvider: recordingProvider{name: "unbooted", recorder: recorder}}}
+		s.app.providerRepository.Add([]foundation.ServiceProvider{unbooted})
+		s.app.providerRepository.Register(s.app)
+		s.Contains(recorder.events, "register:unbooted")
+		s.NotContains(recorder.events, "boot:unbooted")
+
+		s.app.Refresh()
+
+		s.NotContains(recorder.names("flush:"), "unbooted")
+		s.ElementsMatch([]string{"a", "b", "c"}, recorder.names("flush:"))
+	})
+
+	s.Run("no base provider implements the flush hook", func() {
+		s.SetupTest()
+
+		for _, provider := range s.app.baseServiceProviders() {
+			s.NotImplements((*foundation.ServiceProviderWithFlushState)(nil), provider)
+		}
+	})
+
+	s.Run("propagates a panic from a hook and aborts the refresh", func() {
+		recorder := s.newRefreshApp(func(recorder *lifecycleRecorder) []foundation.ServiceProvider {
+			return []foundation.ServiceProvider{
+				&flushingProviderA{flushingProvider{recordingProvider: recordingProvider{name: "a", recorder: recorder}, panicValue: "flush failed"}},
+			}
+		})
+		booted := len(s.app.providerRepository.GetBooted())
+		s.NotZero(booted)
+
+		start := len(recorder.events)
+
+		s.PanicsWithValue("flush failed", s.app.Refresh)
+		s.Equal([]string{"cached:a=false", "flush:a"}, recorder.events[start:])
+		s.Len(s.app.providerRepository.GetBooted(), booted, "the provider repository must not be reset")
+	})
+}
+
+// aboutProvider adds an about entry in Boot, as a package provider does.
+type aboutProvider struct{}
+
+func (r *aboutProvider) Register(foundation.Application) {}
+
+func (r *aboutProvider) Boot(app foundation.Application) {
+	app.About("Refresh Test", []foundation.AboutItem{{Key: "Refresh Entry", Value: "present"}})
+}
+
+func (s *ApplicationTestSuite) TestRefresh_FlushesAboutState() {
+	consolepkg.FlushAboutState()
+	s.T().Cleanup(consolepkg.FlushAboutState)
+
+	s.newRefreshApp(func(*lifecycleRecorder) []foundation.ServiceProvider {
+		return []foundation.ServiceProvider{&aboutProvider{}}
+	})
+	s.app.Refresh()
+
+	artisan := s.app.MakeArtisan()
+	s.NotNil(artisan)
+
+	output := color.CaptureOutput(func(io.Writer) {
+		s.NoError(artisan.Call("about"))
+	})
+
+	s.Equal(1, strings.Count(output, "Refresh Entry"), output)
+}
+
+func (s *ApplicationTestSuite) TestFresh_DoesNotFlushState() {
+	recorder := s.newRefreshApp(s.fakeProviders)
+	start := len(recorder.events)
+
+	s.app.Fresh()
+	s.app.Fresh(refreshProbeBinding)
+
+	s.Empty(recorder.events[start:])
+}
+
+func (s *ApplicationTestSuite) TestRestart_FlushesStateThroughRefresh() {
+	recorder := s.newRefreshApp(s.fakeProviders)
+
+	s.NoError(s.app.Restart())
+
+	s.ElementsMatch([]string{"a", "b", "c"}, recorder.names("flush:"))
+}
+
+// refreshGuard and refreshUserProvider are the custom auth types that a test registers before Refresh.
+type refreshGuard struct {
+	contractsauth.GuardDriver
+	userProvider contractsauth.UserProvider
+}
+
+type refreshUserProvider struct {
+	contractsauth.UserProvider
+}
+
+// TestRefresh_KeepsProcessWideState checks the state that Refresh leaves alone on purpose. Laravel
+// discards the auth manager with the application, but Goravel keeps the auth guard and user provider
+// registries, because custom ones are usually registered once at startup, and a flush would make a
+// later lookup panic. This is a deliberate deviation from Laravel. The morph key type, the database
+// name mapper, the pluralizer, and the one-time ping warning and telemetry error handler guard are
+// process-wide too. Do not add them to a flush hook.
+func (s *ApplicationTestSuite) TestRefresh_KeepsProcessWideState() {
+	s.Run("custom auth guard and user provider stay registered and resolvable", func() {
+		s.newRefreshApp(nil)
+		config := s.app.MakeConfig()
+		config.Add("auth.guards.refreshguard.driver", "refreshguarddriver")
+		config.Add("auth.guards.refreshguard.provider", "refreshprovider")
+		config.Add("auth.providers.refreshprovider.driver", "refreshproviderdriver")
+
+		provider := &refreshUserProvider{}
+		registered, err := auth.NewAuth(nil, config, nil)
+		s.NoError(err)
+		registered.Extend("refreshguarddriver", func(_ contractshttp.Context, _ string, userProvider contractsauth.UserProvider) (contractsauth.GuardDriver, error) {
+			return &refreshGuard{userProvider: userProvider}, nil
+		})
+		registered.Provider("refreshproviderdriver", func(contractshttp.Context) (contractsauth.UserProvider, error) {
+			return provider, nil
+		})
+
+		s.app.Refresh()
+
+		var guard contractsauth.GuardDriver
+		s.NotPanics(func() {
+			lookup, err := auth.NewAuth(nil, s.app.MakeConfig(), nil)
+			s.NoError(err)
+			guard = lookup.Guard("refreshguard")
+		})
+		s.IsType(&refreshGuard{}, guard)
+		s.Same(provider, guard.(*refreshGuard).userProvider)
+	})
+
+	s.Run("morph key type stays set", func() {
+		s.newRefreshApp(nil)
+		previous := databaseschema.GetDefaultMorphKeyType()
+		s.T().Cleanup(func() { databaseschema.SetDefaultMorphKeyType(previous) })
+		databaseschema.SetDefaultMorphKeyType(databaseschema.MorphKeyTypeUuid)
+
+		s.app.Refresh()
+
+		s.Equal(databaseschema.MorphKeyTypeUuid, databaseschema.GetDefaultMorphKeyType())
+	})
+
+	s.Run("database name mapper stays set", func() {
+		s.newRefreshApp(nil)
+		previous := databasedb.NameMapper
+		s.T().Cleanup(func() { databasedb.NameMapper = previous })
+		databasedb.NameMapper = func(name string) string { return "mapped_" + name }
+
+		s.app.Refresh()
+
+		s.Equal("mapped_UserName", databasedb.NameMapper("UserName"))
+	})
+
+	s.Run("pluralizer language and its registrations stay", func() {
+		s.newRefreshApp(nil)
+		s.NoError(pluralizer.RegisterUninflected("english", "refreshsheep"))
+		language := pluralizer.GetLanguage()
+
+		s.app.Refresh()
+
+		s.Same(language, pluralizer.GetLanguage())
+		s.Equal("refreshsheep", pluralizer.Plural("refreshsheep"))
+	})
+
+	s.Run("telemetry error handler is installed once and not replaced on refresh", func() {
+		s.newRefreshApp(nil)
+		cfg := telemetry.Config{
+			Service:     telemetry.ServiceConfig{Name: "refresh-test"},
+			Propagators: "tracecontext",
+		}
+		_, err := telemetry.NewApplication(cfg)
+		s.NoError(err)
+
+		var handled []error
+		previousHandler := otel.GetErrorHandler()
+		s.T().Cleanup(func() { otel.SetErrorHandler(previousHandler) })
+		otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) { handled = append(handled, err) }))
+
+		s.app.Refresh()
+		_, err = telemetry.NewApplication(cfg)
+		s.NoError(err)
+
+		otel.Handle(assert.AnError)
+		s.Equal([]error{assert.AnError}, handled)
+	})
+
+	s.Run("database ping warning is not printed again across refresh", func() {
+		s.newRefreshApp(func(*lifecycleRecorder) []foundation.ServiceProvider {
+			s.addStubDatabaseConfig(s.app.MakeConfig())
+			s.app.Instance(binding.Log, mockslog.NewLog(s.T()))
+
+			return []foundation.ServiceProvider{&database.ServiceProvider{}}
+		})
+
+		// Every build pings its new connection and the ping fails. The once guard spends the warning on the first
+		// failing ping in the process, so the first build may print it, or an earlier test already did.
+		pingsBefore := freshStubConnects.Load()
+		first := color.CaptureOutput(func(io.Writer) {
+			s.app.Refresh()
+			s.NotNil(s.app.MakeOrm())
+		})
+		s.Greater(freshStubConnects.Load(), pingsBefore, "the first build must ping")
+
+		pingsBefore = freshStubConnects.Load()
+		window := color.CaptureOutput(func(io.Writer) {
+			s.app.Refresh()
+			s.NotNil(s.app.MakeOrm())
+			s.app.Refresh()
+			s.NotNil(s.app.MakeOrm())
+		})
+		s.Greater(freshStubConnects.Load(), pingsBefore, "the builds after a refresh must ping")
+
+		warning := sqldriver.ErrBadConn.Error()
+		s.LessOrEqual(strings.Count(first, warning), 1)
+		s.Zero(strings.Count(window, warning), "a refresh must not print the ping warning again")
+	})
+}
+
+// freshStubConnects counts the connection attempts that the stub connector refuses.
+var freshStubConnects atomic.Int64
+
+type freshStubConnector struct{}
+
+func (freshStubConnector) Connect(context.Context) (sqldriver.Conn, error) {
+	freshStubConnects.Add(1)
+
+	return nil, sqldriver.ErrBadConn
+}
+func (freshStubConnector) Driver() sqldriver.Driver { return freshStubDriver{} }
+
+type freshStubDriver struct{}
+
+func (freshStubDriver) Open(string) (sqldriver.Conn, error) { return nil, sqldriver.ErrBadConn }
+
+type freshStubDialector struct {
+	gormtests.DummyDialector
+}
+
+func (freshStubDialector) Initialize(db *gorm.DB) error {
+	if err := (gormtests.DummyDialector{}).Initialize(db); err != nil {
+		return err
+	}
+
+	db.ConnPool = sql.OpenDB(freshStubConnector{})
+
+	return nil
+}
+
+// addStubDatabaseConfig makes the default connection use the stub driver. The returned flag makes
+// the driver factory fail while it is true.
+func (s *ApplicationTestSuite) addStubDatabaseConfig(config contractsconfig.Config) (failConnection *bool) {
+	failConnection = new(bool)
+	driver := mocksdriver.NewDriver(s.T())
+	driver.EXPECT().Pool().Return(contractsdatabase.Pool{
+		Writers: []contractsdatabase.Config{{Driver: "postgres", Database: "app", Dialector: freshStubDialector{}}},
+	}).Maybe()
+	driver.EXPECT().Grammar().Return(nil).Maybe()
+	driver.EXPECT().Processor().Return(nil).Maybe()
+
+	config.Add("database.default", "primary")
+	config.Add("database.connections.primary.via", func() (contractsdriver.Driver, error) {
+		if *failConnection {
+			return nil, assert.AnError
+		}
+
+		return driver, nil
+	})
+
+	return failConnection
 }

@@ -10,7 +10,9 @@ type ProviderRepository interface {
 	// Boot boots all registered service providers in dependency order.
 	Boot(app Application)
 
-	// GetBooted returns a slice of all providers that have been booted.
+	// GetBooted returns a copy of the providers that have been booted, in the
+	// order their Boot returned. A provider that registered but did not boot is
+	// not included. Reset clears the record.
 	GetBooted() []ServiceProvider
 
 	// LoadFromConfig lazy-loads providers from the "app.providers" config.

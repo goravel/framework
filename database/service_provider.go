@@ -139,6 +139,11 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 	r.registerCommands(app)
 }
 
+// FlushState closes the cached database connections and their pools.
+func (r *ServiceProvider) FlushState(foundation.Application) {
+	databasedriver.CloseConnections()
+}
+
 func (r *ServiceProvider) registerCommands(app foundation.Application) {
 	artisan := app.MakeArtisan()
 	config := app.MakeConfig()

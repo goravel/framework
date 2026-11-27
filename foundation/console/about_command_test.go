@@ -5,7 +5,9 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/console/command"
@@ -24,7 +26,7 @@ func (s *AboutCommandTestSuite) SetupTest() {
 }
 
 func (s *AboutCommandTestSuite) TearDownTest() {
-	appInformation = &information{section: make(map[string]int)}
+	FlushAboutState()
 }
 
 func TestAboutCommandTestSuite(t *testing.T) {
@@ -148,6 +150,119 @@ func (s *AboutCommandTestSuite) TestAddToSection() {
 	appInformation.addToSection("Test", []foundation.AboutItem{{Key: "Test Info", Value: "OK"}})
 	s.Equal(appInformation.section, map[string]int{"Test": 0})
 	s.Len(appInformation.details, 1)
+}
+
+func (s *AboutCommandTestSuite) TestFlushAboutState() {
+	collect := func() map[string][]foundation.AboutItem {
+		sections := make(map[string][]foundation.AboutItem)
+		appInformation.Range("", func(section string, items []foundation.AboutItem) {
+			sections[section] = items
+		})
+
+		return sections
+	}
+
+	s.Run("empties the sections, the details and the resolvers", func() {
+		appInformation.addToSection("Test", []foundation.AboutItem{{Key: "Key", Value: "Value"}})
+		AddAboutInformation("Custom", foundation.AboutItem{Key: "Custom Key", Value: "Custom Value"})
+		s.Equal(map[string][]foundation.AboutItem{"Test": {{Key: "Key", Value: "Value"}}}, collect())
+
+		FlushAboutState()
+
+		s.Empty(collect())
+
+		// The flushed resolver no longer adds its entry when the command gathers the information.
+		mockApp := mocksfoundation.NewApplication(s.T())
+		mockConfig := mocksconfig.NewConfig(s.T())
+		mockApp.EXPECT().MakeConfig().Return(mockConfig).Once()
+		mockApp.EXPECT().Version().Return("test_version").Once()
+		mockConfig.EXPECT().GetString(mock.Anything).Return("").Maybe()
+		mockConfig.EXPECT().GetString("mail.default", "smtp").Return("").Once()
+		mockConfig.EXPECT().GetBool("app.debug").Return(false).Once()
+		mockConfig.EXPECT().Get(mock.Anything).Return(nil).Maybe()
+
+		NewAboutCommand(mockApp).gatherApplicationInformation()
+
+		s.ElementsMatch([]string{"Environment", "Drivers"}, sectionNames(collect()))
+	})
+
+	s.Run("is safe on empty state and can run repeatedly", func() {
+		FlushAboutState()
+
+		s.NotPanics(func() {
+			FlushAboutState()
+			FlushAboutState()
+		})
+		s.Empty(collect())
+
+		appInformation.addToSection("Again", []foundation.AboutItem{{Key: "Key", Value: "Value"}})
+		s.Equal(map[string][]foundation.AboutItem{"Again": {{Key: "Key", Value: "Value"}}}, collect())
+	})
+}
+
+func sectionNames(sections map[string][]foundation.AboutItem) []string {
+	names := make([]string, 0, len(sections))
+	for name := range sections {
+		names = append(names, name)
+	}
+
+	return names
+}
+
+func (s *AboutCommandTestSuite) TestGatherApplicationInformation_RunsResolversOutsideTheLock() {
+	mockApp := mocksfoundation.NewApplication(s.T())
+	mockConfig := mocksconfig.NewConfig(s.T())
+	mockApp.EXPECT().MakeConfig().Return(mockConfig).Once()
+	mockApp.EXPECT().Version().Return("test_version").Once()
+	mockConfig.EXPECT().GetString(mock.Anything).Return("").Maybe()
+	mockConfig.EXPECT().GetString("mail.default", "smtp").Return("").Once()
+	mockConfig.EXPECT().GetBool("app.debug").Return(false).Once()
+	mockConfig.EXPECT().Get(mock.Anything).Return(nil).Maybe()
+
+	var seen []string
+	AddAboutInformation("Custom", foundation.AboutItem{Key: "Key", Value: "Value"})
+	// A resolver that reads and writes the shared state would deadlock if it ran under the lock.
+	aboutMu.Lock()
+	customInformationResolvers = append(customInformationResolvers, func() {
+		appInformation.Range("Custom", func(section string, _ []foundation.AboutItem) {
+			seen = append(seen, section)
+		})
+		appInformation.addToSection("Resolver", []foundation.AboutItem{{Key: "Key", Value: "Value"}})
+		FlushAboutState()
+	})
+	aboutMu.Unlock()
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		NewAboutCommand(mockApp).gatherApplicationInformation()
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		s.FailNow("the resolver deadlocked")
+	}
+	s.Equal([]string{"Custom"}, seen)
+}
+
+func (s *AboutCommandTestSuite) TestInformationRange_RunsCallbackOutsideTheLock() {
+	appInformation.addToSection("Test", []foundation.AboutItem{{Key: "Key", Value: "Value"}})
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		appInformation.Range("", func(string, []foundation.AboutItem) {
+			// A callback that writes the shared state would deadlock if it ran under the lock.
+			appInformation.addToSection("Other", []foundation.AboutItem{{Key: "Key", Value: "Value"}})
+		})
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		s.FailNow("the callback deadlocked")
+	}
 }
 
 func (s *AboutCommandTestSuite) TestInformationRange() {

@@ -62,3 +62,12 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 func (r *ServiceProvider) Boot(app foundation.Application) {
 
 }
+
+// FlushState discards the loaded translation groups. It takes the load lock, so a
+// load in progress cannot store old data after the flush returns.
+func (r *ServiceProvider) FlushState(foundation.Application) {
+	loadMu.Lock()
+	defer loadMu.Unlock()
+
+	loaded.Clear()
+}

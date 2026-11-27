@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"slices"
 	"strings"
+	"sync"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
@@ -21,6 +22,9 @@ type information struct {
 	details [][]foundation.AboutItem
 }
 
+// aboutMu guards appInformation and customInformationResolvers. It guards each
+// individual read or write. Callbacks and resolvers always run outside it.
+var aboutMu sync.RWMutex
 var appInformation = &information{section: make(map[string]int)}
 var customInformationResolvers []func()
 var getGoVersion = runtime.Version
@@ -106,13 +110,20 @@ func (r *AboutCommand) gatherApplicationInformation() {
 		{Key: "Queue", Value: configFacade.GetString("queue.default")},
 		{Key: "Session", Value: configFacade.GetString("session.default")},
 	})
-	for i := range customInformationResolvers {
-		customInformationResolvers[i]()
+	// Copy the resolvers under the lock and run them outside it, because they write to the same state.
+	aboutMu.RLock()
+	resolvers := slices.Clone(customInformationResolvers)
+	aboutMu.RUnlock()
+	for i := range resolvers {
+		resolvers[i]()
 	}
 }
 
 // addToSection Add a new section to the application information.
 func (info *information) addToSection(section string, items []foundation.AboutItem) {
+	aboutMu.Lock()
+	defer aboutMu.Unlock()
+
 	index, ok := info.section[section]
 	if !ok {
 		index = len(info.details)
@@ -124,26 +135,54 @@ func (info *information) addToSection(section string, items []foundation.AboutIt
 
 // Range Iterate over the application information sections.
 func (info *information) Range(section string, ranger func(s string, items []foundation.AboutItem)) {
-	var sections []string
-	for s := range info.section {
+	type sectionItems struct {
+		name  string
+		index int
+		items []foundation.AboutItem
+	}
+
+	// Copy the sections and their items under the lock and call the callback outside it.
+	var sections []sectionItems
+	aboutMu.RLock()
+	for s, index := range info.section {
 		if len(section) == 0 || strings.EqualFold(section, s) {
-			sections = append(sections, s)
+			sections = append(sections, sectionItems{name: s, index: index, items: slices.Clone(info.details[index])})
 		}
 	}
+	aboutMu.RUnlock()
+
 	if len(sections) > 1 {
-		slices.SortFunc(sections, func(a, b string) int {
-			return cmp.Compare(info.section[a], info.section[b])
+		slices.SortFunc(sections, func(a, b sectionItems) int {
+			return cmp.Compare(a.index, b.index)
 		})
 	}
 	for i := range sections {
-		ranger(sections[i], info.details[info.section[sections[i]]])
+		ranger(sections[i].name, sections[i].items)
 	}
-
 }
 
 // AddAboutInformation Add custom information to the application information.
+//
+// Add entries from a service provider Register or Boot, or from an application builder callback,
+// because those run again when the application is rebuilt. Refresh flushes the application
+// information and the registered entries, so an entry added once outside the build is lost on refresh.
 func AddAboutInformation(section string, items ...foundation.AboutItem) {
+	aboutMu.Lock()
+	defer aboutMu.Unlock()
+
 	customInformationResolvers = append(customInformationResolvers, func() {
 		appInformation.addToSection(section, items)
 	})
+}
+
+// FlushAboutState Clear the collected application information and the custom information resolvers.
+// It is safe on empty state and can run repeatedly.
+func FlushAboutState() {
+	aboutMu.Lock()
+	defer aboutMu.Unlock()
+
+	// Clear in place, so that readers of appInformation never see the variable change.
+	clear(appInformation.section)
+	appInformation.details = nil
+	customInformationResolvers = nil
 }

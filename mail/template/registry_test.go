@@ -133,3 +133,23 @@ func TestGet_UnsupportedEngine(t *testing.T) {
 	assert.ErrorIs(t, err, errors.MailTemplateEngineNotSupported)
 	assert.Nil(t, engine)
 }
+
+func TestFlushEngines(t *testing.T) {
+	engines = sync.Map{}
+
+	mockConfig := mocksconfig.NewConfig(t)
+	mockConfig.EXPECT().GetString("mail.template.default", "html").Return("html").Times(2)
+	mockConfig.EXPECT().GetString("mail.template.engines.html.driver", "html").Return("html").Times(2)
+	mockConfig.EXPECT().GetString("mail.template.engines.html.path", "resources/views/mail").Return("/old/views").Once()
+	mockConfig.EXPECT().GetString("mail.template.engines.html.path", "resources/views/mail").Return("/new/views").Once()
+
+	before, err := Get(mockConfig)
+	assert.NoError(t, err)
+	assert.Equal(t, "/old/views", before.(*Html).viewsPath)
+
+	FlushEngines()
+
+	after, err := Get(mockConfig)
+	assert.NoError(t, err)
+	assert.Equal(t, "/new/views", after.(*Html).viewsPath)
+}
