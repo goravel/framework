@@ -1495,9 +1495,11 @@ func (r *Query) buildConditions() *Query {
 	db = query.buildOffset(db)
 	db = query.buildOmit(db)
 	db = query.buildScopes(db)
+	db = query.buildTable(db)
+	// After the table, so the counts refer to its alias.
+	db = query.buildWithCount(db)
 	db = query.buildSelectColumns(db)
 	db = query.buildSharedLock(db)
-	db = query.buildTable(db)
 	db = query.buildWith(db)
 	db = query.buildWithTrashed(db)
 	db = query.buildWhere(db)
@@ -2439,6 +2441,8 @@ func buildSelectForCount(query *Query) *Query {
 	if len(conditions.selectColumns) == 1 && str.Of(conditions.selectColumns[0]).Trim().Contains(" ") {
 		conditions.selectColumns = []string{str.Of(conditions.selectColumns[0]).Split(" ")[0]}
 	}
+	// The counts of the related records are not part of the row count.
+	conditions.withCount = nil
 
 	return query.setConditions(conditions).addGlobalScopes().buildConditions()
 }

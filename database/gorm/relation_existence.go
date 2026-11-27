@@ -86,21 +86,32 @@ func (r *Query) addRelationExistence(relation string, callback func(contractsorm
 // buildRelationExistence resolves the relation on the model of the query and
 // returns the condition on its related records.
 func (r *Query) buildRelationExistence(db *gormio.DB, existence relationExistence) (clause.Expression, error) {
+	parent, table, err := r.relationParent(db, existence.relation)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.relationExistenceExpression(parent, table, existence)
+}
+
+// relationParent returns the schema of the model of the query and its table,
+// on which the relations are resolved.
+func (r *Query) relationParent(db *gormio.DB, relation string) (*schema.Schema, string, error) {
 	model := r.conditions.model
 	if model == nil {
 		model = r.conditions.dest
 	}
 	if model == nil {
-		return nil, errors.OrmQueryRelationWithoutModel.Args(existence.relation)
+		return nil, "", errors.OrmQueryRelationWithoutModel.Args(relation)
 	}
 
 	statement := &gormio.Statement{DB: db}
 	if err := statement.Parse(model); err != nil {
 		if errors.Is(err, schema.ErrUnsupportedDataType) {
-			return nil, errors.OrmQueryRelationWithoutModel.Args(existence.relation)
+			return nil, "", errors.OrmQueryRelationWithoutModel.Args(relation)
 		}
 
-		return nil, err
+		return nil, "", err
 	}
 
 	table := db.Statement.Table
@@ -108,7 +119,7 @@ func (r *Query) buildRelationExistence(db *gormio.DB, existence relationExistenc
 		table = statement.Schema.Table
 	}
 
-	return r.relationExistenceExpression(statement.Schema, table, existence)
+	return statement.Schema, table, nil
 }
 
 // relationExistenceExpression compares the related records of the first
@@ -118,6 +129,48 @@ func (r *Query) buildRelationExistence(db *gormio.DB, existence relationExistenc
 func (r *Query) relationExistenceExpression(parent *schema.Schema, parentTable string, existence relationExistence) (clause.Expression, error) {
 	name, rest, nested := strings.Cut(existence.relation, ".")
 
+	callback := existence.callback
+	operator, count := existence.operator, existence.count
+	if nested {
+		// As in Laravel, "doesn't have Books.Authors" is "doesn't have a
+		// book that has authors": the negation stays on the first relation.
+		nestedOperator, nestedCount := operator, count
+		operator, count = ">=", 1
+		if nestedOperator == "<" && nestedCount == 1 {
+			nestedOperator, nestedCount = ">=", 1
+			operator, count = "<", 1
+		}
+
+		callback = func(query contractsorm.Query) contractsorm.Query {
+			return query.(*Query).addWhere(contractsdriver.Where{
+				Query: relationExistence{
+					callback: existence.callback,
+					relation: rest,
+					operator: nestedOperator,
+					count:    nestedCount,
+				},
+			})
+		}
+	}
+
+	db, err := r.relationSubquery(parent, parentTable, name, callback)
+	if err != nil {
+		return nil, err
+	}
+
+	switch {
+	case operator == ">=" && count == 1:
+		return clause.Expr{SQL: "EXISTS (?)", Vars: []any{db.Select("1")}}, nil
+	case operator == "<" && count == 1:
+		return clause.Expr{SQL: "NOT EXISTS (?)", Vars: []any{db.Select("1")}}, nil
+	default:
+		return clause.Expr{SQL: "(?) " + operator + " ?", Vars: []any{db.Select("COUNT(*)"), count}}, nil
+	}
+}
+
+// relationSubquery returns the query on the related records of the parent
+// row through the relation, limited by the callback.
+func (r *Query) relationSubquery(parent *schema.Schema, parentTable, name string, callback func(contractsorm.Query) contractsorm.Query) (*gormio.DB, error) {
 	relation, ok := parent.Relationships.Relations[name]
 	if !ok {
 		return nil, errors.OrmQueryRelationNotFound.Args(name, parent.Name)
@@ -150,27 +203,8 @@ func (r *Query) relationExistenceExpression(parent *schema.Schema, parentTable s
 		sub = sub.setConditions(conditions)
 	}
 
-	operator, count := existence.operator, existence.count
-	if nested {
-		// As in Laravel, "doesn't have Books.Authors" is "doesn't have a
-		// book that has authors": the negation stays on the first relation.
-		nestedOperator, nestedCount := operator, count
-		operator, count = ">=", 1
-		if nestedOperator == "<" && nestedCount == 1 {
-			nestedOperator, nestedCount = ">=", 1
-			operator, count = "<", 1
-		}
-
-		sub = sub.addWhere(contractsdriver.Where{
-			Query: relationExistence{
-				callback: existence.callback,
-				relation: rest,
-				operator: nestedOperator,
-				count:    nestedCount,
-			},
-		}).(*Query)
-	} else if existence.callback != nil {
-		query, ok := existence.callback(sub).(*Query)
+	if callback != nil {
+		query, ok := callback(sub).(*Query)
 		if !ok || query == nil {
 			return nil, errors.OrmQueryInvalidSubQuery
 		}
@@ -182,16 +216,7 @@ func (r *Query) relationExistenceExpression(parent *schema.Schema, parentTable s
 		return nil, err
 	}
 
-	db = r.constrainToParent(db, relation, relatedTable, parentTable)
-
-	switch {
-	case operator == ">=" && count == 1:
-		return clause.Expr{SQL: "EXISTS (?)", Vars: []any{db.Select("1")}}, nil
-	case operator == "<" && count == 1:
-		return clause.Expr{SQL: "NOT EXISTS (?)", Vars: []any{db.Select("1")}}, nil
-	default:
-		return clause.Expr{SQL: "(?) " + operator + " ?", Vars: []any{db.Select("COUNT(*)"), count}}, nil
-	}
+	return r.constrainToParent(db, relation, relatedTable, parentTable), nil
 }
 
 // buildRelationConditions builds the conditions of the related records: the

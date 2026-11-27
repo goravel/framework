@@ -6220,6 +6220,69 @@ func (_c *Query_With_Call) RunAndReturn(run func(string, ...interface{}) orm.Que
 	return _c
 }
 
+// WithCount provides a mock function with given fields: relation, callback
+func (_m *Query) WithCount(relation string, callback ...func(orm.Query) orm.Query) orm.Query {
+	_va := make([]interface{}, len(callback))
+	for _i := range callback {
+		_va[_i] = callback[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, relation)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithCount")
+	}
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string, ...func(orm.Query) orm.Query) orm.Query); ok {
+		r0 = rf(relation, callback...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_WithCount_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithCount'
+type Query_WithCount_Call struct {
+	*mock.Call
+}
+
+// WithCount is a helper method to define mock.On call
+//   - relation string
+//   - callback ...func(orm.Query) orm.Query
+func (_e *Query_Expecter) WithCount(relation interface{}, callback ...interface{}) *Query_WithCount_Call {
+	return &Query_WithCount_Call{Call: _e.mock.On("WithCount",
+		append([]interface{}{relation}, callback...)...)}
+}
+
+func (_c *Query_WithCount_Call) Run(run func(relation string, callback ...func(orm.Query) orm.Query)) *Query_WithCount_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]func(orm.Query) orm.Query, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(func(orm.Query) orm.Query)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Query_WithCount_Call) Return(_a0 orm.Query) *Query_WithCount_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_WithCount_Call) RunAndReturn(run func(string, ...func(orm.Query) orm.Query) orm.Query) *Query_WithCount_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // WithTrashed provides a mock function with no fields
 func (_m *Query) WithTrashed() orm.Query {
 	ret := _m.Called()

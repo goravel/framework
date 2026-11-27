@@ -285,6 +285,7 @@ var (
 	OrmQueryInvalidRelationCount        = New("invalid relation count, pass an operator (=, !=, <>, <, <=, >, >=) and a non-negative integer count")
 	OrmQueryInvalidSubQuery             = New("invalid sub query, the callback must return a query created by the orm")
 	OrmQueryModelNotPointer             = New("model must be pointer")
+	OrmQueryRelationCountNoField        = New("%s has no field for the column %s of WithCount, add one such as `gorm:\"->\"`")
 	OrmQueryRelationNotFound            = New("relation %s not found on %s")
 	OrmQueryRelationDifferentConnection = New("relation %s uses the %s connection, but the query uses %s: a relation query can't reach another connection")
 	OrmQueryRelationWithoutModel        = New("relation %s needs a model, set it with Model or pass the destination to Find, First, Get or similar")
