@@ -55,7 +55,7 @@ func TestWithCount(t *testing.T) {
 		{
 			name:      "WithCount keeps the selected columns",
 			query:     func() contractsorm.Query { return users().Select("id", "name").WithCount("Books") },
-			expectSql: "SELECT id, name, (SELECT COUNT(*) FROM `relation_books` WHERE `relation_books`.`relation_user_id` = `relation_users`.`id`) AS `books_count` FROM `relation_users`",
+			expectSql: "SELECT `id`, `name`, (SELECT COUNT(*) FROM `relation_books` WHERE `relation_books`.`relation_user_id` = `relation_users`.`id`) AS `books_count` FROM `relation_users`",
 		},
 		{
 			name:      "WithCount on a table alias",
@@ -96,6 +96,37 @@ func TestWithCount(t *testing.T) {
 			query:     func() contractsorm.Query { return users().WithCount("Books") },
 			dest:      &[]relationUser{},
 			expectSql: "SELECT `relation_users`.*, (SELECT COUNT(*) FROM `relation_books` WHERE `relation_books`.`relation_user_id` = `relation_users`.`id`) AS `books_count` FROM `relation_users`",
+		},
+		{
+			name: "WithCount resolves a selected field name to its column",
+			query: func() contractsorm.Query {
+				return users().Select("Name", "UPPER(name) AS upper_name").WithCount("Books")
+			},
+			expectSql: "SELECT `name`, UPPER(name) AS upper_name, (SELECT COUNT(*) FROM `relation_books` WHERE `relation_books`.`relation_user_id` = `relation_users`.`id`) AS `books_count` FROM `relation_users`",
+		},
+		{
+			name:      "WithCount keeps the omitted columns out",
+			query:     func() contractsorm.Query { return users().Omit("Name").WithCount("Books") },
+			expectSql: "SELECT `relation_users`.`id`, (SELECT COUNT(*) FROM `relation_books` WHERE `relation_books`.`relation_user_id` = `relation_users`.`id`) AS `books_count` FROM `relation_users`",
+		},
+		{
+			name:      "WithCount reads into maps without a field",
+			query:     func() contractsorm.Query { return users().WithCount("Roles") },
+			dest:      &[]map[string]any{},
+			expectSql: "SELECT `relation_users`.*, (SELECT COUNT(*) FROM `relation_roles` INNER JOIN `relation_role_users` ON `relation_role_users`.`relation_role_id` = `relation_roles`.`id` WHERE `relation_role_users`.`relation_user_id` = `relation_users`.`id`) AS `roles_count` FROM `relation_users`",
+		},
+		{
+			name:        "WithCount reports a misspelled relation rather than the field",
+			query:       func() contractsorm.Query { return users().WithCount("Bookss") },
+			dest:        &[]relationUser{},
+			expectError: errors.OrmQueryRelationNotFound.Args("Bookss", "relationUser"),
+		},
+		{
+			name: "WithCount with more than one callback",
+			query: func() contractsorm.Query {
+				return users().WithCount("Books", published, published)
+			},
+			expectError: errors.OrmQueryInvalidParameter,
 		},
 		{
 			name:        "WithCount without a field for the column",
